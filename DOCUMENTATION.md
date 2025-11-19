@@ -558,3 +558,17 @@ This is a highly interactive page that provides a freeform canvas for creating a
 -   **Fullscreen Mode**: Allows the canvas to fill the entire screen for an immersive experience.
 -   **List View**: An alternative to the canvas that displays all items in a simple list.
 -   **Download**: Export the current view of the moodboard as a PNG image.
+
+### `components/board`
+
+#### `AddStageModal.tsx`
+
+A modal component for adding a new stage to a project board.
+
+-   **Props**:
+    -   `isOpen`: A boolean that controls the visibility of the modal.
+    -   `onClose`: A function to be called when the modal is closed.
+    -   `onAddStage`: A function that takes the new stage's name and status (`'Open'` or `'Closed'`) as arguments and adds the stage to the board.
+-   **Functionality**:
+    -   Provides a form with a text input for the stage name and a select input for the stage status.
+    -   The `handleSubmit` function calls the `onAddStage` prop with the new stage's data.
