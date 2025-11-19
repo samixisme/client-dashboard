@@ -1,0 +1,5 @@
+{
+  "name": "Admin Dashboard",
+  "description": "A modern, professional admin dashboard application with a dark mode theme, sidebar navigation, and header. It simulates a multi-page experience with mock authentication.",
+  "requestFramePermissions": []
+}

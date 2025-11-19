@@ -1,0 +1,11 @@
+{
+  "name": "admin-dashboard",
+  "version": "1.0.0",
+  "description": "A modern, professional admin dashboard application with a dark mode theme, sidebar navigation, and header. It simulates a multi-page experience with mock authentication.",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-router-dom": "6.23.1",
+    "@hello-pangea/dnd": "16.6.0",
+    "react-dom": "^18.2.0"
+  }
+}

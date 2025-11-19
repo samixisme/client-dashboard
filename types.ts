@@ -1,0 +1,397 @@
+export type ProjectStatus = 'Active' | 'Archived' | 'Completed';
+
+export interface Project {
+    id: string;
+    brandId: string;
+    name: string;
+    description: string;
+    status: ProjectStatus;
+    createdAt: string; // ISO string
+}
+
+export interface Board {
+    id: string;
+    projectId: string;
+    name: string;
+    is_pinned: boolean;
+    background_image: string;
+    member_ids: string[];
+}
+
+export interface Stage {
+    id: string;
+    boardId: string;
+    name: string;
+    order: number;
+    status?: 'Open' | 'Closed';
+    backgroundPattern?: string;
+    sortConfig?: {
+        key: 'createdAt' | 'priority' | 'title' | 'dueDate';
+        direction: 'asc' | 'desc';
+    };
+}
+
+export interface RecurringTaskSettings {
+    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    interval: number; // e.g., every 2 weeks
+    nextDueDate: string; // ISO string for the next occurrence
+    repeatInStageId: string; // Stage where the new task should be created
+    repeatOnlyWhenCompleted: boolean;
+}
+
+export interface Task {
+    id: string;
+    boardId: string;
+    stageId: string;
+    title: string;
+    description: string;
+    priority: 'Low' | 'Medium' | 'High';
+    dateAssigned: string;
+    assignees: string[]; // array of user IDs
+    labelIds: string[];
+    dueDate?: string; // ISO string
+    start_date?: string; // ISO string
+    cover_image?: string;
+    attachments: {id: string, name: string, url: string, type: string}[];
+    createdAt: string; // ISO string
+    roadmapItemId?: string; // Link to roadmap item
+    order?: number;
+    timeEstimation?: number; // in minutes
+    recurring?: RecurringTaskSettings;
+}
+
+export interface TimeLog {
+    id: string;
+    taskId: string;
+    userId: string;
+    duration: number; // in seconds
+    date: string; // ISO string
+}
+
+export interface Tag {
+    id: string;
+    boardId: string;
+    name: string;
+    color: string;
+}
+
+export interface Comment {
+    id: string;
+    taskId?: string;
+    boardId?: string;
+    roadmapItemId?: string;
+    author: string;
+    text: string;
+    timestamp: string;
+}
+
+export interface Activity {
+    id: string;
+    objectId: string;
+    objectType: 'task' | 'comment' | 'roadmap_item';
+    description: string;
+    timestamp: string;
+    comment_timestamp_seconds?: number;
+    video_screenshot_url?: string;
+}
+
+export interface RoadmapItem {
+    id: string;
+    projectId: string;
+    title: string;
+    description: string;
+    status: 'Planned' | 'In Progress' | 'Completed';
+    startDate: string; // ISO string
+    endDate: string; // ISO string
+    assignees?: string[];
+    order?: number;
+    attachments: {id: string, name: string, url: string, type: string}[];
+    labelIds: string[];
+    sortConfig?: {
+        key: 'createdAt' | 'priority' | 'title' | 'dueDate';
+        direction: 'asc' | 'desc';
+    };
+    backgroundPattern?: string;
+}
+
+export interface CustomField {
+    id: string;
+    boardId: string;
+    name: string;
+    type: 'text' | 'number' | 'date' | 'dropdown';
+}
+
+export interface BoardNotificationSettings {
+    id: string;
+    userId: string;
+    boardId: string;
+    comment: boolean;
+    stage_changed: boolean;
+    assigned: boolean;
+    dates: boolean;
+    archived: boolean;
+    removed: boolean;
+}
+
+export interface BoardMember {
+    id: string;
+    name: string;
+    avatarUrl: string;
+}
+
+
+// Payments Feature Types
+export interface Client {
+    id: string;
+    userId: string;
+    brandId?: string;
+    name: string;
+    adresse: string;
+    ice: string;
+    rc: string;
+    if: string;
+}
+
+export interface LineItem {
+    id: string;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+}
+
+export interface ItemCategory {
+    id: string;
+    name: string;
+    items: LineItem[];
+}
+
+interface DocumentBase {
+    id: string;
+    userId: string;
+    clientId: string;
+    date: string; // ISO string
+    status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';
+    itemCategories: ItemCategory[];
+    note: string;
+    terms: string;
+    totals: {
+        subtotal: number;
+        totalNet: number;
+    };
+}
+
+export interface Invoice extends DocumentBase {
+    invoiceNumber: string;
+}
+
+export interface Estimate extends DocumentBase {
+    estimateNumber: string;
+}
+
+export interface UserSettings {
+    userId: string;
+    ae: string;
+    cnie: string;
+    ice: string;
+    if: string;
+    tp: string;
+    adresse_ae: string;
+    bankDetails: {
+        codeBanque: string;
+        codeVille: string;
+        nDeCompte: string;
+        cleRib: string;
+        codeSwift: string;
+    };
+    footerDetails: {
+        logo1Url?: string;
+        logo2Url?: string;
+        logo3Url?: string;
+        adresseMail: string;
+        telephone: string;
+        site: string;
+    };
+    legalNote: string;
+    signatureBoxClient: string;
+    signatureBoxAutoEntrepreneur: string;
+}
+
+// Feedback Feature Types
+export type DeviceView = 'desktop' | 'notebook' | 'tablet' | 'phone';
+
+export interface WebsitePage {
+    id: string;
+    path: string; // e.g., "/about", "/contact"
+    name: string;
+}
+
+export interface FeedbackWebsite {
+    id: string;
+    projectId: string;
+    name: string;
+    url: string;
+    isSubscribed?: boolean;
+    isApproved?: boolean;
+    description?: string;
+    pages?: WebsitePage[];
+    approvedPageIds?: string[];
+}
+
+export interface MockupImage {
+    id: string;
+    name: string;
+    url: string;
+}
+
+export interface FeedbackMockup {
+    id: string;
+    projectId: string;
+    name: string;
+    images: MockupImage[];
+    description?: string;
+    approvedImageIds?: string[];
+}
+
+export interface VideoAsset {
+    id: string;
+    name: string;
+    url: string;
+}
+
+export interface FeedbackVideo {
+    id:string;
+    projectId: string;
+    name: string;
+    videos: VideoAsset[];
+    description?: string;
+    approvedVideoIds?: string[];
+}
+
+export interface FeedbackComment {
+    id: string;
+    projectId: string;
+    targetId: string; // ID of the Mockup, Website, or Video
+    imageId?: string; // ID of the specific image within a mockup
+    videoAssetId?: string; // for specific video in a collection
+    deviceView?: DeviceView;
+    pageUrl?: string; // For website feedback, the specific page URL path
+    targetType: 'website' | 'mockup' | 'video';
+    comment: string;
+    reporterId: string; 
+    assignedId?: string;
+    x_coordinate?: number;
+    y_coordinate?: number;
+    startTime?: number; // in seconds, for video comments
+    endTime?: number;   // in seconds, for video comments
+    status: 'Active' | 'Resolved';
+    timestamp: string;
+    pin_number: number;
+    dueDate?: string; // Optional due date for the comment/task
+    replies?: {
+        id: string;
+        authorId: string;
+        text: string;
+        timestamp: string;
+    }[];
+}
+
+// Moodboard Feature Types
+export interface Moodboard {
+    id: string;
+    projectId: string;
+    name: string;
+}
+
+export type MoodboardItemType = 'text' | 'link' | 'image' | 'todo_list' | 'column' | 'connector' | 'color';
+
+export interface MoodboardItem {
+    id: string;
+    moodboardId: string;
+    type: MoodboardItemType;
+    content: {
+        text?: string;
+        url?: string;
+        imageUrl?: string;
+        todos?: { id: string; text: string; completed: boolean }[];
+        title?: string;
+        hex?: string;
+    };
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    parentId?: string;
+    connector_ends?: {
+        start_item_id: string;
+        end_item_id: string;
+    };
+    creatorId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+// Brand Feature Types
+export type BrandLogoType = 'Full Logo' | 'Logomark' | 'Logotype';
+export type BrandLogoVariation = 'Color' | 'Dark Background' | 'White Background' | 'Grayscale';
+
+export interface BrandLogo {
+    type: BrandLogoType;
+    variation: BrandLogoVariation;
+    formats: { format: string; url: string }[];
+}
+
+export interface BrandColor {
+    name: string;
+    type: 'Primary' | 'Secondary';
+    hex: string;
+    rgb: string;
+    hsl: string;
+    cmyk: string;
+}
+
+export interface BrandTypographyStyle {
+    name: string;
+    size: string;
+    weight: string;
+    letterSpacing: string;
+    lineHeight: string;
+}
+
+export interface BrandFont {
+    name: string;
+    type: 'Primary' | 'Secondary';
+    url: string;
+    styles: BrandTypographyStyle[];
+}
+
+export interface BrandAsset {
+    name: string;
+    url: string;
+}
+
+export interface Brand {
+    id: string;
+    name: string;
+    createdAt: string; // ISO string
+    memberIds: string[];
+    logos: BrandLogo[];
+    colors: BrandColor[];
+    fonts: BrandFont[];
+    brandVoice: string;
+    brandPositioning: string;
+    imagery: BrandAsset[];
+    graphics: BrandAsset[];
+}
+
+// Calendar Feature Types
+export interface CalendarEvent {
+    id: string;
+    title: string;
+    startDate: string; // ISO string
+    endDate: string; // ISO string
+    type: 'task' | 'invoice' | 'estimate' | 'roadmap_item' | 'manual';
+    sourceId: string | null;
+    userId: string;
+    brandId?: string;
+    projectId?: string;
+    taskId?: string;
+    reminder?: string;
+}
