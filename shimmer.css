@@ -1,0 +1,38 @@
+.shimmer-button {
+  position: relative;
+  overflow: hidden;
+  --shimmer-color-shine: rgba(255, 255, 255, 0.5);
+  --shimmer-color-glow: rgba(163, 230, 53, 0.2);
+  --shimmer-color-shadow: rgba(163, 230, 53, 0.3);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transition: box-shadow 0.5s ease-out;
+}
+
+.shimmer-button-secondary {
+  --shimmer-color-shine: rgba(163, 230, 53, 0.5);
+}
+
+.shimmer-button:hover {
+  box-shadow: 0 10px 15px -3px var(--shimmer-color-shadow), 0 4px 6px -4px var(--shimmer-color-shadow);
+}
+
+.shimmer-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--shimmer-color-shine),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform 1s ease-out;
+}
+
+.shimmer-button:hover::after {
+    transform: translateX(100%);
+}
