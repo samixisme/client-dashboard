@@ -100,7 +100,7 @@ function App() {
   }
 
   if (isInitializing) {
-    return null; // Reverted to blank screen during auth check
+    return <div className="h-screen w-screen bg-background" />;
   }
 
   if (error) {
