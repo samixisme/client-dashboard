@@ -1,7 +1,10 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
+import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+import { Brand } from '../types';
+
 // Import all data sources
 import { projects as initialProjects, boards as initialBoards, stages as initialStages, tasks as initialTasks, tags as initialTags, comments as initialComments, activities as initialActivities, roadmapItems as initialRoadmapItems, custom_fields as initialCustomFields, board_notification_settings as initialBoardNotificationSettings, board_members as initialBoardMembers, time_logs as initialTimeLogs } from '../data/mockData';
-import { brands as initialBrands } from '../data/brandData';
 import { clients as initialClients, invoices as initialInvoices, estimates as initialEstimates, userSettings as initialUserSettings } from '../data/paymentsData';
 import { feedbackWebsites as initialFeedbackWebsites, feedbackMockups as initialFeedbackMockups, feedbackVideos as initialFeedbackVideos, feedbackComments as initialFeedbackComments } from '../data/feedbackData';
 import { moodboards as initialMoodboards, moodboardItems as initialMoodboardItems } from '../data/moodboardData';
@@ -29,7 +32,7 @@ const dataStore = {
     custom_fields: initialCustomFields,
     board_notification_settings: initialBoardNotificationSettings,
     board_members: initialBoardMembers,
-    brands: initialBrands,
+    brands: [] as Brand[],
     clients: initialClients,
     invoices: initialInvoices,
     estimates: initialEstimates,
@@ -48,6 +51,8 @@ type DataStoreKey = keyof typeof dataStore;
 
 interface DataContextType {
     data: typeof dataStore;
+    loading: boolean;
+    error: Error | null;
     updateData: (key: DataStoreKey, newData: any[]) => void;
     forceUpdate: () => void;
 }
@@ -56,6 +61,40 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [version, setVersion] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        setLoading(true);
+        const q = query(collection(db, 'brands'), orderBy('name'));
+
+        const unsubscribeBrands = onSnapshot(q, (snapshot) => {
+            try {
+                const fetchedBrands = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                } as Brand));
+                dataStore.brands = fetchedBrands;
+                setVersion(v => v + 1); // Trigger re-render
+            } catch (err) {
+                setError(err as Error);
+                console.error("Error processing brand snapshot: ", err);
+            } finally {
+                setLoading(false);
+            }
+        }, (err) => {
+            console.error("Error fetching brands: ", err);
+            setError(err);
+            setLoading(false);
+        });
+
+        // Placeholder for other listeners
+
+        return () => {
+            unsubscribeBrands();
+            // Unsubscribe other listeners here
+        };
+    }, []);
 
     const forceUpdate = useCallback(() => {
         setVersion(v => v + 1);
@@ -73,7 +112,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [forceUpdate]);
 
     return (
-        <DataContext.Provider value={{ data: dataStore, updateData, forceUpdate }}>
+        <DataContext.Provider value={{ data: dataStore, loading, error, updateData, forceUpdate }}>
             {children}
         </DataContext.Provider>
     );

@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { useSearch } from '../contexts/SearchContext';
 import { Brand, CalendarEvent, BoardMember } from '../types';
-
 import { BrandIcon } from '../components/icons/BrandIcon';
 import { ProjectsIcon } from '../components/icons/ProjectsIcon';
 import { MoodboardIcon } from '../components/icons/MoodboardIcon';
@@ -15,12 +14,10 @@ import { AiSparkleIcon } from '../components/icons/AiSparkleIcon';
 import { FilterIcon } from '../components/icons/FilterIcon';
 import { BoardIcon } from '../components/icons/BoardIcon';
 import { ListIcon } from '../components/icons/ListIcon';
-
 import AddBrandModal from '../components/brands/AddBrandModal';
 import BrandFilterSortPopover, { BrandSortState } from '../components/brands/BrandFilterSortPopover';
 import AdminPanel from '../components/admin/AdminPanel';
 import { useAdmin } from '../contexts/AdminContext';
-
 
 const StatBox = ({ to, icon, count, label }: { to: string; icon: React.ReactNode; count: number; label: string }) => {
     const singularLabel = count === 1 && label.endsWith('s') ? label.slice(0, -1) : label;
@@ -85,7 +82,7 @@ const BrandCard: React.FC<{ brand: Brand }> = ({ brand }) => {
         return { projectCount, moodboardCount, feedbackCount, invoiceCount, estimateCount, eventCount };
     };
 
-    const members = board_members.filter(m => brand.memberIds.includes(m.id));
+    const members = board_members.filter(m => brand.memberIds?.includes(m.id));
     const stats = getBrandStats(brand.id);
 
     return (
@@ -123,12 +120,9 @@ const BrandCard: React.FC<{ brand: Brand }> = ({ brand }) => {
 
 const BrandsPage = () => {
     const { isAdminMode } = useAdmin();
-    const { data, updateData, forceUpdate } = useData();
+    const { data, loading, error, updateData, forceUpdate } = useData();
     const { searchQuery, setSearchQuery } = useSearch();
     const { projects } = data;
-
-    // Hardcoded current user for demonstration purposes
-    const currentUserId = 'user-1';
 
     const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
     const [sortState, setSortState] = useState<BrandSortState>({
@@ -141,35 +135,38 @@ const BrandsPage = () => {
     const sortAnchorEl = useRef<HTMLButtonElement>(null);
 
     const filteredBrands = useMemo(() => {
-        let tempBrands = [...data.brands].filter(brand => brand.memberIds.includes(currentUserId));
+        let tempBrands = [...data.brands];
 
         if (searchQuery) {
             const lowercasedQuery = searchQuery.toLowerCase();
-            tempBrands = tempBrands.filter(b => b.name.toLowerCase().includes(lowercasedQuery));
+            tempBrands = tempBrands.filter(b => b.name && b.name.toLowerCase().includes(lowercasedQuery));
         }
 
         tempBrands.sort((a, b) => {
             let comparison = 0;
+            const aDate = a.createdAt ? (a.createdAt as any).toDate ? (a.createdAt as any).toDate() : new Date(a.createdAt as any) : new Date(0);
+            const bDate = b.createdAt ? (b.createdAt as any).toDate ? (b.createdAt as any).toDate() : new Date(b.createdAt as any) : new Date(0);
+
             if (sortState.sortBy === 'createdAt') {
-                comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                comparison = aDate.getTime() - bDate.getTime();
             } else { // 'name'
-                comparison = a.name.localeCompare(b.name);
+                comparison = (a.name || '').localeCompare(b.name || '');
             }
             return sortState.sortDirection === 'desc' ? -comparison : comparison;
         });
 
         return tempBrands;
-    }, [data.brands, searchQuery, sortState, currentUserId]);
+    }, [data.brands, searchQuery, sortState]);
 
     const handleAddBrand = ({ name, memberIds }: { name: string, memberIds: string[] }) => {
+        // This is now handled by the Admin page and Firestore, but we can keep a mock version for non-admin
         const newBrand: Brand = { 
             id: `brand-${Date.now()}`, 
             name, 
-            createdAt: new Date().toISOString(),
+            createdAt: new Date(),
             memberIds,
-            logos: [], colors: [], fonts: [], brandVoice: '', brandPositioning: '', imagery: [], graphics: [],
         };
-        data.brands.push(newBrand);
+        data.brands.push(newBrand as any);
         forceUpdate();
         setIsAddBrandModalOpen(false);
     };
@@ -177,6 +174,9 @@ const BrandsPage = () => {
     const dataSources = [
         { name: 'Brands', data: data.brands, onSave: (newData: any) => updateData('brands', newData) },
     ];
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error.message}</div>
 
   return (
     <div>
@@ -240,13 +240,14 @@ const BrandsPage = () => {
                 <tbody>
                     {filteredBrands.map(brand => {
                         const projectCount = projects.filter(p => p.brandId === brand.id).length;
+                        const createdAt = (brand.createdAt as any)?.toDate ? (brand.createdAt as any).toDate() : new Date(brand.createdAt as any);
                         return (
                             <tr key={brand.id} className="border-b border-border-color last:border-b-0">
                                 <td className="p-4">
                                     <Link to={`/brands/${brand.id}`} className="font-semibold text-text-primary hover:text-primary">{brand.name}</Link>
                                 </td>
                                 <td className="p-4 text-text-secondary">{projectCount}</td>
-                                <td className="p-4 text-text-secondary">{new Date(brand.createdAt).toLocaleDateString()}</td>
+                                <td className="p-4 text-text-secondary">{createdAt.toLocaleDateString()}</td>
                             </tr>
                         )
                     })}

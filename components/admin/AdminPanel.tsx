@@ -12,9 +12,10 @@ interface DataSource {
 
 interface AdminPanelProps {
     dataSources: DataSource[];
+    isEmbedded?: boolean;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ dataSources }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ dataSources, isEmbedded = false }) => {
     const { toggleAdminMode } = useAdmin();
     const [activeSourceIndex, setActiveSourceIndex] = useState(0);
     const [editorMode, setEditorMode] = useState<'structured' | 'raw'>('structured');
@@ -36,21 +37,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ dataSources }) => {
 
     if (dataSources.length === 0) {
         return (
-             <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+             <div className={`${isEmbedded ? 'relative' : 'fixed inset-0 bg-black/80 z-50'} flex items-center justify-center p-4`}>
                 <div className="bg-glass p-8 rounded-lg max-w-lg w-full">
                     <h2 className="text-2xl font-bold text-text-primary mb-4">Admin Panel</h2>
                     <p className="text-text-secondary">No editable data sources have been configured for this page.</p>
-                     <button onClick={toggleAdminMode} className="mt-6 px-4 py-2 bg-primary text-background font-bold rounded-lg">Exit Admin Mode</button>
+                     {!isEmbedded && <button onClick={toggleAdminMode} className="mt-6 px-4 py-2 bg-primary text-background font-bold rounded-lg">Exit Admin Mode</button>}
                 </div>
             </div>
         )
     }
 
+    const containerClasses = isEmbedded 
+        ? "relative h-full flex flex-col no-print" 
+        : "fixed inset-0 bg-background/95 z-50 p-4 lg:p-10 flex flex-col no-print";
+
     return (
-        <div className="fixed inset-0 bg-background/95 z-50 p-4 lg:p-10 flex flex-col no-print">
+        <div className={containerClasses}>
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <h2 className="text-3xl font-bold text-text-primary">Admin Backend</h2>
-                <button onClick={toggleAdminMode} className="text-4xl text-text-secondary hover:text-text-primary">&times;</button>
+                {!isEmbedded && <button onClick={toggleAdminMode} className="text-4xl text-text-secondary hover:text-text-primary">&times;</button>}
             </div>
             <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
                 <div className="w-full md:w-64 flex-shrink-0 bg-glass p-4 rounded-lg border border-border-color overflow-y-auto">

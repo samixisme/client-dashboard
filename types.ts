@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export type ProjectStatus = 'Active' | 'Archived' | 'Completed';
 
 export interface Project {
@@ -370,16 +372,19 @@ export interface BrandAsset {
 export interface Brand {
     id: string;
     name: string;
-    createdAt: string; // ISO string
-    memberIds: string[];
-    logos: BrandLogo[];
-    colors: BrandColor[];
-    fonts: BrandFont[];
-    brandVoice: string;
-    brandPositioning: string;
-    imagery: BrandAsset[];
-    graphics: BrandAsset[];
+    createdAt: Date | Timestamp;
+    logoUrl?: string;
+    industry?: string;
+    memberIds?: string[];
+    logos?: BrandLogo[];
+    colors?: (BrandColor | string)[]; 
+    fonts?: BrandFont[];
+    brandVoice?: string;
+    brandPositioning?: string;
+    imagery?: BrandAsset[];
+    graphics?: BrandAsset[];
 }
+
 
 // Calendar Feature Types
 export interface CalendarEvent {

@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useNavigate, useMatch, NavLink, Link } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -115,6 +114,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
               </button>
               {profileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-glass rounded-xl shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-10 border border-border-color">
+                  <Link to="/admin" onClick={() => setProfileDropdownOpen(false)} className="block px-4 py-2 text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary">Admin Dashboard</Link>
                   <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className="block px-4 py-2 text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary">Profile</Link>
                   <Link to="/settings" onClick={() => setProfileDropdownOpen(false)} className="block px-4 py-2 text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary">Settings</Link>
                   <button onClick={handleLogoutClick} className="w-full text-left block px-4 py-2 text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary">
