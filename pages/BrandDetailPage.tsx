@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { brands as initialBrands } from '../data/brandData';
+import { useData } from '../contexts/DataContext';
+import { db } from '../utils/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { projects, board_members } from '../data/mockData';
 import { Brand, BrandColor, BrandFont, BrandAsset, BrandLogo, BrandLogoType, BrandLogoVariation, BrandTypographyStyle } from '../types';
 import { ProjectsIcon } from '../components/icons/ProjectsIcon';
@@ -37,6 +39,7 @@ const AddLogoCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
 
 const BrandDetailPage = () => {
     const { brandId } = useParams<{ brandId: string }>();
+    const { data, loading, error, forceUpdate } = useData();
     
     const [brand, setBrand] = useState<Brand | undefined>();
     const [editedBrand, setEditedBrand] = useState<Brand | null>(null);
@@ -59,13 +62,15 @@ const BrandDetailPage = () => {
     const allLogoTypes: BrandLogoType[] = ['Full Logo', 'Logomark', 'Logotype'];
 
     useEffect(() => {
-        const foundBrand = initialBrands.find(b => b.id === brandId);
-        if (foundBrand) {
-            const brandCopy = JSON.parse(JSON.stringify(foundBrand));
-            setBrand(brandCopy);
-            setEditedBrand(JSON.parse(JSON.stringify(foundBrand)));
+        if (data.brands.length > 0) {
+            const foundBrand = data.brands.find(b => b.id === brandId);
+            if (foundBrand) {
+                const brandCopy = JSON.parse(JSON.stringify(foundBrand));
+                setBrand(brandCopy);
+                setEditedBrand(JSON.parse(JSON.stringify(brandCopy)));
+            }
         }
-    }, [brandId]);
+    }, [brandId, data.brands]);
     
     const allLogoVariations: BrandLogoVariation[] = useMemo(() => {
         if (!editedBrand) return [];
@@ -92,14 +97,28 @@ const BrandDetailPage = () => {
         setIsEditMode(!isEditMode);
     };
 
-    const handleSave = () => {
-        if (editedBrand) {
-            const brandIndex = initialBrands.findIndex(b => b.id === brandId);
-            if (brandIndex !== -1) {
-                initialBrands[brandIndex] = JSON.parse(JSON.stringify(editedBrand));
+    const handleSave = async () => {
+        if (editedBrand && brandId) {
+            try {
+                const brandRef = doc(db, 'brands', brandId);
+                // Create a deep copy and remove `createdAt` if it's not a server timestamp
+                const brandToSave = JSON.parse(JSON.stringify(editedBrand));
+                if (brandToSave.createdAt && brandToSave.createdAt.seconds) {
+                    // It's a Firestore Timestamp, keep it
+                } else {
+                    // It might be a string or date object, safer to remove and let server handle it if needed
+                    // Or ideally, ensure it's always in the correct format before saving.
+                    // For now, let's just assume we don't want to overwrite it with a client date.
+                }
+
+                await updateDoc(brandRef, brandToSave);
+                setBrand(JSON.parse(JSON.stringify(editedBrand)));
+                setIsEditMode(false);
+                forceUpdate(); // Trigger a re-fetch in DataContext
+            } catch (error) {
+                console.error("Error updating brand: ", error);
+                alert("Failed to save brand updates. Check the console for more information.");
             }
-            setBrand(JSON.parse(JSON.stringify(editedBrand)));
-            setIsEditMode(false);
         }
     };
     
@@ -323,6 +342,14 @@ const BrandDetailPage = () => {
           })
           .catch(console.error);
     };
+
+    if (loading) {
+        return <div className="text-center p-10">Loading brand details...</div>;
+    }
+
+    if (error) {
+        return <div className="text-center p-10 text-red-500">Error: {error.message}</div>;
+    }
 
     if (!brand || !editedBrand) {
         return <div className="text-center p-10">Brand not found.</div>;

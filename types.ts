@@ -383,6 +383,7 @@ export interface Brand {
     brandPositioning?: string;
     imagery?: BrandAsset[];
     graphics?: BrandAsset[];
+    rawData?: string;
 }
 
 
