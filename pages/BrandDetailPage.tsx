@@ -167,8 +167,8 @@ const BrandDetailPage = () => {
         switch (section) {
             case 'colors': newItem = { name: 'New Color', type: 'Secondary', hex: '#ffffff', rgb: '255, 255, 255', hsl: '0, 0%, 100%', cmyk: '0, 0, 0, 0' }; break;
             case 'fonts': newItem = { name: 'New Font', type: 'Secondary', url: '#', styles: [{ name: 'Body', size: '16px', weight: '400', letterSpacing: '0.5px', lineHeight: '24px' }] }; break;
-            case 'imagery': newItem = { name: 'New Image', url: `https://picsum.photos/seed/${Date.now()}/600/400`, name: 'New Image' }; break;
-            case 'graphics': newItem = { name: 'New Graphic', url: `https://picsum.photos/seed/${Date.now()}/400/300`, name: 'New Graphic' }; break;
+            case 'imagery': newItem = { name: 'New Image', url: `https://picsum.photos/seed/${Date.now()}/600/400` }; break;
+            case 'graphics': newItem = { name: 'New Graphic', url: `https://picsum.photos/seed/${Date.now()}/400/300` }; break;
             default: return;
         }
         setEditedBrand(currentBrand => currentBrand ? ({ ...currentBrand, [section]: [...(currentBrand[section] as any[]), newItem] }) : null);
