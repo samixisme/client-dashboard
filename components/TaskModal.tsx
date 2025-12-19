@@ -1,11 +1,8 @@
 
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Task, Tag, TimeLog, RecurringTaskSettings, Stage, Activity, Comment } from '../types';
+import { Task, Tag, TimeLog, RecurringTaskSettings, Stage, Activity, Comment, User, Board, Project } from '../types';
 import { useData } from '../contexts/DataContext';
-import { useTimer } from '../contexts/TimerContext';
 import { Link } from 'react-router-dom';
-
 import { AddIcon } from './icons/AddIcon';
 import { EditIcon } from './icons/EditIcon';
 import { TimerIcon } from './icons/TimerIcon';
@@ -15,11 +12,11 @@ import { FileIcon } from './icons/FileIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 import { RoadmapIcon } from './icons/RoadmapIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
-
-
 import LogTimeModal from './tasks/LogTimeModal';
 import RecurringTaskPopover from './tasks/RecurringTaskPopover';
-
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage, db } from '../utils/firebase';
+import { doc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface TaskModalProps {
     task: Task;
@@ -62,21 +59,35 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
     
     const attachmentInputRef = useRef<HTMLInputElement>(null);
 
+    const [uploadingAttachment, setUploadingAttachment] = useState(false);
+
     useEffect(() => {
         setEditedTask(task);
     }, [task]);
     
+    const board = data.boards.find(b => b.id === task.boardId);
+    const project = board ? data.projects.find(p => p.id === board.projectId) : undefined;
+
     const projectRoadmapItems = useMemo(() => {
-        const board = data.boards.find(b => b.id === task.boardId);
         if (!board) return [];
         return data.roadmapItems.filter(item => item.projectId === board.projectId);
-    }, [data.roadmapItems, data.boards, task.boardId]);
+    }, [data.roadmapItems, board]);
 
+    // Determine members based on Project type.
+    // If it's a mock project, we might have specific mock users.
+    // If it's a real project (no 'member_ids' on board yet?), we should fallback to all users or project members.
     const boardMembers = useMemo(() => {
-        const board = data.boards.find(b => b.id === task.boardId);
         if (!board) return [];
-        return data.board_members.filter(m => board.member_ids.includes(m.id));
-    }, [data.board_members, data.boards, task.boardId]);
+        
+        // If board has specific members, use them
+        if (board.member_ids && board.member_ids.length > 0) {
+             return data.users.filter(m => board.member_ids.includes(m.id));
+        }
+        
+        // Fallback: If no members assigned to board specifically, show all users (common for small teams/MVP)
+        // This fixes the "blank" issue if member_ids is empty or undefined in new Firestore boards.
+        return data.users;
+    }, [data.users, board]);
 
     const availableMembers = useMemo(() => {
         return boardMembers.filter(m => !editedTask.assignees.includes(m.id));
@@ -121,7 +132,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
          setEditedTask(prev => ({...prev, dueDate: value ? new Date(value).toISOString() : undefined }));
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const changes: string[] = [];
         if (task.title !== editedTask.title) changes.push(`renamed task to "${editedTask.title}"`);
         if (task.description !== editedTask.description) changes.push(`updated the description`);
@@ -131,6 +142,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         if (JSON.stringify(task.assignees.sort()) !== JSON.stringify(editedTask.assignees.sort())) changes.push(`updated assignees`);
         if (JSON.stringify(task.labelIds.sort()) !== JSON.stringify(editedTask.labelIds.sort())) changes.push(`updated labels`);
 
+        // Save Activity to Firestore/Context
         if (changes.length > 0) {
             const newActivity: Activity = {
                 id: `activity-${Date.now()}`,
@@ -140,10 +152,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                 timestamp: new Date().toISOString()
             };
             data.activities.unshift(newActivity);
+            // TODO: Ideally save activity to Firestore too
         }
 
+        // Save tags (if any created) - Assuming local state update for now as Tags are not fully migrated to nested subcollections yet in prompt
+        // But let's persist if we can.
         const otherBoardsTags = data.tags.filter(t => t.boardId !== task.boardId);
         updateData('tags', [...otherBoardsTags, ...boardTags]);
+        
+        // Call parent update which handles Firestore update
         onUpdateTask(editedTask);
         onClose();
     };
@@ -164,7 +181,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         });
     };
     
-    const handleCreateTag = (tagName: string) => {
+    const handleCreateTag = async (tagName: string) => {
         const newTag: Tag = {
             id: `tag-${Date.now()}`, boardId: task.boardId, name: tagName,
             color: tagColors[Math.floor(Math.random() * tagColors.length)],
@@ -172,6 +189,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         setBoardTags(prev => [...prev, newTag]);
         handleToggleTag(newTag.id);
         setTagSearch('');
+
+        // Save to Firestore if project/board context exists
+        if (project && board) {
+            try {
+                await addDoc(collection(db, 'projects', project.id, 'boards', board.id, 'tags'), {
+                    name: tagName,
+                    color: newTag.color,
+                    boardId: task.boardId
+                });
+            } catch(e) {
+                console.error("Failed to create tag in Firestore", e);
+            }
+        }
     };
 
     const handleAddAssignee = (memberId: string) => {
@@ -182,16 +212,29 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         setEditedTask(prev => ({ ...prev, assignees: prev.assignees.filter(id => id !== memberId) }));
     };
     
-     const handleAddAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
+     const handleAddAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0] && project) {
             const file = e.target.files[0];
-            const newAttachment = {
-                id: `att-${Date.now()}`,
-                name: file.name,
-                url: URL.createObjectURL(file),
-                type: file.type.split('/')[1] || 'file'
-            };
-            setEditedTask(prev => ({...prev, attachments: [...prev.attachments, newAttachment]}));
+            setUploadingAttachment(true);
+            try {
+                // Strip task ID of timestamp if it's a Firestore ID for cleaner path, or just use ID
+                const storageRef = ref(storage, `projects/${project.id}/tasks/${task.id}/attachments/${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(snapshot.ref);
+
+                const newAttachment = {
+                    id: `att-${Date.now()}`,
+                    name: file.name,
+                    url: url,
+                    type: file.type.split('/')[1] || 'file'
+                };
+                setEditedTask(prev => ({...prev, attachments: [...prev.attachments, newAttachment]}));
+            } catch (error) {
+                console.error("Error uploading attachment:", error);
+                alert("Failed to upload attachment.");
+            } finally {
+                setUploadingAttachment(false);
+            }
         }
     };
     
@@ -199,19 +242,32 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         setEditedTask(prev => ({ ...prev, attachments: prev.attachments.filter(a => a.id !== attachmentId)}));
     };
 
-    const handlePostComment = () => {
+    const handlePostComment = async () => {
         if (newComment.trim()) {
-            const comment: Comment = {
-                id: `comment-${Date.now()}`,
+            const commentData: Omit<Comment, 'id'> = {
                 taskId: task.id,
                 boardId: task.boardId,
                 author: 'admin', // Hardcoded user
                 text: newComment,
                 timestamp: new Date().toISOString()
             };
+            
+            // Optimistic Update
+            const comment: Comment = {
+                id: `comment-${Date.now()}`,
+                ...commentData
+            };
             data.comments.unshift(comment);
             forceUpdate();
             setNewComment('');
+
+            if (project && board && !task.id.startsWith('task-')) {
+                 try {
+                    await addDoc(collection(db, 'projects', project.id, 'boards', board.id, 'tasks', task.id, 'comments'), commentData);
+                 } catch(e) {
+                     console.error("Failed to post comment to Firestore", e);
+                 }
+            }
         }
     };
     
@@ -257,10 +313,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         } catch (e) { return ''; }
     };
     
-    const roadmapItem = editedTask.roadmapItemId ? data.roadmapItems.find(r => r.id === editedTask.roadmapItemId) : null;
-    const board = data.boards.find(b => b.id === editedTask.boardId);
-    const project = board ? data.projects.find(p => p.id === board.projectId) : undefined;
-
     const taskCurrentTags = boardTags.filter(t => editedTask.labelIds.includes(t.id));
 
     const SidebarSection: React.FC<{title: string, children: React.ReactNode}> = ({ title, children }) => (
@@ -288,7 +340,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                             </select>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
-                             {project && roadmapItem && (
+                             {project && editedTask.roadmapItemId && (
                                 <Link to={`/projects/${project.id}/roadmap`} onClick={onClose} className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-medium hover:bg-purple-500/40 whitespace-nowrap">
                                     <RoadmapIcon className="w-4 h-4"/> Go to Roadmap
                                 </Link>
@@ -349,7 +401,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                     </div>
                                 ))}
                              </div>
-                             <button onClick={() => attachmentInputRef.current?.click()} className="mt-3 text-sm text-primary font-semibold hover:underline">+ Add Attachment</button>
+                             <button onClick={() => attachmentInputRef.current?.click()} disabled={uploadingAttachment} className="mt-3 text-sm text-primary font-semibold hover:underline">
+                                 {uploadingAttachment ? 'Uploading...' : '+ Add Attachment'}
+                             </button>
                              <input type="file" ref={attachmentInputRef} onChange={handleAddAttachment} className="hidden" />
                         </div>
 
@@ -430,12 +484,16 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                     <button onClick={() => setIsAssigneeDropdownOpen(o => !o)} className="h-8 w-8 rounded-full bg-surface-light border border-dashed border-border-color flex items-center justify-center text-text-secondary hover:border-primary hover:text-primary"><AddIcon className="w-4 h-4" /></button>
                                     {isAssigneeDropdownOpen && (
                                         <div className="absolute top-full left-0 mt-2 w-60 bg-surface p-2 rounded-lg border border-border-color shadow-lg z-10">
-                                            {availableMembers.map(member => (
-                                                <button key={member.id} onClick={() => handleAddAssignee(member.id)} className="w-full text-left flex items-center gap-2 p-1.5 rounded hover:bg-surface-light text-sm">
-                                                    <img src={member.avatarUrl} className="w-6 h-6 rounded-full" alt={member.name} />
-                                                    <span className="text-text-primary">{member.name}</span>
-                                                </button>
-                                            ))}
+                                            {availableMembers.length > 0 ? (
+                                                availableMembers.map(member => (
+                                                    <button key={member.id} onClick={() => handleAddAssignee(member.id)} className="w-full text-left flex items-center gap-2 p-1.5 rounded hover:bg-surface-light text-sm">
+                                                        <img src={member.avatarUrl} className="w-6 h-6 rounded-full" alt={member.name} />
+                                                        <span className="text-text-primary">{member.name}</span>
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="p-2 text-xs text-text-secondary text-center">No more members to assign.</div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -492,7 +550,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                 </div>
             </div>
 
-            {isLogTimeModalOpen && <LogTimeModal isOpen={isLogTimeModalOpen} onClose={() => setIsLogTimeModalOpen(false)} onTaskModalClose={onClose} taskId={task.id} />}
+            {isLogTimeModalOpen && <LogTimeModal isOpen={isLogTimeModalOpen} onClose={() => setIsLogTimeModalOpen(false)} onTaskModalClose={onClose} taskId={task.id} projectId={project?.id} boardId={board?.id} />}
             {isRecurringPopoverOpen && (
                 <RecurringTaskPopover 
                     isOpen={isRecurringPopoverOpen}

@@ -2,15 +2,19 @@ import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useTimer } from '../../contexts/TimerContext';
 import { TimeLog } from '../../types';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 
 interface LogTimeModalProps {
     isOpen: boolean;
     onClose: () => void;
     onTaskModalClose: () => void;
     taskId: string;
+    projectId?: string;
+    boardId?: string;
 }
 
-const LogTimeModal: React.FC<LogTimeModalProps> = ({ isOpen, onClose, onTaskModalClose, taskId }) => {
+const LogTimeModal: React.FC<LogTimeModalProps> = ({ isOpen, onClose, onTaskModalClose, taskId, projectId, boardId }) => {
     const { data, forceUpdate } = useData();
     const { startTimer, runningTimer } = useTimer();
     const [manualTime, setManualTime] = useState('');
@@ -24,7 +28,7 @@ const LogTimeModal: React.FC<LogTimeModalProps> = ({ isOpen, onClose, onTaskModa
         onTaskModalClose(); // Close the main task modal
     };
     
-    const handleLogTime = () => {
+    const handleLogTime = async () => {
         const parts = manualTime.toLowerCase().match(/(\d+h)?\s*(\d+m)?/);
         if (!parts) return;
         let totalSeconds = 0;
@@ -32,15 +36,30 @@ const LogTimeModal: React.FC<LogTimeModalProps> = ({ isOpen, onClose, onTaskModa
         if(parts[2]) totalSeconds += parseInt(parts[2]) * 60;
 
         if (totalSeconds > 0) {
-            const newLog: TimeLog = {
-                id: `log-${Date.now()}`,
+            const newLogData: Omit<TimeLog, 'id'> = {
                 taskId,
-                userId: 'user-1', // Hardcoded user
+                userId: 'user-1', // Hardcoded user for now, replace with auth user later
                 duration: totalSeconds,
                 date: new Date().toISOString(),
             };
+
+            // Optimistic update
+            const newLog: TimeLog = {
+                id: `log-${Date.now()}`,
+                ...newLogData
+            };
             data.time_logs.push(newLog);
             forceUpdate();
+
+            // Firestore update
+            if (projectId && boardId && !taskId.startsWith('task-')) {
+                try {
+                    await addDoc(collection(db, 'projects', projectId, 'boards', boardId, 'tasks', taskId, 'time_logs'), newLogData);
+                } catch (e) {
+                    console.error("Error logging time to Firestore", e);
+                }
+            }
+
             onClose();
         }
     };

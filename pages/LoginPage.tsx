@@ -97,14 +97,43 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const checkUserStatus = async (user: any, additionalData?: { firstName?: string; lastName?: string; email?: string }) => {
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
-    if (userDoc.exists()) return userDoc.data().status;
-    const newUserProfile: any = { status: 'pending', createdAt: new Date() };
-    if (user.email) newUserProfile.email = user.email;
-    if (user.phoneNumber) newUserProfile.phoneNumber = user.phoneNumber;
-    if (additionalData?.firstName) newUserProfile.firstName = additionalData.firstName;
-    if (additionalData?.lastName) newUserProfile.lastName = additionalData.lastName;
-    if (additionalData?.email) newUserProfile.email = additionalData.email;
-    try { await setDoc(userDocRef, newUserProfile); } catch (e) { console.error("Failed to write user doc:", e); }
+
+    if (userDoc.exists()) {
+      return userDoc.data().status;
+    }
+
+    // New document creation logic
+    const newUserProfile: any = {
+      email: user.email || additionalData?.email || '',
+      phoneNumber: user.phoneNumber || '',
+      status: 'pending',
+      role: 'client', // Add default role here
+      createdAt: new Date(),
+    };
+
+    let fName = additionalData?.firstName || '';
+    let lName = additionalData?.lastName || '';
+
+    // If no name from form, try to get from Google displayName
+    if ((!fName || !lName) && user.displayName) {
+      const nameParts = user.displayName.split(' ');
+      fName = nameParts[0] || '';
+      lName = nameParts.slice(1).join(' ') || '';
+    }
+    
+    newUserProfile.firstName = fName;
+    newUserProfile.lastName = lName;
+    newUserProfile.name = `${fName} ${lName}`.trim();
+
+    if (!newUserProfile.name) {
+      newUserProfile.name = newUserProfile.email || newUserProfile.phoneNumber || 'Unnamed User';
+    }
+
+    try {
+      await setDoc(userDocRef, newUserProfile);
+    } catch (e) {
+      console.error("Failed to write user doc:", e);
+    }
     return 'pending';
   };
 
@@ -183,7 +212,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         return createUserWithEmailAndPassword(auth, email, password);
       })
         .then(async ({ user }) => {
-          await setDoc(doc(db, "users", user.uid), { email: user.email, firstName, lastName, status: 'pending', createdAt: new Date() });
+          await setDoc(doc(db, "users", user.uid), { email: user.email, firstName, lastName, name: `${firstName} ${lastName}`, status: 'pending', role: 'client', createdAt: new Date() });
           onLogin('pending');
         })
         .catch((err) => setError(getErrorMessage(err.code)));
@@ -197,7 +226,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     .then(() => {
         return signInWithPopup(auth, new GoogleAuthProvider());
     })
-      .then(async ({ user }) => onLogin(await checkUserStatus(user)))
+      .then(async ({ user }) => onLogin(await checkUserStatus(user, { firstName, lastName })))
       .catch((err) => setError(getErrorMessage(err.code)));
   };
 

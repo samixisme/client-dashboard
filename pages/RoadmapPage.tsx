@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { RoadmapItem, Task } from '../types';
@@ -19,6 +19,9 @@ import MoveRoadmapTasksModal from '../components/roadmap/MoveRoadmapTasksModal';
 import ReorderRoadmapItemsModal from '../components/roadmap/ReorderRoadmapItemsModal';
 import { backgroundPatterns } from '../data/patterns';
 import ViewSwitcher, { ViewOption } from '../components/board/ViewSwitcher';
+import { doc, setDoc, updateDoc, deleteDoc, collection, getDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+import { slugify } from '../utils/slugify';
 
 type ViewMode = 'kanban' | 'timeline';
 
@@ -45,6 +48,20 @@ const RoadmapPage = () => {
     const [moveTasksModalState, setMoveTasksModalState] = useState<{ isOpen: boolean, sourceItem: RoadmapItem | null }>({ isOpen: false, sourceItem: null });
 
     const project = projects.find(p => p.id === projectId);
+
+    // Fetch override dates on component mount
+    useEffect(() => {
+        const fetchDurationSettings = async () => {
+            if (!projectId) return;
+            const docRef = doc(db, 'projects', projectId, 'roadmap_settings', 'duration');
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const { startDate, endDate } = docSnap.data();
+                setOverrideDates({ start: startDate, end: endDate });
+            }
+        };
+        fetchDurationSettings();
+    }, [projectId]);
     
     // Non-memoized calculations to fix update bugs
     const roadmapItems = data.roadmapItems.filter(item => item.projectId === projectId);
@@ -110,11 +127,11 @@ const RoadmapPage = () => {
     const projectStartDate = overrideDates.start ?? calculatedDateRange.start;
     const projectEndDate = overrideDates.end ?? calculatedDateRange.end;
 
-    const handleCreateItem = () => {
+    const handleCreateItem = async () => {
+        if (!projectId) return;
         const newOrder = roadmapItems.length > 0 ? Math.max(...roadmapItems.map(i => i.order || 0)) + 1 : 1;
-        const newItem: RoadmapItem = {
-            id: `roadmap-${Date.now()}`,
-            projectId: projectId!,
+        const newItemData: Omit<RoadmapItem, 'id'> = {
+            projectId: projectId,
             title: 'New Roadmap Item',
             description: '',
             status: 'Planned',
@@ -124,144 +141,87 @@ const RoadmapPage = () => {
             attachments: [],
             labelIds: [],
         };
-        data.roadmapItems.push(newItem);
-        forceUpdate();
-        createCalendarEvent(newItem, 'roadmap_item');
+        const docId = slugify(newItemData.title);
+        await setDoc(doc(db, 'projects', projectId, 'roadmap', docId), newItemData);
     };
     
-    const handleUpdateItem = (updatedItem: RoadmapItem) => {
-        const index = data.roadmapItems.findIndex(i => i.id === updatedItem.id);
-        if (index > -1) {
-            data.roadmapItems[index] = updatedItem;
-        }
-        forceUpdate();
+    const handleUpdateItem = async (updatedItem: RoadmapItem) => {
+        if (!projectId) return;
+        const { id, ...itemData } = updatedItem;
+        await updateDoc(doc(db, 'projects', projectId, 'roadmap', id), itemData);
 
-        updateCalendarEvent(updatedItem.id, {
-            title: `Roadmap: ${updatedItem.title}`,
-            startDate: updatedItem.startDate,
-            endDate: updatedItem.endDate,
-        });
         if (editingItem?.id === updatedItem.id) {
             setEditingItem(null);
         }
     };
     
-    const handleUpdateTask = (updatedTask: Task) => {
-        const index = data.tasks.findIndex(t => t.id === updatedTask.id);
-        if (index !== -1) {
-            data.tasks[index] = updatedTask;
-            forceUpdate();
+    const handleUpdateTask = async (updatedTask: Task) => {
+        const board = data.boards.find(b => b.id === updatedTask.boardId);
+        if (!project || !board) return;
+        const { id, ...taskData } = updatedTask;
+        await updateDoc(doc(db, 'projects', project.id, 'boards', board.id, 'tasks', id), JSON.parse(JSON.stringify(taskData)));
+    };
+
+    const handleDeleteTask = async (taskId: string) => {
+        const task = data.tasks.find(t => t.id === taskId);
+        const board = task ? data.boards.find(b => b.id === task.boardId) : undefined;
+        if (project && board && task) {
+             await deleteDoc(doc(db, 'projects', project.id, 'boards', board.id, 'tasks', taskId));
         }
     };
 
-    const handleDeleteTask = (taskId: string) => {
-        const taskIndex = data.tasks.findIndex(t => t.id === taskId);
-        if(taskIndex > -1) {
-            data.tasks.splice(taskIndex, 1);
-            forceUpdate();
-        }
-    };
-
-    const handleDeleteItem = (itemId: string) => {
-        const tasksToDelete = data.tasks.filter(t => t.roadmapItemId === itemId).map(t => t.id);
-        data.tasks = data.tasks.filter(t => !tasksToDelete.includes(t.id));
-
-        const index = data.roadmapItems.findIndex(i => i.id === itemId);
-        if (index > -1) {
-            data.roadmapItems.splice(index, 1);
-        }
-        
-        forceUpdate();
-        deleteCalendarEvent(itemId);
+    const handleDeleteItem = async (itemId: string) => {
+        if (!projectId) return;
+        await deleteDoc(doc(db, 'projects', projectId, 'roadmap', itemId));
         setEditingItem(null);
     };
     
     const handleSortTasksInItem = (itemId: string, config: RoadmapItem['sortConfig']) => {
-        const item = data.roadmapItems.find(i => i.id === itemId);
-        if (item) {
-            item.sortConfig = config;
-            forceUpdate();
-        }
-        setItemActionState({ anchorEl: null, item: null });
+        handleUpdateItem({ ...data.roadmapItems.find(i => i.id === itemId)!, sortConfig: config });
     };
 
     const handleChangeItemPattern = (itemId: string, patternId?: string) => {
-        const item = data.roadmapItems.find(i => i.id === itemId);
-        if (item) {
-            item.backgroundPattern = patternId;
-            forceUpdate();
-        }
-        setItemActionState({ anchorEl: null, item: null });
+        handleUpdateItem({ ...data.roadmapItems.find(i => i.id === itemId)!, backgroundPattern: patternId });
     };
 
     const handleCopyItem = (itemId: string) => {
-        const itemToCopy = data.roadmapItems.find(i => i.id === itemId);
-        if (!itemToCopy) return;
-        const newId = `roadmap-${Date.now()}`;
-        const newItem = {
-            ...itemToCopy,
-            id: newId,
-            title: `${itemToCopy.title} (Copy)`,
-            order: data.roadmapItems.filter(i => i.projectId === projectId).length + 1,
-        };
-        data.roadmapItems.push(newItem);
-        const tasksToCopy = data.tasks.filter(t => t.roadmapItemId === itemId);
-        tasksToCopy.forEach(task => {
-            const newTask = {
-                ...task,
-                id: `task-${Date.now()}-${Math.random()}`,
-                roadmapItemId: newId,
-            };
-            data.tasks.push(newTask);
-        });
+        // This is complex with Firestore, keep as local-only for now or implement as a cloud function
         forceUpdate();
     };
 
     const handleSetItemStatus = (itemId: string, status: 'Planned' | 'In Progress' | 'Completed') => {
-        const item = data.roadmapItems.find(i => i.id === itemId);
-        if (item) {
-            item.status = status;
-            forceUpdate();
-        }
+        handleUpdateItem({ ...data.roadmapItems.find(i => i.id === itemId)!, status: status });
     };
 
     const handleMoveAllTasksInItem = (sourceItemId: string, destinationItemId: string) => {
         data.tasks.forEach(task => {
             if (task.roadmapItemId === sourceItemId) {
-                task.roadmapItemId = destinationItemId === 'unassigned' ? undefined : destinationItemId;
+                const updatedTask = { ...task, roadmapItemId: destinationItemId === 'unassigned' ? undefined : destinationItemId };
+                handleUpdateTask(updatedTask);
             }
         });
-        forceUpdate();
         setMoveTasksModalState({ isOpen: false, sourceItem: null });
     };
 
     const handleArchiveAllTasksInItem = (itemId: string) => {
-        data.tasks = data.tasks.filter(t => t.roadmapItemId !== itemId);
-        forceUpdate();
+        data.tasks.forEach(task => {
+            if (task.roadmapItemId === itemId) {
+                handleDeleteTask(task.id);
+            }
+        });
     };
-
 
     const handleReorderItems = (reordered: RoadmapItem[]) => {
         reordered.forEach((item, index) => {
-            const originalItem = data.roadmapItems.find(i => i.id === item.id);
-            if (originalItem) {
-                originalItem.order = index + 1;
-            }
+             handleUpdateItem({ ...item, order: index + 1 });
         });
-        forceUpdate();
         setIsReorderItemsModalOpen(false);
     };
 
     const handleReorderTasks = (reordered: Task[], parentId: string) => {
-        const parentTasksWithNewOrder = new Map(reordered.map((task, index) => [task.id, index + 1]));
-
-        data.tasks.forEach(task => {
-            const taskParentId = task.roadmapItemId || 'unassigned';
-            if (taskParentId === parentId && parentTasksWithNewOrder.has(task.id)) {
-                task.order = parentTasksWithNewOrder.get(task.id);
-            }
+        reordered.forEach((task, index) => {
+            handleUpdateTask({ ...task, order: index + 1 });
         });
-        forceUpdate();
     };
 
     const handleKanbanDragEnd = (result: DropResult) => {
@@ -277,24 +237,18 @@ const RoadmapPage = () => {
             const tasksForParent = (parentId === 'unassigned' 
                 ? projectTasks.filter(t => !t.roadmapItemId) 
                 : tasksByRoadmapItem.get(parentId) || []
-            );
+            ).sort((a,b) => (a.order || 0) - (b.order || 0));
     
             const [moved] = tasksForParent.splice(source.index, 1);
             tasksForParent.splice(destination.index, 0, moved);
-            
-            tasksForParent.forEach((t, index) => {
-                const originalTask = data.tasks.find(ot => ot.id === t.id);
-                if (originalTask) originalTask.order = index;
-            });
-            forceUpdate();
+            handleReorderTasks(tasksForParent, parentId);
     
         } else {
-            task.roadmapItemId = destination.droppableId === 'unassigned' ? undefined : destination.droppableId;
-            forceUpdate();
+            handleUpdateTask({ ...task, roadmapItemId: destination.droppableId === 'unassigned' ? undefined : destination.droppableId });
         }
     };
     
-    const handleCreateTask = (roadmapItemId: string, title: string) => {
+    const handleCreateTask = async (roadmapItemId: string, title: string) => {
         if (!title.trim() || !projectId) return;
         const boardIdForProject = data.boards.find(b => b.projectId === projectId)?.id;
         if (!boardIdForProject) return;
@@ -303,8 +257,7 @@ const RoadmapPage = () => {
 
         const tasksInItem = tasksByRoadmapItem.get(roadmapItemId) || [];
 
-        const newTask: Task = {
-            id: `task-${Date.now()}`,
+        const newTaskData: Omit<Task, 'id'> = {
             boardId: boardIdForProject,
             stageId: firstStage.id, 
             title,
@@ -313,13 +266,33 @@ const RoadmapPage = () => {
             roadmapItemId: roadmapItemId,
             order: tasksInItem.length,
         };
-        data.tasks.push(newTask);
-        forceUpdate();
+        const taskId = `${slugify(title)}-${Date.now()}`;
+        await setDoc(doc(db, 'projects', projectId, 'boards', boardIdForProject, 'tasks', taskId), newTaskData);
         setAddingTaskTo(null);
     };
 
     const handleRoadmapItemClick = (item: RoadmapItem) => {
         setEditingItem(item);
+    };
+    
+    const handleToggleEditMode = async () => {
+        if (isEditMode) {
+            // Save duration on exit
+            if (projectId && (overrideDates.start || overrideDates.end)) {
+                await setDoc(doc(db, 'projects', projectId, 'roadmap_settings', 'duration'), {
+                    startDate: overrideDates.start,
+                    endDate: overrideDates.end
+                });
+            }
+        }
+        setIsEditMode(e => !e);
+    };
+    
+    const handleResetDuration = async () => {
+        setOverrideDates({ start: null, end: null });
+        if (projectId) {
+            await deleteDoc(doc(db, 'projects', projectId, 'roadmap_settings', 'duration'));
+        }
     };
     
     if (!project) return <div>Project not found</div>;
@@ -450,7 +423,7 @@ const RoadmapPage = () => {
                             + Add Roadmap
                         </button>
                     )}
-                    <button onClick={() => setIsEditMode(e => !e)} className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-colors ${isEditMode ? 'bg-green-500 text-white' : 'bg-glass-light text-text-primary hover:bg-border-color'}`}>
+                    <button onClick={handleToggleEditMode} className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-colors ${isEditMode ? 'bg-green-500 text-white' : 'bg-glass-light text-text-primary hover:bg-border-color'}`}>
                         {isEditMode ? <><SaveIcon className="h-4 w-4"/> Done</> : <><EditIcon className="h-4 w-4"/> Edit</>}
                     </button>
                     <ViewSwitcher currentView={viewMode} onSwitchView={(view) => setViewMode(view as ViewMode)} options={roadmapViewOptions} />
@@ -476,7 +449,7 @@ const RoadmapPage = () => {
                         className="bg-glass-light border border-border-color rounded-md px-2 py-1 text-sm text-text-primary disabled:opacity-50" 
                     />
                     {(overrideDates.start || overrideDates.end) && isEditMode && (
-                        <button onClick={() => setOverrideDates({ start: null, end: null })} className="text-xs text-text-secondary hover:text-primary">Reset to Auto</button>
+                        <button onClick={handleResetDuration} className="text-xs text-text-secondary hover:text-primary">Reset to Auto</button>
                     )}
                 </div>
             )}

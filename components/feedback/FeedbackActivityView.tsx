@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { useData } from '../../contexts/DataContext';
-import { BoardMember, FeedbackComment, Activity } from '../../types';
+import { User, FeedbackComment, Activity } from '../../types';
 import { Link } from 'react-router-dom';
 
 const FeedbackActivityView = ({ projectId }: { projectId: string }) => {
     const { data } = useData();
-    const { feedbackComments, board_members, feedbackVideos } = data;
+    const { feedbackComments, users, feedbackVideos } = data;
 
     const projectActivities = useMemo(() => 
         data.activities
@@ -18,7 +18,7 @@ const FeedbackActivityView = ({ projectId }: { projectId: string }) => {
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
     [data.activities, feedbackComments, projectId]);
 
-    const getMember = (id: string | undefined): BoardMember | undefined => id ? board_members.find(m => m.id === id) : undefined;
+    const getMember = (id: string | undefined): User | undefined => id ? users.find(m => m.id === id) : undefined;
 
     const formatTimestamp = (seconds: number) => {
         const min = Math.floor(seconds / 60);

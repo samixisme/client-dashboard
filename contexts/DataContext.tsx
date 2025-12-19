@@ -1,10 +1,10 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
 import { db } from '../utils/firebase';
-import { Brand } from '../types';
+import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity } from '../types';
 
 // Import all data sources
-import { projects as initialProjects, boards as initialBoards, stages as initialStages, tasks as initialTasks, tags as initialTags, comments as initialComments, activities as initialActivities, roadmapItems as initialRoadmapItems, custom_fields as initialCustomFields, board_notification_settings as initialBoardNotificationSettings, board_members as initialBoardMembers, time_logs as initialTimeLogs } from '../data/mockData';
+import { projects as initialProjects, boards as initialBoards, stages as initialStages, tasks as initialTasks, tags as initialTags, comments as initialComments, activities as initialActivities, roadmapItems as initialRoadmapItems, custom_fields as initialCustomFields, board_notification_settings as initialBoardNotificationSettings, users as initialUsers, time_logs as initialTimeLogs } from '../data/mockData';
 import { clients as initialClients, invoices as initialInvoices, estimates as initialEstimates, userSettings as initialUserSettings } from '../data/paymentsData';
 import { feedbackWebsites as initialFeedbackWebsites, feedbackMockups as initialFeedbackMockups, feedbackVideos as initialFeedbackVideos, feedbackComments as initialFeedbackComments } from '../data/feedbackData';
 import { moodboards as initialMoodboards, moodboardItems as initialMoodboardItems } from '../data/moodboardData';
@@ -31,7 +31,7 @@ const dataStore = {
     roadmapItems: initialRoadmapItems,
     custom_fields: initialCustomFields,
     board_notification_settings: initialBoardNotificationSettings,
-    board_members: initialBoardMembers,
+    users: initialUsers,
     brands: [] as Brand[],
     clients: initialClients,
     invoices: initialInvoices,
@@ -66,33 +66,92 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     useEffect(() => {
         setLoading(true);
-        const q = query(collection(db, 'brands'), orderBy('name'));
+        const qBrands = query(collection(db, 'brands'), orderBy('name'));
+        const qUsers = query(collection(db, 'users'));
+        const qProjects = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
+        
+        // Use collectionGroup to query subcollections across all projects
+        const qBoards = query(collectionGroup(db, 'boards'));
+        const qStages = query(collectionGroup(db, 'stages'));
+        const qTasks = query(collectionGroup(db, 'tasks'));
+        const qTags = query(collectionGroup(db, 'tags'));
+        const qTimeLogs = query(collectionGroup(db, 'time_logs'));
+        const qRoadmapItems = query(collectionGroup(db, 'roadmap'));
+        const qComments = query(collectionGroup(db, 'comments'));
+        const qActivities = query(collectionGroup(db, 'activities'));
 
-        const unsubscribeBrands = onSnapshot(q, (snapshot) => {
-            try {
-                const fetchedBrands = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                } as Brand));
-                dataStore.brands = fetchedBrands;
-                setVersion(v => v + 1); // Trigger re-render
-            } catch (err) {
-                setError(err as Error);
-                console.error("Error processing brand snapshot: ", err);
-            } finally {
-                setLoading(false);
-            }
-        }, (err) => {
-            console.error("Error fetching brands: ", err);
-            setError(err);
-            setLoading(false);
-        });
+        const unsubscribers = [
+            onSnapshot(qBrands, (snapshot) => {
+                dataStore.brands = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand));
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching brands: ", err)),
 
-        // Placeholder for other listeners
+            onSnapshot(qUsers, (snapshot) => {
+                const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+                dataStore.users = [...initialUsers, ...fetchedUsers];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching users: ", err)),
+
+            onSnapshot(qProjects, (snapshot) => {
+                const fetchedProjects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+                dataStore.projects = [...initialProjects, ...fetchedProjects];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching projects: ", err)),
+
+            onSnapshot(qBoards, (snapshot) => {
+                const fetchedBoards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Board));
+                dataStore.boards = [...initialBoards, ...fetchedBoards];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching boards: ", err)),
+
+            onSnapshot(qStages, (snapshot) => {
+                const fetchedStages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Stage));
+                fetchedStages.sort((a, b) => a.order - b.order);
+                dataStore.stages = [...initialStages, ...fetchedStages];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching stages: ", err)),
+
+            onSnapshot(qTasks, (snapshot) => {
+                const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+                dataStore.tasks = [...initialTasks, ...fetchedTasks];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching tasks: ", err)),
+
+            onSnapshot(qTags, (snapshot) => {
+                const fetchedTags = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag));
+                dataStore.tags = [...initialTags, ...fetchedTags];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching tags: ", err)),
+
+            onSnapshot(qTimeLogs, (snapshot) => {
+                const fetchedLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeLog));
+                dataStore.time_logs = [...initialTimeLogs, ...fetchedLogs];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching time logs: ", err)),
+
+            onSnapshot(qRoadmapItems, (snapshot) => {
+                const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoadmapItem));
+                dataStore.roadmapItems = [...initialRoadmapItems, ...fetchedItems];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching roadmap items: ", err)),
+            
+            onSnapshot(qComments, (snapshot) => {
+                const fetchedComments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+                dataStore.comments = [...initialComments, ...fetchedComments];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching comments: ", err)),
+
+            onSnapshot(qActivities, (snapshot) => {
+                const fetchedActivities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity));
+                dataStore.activities = [...initialActivities, ...fetchedActivities];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching activities: ", err)),
+        ];
+
+        Promise.all(unsubscribers.map(unsub => new Promise(res => setTimeout(res, 200)))).finally(() => setLoading(false));
 
         return () => {
-            unsubscribeBrands();
-            // Unsubscribe other listeners here
+            unsubscribers.forEach(unsub => unsub());
         };
     }, []);
 

@@ -19,6 +19,9 @@ import { KanbanViewIcon } from '../components/icons/KanbanViewIcon';
 import { ListIcon } from '../components/icons/ListIcon';
 import { TableViewIcon } from '../components/icons/TableViewIcon';
 import { CalendarIcon } from '../components/icons/CalendarIcon';
+import { doc, addDoc, updateDoc, deleteDoc, collection, setDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+import { slugify } from '../utils/slugify';
 
 export type ViewMode = 'kanban' | 'list' | 'table' | 'calendar';
 
@@ -102,7 +105,7 @@ const ProjectBoardPage = () => {
 
     })();
     
-    const handleDragEnd = (result: any) => {
+    const handleDragEnd = async (result: any) => {
         const { destination, source, draggableId } = result;
 
         if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
@@ -124,49 +127,123 @@ const ProjectBoardPage = () => {
                 timestamp: new Date().toISOString()
             };
             activities.push(newActivity);
+            
+            // Update Firestore
+            if (project && boardId && !taskToMove.id.startsWith('task-')) {
+                try {
+                    // Assuming path: projects/{projectId}/boards/{boardId}/tasks/{taskId}
+                    // Note: We are moving to a new stage, but stageId is just a field in the task document.
+                    // We do NOT move the document to a different collection.
+                    await updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'tasks', taskToMove.id), {
+                        stageId: destination.droppableId
+                    });
+                } catch (e) {
+                    console.error("Error updating task stage in Firestore", e);
+                }
+            }
+
             forceUpdate();
         }
     };
     
-    const handleDeleteTask = (taskId: string) => {
+    const handleDeleteTask = async (taskId: string) => {
+        const taskToDelete = data.tasks.find(t => t.id === taskId);
+        
+        // Optimistic update
         const taskIndex = data.tasks.findIndex(t => t.id === taskId);
         if(taskIndex > -1) {
             data.tasks.splice(taskIndex, 1);
             forceUpdate();
         }
+
+        if (project && boardId && taskToDelete && !taskId.startsWith('task-')) {
+            try {
+                await deleteDoc(doc(db, 'projects', project.id, 'boards', boardId, 'tasks', taskId));
+            } catch (e) {
+                console.error("Error deleting task from Firestore", e);
+            }
+        }
     };
 
-    const handleUpdateTask = (updatedTask: Task) => {
+    const handleUpdateTask = async (updatedTask: Task) => {
+        // Optimistic update
         const index = data.tasks.findIndex(t => t.id === updatedTask.id);
         if (index !== -1) {
             data.tasks[index] = updatedTask;
             forceUpdate();
         }
-    }
 
-    const handleAddTask = (stageId: string, title: string) => {
-        if (title.trim() === '' || !boardId) return;
-        const newTask: Task = {
-            id: `task-${Date.now()}`, boardId, stageId, title,
-            description: '', priority: 'Medium', dateAssigned: new Date().toISOString(),
-            assignees: [], labelIds: [], attachments: [], createdAt: new Date().toISOString(),
+        if (project && boardId && !updatedTask.id.startsWith('task-')) {
+            try {
+                // We need to strip out fields that might not be in Firestore or are handled differently if needed
+                // But generally dumping the object is fine if it matches schema.
+                // Removing undefined values is good practice as Firestore doesn't like them.
+                const taskData = JSON.parse(JSON.stringify(updatedTask)); 
+                await updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'tasks', updatedTask.id), taskData);
+            } catch (e) {
+                console.error("Error updating task in Firestore", e);
+            }
+        }
+    };
+
+    const handleAddTask = async (stageId: string, title: string) => {
+        if (title.trim() === '' || !boardId || !project) return;
+        
+        const newTaskData: Omit<Task, 'id'> = {
+            boardId, 
+            stageId, 
+            title,
+            description: '', 
+            priority: 'Medium', 
+            dateAssigned: new Date().toISOString(),
+            assignees: [], 
+            labelIds: [], 
+            attachments: [], 
+            createdAt: new Date().toISOString(),
         };
-        data.tasks.push(newTask);
-        forceUpdate();
+
+        // Use slugified title + timestamp for ID
+        const taskSlug = slugify(title);
+        const taskId = `${taskSlug}-${Date.now()}`;
+
+        try {
+            await setDoc(doc(db, 'projects', project.id, 'boards', boardId, 'tasks', taskId), newTaskData);
+            // No need to manually push to data.tasks as DataContext listener will pick it up
+        } catch (e) {
+            console.error("Error adding task to Firestore", e);
+            // Fallback
+            const newTask: Task = {
+                id: `task-${Date.now()}`,
+                ...newTaskData
+            };
+            data.tasks.push(newTask);
+            forceUpdate();
+        }
+        
         setAddingTaskToStage(null);
     };
 
-    const handleAddStage = (name: string, status: 'Open' | 'Closed') => {
-        if (name.trim() && boardId) {
-            const newStage: Stage = {
-                id: `stage-${Date.now()}`,
+    const handleAddStage = async (name: string, status: 'Open' | 'Closed') => {
+        if (name.trim() && boardId && project) {
+            const newStageData = {
                 boardId,
                 name,
                 status,
                 order: data.stages.filter(s => s.boardId === boardId).length + 1,
             };
-            data.stages.push(newStage);
-            forceUpdate();
+            
+            try {
+                const stageSlug = slugify(name);
+                const stageDocId = stageSlug;
+                await setDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageDocId), newStageData);
+            } catch (e) {
+                const newStage: Stage = {
+                    id: `stage-${Date.now()}`,
+                    ...newStageData
+                } as Stage;
+                data.stages.push(newStage);
+                forceUpdate();
+            }
         }
         setIsAddStageModalOpen(false);
     };
@@ -196,10 +273,14 @@ const ProjectBoardPage = () => {
         setStageActionState({ anchorEl: null, stage: null });
     };
     
-    const handleSetStageStatus = (stageId: string, status: 'Open' | 'Closed') => {
+    const handleSetStageStatus = async (stageId: string, status: 'Open' | 'Closed') => {
         const stage = data.stages.find(s => s.id === stageId);
-        if (stage) {
+        if (stage && project) {
             stage.status = status;
+            try {
+                 await updateDoc(doc(db, 'projects', project.id, 'boards', boardId!, 'stages', stageId), { status });
+            } catch (e) {
+            }
             forceUpdate();
         }
         setStageActionState({ anchorEl: null, stage: null });
@@ -215,12 +296,19 @@ const ProjectBoardPage = () => {
         setMoveTasksModalState({ isOpen: false, sourceStage: null });
     };
 
-    const handleArchiveStage = (stageId: string) => {
+    const handleArchiveStage = async (stageId: string) => {
         data.tasks = data.tasks.filter(t => t.stageId !== stageId);
         const stageIndex = data.stages.findIndex(s => s.id === stageId);
         if (stageIndex > -1) {
             data.stages.splice(stageIndex, 1);
         }
+        
+        if (project && boardId) {
+             try {
+                await deleteDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId));
+            } catch (e) {}
+        }
+
         forceUpdate();
         setStageActionState({ anchorEl: null, stage: null });
     };
@@ -233,8 +321,11 @@ const ProjectBoardPage = () => {
     
     const handleSortTasks = (stageId: string, config: Stage['sortConfig']) => {
         const stage = data.stages.find(s => s.id === stageId);
-        if (stage) {
+        if (stage && project && boardId) {
             stage.sortConfig = config;
+             try {
+                updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId), { sortConfig: config });
+            } catch (e) {}
             forceUpdate();
         }
         setStageActionState({ anchorEl: null, stage: null });
@@ -242,18 +333,26 @@ const ProjectBoardPage = () => {
     
     const handleChangeStagePattern = (stageId: string, patternId?: string) => {
         const stage = data.stages.find(s => s.id === stageId);
-        if (stage) {
+        if (stage && project && boardId) {
             stage.backgroundPattern = patternId;
+             try {
+                updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId), { backgroundPattern: patternId });
+            } catch (e) {}
             forceUpdate();
         }
         setStageActionState({ anchorEl: null, stage: null });
     };
 
     const handleReorderStages = (reorderedStages: Stage[]) => {
-        reorderedStages.forEach((stage, index) => {
+        reorderedStages.forEach(async (stage, index) => {
             const originalStage = data.stages.find(s => s.id === stage.id);
             if (originalStage) {
                 originalStage.order = index;
+                if (project && boardId) {
+                    try {
+                         await updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stage.id), { order: index });
+                    } catch(e) {}
+                }
             }
         });
         forceUpdate();

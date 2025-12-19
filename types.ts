@@ -9,6 +9,7 @@ export interface Project {
     description: string;
     status: ProjectStatus;
     createdAt: string; // ISO string
+    logoUrl?: string;
 }
 
 export interface Board {
@@ -135,10 +136,14 @@ export interface BoardNotificationSettings {
     removed: boolean;
 }
 
-export interface BoardMember {
+export interface User {
     id: string;
-    name: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
     avatarUrl: string;
+    role?: 'admin' | 'client';
 }
 
 
@@ -335,33 +340,22 @@ export type BrandLogoType = 'Full Logo' | 'Logomark' | 'Logotype';
 export type BrandLogoVariation = 'Color' | 'Dark Background' | 'White Background' | 'Grayscale';
 
 export interface BrandLogo {
-    type: BrandLogoType;
-    variation: BrandLogoVariation;
-    formats: { format: string; url: string }[];
+    url: string;
+    name: string;
+    tags: string[]; // e.g., 'Full Logo', 'Logomark', 'Logotype', 'Primary', 'Variations'
 }
 
 export interface BrandColor {
-    name: string;
-    type: 'Primary' | 'Secondary';
     hex: string;
-    rgb: string;
-    hsl: string;
-    cmyk: string;
+    name: string;
+    category: 'Primary' | 'Secondary';
 }
 
-export interface BrandTypographyStyle {
-    name: string;
-    size: string;
-    weight: string;
-    letterSpacing: string;
-    lineHeight: string;
-}
-
-export interface BrandFont {
-    name: string;
-    type: 'Primary' | 'Secondary';
-    url: string;
-    styles: BrandTypographyStyle[];
+export interface BrandTypography {
+    fontFamily: string;
+    usage: string;
+    fileUrl: string;
+    category: 'Primary' | 'Secondary';
 }
 
 export interface BrandAsset {
@@ -377,13 +371,12 @@ export interface Brand {
     industry?: string;
     memberIds?: string[];
     logos?: BrandLogo[];
-    colors?: (BrandColor | string)[]; 
-    fonts?: BrandFont[];
+    colors?: BrandColor[];
+    typography?: BrandTypography[];
     brandVoice?: string;
     brandPositioning?: string;
     imagery?: BrandAsset[];
     graphics?: BrandAsset[];
-    rawData?: string;
 }
 
 

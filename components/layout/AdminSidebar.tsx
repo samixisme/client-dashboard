@@ -10,6 +10,7 @@ import { ProfileIcon } from '../icons/ProfileIcon';
 import { SettingsIcon } from '../icons/SettingsIcon';
 import { AiSparkleIcon } from '../icons/AiSparkleIcon';
 import { PaymentsIcon } from '../icons/PaymentsIcon';
+import { BoardIcon } from '../icons/BoardIcon'; // Import BoardIcon
 
 const AdminSidebar: React.FC = () => {
   const navLinkClasses = ({ isActive }: { isActive: boolean }) => 
@@ -43,6 +44,10 @@ const AdminSidebar: React.FC = () => {
         <NavLink to="/admin/projects" className={navLinkClasses}>
           <ProjectsIcon className="h-5 w-5" />
           Projects
+        </NavLink>
+        <NavLink to="/admin/boards" className={navLinkClasses}> {/* Added Boards Link */}
+          <BoardIcon className="h-5 w-5" />
+          Boards
         </NavLink>
         <NavLink to="/admin/feedback" className={navLinkClasses}>
             <FeedbackIcon className="h-5 w-5" />

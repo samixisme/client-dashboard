@@ -149,7 +149,7 @@ const AdminBrandsPage: React.FC = () => {
                             <td className="p-4">
                                 <div className="flex items-center gap-1">
                                     {(brand.colors || []).slice(0, 3).map((color, i) => (
-                                        <div key={i} className="w-4 h-4 rounded-full border border-border-color shadow-sm" style={{ backgroundColor: color }} title={color}></div>
+                                        <div key={i} className="w-4 h-4 rounded-full border border-border-color shadow-sm" style={{ backgroundColor: color.hex }} title={color.name}></div>
                                     ))}
                                     {(brand.colors?.length || 0) > 3 && (
                                         <span className="text-xs text-text-secondary ml-1">+{brand.colors!.length - 3}</span>

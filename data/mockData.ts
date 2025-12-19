@@ -1,4 +1,4 @@
-import { Project, Board, Stage, Task, Tag, Comment, Activity, RoadmapItem, CustomField, BoardNotificationSettings, BoardMember, TimeLog } from '../types';
+import { Project, Board, Stage, Task, Tag, Comment, Activity, RoadmapItem, CustomField, BoardNotificationSettings, User, TimeLog } from '../types';
 
 export let projects: Project[] = [
     { id: 'proj-1', brandId: 'brand-1', name: 'JRAG', description: 'A next-generation platform for cloud-native applications.', status: 'Active', createdAt: '2023-10-25T10:00:00.000Z' },
@@ -133,7 +133,7 @@ export let board_notification_settings: BoardNotificationSettings[] = [
     { id: 'bns-1', userId: 'user-1', boardId: 'board-1', comment: true, stage_changed: true, assigned: true, dates: true, archived: true, removed: true }
 ];
 
-export let board_members: BoardMember[] = [
+export let users: User[] = [
     { id: 'user-1', name: 'Alex Doe', avatarUrl: 'https://i.pravatar.cc/150?u=user-1' },
     { id: 'user-2', name: 'Jane Smith', avatarUrl: 'https://i.pravatar.cc/150?u=user-2' },
 ];

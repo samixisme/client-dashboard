@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import LoginPage from './pages/LoginPage';
 import { auth, db } from './utils/firebase';
 import { onAuthStateChanged, signOut, isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import './cursor.css';
 
 // --- Other Page Imports ---
 import DashboardPage from './pages/DashboardPage';
@@ -39,6 +40,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminBrandsPage from './pages/admin/AdminBrandsPage';
 import AdminProjectsPage from './pages/admin/AdminProjectsPage';
+import AdminBoardsPage from './pages/admin/AdminBoardsPage';
 import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
 import AdminMoodboardsPage from './pages/admin/AdminMoodboardsPage';
 import AdminTasksPage from './pages/admin/AdminTasksPage';
@@ -57,6 +59,38 @@ function App() {
   const [userStatus, setUserStatus] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // --- START: CUSTOM CURSOR LOGIC ---
+  const cursorRef = useRef<HTMLDivElement>(null);
+  const cursorDotRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const moveCursor = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      if (cursorRef.current && cursorDotRef.current) {
+        cursorRef.current.style.left = `${clientX}px`;
+        cursorRef.current.style.top = `${clientY}px`;
+        cursorDotRef.current.style.left = `${clientX}px`;
+        cursorDotRef.current.style.top = `${clientY}px`;
+      }
+
+      const target = e.target as HTMLElement;
+      if (target.closest('a, button, [role="button"], input, select, textarea, [data-interactive="true"]') || window.getComputedStyle(target).cursor === 'pointer') {
+        cursorRef.current?.classList.add('hovered');
+        cursorDotRef.current?.classList.add('hovered');
+      } else {
+        cursorRef.current?.classList.remove('hovered');
+        cursorDotRef.current?.classList.remove('hovered');
+      }
+    };
+
+    window.addEventListener('mousemove', moveCursor);
+
+    return () => {
+      window.removeEventListener('mousemove', moveCursor);
+    };
+  }, []);
+  // --- END: CUSTOM CURSOR LOGIC ---
 
   useEffect(() => {
     // Handle incoming email link
@@ -148,195 +182,173 @@ function App() {
   }
   
   return (
-    <AdminProvider>
-      <DataProvider>
-        <TimerProvider>
-          <SearchProvider>
-             <Routes>
-                {/* Admin CMS Routes - Completely separate layout */}
-                <Route path="/admin" element={<AdminLayout />}>
-                    <Route index element={<AdminDashboardPage />} />
-                    <Route path="brands" element={<AdminBrandsPage />} />
-                    <Route path="projects" element={<AdminProjectsPage />} />
-                    <Route path="feedback" element={<AdminFeedbackPage />} />
-                    <Route path="moodboards" element={<AdminMoodboardsPage />} />
-                    <Route path="tasks" element={<AdminTasksPage />} />
-                    <Route path="users" element={<AdminUsersPage />} />
-                    <Route path="settings" element={<AdminSettingsPage />} />
-                    <Route path="aicreator" element={<AdminAICreatorPage />} />
-                    <Route path="payments" element={<AdminPaymentsPage />} />
-                </Route>
+    <>
+      <div ref={cursorRef} className="custom-cursor"></div>
+      <div ref={cursorDotRef} className="custom-cursor-dot"></div>
+      <AdminProvider>
+        <DataProvider>
+          <TimerProvider>
+            <SearchProvider>
+               <Routes>
+                  {/* Admin CMS Routes - Completely separate layout */}
+                  <Route path="/admin/*" element={<AdminLayout />}>
+                      <Route index element={<AdminDashboardPage />} />
+                      <Route path="brands" element={<AdminBrandsPage />} />
+                      <Route path="projects" element={<AdminProjectsPage />} />
+                      <Route path="boards" element={<AdminBoardsPage />} />
+                      <Route path="feedback" element={<AdminFeedbackPage />} />
+                      <Route path="moodboards" element={<AdminMoodboardsPage />} />
+                      <Route path="tasks" element={<AdminTasksPage />} />
+                      <Route path="users" element={<AdminUsersPage />} />
+                      <Route path="settings" element={<AdminSettingsPage />} />
+                      <Route path="aicreator" element={<AdminAICreatorPage />} />
+                      <Route path="payments" element={<AdminPaymentsPage />} />
+                  </Route>
 
-                {/* Main Application Routes - Wrapped in MainLayout */}
-                <Route path="/" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <DashboardPage />
-                    </MainLayout>
-                } />
-                <Route path="/dashboard" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <DashboardPage />
-                    </MainLayout>
-                } />
-                <Route path="/brands" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <BrandsPage />
-                    </MainLayout>
-                } />
-                 <Route path="/brands/:brandId" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <BrandDetailPage />
-                    </MainLayout>
-                } />
-                <Route path="/projects" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <ProjectsPage />
-                    </MainLayout>
-                } />
-                
-                <Route path="/board/:boardId" element={
-                     <MainLayout onLogout={handleLogout}>
-                        <ProjectLayout />
-                     </MainLayout>
-                }>
-                     <Route index element={<ProjectBoardPage />} />
-                </Route>
+                  {/* Main Application Routes - Wrapped in MainLayout */}
+                  <Route path="/" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <DashboardPage />
+                      </MainLayout>
+                  } />
+                  <Route path="/dashboard" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <DashboardPage />
+                      </MainLayout>
+                  } />
+                  <Route path="/brands" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <BrandsPage />
+                      </MainLayout>
+                  } />
+                   <Route path="/brands/:brandId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <BrandDetailPage />
+                      </MainLayout>
+                  } />
+                  <Route path="/projects" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <ProjectsPage />
+                      </MainLayout>
+                  } />
+                  
+                  <Route path="/board/:boardId" element={
+                       <MainLayout onLogout={handleLogout}>
+                          <ProjectLayout />
+                       </MainLayout>
+                  }>
+                       <Route index element={<ProjectBoardPage />} />
+                  </Route>
 
-                {/* The nested routes inside ProjectLayout need special handling if ProjectLayout contains the outlet but we are wrapping it in MainLayout here. 
-                    Actually, ProjectLayout was likely designed to be a layout route itself.
-                    Let's keep the structure close to original but correctly nesting under MainLayout is tricky with the * path.
-                    Better approach: Use a layout component wrapper for standard routes.
-                */}
-                
-                {/* Reverting to the * approach but ensuring /admin is matched FIRST */}
-                {/* The issue is likely that the * route is matching eagerly or incorrectly. 
-                    In react-router v6, specific routes should be defined before splats, but here they are siblings.
-                    Wait, the previous code had the admin routes BEFORE the * route. That should work.
-                    
-                    Let's try to explicitly define the MainLayout wrapper for all non-admin routes instead of using * 
-                    OR move the admin routes to be definitely matched.
-                 */}
+                   <Route path="/payments" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <PaymentsPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/payments/invoice/new" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <CreateInvoicePage />
+                      </MainLayout>
+                   } />
+                   <Route path="/calendar" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <CalendarPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/brand-asset-creator" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <BrandAssetCreatorPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackProjectDetailPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/mockups" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackMockupsPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/websites" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackWebsitesPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/videos" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackVideosPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/mockups/:mockupId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackMockupDetailPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/websites/:websiteId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackWebsiteDetailPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/videos/:videoId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackVideoDetailPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/:itemType/:itemId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackItemPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/moodboards" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <MoodboardsPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/moodboards/:projectId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <ProjectMoodboardsPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/moodboard/:moodboardId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <MoodboardCanvasPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/profile" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <ProfilePage />
+                      </MainLayout>
+                   } />
+                   <Route path="/settings" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <SettingsPage />
+                      </MainLayout>
+                   } />
 
-                 <Route path="/payments" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <PaymentsPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/payments/invoice/new" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <CreateInvoicePage />
-                    </MainLayout>
-                 } />
-                 <Route path="/calendar" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <CalendarPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/brand-asset-creator" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <BrandAssetCreatorPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback/:projectId" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackProjectDetailPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback/:projectId/mockups" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackMockupsPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback/:projectId/websites" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackWebsitesPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback/:projectId/videos" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackVideosPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback/:projectId/mockups/:mockupId" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackMockupDetailPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback/:projectId/websites/:websiteId" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackWebsiteDetailPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback/:projectId/videos/:videoId" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackVideoDetailPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/feedback/:projectId/:itemType/:itemId" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <FeedbackItemPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/moodboards" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <MoodboardsPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/moodboards/:projectId" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <ProjectMoodboardsPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/moodboard/:moodboardId" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <MoodboardCanvasPage />
-                    </MainLayout>
-                 } />
-                 <Route path="/profile" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <ProfilePage />
-                    </MainLayout>
-                 } />
-                 <Route path="/settings" element={
-                    <MainLayout onLogout={handleLogout}>
-                       <SettingsPage />
-                    </MainLayout>
-                 } />
+                   <Route element={
+                      <MainLayout onLogout={handleLogout}>
+                          <ProjectLayout />
+                      </MainLayout>
+                   }>
+                      <Route path="/board/:boardId" element={<ProjectBoardPage />} />
+                      <Route path="/projects/:projectId/roadmap" element={<RoadmapPage />} />
+                   </Route>
 
+                   {/* Fallback */}
+                   <Route path="*" element={<Navigate to="/" />} />
 
-                {/* Project Layout Routes need to be handled carefully. 
-                    Original:
-                    <Route element={<ProjectLayout />}>
-                        <Route path="/board/:boardId" element={<ProjectBoardPage />} />
-                        <Route path="/projects/:projectId/roadmap" element={<RoadmapPage />} />
-                    </Route>
-                    
-                    We need to wrap ProjectLayout in MainLayout? 
-                    ProjectLayout likely renders an Outlet.
-                    Let's verify ProjectLayout content.
-                */}
-                 <Route element={
-                    <MainLayout onLogout={handleLogout}>
-                        <ProjectLayout />
-                    </MainLayout>
-                 }>
-                    <Route path="/board/:boardId" element={<ProjectBoardPage />} />
-                    <Route path="/projects/:projectId/roadmap" element={<RoadmapPage />} />
-                 </Route>
-
-                 {/* Fallback */}
-                 <Route path="*" element={<Navigate to="/" />} />
-
-              </Routes>
-          </SearchProvider>
-        </TimerProvider>
-      </DataProvider>
-    </AdminProvider>
+                </Routes>
+            </SearchProvider>
+          </TimerProvider>
+        </DataProvider>
+      </AdminProvider>
+    </>
   );
 }
 

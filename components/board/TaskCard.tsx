@@ -23,9 +23,9 @@ const formatDate = (dateString: string) => new Date(dateString).toLocaleDateStri
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     const { data } = useData();
-    const { tags, board_members, roadmapItems, boards, projects } = data;
+    const { tags, users, roadmapItems, boards, projects } = data;
     const taskTags = tags.filter(t => task.labelIds.includes(t.id));
-    const assignees = board_members.filter(m => task.assignees.includes(m.id));
+    const assignees = users.filter(m => task.assignees.includes(m.id));
     
     const roadmapItem = task.roadmapItemId ? roadmapItems.find(r => r.id === task.roadmapItemId) : null;
     const board = boards.find(b => b.id === task.boardId);

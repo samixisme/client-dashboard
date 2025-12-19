@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { FeedbackComment, BoardMember } from '../../types';
+import { FeedbackComment, User } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { CancelIcon } from '../icons/CancelIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
@@ -17,7 +17,7 @@ interface FeedbackSidebarProps {
 const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCommentClick, onClose, onNavigate, position }) => {
     const { data, forceUpdate } = useData();
 
-    const getMember = (id: string | undefined): BoardMember | undefined => id ? data.board_members.find(m => m.id === id) : undefined;
+    const getMember = (id: string | undefined): User | undefined => id ? data.users.find(m => m.id === id) : undefined;
     
     const handleResolve = (commentId: string) => {
         const comment = data.feedbackComments.find(c => c.id === commentId);

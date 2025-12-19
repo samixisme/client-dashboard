@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { TimeLog } from '../types';
 import { useData } from './DataContext';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 
 interface RunningTimer {
     taskId: string;
@@ -21,33 +23,53 @@ export const TimerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     const startTimer = useCallback((taskId: string) => {
         if (runningTimer) {
-            // In a real app, you might want to ask the user if they want to stop the current timer.
-            // For now, we'll just log a warning and not start a new one.
             console.warn("Another timer is already running.");
             return;
         }
         setRunningTimer({ taskId, startTime: Date.now() });
     }, [runningTimer]);
 
-    const stopTimer = useCallback(() => {
+    const stopTimer = useCallback(async () => {
         if (!runningTimer) return;
 
         const durationInSeconds = Math.floor((Date.now() - runningTimer.startTime) / 1000);
+        const taskId = runningTimer.taskId;
         
         if (durationInSeconds > 0) {
-            const newLog: TimeLog = {
-                id: `log-${Date.now()}`,
-                taskId: runningTimer.taskId,
+            const newLogData: Omit<TimeLog, 'id'> = {
+                taskId: taskId,
                 userId: 'user-1', // Hardcoded current user
                 duration: durationInSeconds,
                 date: new Date().toISOString(),
             };
+
+            // Optimistic update
+            const newLog: TimeLog = {
+                id: `log-${Date.now()}`,
+                ...newLogData
+            };
             data.time_logs.push(newLog);
-            forceUpdate(); // Notify consumers that data has changed
+            forceUpdate();
+
+            // Find Task Context (Project/Board) to save to Firestore
+            // Since tasks are flattened in data.tasks, we can find the task there.
+            const task = data.tasks.find(t => t.id === taskId);
+            if (task && !taskId.startsWith('task-')) { // Check if it's a Firestore task
+                const board = data.boards.find(b => b.id === task.boardId);
+                const project = board ? data.projects.find(p => p.id === board.projectId) : undefined;
+
+                if (project && board) {
+                    try {
+                        await addDoc(collection(db, 'projects', project.id, 'boards', board.id, 'tasks', taskId, 'time_logs'), newLogData);
+                    } catch (e) {
+                        console.error("Error logging timer time to Firestore", e);
+                    }
+                }
+            }
         }
         
         setRunningTimer(null);
-    }, [runningTimer, data.time_logs, forceUpdate]);
+    }, [runningTimer, data.time_logs, data.tasks, data.boards, data.projects, forceUpdate]);
 
     return (
         <TimerContext.Provider value={{ runningTimer, startTimer, stopTimer }}>

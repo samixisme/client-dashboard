@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { useSearch } from '../contexts/SearchContext';
-import { Brand, CalendarEvent, BoardMember } from '../types';
+import { Brand, CalendarEvent, User } from '../types';
 import { BrandIcon } from '../components/icons/BrandIcon';
 import { ProjectsIcon } from '../components/icons/ProjectsIcon';
 import { MoodboardIcon } from '../components/icons/MoodboardIcon';
@@ -41,7 +41,7 @@ const StatBox = ({ to, icon, count, label }: { to: string; icon: React.ReactNode
 
 const BrandCard: React.FC<{ brand: Brand }> = ({ brand }) => {
     const { data } = useData();
-    const { projects, boards, roadmapItems, tasks, board_members, moodboards, calendar_events, invoices, estimates, clients, feedbackComments } = data;
+    const { projects, boards, roadmapItems, tasks, users, moodboards, calendar_events, invoices, estimates, clients, feedbackComments } = data;
 
     const getBrandStats = (brandId: string) => {
         const brandProjects = projects.filter(p => p.brandId === brandId);
@@ -82,7 +82,7 @@ const BrandCard: React.FC<{ brand: Brand }> = ({ brand }) => {
         return { projectCount, moodboardCount, feedbackCount, invoiceCount, estimateCount, eventCount };
     };
 
-    const members = board_members.filter(m => brand.memberIds?.includes(m.id));
+    const members = users.filter(m => brand.memberIds?.includes(m.id));
     const stats = getBrandStats(brand.id);
 
     return (
@@ -164,7 +164,7 @@ const BrandsPage = () => {
             id: `brand-${Date.now()}`, 
             name, 
             createdAt: new Date(),
-            memberIds,
+            memberIds: memberIds,
         };
         data.brands.push(newBrand as any);
         forceUpdate();

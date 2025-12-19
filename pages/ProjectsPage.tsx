@@ -2,14 +2,17 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { useSearch } from '../contexts/SearchContext';
-import { Project, BoardMember, Task, Brand, Stage, ProjectStatus } from '../types';
+import { Project, User, Task, Brand, Stage, ProjectStatus, Board } from '../types';
 import { MoreIcon } from '../components/icons/MoreIcon';
 import { FilterIcon } from '../components/icons/FilterIcon';
 import { BoardIcon } from '../components/icons/BoardIcon';
 import { ListIcon } from '../components/icons/ListIcon';
 import { RoadmapIcon } from '../components/icons/RoadmapIcon';
-import AddProjectModal from '../components/projects/AddProjectModal';
+import AddEditProjectModal from '../components/projects/AddProjectModal';
 import ProjectFilterSortPopover, { FilterSortState } from '../components/projects/ProjectFilterSortPopover';
+import { collection, setDoc, doc, addDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+import { slugify } from '../utils/slugify';
 
 const StatusBadge: React.FC<{ status: ProjectStatus }> = ({ status }) => {
   const statusClasses: Record<ProjectStatus, string> = {
@@ -26,12 +29,12 @@ const StatusBadge: React.FC<{ status: ProjectStatus }> = ({ status }) => {
 
 const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
     const { data } = useData();
-    const { brands, board_members, tasks, moodboards, boards, roadmapItems } = data;
+    const { brands, users, tasks, moodboards, boards, roadmapItems } = data;
     
     const brand = brands.find(b => b.id === project.brandId);
     const projectBoards = boards.filter(b => b.projectId === project.id);
     const memberIds = [...new Set(projectBoards.flatMap(b => b.member_ids))];
-    const members = board_members.filter(m => memberIds.includes(m.id));
+    const members = users.filter(m => memberIds.includes(m.id));
     const projectBoardIds = projectBoards.map(b => b.id);
     const projectTasks = tasks.filter(t => projectBoardIds.includes(t.boardId));
     
@@ -67,6 +70,12 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
                     ))}
                 </div>
             </div>
+            
+            {project.logoUrl && (
+                <div className="w-full h-32 rounded-xl overflow-hidden mt-2 border border-border-color">
+                     <img src={project.logoUrl} alt={project.name} className="w-full h-full object-cover" />
+                </div>
+            )}
             
             <div>
                 <div className="flex justify-between items-center mb-1">
@@ -184,36 +193,55 @@ const ProjectsPage = () => {
     };
   }, [data.tasks]);
   
-  const handleAddProject = ({ name, description, brandId }: { name: string, description: string, brandId: string }) => {
-    const newProjectId = `proj-${Date.now()}`;
-    const newBoardId = `board-${Date.now()}`;
+  const handleAddProject = async ({ name, description, brandId, logoUrl }: { name: string, description: string, brandId: string, logoUrl?: string }) => {
+    // Optimistic update (optional but good for UX) or just wait for Firestore
+    try {
+        // Use project name for slug
+        const docId = slugify(name);
 
-    const newProject: Project = { 
-        id: newProjectId, 
-        name, 
-        description, 
-        brandId,
-        status: 'Active',
-        createdAt: new Date().toISOString()
-    };
-    const newBoard: any = { id: newBoardId, projectId: newProjectId, name: `${name} Board`, is_pinned: false, background_image: '', member_ids: [] };
-    const newStages: Stage[] = [
-        { id: `stage-${newBoardId}-1`, boardId: newBoardId, name: 'Open', order: 1 },
-        { id: `stage-${newBoardId}-2`, boardId: newBoardId, name: 'In Progress', order: 2 },
-        { id: `stage-${newBoardId}-3`, boardId: newBoardId, name: 'Completed', order: 3 },
-    ];
-    
-    data.projects.push(newProject);
-    data.boards.push(newBoard);
-    data.stages.push(...newStages);
-    
-    forceUpdate();
-    setIsAddProjectModalOpen(false);
+        const newProjectData: Omit<Project, 'id'> = { 
+            name, 
+            description, 
+            brandId,
+            status: 'Active',
+            createdAt: new Date().toISOString(),
+            logoUrl: logoUrl // Add logoUrl to saved data
+        };
+        
+        await setDoc(doc(db, 'projects', docId), newProjectData);
+        
+        // Create default board inside project subcollection
+        const newProjectId = docId;
+        const newBoardId = slugify(`${name}-board`);
+        const newBoardData: Omit<Board, 'id'> = { projectId: newProjectId, name: `${name} Board`, is_pinned: false, background_image: '', member_ids: [] };
+        
+        await setDoc(doc(db, 'projects', newProjectId, 'boards', newBoardId), newBoardData);
+
+        const newStagesData: Omit<Stage, 'id'>[] = [
+            { boardId: newBoardId, name: 'Open', order: 1, status: 'Open' },
+            { boardId: newBoardId, name: 'In Progress', order: 2, status: 'Open' },
+            { boardId: newBoardId, name: 'Completed', order: 3, status: 'Open' },
+        ];
+
+        for (const stageData of newStagesData) {
+            // Create stages inside board subcollection
+            const stageSlug = slugify(stageData.name);
+            const stageDocId = stageSlug;
+            await setDoc(doc(db, 'projects', newProjectId, 'boards', newBoardId, 'stages', stageDocId), stageData);
+        }
+        
+        forceUpdate();
+
+        setIsAddProjectModalOpen(false);
+    } catch (error) {
+        console.error("Error adding project: ", error);
+        alert("Failed to add project. Please try again.");
+    }
   };
 
   const TaskRow: React.FC<{task: Task}> = ({task}) => {
     const stage = data.stages.find(s => s.id === task.stageId);
-    const assignees = data.board_members.filter(m => task.assignees.includes(m.id));
+    const assignees = data.users.filter(m => task.assignees.includes(m.id));
 
     const priorityClasses = {
         High: 'text-red-400',
@@ -309,7 +337,7 @@ const ProjectsPage = () => {
                          const brand = data.brands.find(b => b.id === project.brandId);
                          const projectBoards = data.boards.filter(b => b.projectId === project.id);
                          const memberIds = [...new Set(projectBoards.flatMap(b => b.member_ids))];
-                         const members = data.board_members.filter(m => memberIds.includes(m.id));
+                         const members = data.users.filter(m => memberIds.includes(m.id));
                          const projectBoardIds = projectBoards.map(b => b.id);
                          const projectTasks = data.tasks.filter(t => projectBoardIds.includes(t.boardId));
                          const completedTasks = projectTasks.filter(t => t.stageId === 'stage-3').length;
@@ -322,6 +350,7 @@ const ProjectsPage = () => {
                             <tr key={project.id} className="border-b border-border-color last:border-b-0">
                                 <td className="p-4">
                                     <div className="flex items-center gap-2">
+                                         {project.logoUrl && <img src={project.logoUrl} alt={project.name} className="w-8 h-8 rounded-md object-cover border border-border-color" />}
                                         <Link to={mainBoard ? `/board/${mainBoard.id}` : '#'} className="font-semibold text-text-primary hover:text-primary">{project.name}</Link>
                                         <StatusBadge status={project.status} />
                                     </div>
@@ -382,10 +411,10 @@ const ProjectsPage = () => {
         </div>
 
       {isAddProjectModalOpen && (
-        <AddProjectModal 
+        <AddEditProjectModal 
             isOpen={isAddProjectModalOpen}
             onClose={() => setIsAddProjectModalOpen(false)}
-            onAddProject={handleAddProject}
+            onSave={handleAddProject}
         />
       )}
     </div>

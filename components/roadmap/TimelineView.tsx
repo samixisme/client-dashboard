@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { RoadmapItem, BoardMember, Task, Stage } from '../../types';
+import { RoadmapItem, User, Task, Stage } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { ChevronDownIcon } from '../icons/ChevronDownIcon';
 import { DragHandleIcon } from '../icons/DragHandleIcon';
@@ -45,7 +45,7 @@ interface TimelineViewProps {
 
 const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem, onUpdateTask, onTaskClick, onRoadmapItemClick, isEditMode, onReorderItems, onReorderTasks, projectStartDate, projectEndDate }) => {
     const { data } = useData();
-    const { board_members, stages } = data;
+    const { users, stages } = data;
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(items.map(i => i.id)));
     
     // Drag/Resize state for timeline bars
@@ -484,7 +484,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                         const left = diffInDays(itemStartDate, startDate) * DAY_WIDTH;
                                         const duration = diffInDays(itemEndDate, itemStartDate) + 1;
                                         const width = duration * DAY_WIDTH - 4;
-                                        const itemAssignees = board_members.filter(m => (currentItem as Task).assignees?.includes(m.id));
+                                        const itemAssignees = users.filter(m => (currentItem as Task).assignees?.includes(m.id));
                                         
                                         const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('en-US', {month:'short', day: 'numeric'})
 

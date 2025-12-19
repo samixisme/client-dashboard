@@ -1,13 +1,13 @@
 
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../contexts/DataContext';
-import { FeedbackComment, BoardMember } from '../../types';
+import { FeedbackComment, User } from '../../types';
 import { SearchIcon } from '../icons/SearchIcon';
 import { Link } from 'react-router-dom';
 
 const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
     const { data } = useData();
-    const { feedbackComments, board_members, feedbackMockups, feedbackWebsites, feedbackVideos, projects } = data;
+    const { feedbackComments, users, feedbackMockups, feedbackWebsites, feedbackVideos, projects } = data;
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
@@ -28,7 +28,7 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
         });
     }, [projectComments, statusFilter, reporterFilter, assignedFilter, searchTerm]);
 
-    const getMember = (id: string | undefined): BoardMember | undefined => id ? board_members.find(m => m.id === id) : undefined;
+    const getMember = (id: string | undefined): User | undefined => id ? users.find(m => m.id === id) : undefined;
     
     const getTargetItem = (comment: FeedbackComment) => {
         switch (comment.targetType) {
@@ -56,12 +56,12 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                 </select>
                 <select value={reporterFilter} onChange={e => setReporterFilter(e.target.value)} className="bg-glass border border-border-color rounded-lg px-3 py-2 text-sm">
                     <option value="All">All Reporters</option>
-                    {board_members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    {users.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
                 <select value={assignedFilter} onChange={e => setAssignedFilter(e.target.value)} className="bg-glass border border-border-color rounded-lg px-3 py-2 text-sm">
                     <option value="All">All Assigned</option>
                     <option value="unassigned">Unassigned</option>
-                    {board_members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    {users.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
             </div>
             <div className="bg-glass rounded-lg border border-border-color overflow-hidden">
