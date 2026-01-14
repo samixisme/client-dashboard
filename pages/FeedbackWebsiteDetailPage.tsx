@@ -1,209 +1,147 @@
-import React, { useState, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved } from '../utils/feedbackUtils';
+import { FeedbackItem, FeedbackItemComment } from '../types';
 import { useData } from '../contexts/DataContext';
-import { FeedbackWebsite, WebsitePage } from '../types';
-import { AddIcon } from '../components/icons/AddIcon';
-import { CheckCircleIcon } from '../components/icons/CheckCircleIcon';
-import { CancelIcon } from '../components/icons/CancelIcon';
+import { LinkIcon } from '../components/icons/LinkIcon';
 
 const FeedbackWebsiteDetailPage = () => {
-    const { projectId, websiteId } = useParams<{ projectId: string; websiteId: string }>();
-    const navigate = useNavigate();
-    const { data, forceUpdate } = useData();
-    
-    const website = useMemo(() => data.feedbackWebsites.find(m => m.id === websiteId), [data.feedbackWebsites, websiteId]);
-    
-    const [activeTab, setActiveTab] = useState<'all' | 'approved' | 'unapproved'>('all');
-    const [description, setDescription] = useState(website?.description || '');
-    const [isEditingDesc, setIsEditingDesc] = useState(false);
-    const [isAddingPage, setIsAddingPage] = useState(false);
-    const [newPageName, setNewPageName] = useState('');
-    const [newPagePath, setNewPagePath] = useState('');
+  const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
+  const { user } = useData();
 
+  const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
+  const [comments, setComments] = useState<FeedbackItemComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newCommentText, setNewCommentText] = useState('');
 
-    const handleSaveDescription = () => {
-        if (website) {
-            website.description = description;
-            forceUpdate();
-            setIsEditingDesc(false);
-        }
-    };
-    
-    const handleAddPage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (website && newPageName.trim() && newPagePath.trim()) {
-            const newPage: WebsitePage = {
-                id: `page-${Date.now()}`,
-                name: newPageName,
-                path: newPagePath.startsWith('/') ? newPagePath : `/${newPagePath}`,
-            };
-            if (!website.pages) website.pages = [];
-            website.pages.push(newPage);
-            forceUpdate();
-            setIsAddingPage(false);
-            setNewPageName('');
-            setNewPagePath('');
-        }
-    };
+  useEffect(() => {
+    if (projectId && feedbackItemId) {
+      getFeedbackItem(projectId, feedbackItemId).then((item) => {
+        setFeedbackItem(item);
+        setLoading(false);
+      });
 
-    const handleDeletePage = (pageId: string) => {
-        if (website && window.confirm('Are you sure you want to delete this page?')) {
-            website.pages = website.pages?.filter(p => p.id !== pageId);
-            // Also delete comments for this page
-            data.feedbackComments = data.feedbackComments.filter(c => !(c.targetId === websiteId && c.pageUrl === website.pages?.find(p => p.id === pageId)?.path));
-            forceUpdate();
-        }
-    };
+      const unsubscribe = subscribeToComments(projectId, feedbackItemId, (fetchedComments) => {
+        setComments(fetchedComments);
+      });
 
-    const handleDeleteCollection = () => {
-        if (website && window.confirm('Are you sure you want to delete this entire website collection and all its comments?')) {
-            data.feedbackComments = data.feedbackComments.filter(c => c.targetId !== websiteId);
-            const index = data.feedbackWebsites.findIndex(w => w.id === websiteId);
-            if (index > -1) {
-                data.feedbackWebsites.splice(index, 1);
-            }
-            forceUpdate();
-            navigate(`/feedback/${projectId}`);
-        }
-    };
-
-    const handleTogglePageApproval = (pageId: string) => {
-        if (website) {
-            if (!website.approvedPageIds) website.approvedPageIds = [];
-            
-            if (website.approvedPageIds.includes(pageId)) {
-                website.approvedPageIds = website.approvedPageIds.filter(id => id !== pageId);
-            } else {
-                website.approvedPageIds.push(pageId);
-            }
-            forceUpdate();
-        }
-    };
-
-    const filteredPages = useMemo(() => {
-        if (!website || !website.pages) return [];
-        switch (activeTab) {
-            case 'approved':
-                return website.pages.filter(p => website.approvedPageIds?.includes(p.id));
-            case 'unapproved':
-                return website.pages.filter(p => !website.approvedPageIds?.includes(p.id));
-            case 'all':
-            default:
-                return website.pages;
-        }
-    }, [website, activeTab]);
-
-    if (!website) {
-        return <div className="text-center p-10">Website not found.</div>;
+      return () => unsubscribe();
     }
+  }, [projectId, feedbackItemId]);
 
-    const tabs = [
-        { id: 'all', name: 'All' },
-        { id: 'approved', name: 'Approved' },
-        { id: 'unapproved', name: 'Unapproved' },
-    ];
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCommentText.trim() || !projectId || !feedbackItemId || !user) return;
 
-    return (
-        <div>
-            <h1 className="text-3xl font-bold text-text-primary">{website.name}</h1>
-            
-            <div className="mt-4 bg-glass p-6 rounded-lg border border-border-color">
-                <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-lg font-semibold text-text-primary">Introduction or Description</h2>
-                    {isEditingDesc ? (
-                        <div className="flex gap-2">
-                            <button onClick={handleSaveDescription} className="px-3 py-1 bg-primary text-background text-xs font-bold rounded-lg hover:bg-primary-hover">Save</button>
-                            <button onClick={() => setIsEditingDesc(false)} className="px-3 py-1 bg-glass-light text-text-primary text-xs rounded-lg">Cancel</button>
-                        </div>
-                    ) : (
-                         <button onClick={() => setIsEditingDesc(true)} className="px-3 py-1 bg-glass-light text-text-primary text-xs rounded-lg">Edit</button>
-                    )}
-                </div>
-                {isEditingDesc ? (
-                    <textarea 
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                        rows={4}
-                        className="w-full p-2 bg-glass-light border border-border-color rounded-md"
-                    />
-                ) : (
-                    <p className="text-text-secondary">{description || 'No description provided.'}</p>
-                )}
-                <div className="mt-4 pt-4 border-t border-border-color">
-                    <h3 className="text-sm font-semibold text-red-400">Danger Zone</h3>
-                    <button onClick={handleDeleteCollection} className="mt-2 text-sm bg-red-500/20 text-red-300 px-3 py-1 rounded-lg hover:bg-red-500/30 hover:text-red-200">
-                        Delete this Collection
+    try {
+      await addComment(projectId, feedbackItemId, {
+        authorId: user.id,
+        commentText: newCommentText
+      });
+      setNewCommentText('');
+    } catch (error) {
+      console.error("Failed to add comment", error);
+    }
+  };
+
+  const handleResolveToggle = async (commentId: string, currentStatus: boolean) => {
+      if (!projectId || !feedbackItemId) return;
+      await toggleCommentResolved(projectId, feedbackItemId, commentId, currentStatus);
+  };
+
+  if (loading) return <div className="p-10 text-center text-text-secondary">Loading...</div>;
+  if (!feedbackItem) return <div className="p-10 text-center text-text-secondary">Feedback Item Not Found</div>;
+
+  return (
+    <div className="flex h-[calc(100vh-100px)] overflow-hidden">
+      {/* Left Column: Iframe Preview */}
+      <div className="flex-1 bg-white flex flex-col relative overflow-hidden">
+         <div className="h-12 bg-gray-100 border-b flex items-center px-4 justify-between">
+             <div className="flex items-center gap-2 text-sm text-gray-600 truncate max-w-xl">
+                 <LinkIcon className="w-4 h-4" />
+                 <a href={feedbackItem.assetUrl} target="_blank" rel="noopener noreferrer" className="hover:underline truncate">
+                     {feedbackItem.assetUrl}
+                 </a>
+             </div>
+             <a href={feedbackItem.assetUrl} target="_blank" rel="noopener noreferrer" className="text-xs bg-white border px-3 py-1 rounded hover:bg-gray-50">
+                 Open in New Tab
+             </a>
+         </div>
+         <div className="flex-1 relative">
+             <iframe 
+                src={feedbackItem.assetUrl} 
+                title="Website Preview"
+                className="w-full h-full border-none"
+                sandbox="allow-scripts allow-same-origin allow-forms" // Be careful with security here
+             />
+             {/* Overlay to hint about limitations */}
+             <div className="absolute bottom-4 left-4 right-4 bg-yellow-50 border border-yellow-200 p-3 rounded text-xs text-yellow-800 opacity-90 pointer-events-none">
+                 Note: Some websites may block embedding. Use "Open in New Tab" if the preview doesn't load.
+             </div>
+         </div>
+      </div>
+
+      {/* Right Column: Sidebar */}
+      <div className="w-96 bg-glass border-l border-border-color flex flex-col">
+        <div className="p-4 border-b border-border-color">
+            <h2 className="text-lg font-bold text-text-primary">{feedbackItem.name}</h2>
+            <p className="text-sm text-text-secondary mt-1">{feedbackItem.description}</p>
+        </div>
+
+        {/* New Comment Form */}
+        <div className="p-4 bg-glass-light border-b border-border-color">
+            <h3 className="text-sm font-semibold text-text-primary mb-2">Add Feedback</h3>
+            <form onSubmit={handleAddComment}>
+                <textarea 
+                    value={newCommentText}
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    placeholder="General feedback about this page..."
+                    className="w-full p-2 rounded bg-glass border border-border-color text-sm mb-2 focus:ring-1 focus:ring-primary outline-none"
+                    rows={3}
+                />
+                <div className="flex justify-end">
+                    <button 
+                        type="submit" 
+                        className="px-4 py-2 bg-primary text-background text-sm font-bold rounded hover:bg-primary-hover"
+                    >
+                        Post Comment
                     </button>
                 </div>
-            </div>
-
-             <div className="mt-8 flex justify-between items-center border-b border-border-color">
-                <div className="flex items-center gap-4">
-                    {tabs.map(tab => (
-                        <button 
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`py-2 px-4 text-sm font-medium ${activeTab === tab.id ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-primary'}`}
-                        >
-                           {tab.name}
-                        </button>
-                    ))}
-                </div>
-                <button onClick={() => setIsAddingPage(p => !p)} className="px-4 py-1.5 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover flex items-center gap-2">
-                    <AddIcon className="h-4 w-4"/> Add Page
-                </button>
-            </div>
-
-            {isAddingPage && (
-                 <form onSubmit={handleAddPage} className="bg-glass p-4 rounded-b-lg border border-t-0 border-border-color mb-6 space-y-3">
-                    <input type="text" value={newPageName} onChange={e => setNewPageName(e.target.value)} placeholder="Page Name (e.g., 'About Us')" className="w-full bg-glass-light border border-border-color rounded-lg px-3 py-2 text-sm" required />
-                    <input type="text" value={newPagePath} onChange={e => setNewPagePath(e.target.value)} placeholder="URL Path (e.g., '/about')" className="w-full bg-glass-light border border-border-color rounded-lg px-3 py-2 text-sm" required />
-                    <div className="flex gap-2 justify-end">
-                        <button type="button" onClick={() => setIsAddingPage(false)} className="px-3 py-1 bg-glass-light text-text-primary text-xs rounded-lg">Cancel</button>
-                        <button type="submit" className="px-3 py-1 bg-primary text-background text-xs font-bold rounded-lg">Save Page</button>
-                    </div>
-                </form>
-            )}
-
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {filteredPages.map((page) => (
-                    <div key={page.id} className="group relative">
-                        <Link 
-                            to={`/feedback/${projectId}/website/${websiteId}?pagePath=${page.path}`}
-                            className="block aspect-video bg-glass rounded-lg border border-border-color overflow-hidden"
-                        >
-                            <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
-                                <p className="font-bold text-text-primary">{page.name}</p>
-                                <p className="text-xs font-mono text-text-secondary mt-1">{page.path}</p>
-                            </div>
-                            <div className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-white font-bold">View Feedback</span>
-                            </div>
-                        </Link>
-                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeletePage(page.id); }} className="absolute -top-1 -right-1 p-1 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10">
-                            <CancelIcon className="w-4 h-4" />
-                        </button>
-                         <button 
-                            onClick={() => handleTogglePageApproval(page.id)}
-                            className="absolute top-2 left-2 h-6 w-6 rounded-full flex items-center justify-center text-white ring-2 ring-background transition-all"
-                            title={website.approvedPageIds?.includes(page.id) ? 'Unapprove' : 'Approve'}
-                        >
-                             {website.approvedPageIds?.includes(page.id) && (
-                                <div className="h-full w-full rounded-full bg-green-500 flex items-center justify-center">
-                                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.052-.143z" clipRule="evenodd" /></svg>
-                                </div>
-                             )}
-                              {!website.approvedPageIds?.includes(page.id) && (
-                                <div className="h-full w-full rounded-full bg-gray-500/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 flex items-center justify-center">
-                                     <CheckCircleIcon className="w-5 h-5 text-white/80"/>
-                                </div>
-                             )}
-                        </button>
-                    </div>
-                ))}
-            </div>
+            </form>
         </div>
-    );
+
+        {/* Comments List */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+             {comments.length === 0 ? (
+                <p className="text-center text-text-secondary text-sm">No comments yet.</p>
+            ) : (
+                comments.map((comment) => (
+                    <div 
+                        key={comment.id} 
+                        className={`p-4 rounded-lg border bg-glass-light border-border-color`}
+                    >
+                        <div className="flex justify-between items-start mb-2">
+                            <span className="font-bold text-xs text-text-primary">User</span>
+                            <span className="text-xs text-text-secondary">{new Date(comment.createdAt?.seconds * 1000).toLocaleString()}</span>
+                        </div>
+                        <p className={`text-sm text-text-primary mb-3 ${comment.resolved ? 'line-through text-text-secondary' : ''}`}>{comment.commentText}</p>
+                        
+                         <div className="flex justify-end">
+                             <button 
+                                onClick={() => handleResolveToggle(comment.id, comment.resolved)}
+                                className={`text-xs px-2 py-1 rounded ${comment.resolved ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-secondary/20 text-text-secondary hover:bg-secondary/30'}`}
+                             >
+                                 {comment.resolved ? 'Resolved' : 'Mark Resolved'}
+                             </button>
+                        </div>
+                    </div>
+                ))
+            )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default FeedbackWebsiteDetailPage;

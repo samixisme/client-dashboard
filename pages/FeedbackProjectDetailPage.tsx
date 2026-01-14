@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { MockupIcon } from '../components/icons/MockupIcon';
@@ -9,6 +9,7 @@ import { AddIcon } from '../components/icons/AddIcon';
 import FeedbackTasksView from '../components/feedback/FeedbackTasksView';
 import FeedbackActivityView from '../components/feedback/FeedbackActivityView';
 import AddFeedbackRequestModal from '../components/feedback/AddFeedbackRequestModal';
+import { getFeedbackItems } from '../utils/feedbackUtils';
 
 const WidgetLink = ({ to, Icon, title, count, label }: { to: string, Icon: React.FC<any>, title: string, count: number, label: string }) => (
     <Link to={to} className="bg-glass p-6 rounded-lg shadow-md border border-border-color transition-all hover:shadow-lg hover:border-primary block">
@@ -26,17 +27,24 @@ const WidgetLink = ({ to, Icon, title, count, label }: { to: string, Icon: React
 const FeedbackProjectDetailPage = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const { data } = useData();
-    const { projects, feedbackMockups, feedbackWebsites, feedbackVideos } = data;
+    const { projects } = data;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [stats, setStats] = useState({ mockups: 0, websites: 0, videos: 0 });
 
     const project = useMemo(() => projects.find(p => p.id === projectId), [projectId, projects]);
 
-    const stats = useMemo(() => ({
-        mockups: feedbackMockups.filter(m => m.projectId === projectId).length,
-        websites: feedbackWebsites.filter(w => w.projectId === projectId).length,
-        videos: feedbackVideos.filter(v => v.projectId === projectId).length,
-    }), [feedbackMockups, feedbackWebsites, feedbackVideos, projectId]);
+    useEffect(() => {
+        if (projectId) {
+            getFeedbackItems(projectId).then(items => {
+                setStats({
+                    mockups: items.filter(i => i.type === 'mockup').length,
+                    websites: items.filter(i => i.type === 'website').length,
+                    videos: items.filter(i => i.type === 'video').length,
+                });
+            });
+        }
+    }, [projectId, isModalOpen]); // Re-fetch when modal closes (new item added)
 
     if (!project) {
         return <div className="text-center p-10">Project not found.</div>;

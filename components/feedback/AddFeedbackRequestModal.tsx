@@ -1,29 +1,29 @@
 
 import React, { useState } from 'react';
-import { useData } from '../../contexts/DataContext';
-import { FeedbackMockup, FeedbackWebsite, FeedbackVideo, MockupImage, VideoAsset } from '../../types';
+import { AddIcon } from '../icons/AddIcon';
 import { WebsiteIcon } from '../icons/WebsiteIcon';
 import { MockupIcon } from '../icons/MockupIcon';
 import { VideoIcon } from '../icons/VideoIcon';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
+import { FeedbackType } from '../../types';
+import { addFeedbackItem } from '../../utils/feedbackUtils';
+import { uploadFile } from '../../utils/firebase';
 
 interface AddFeedbackRequestModalProps {
     projectId: string;
     onClose: () => void;
 }
 
-type FeedbackType = 'website' | 'mockup' | 'video';
-
 const AddFeedbackRequestModal: React.FC<AddFeedbackRequestModalProps> = ({ projectId, onClose }) => {
-    const { data, forceUpdate } = useData();
     const [step, setStep] = useState(1);
     const [type, setType] = useState<FeedbackType | null>(null);
 
     // Form state
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [url, setUrl] = useState(''); // For websites and videos
-    const [imageUrls, setImageUrls] = useState(''); // For mockups
+    const [url, setUrl] = useState(''); // For websites
+    const [file, setFile] = useState<File | null>(null); // For mockups/videos
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleTypeSelect = (selectedType: FeedbackType) => {
         setType(selectedType);
@@ -36,38 +36,55 @@ const AddFeedbackRequestModal: React.FC<AddFeedbackRequestModalProps> = ({ proje
         setName('');
         setDescription('');
         setUrl('');
-        setImageUrls('');
+        setFile(null);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!type || !name.trim()) return;
 
-        switch (type) {
-            case 'website':
-                if (url.trim()) {
-                    const newWebsite: FeedbackWebsite = { id: `web-${Date.now()}`, projectId, name, url, description, isApproved: false, pages: [], approvedPageIds: [] };
-                    data.feedbackWebsites.push(newWebsite);
-                }
-                break;
-            case 'mockup':
-                if (imageUrls.trim()) {
-                    const images: MockupImage[] = imageUrls.split(',').map((imgUrl, i) => ({ id: `img-${Date.now()}-${i}`, name: `Image ${i+1}`, url: imgUrl.trim() }));
-                    const newMockup: FeedbackMockup = { id: `mock-${Date.now()}`, projectId, name, description, images, approvedImageIds: [] };
-                    data.feedbackMockups.push(newMockup);
-                }
-                break;
-            case 'video':
-                 if (url.trim()) {
-                    const videos: VideoAsset[] = url.split(',').map((vidUrl, i) => ({ id: `vid-asset-${Date.now()}-${i}`, name: `Video ${i+1}`, url: vidUrl.trim() }));
-                    const newVideo: FeedbackVideo = { id: `vid-collection-${Date.now()}`, projectId, name, description, videos, approvedVideoIds: [] };
-                    data.feedbackVideos.push(newVideo);
-                }
-                break;
+        setIsSubmitting(true);
+
+        try {
+            let assetUrl = '';
+
+            if (type === 'website') {
+                assetUrl = url;
+            } else if (file) {
+                // Upload file to Firebase Storage
+                const path = `projects/${projectId}/feedback/${type}s`;
+                assetUrl = await uploadFile(file, path);
+            }
+
+            if (!assetUrl) {
+                alert("Please provide a URL or upload a file.");
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Create Feedback Item in Firestore
+            await addFeedbackItem(projectId, {
+                type,
+                name,
+                description,
+                assetUrl,
+                status: 'pending',
+                createdBy: 'currentUser', // Replace with actual user ID from Auth Context
+            });
+            
+            onClose();
+        } catch (error) {
+            console.error("Error creating feedback item:", error);
+            alert("Failed to create feedback item. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
-        
-        forceUpdate();
-        onClose();
     };
     
     const TypeButton = ({ Icon, title, onClick }: { Icon: React.FC<any>, title: string, onClick: () => void }) => (
@@ -97,15 +114,32 @@ const AddFeedbackRequestModal: React.FC<AddFeedbackRequestModalProps> = ({ proje
                             <h2 className="text-xl font-bold text-text-primary">New {type} Feedback</h2>
                         </div>
                         <div className="space-y-4">
-                            <InputField label="Name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Homepage Redesign v1" required/>
-                            <TextAreaField label="Description (Optional)" value={description} onChange={e => setDescription(e.target.value)} placeholder="A brief description of this feedback request."/>
-                            {type === 'website' && <InputField label="URL" type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com" required/>}
-                            {type === 'mockup' && <TextAreaField label="Image URLs" value={imageUrls} onChange={e => setImageUrls(e.target.value)} placeholder="Enter image URLs, separated by commas" required/>}
-                            {type === 'video' && <TextAreaField label="Video URLs" value={url} onChange={e => setUrl(e.target.value)} placeholder="Enter video URLs, separated by commas" required/>}
+                            <InputField label="Name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Homepage Redesign v1" required disabled={isSubmitting}/>
+                            <TextAreaField label="Description (Optional)" value={description} onChange={e => setDescription(e.target.value)} placeholder="A brief description of this feedback request." disabled={isSubmitting}/>
+                            
+                            {type === 'website' && (
+                                <InputField label="URL" type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com" required disabled={isSubmitting}/>
+                            )}
+                            
+                            {(type === 'mockup' || type === 'video') && (
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">Upload File</label>
+                                    <input 
+                                        type="file" 
+                                        accept={type === 'mockup' ? "image/*" : "video/*"}
+                                        onChange={handleFileChange}
+                                        className="w-full text-text-primary"
+                                        required
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <div className="flex justify-end gap-4 mt-8">
-                            <button type="button" onClick={onClose} className="px-4 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Cancel</button>
-                            <button type="submit" className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Create</button>
+                            <button type="button" onClick={onClose} className="px-4 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color" disabled={isSubmitting}>Cancel</button>
+                            <button type="submit" className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed">
+                                {isSubmitting ? 'Creating...' : 'Create'}
+                            </button>
                         </div>
                     </form>
                 )}
@@ -117,14 +151,14 @@ const AddFeedbackRequestModal: React.FC<AddFeedbackRequestModalProps> = ({ proje
 const InputField = (props: React.InputHTMLAttributes<HTMLInputElement> & {label: string}) => (
     <div>
         <label className="block text-sm font-medium text-text-secondary mb-1">{props.label}</label>
-        <input {...props} className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary sm:text-sm" />
+        <input {...props} className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary sm:text-sm disabled:opacity-50" />
     </div>
 );
 
 const TextAreaField = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {label: string}) => (
     <div>
         <label className="block text-sm font-medium text-text-secondary mb-1">{props.label}</label>
-        <textarea {...props} rows={3} className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary sm:text-sm" />
+        <textarea {...props} rows={3} className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary sm:text-sm disabled:opacity-50" />
     </div>
 );
 

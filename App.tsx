@@ -285,17 +285,18 @@ function App() {
                          <FeedbackVideosPage />
                       </MainLayout>
                    } />
-                   <Route path="/feedback/:projectId/mockups/:mockupId" element={
+                   {/* Corrected Routes for new feedback system */}
+                   <Route path="/feedback/:projectId/mockup/:feedbackItemId" element={
                       <MainLayout onLogout={handleLogout}>
                          <FeedbackMockupDetailPage />
                       </MainLayout>
                    } />
-                   <Route path="/feedback/:projectId/websites/:websiteId" element={
+                   <Route path="/feedback/:projectId/website/:feedbackItemId" element={
                       <MainLayout onLogout={handleLogout}>
                          <FeedbackWebsiteDetailPage />
                       </MainLayout>
                    } />
-                   <Route path="/feedback/:projectId/videos/:videoId" element={
+                   <Route path="/feedback/:projectId/video/:feedbackItemId" element={
                       <MainLayout onLogout={handleLogout}>
                          <FeedbackVideoDetailPage />
                       </MainLayout>

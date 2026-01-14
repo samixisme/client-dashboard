@@ -302,6 +302,35 @@ export interface FeedbackComment {
     }[];
 }
 
+// New Feedback Types
+export type FeedbackType = 'mockup' | 'website' | 'video';
+export type FeedbackStatus = 'pending' | 'in_review' | 'approved' | 'changes_requested';
+
+export interface FeedbackItem {
+  id: string;
+  projectId: string;
+  type: FeedbackType;
+  name: string;
+  description: string;
+  assetUrl: string;
+  status: FeedbackStatus;
+  createdBy: string;
+  createdAt: any; // Timestamp or Date or serializable object
+  commentCount?: number;
+}
+
+export interface FeedbackItemComment {
+  id: string;
+  feedbackItemId: string;
+  authorId: string;
+  commentText: string;
+  createdAt: any; // Timestamp or Date
+  resolved: boolean;
+  position?: { x: number; y: number }; // ONLY for 'mockup' type
+  timestamp?: number; // ONLY for 'video' type (time in seconds)
+}
+
+
 // Moodboard Feature Types
 export interface Moodboard {
     id: string;

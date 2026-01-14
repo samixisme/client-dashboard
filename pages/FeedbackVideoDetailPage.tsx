@@ -1,206 +1,253 @@
-import React, { useState, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved } from '../utils/feedbackUtils';
+import { FeedbackItem, FeedbackItemComment } from '../types';
 import { useData } from '../contexts/DataContext';
-import { CheckCircleIcon } from '../components/icons/CheckCircleIcon';
-import { AddIcon } from '../components/icons/AddIcon';
-import { CancelIcon } from '../components/icons/CancelIcon';
-import { VideoAsset } from '../types';
+import { PlayIcon } from '../components/icons/PlayIcon';
+import { PauseIcon } from '../components/icons/PauseIcon';
 
 const FeedbackVideoDetailPage = () => {
-    const { projectId, videoId } = useParams<{ projectId: string; videoId: string }>();
-    const navigate = useNavigate();
-    const { data, forceUpdate } = useData();
-    
-    const videoCollection = useMemo(() => data.feedbackVideos.find(m => m.id === videoId), [data.feedbackVideos, videoId]);
-    
-    const [activeTab, setActiveTab] = useState<'all' | 'approved' | 'unapproved'>('all');
-    const [description, setDescription] = useState(videoCollection?.description || '');
-    const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
+  const { user } = useData();
 
-    // State for adding a new video
-    const [isAdding, setIsAdding] = useState(false);
-    const [newVideoName, setNewVideoName] = useState('');
-    const [newVideoUrl, setNewVideoUrl] = useState('');
+  const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
+  const [comments, setComments] = useState<FeedbackItemComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
-    const handleSaveDescription = () => {
-        if (videoCollection) {
-            videoCollection.description = description;
-            forceUpdate();
-            setIsEditingDesc(false);
-        }
-    };
+  // New Comment State
+  const [newCommentText, setNewCommentText] = useState('');
+  const [commentTimestamp, setCommentTimestamp] = useState<number | null>(null);
 
-    const handleAddVideo = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (videoCollection && newVideoName.trim() && newVideoUrl.trim()) {
-            const newVideo: VideoAsset = {
-                id: `vid-asset-${Date.now()}`,
-                name: newVideoName,
-                url: newVideoUrl,
-            };
-            videoCollection.videos.push(newVideo);
-            forceUpdate();
-            setIsAdding(false);
-            setNewVideoName('');
-            setNewVideoUrl('');
-        }
-    };
+  useEffect(() => {
+    if (projectId && feedbackItemId) {
+      getFeedbackItem(projectId, feedbackItemId).then((item) => {
+        setFeedbackItem(item);
+        setLoading(false);
+      });
 
-    const handleDeleteVideo = (videoAssetId: string) => {
-        if (videoCollection && window.confirm('Are you sure you want to delete this video?')) {
-            videoCollection.videos = videoCollection.videos.filter(v => v.id !== videoAssetId);
-            // Also delete comments associated with this video asset
-            data.feedbackComments = data.feedbackComments.filter(c => c.videoAssetId !== videoAssetId);
-            forceUpdate();
-        }
-    };
+      const unsubscribe = subscribeToComments(projectId, feedbackItemId, (fetchedComments) => {
+        setComments(fetchedComments);
+      });
 
-    const handleDeleteCollection = () => {
-        if (videoCollection && window.confirm('Are you sure you want to delete this entire video collection and all its comments?')) {
-            data.feedbackComments = data.feedbackComments.filter(c => c.targetId !== videoId);
-            const index = data.feedbackVideos.findIndex(m => m.id === videoId);
-            if (index > -1) {
-                data.feedbackVideos.splice(index, 1);
-            }
-            forceUpdate();
-            navigate(`/feedback/${projectId}`);
-        }
-    };
-
-    const handleToggleVideoApproval = (videoAssetId: string) => {
-        if (videoCollection) {
-            if (!videoCollection.approvedVideoIds) videoCollection.approvedVideoIds = [];
-            
-            if (videoCollection.approvedVideoIds.includes(videoAssetId)) {
-                videoCollection.approvedVideoIds = videoCollection.approvedVideoIds.filter(id => id !== videoAssetId);
-            } else {
-                videoCollection.approvedVideoIds.push(videoAssetId);
-            }
-            forceUpdate();
-        }
-    };
-
-    const filteredVideos = useMemo(() => {
-        if (!videoCollection) return [];
-        switch (activeTab) {
-            case 'approved':
-                return videoCollection.videos.filter(v => videoCollection.approvedVideoIds?.includes(v.id));
-            case 'unapproved':
-                return videoCollection.videos.filter(v => !videoCollection.approvedVideoIds?.includes(v.id));
-            case 'all':
-            default:
-                return videoCollection.videos;
-        }
-    }, [videoCollection, activeTab]);
-    
-    if (!videoCollection) {
-        return <div className="text-center p-10">Video collection not found.</div>;
+      return () => unsubscribe();
     }
+  }, [projectId, feedbackItemId]);
 
-    const tabs = [
-        { id: 'all', name: 'All' },
-        { id: 'approved', name: 'Approved' },
-        { id: 'unapproved', name: 'Unapproved' },
-    ];
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
 
-    return (
-        <div>
-            <h1 className="text-3xl font-bold text-text-primary">{videoCollection.name}</h1>
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+      if (videoRef.current) {
+          setDuration(videoRef.current.duration);
+      }
+  }
+
+  const handleSeek = (time: number) => {
+      if (videoRef.current) {
+          videoRef.current.currentTime = time;
+          setCurrentTime(time);
+      }
+  };
+
+  const startComment = () => {
+      if (videoRef.current) {
+          videoRef.current.pause();
+          setIsPlaying(false);
+          setCommentTimestamp(videoRef.current.currentTime);
+          setNewCommentText('');
+      }
+  };
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCommentText.trim() || !projectId || !feedbackItemId || !user || commentTimestamp === null) return;
+
+    try {
+      await addComment(projectId, feedbackItemId, {
+        authorId: user.id,
+        commentText: newCommentText,
+        timestamp: commentTimestamp
+      });
+      setNewCommentText('');
+      setCommentTimestamp(null);
+      // Optionally resume play?
+    } catch (error) {
+      console.error("Failed to add comment", error);
+    }
+  };
+  
+  const handleResolveToggle = async (commentId: string, currentStatus: boolean) => {
+      if (!projectId || !feedbackItemId) return;
+      await toggleCommentResolved(projectId, feedbackItemId, commentId, currentStatus);
+  };
+
+  const formatTime = (seconds: number) => {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  if (loading) return <div className="p-10 text-center text-text-secondary">Loading...</div>;
+  if (!feedbackItem) return <div className="p-10 text-center text-text-secondary">Feedback Item Not Found</div>;
+
+  return (
+    <div className="flex h-[calc(100vh-100px)] overflow-hidden">
+      {/* Left Column: Video Player */}
+      <div className="flex-1 bg-black flex flex-col justify-center relative p-4">
+        <div className="relative w-full h-full flex flex-col justify-center">
+             <video 
+                ref={videoRef}
+                src={feedbackItem.assetUrl} 
+                className="w-full max-h-[calc(100%-60px)] object-contain"
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
+                onClick={togglePlay}
+            />
             
-            <div className="mt-8 bg-glass p-6 rounded-lg border border-border-color">
-                <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-lg font-semibold text-text-primary">Description</h2>
-                    {isEditingDesc ? (
-                        <div className="flex gap-2">
-                            <button onClick={handleSaveDescription} className="px-3 py-1 bg-primary text-background text-xs font-bold rounded-lg hover:bg-primary-hover">Save</button>
-                            <button onClick={() => setIsEditingDesc(false)} className="px-3 py-1 bg-glass-light text-text-primary text-xs rounded-lg">Cancel</button>
-                        </div>
-                    ) : (
-                         <button onClick={() => setIsEditingDesc(true)} className="px-3 py-1 bg-glass-light text-text-primary text-xs rounded-lg">Edit</button>
-                    )}
-                </div>
-                {isEditingDesc ? (
-                    <textarea 
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                        rows={4}
-                        className="w-full p-2 bg-glass-light border border-border-color rounded-md"
-                    />
-                ) : (
-                    <p className="text-text-secondary">{description || 'No description provided.'}</p>
-                )}
-                 <div className="mt-4 pt-4 border-t border-border-color">
-                    <h3 className="text-sm font-semibold text-red-400">Danger Zone</h3>
-                    <button onClick={handleDeleteCollection} className="mt-2 text-sm bg-red-500/20 text-red-300 px-3 py-1 rounded-lg hover:bg-red-500/30 hover:text-red-200">
-                        Delete this Collection
-                    </button>
-                </div>
-            </div>
+            {/* Custom Controls / Seek Bar */}
+            <div className="h-12 bg-gray-900 flex items-center px-4 gap-4 mt-2 rounded">
+                 <button onClick={togglePlay} className="text-white hover:text-primary">
+                    {isPlaying ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6" />}
+                 </button>
+                 
+                 <div className="text-xs text-white w-20 text-center">
+                     {formatTime(currentTime)} / {formatTime(duration)}
+                 </div>
 
-            <div className="mt-8 flex justify-between items-center border-b border-border-color">
-                <div className="flex items-center gap-4">
-                    {tabs.map(tab => (
-                        <button 
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`py-2 px-4 text-sm font-medium ${activeTab === tab.id ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-primary'}`}
-                        >
-                           {tab.name}
-                        </button>
-                    ))}
-                </div>
-                <button onClick={() => setIsAdding(p => !p)} className="px-4 py-1.5 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover flex items-center gap-2">
-                    <AddIcon className="h-4 w-4"/> Add Video
-                </button>
-            </div>
-            
-            {isAdding && (
-                 <form onSubmit={handleAddVideo} className="bg-glass p-4 rounded-b-lg border border-t-0 border-border-color mb-6 space-y-3">
-                    <input type="text" value={newVideoName} onChange={e => setNewVideoName(e.target.value)} placeholder="Video Name (e.g., 'Flow v2')" className="w-full bg-glass-light border border-border-color rounded-lg px-3 py-2 text-sm" required />
-                    <input type="url" value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} placeholder="Video URL (e.g., 'https://.../video.mp4')" className="w-full bg-glass-light border border-border-color rounded-lg px-3 py-2 text-sm" required />
-                    <div className="flex gap-2 justify-end">
-                        <button type="button" onClick={() => setIsAdding(false)} className="px-3 py-1 bg-glass-light text-text-primary text-xs rounded-lg">Cancel</button>
-                        <button type="submit" className="px-3 py-1 bg-primary text-background text-xs font-bold rounded-lg">Save Video</button>
-                    </div>
-                </form>
-            )}
-
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredVideos.map(videoAsset => (
-                    <div key={videoAsset.id} className="group relative">
-                        <Link 
-                            to={`/feedback/${projectId}/video/${videoCollection.id}?videoAssetId=${videoAsset.id}`}
-                            className="block aspect-video bg-glass rounded-lg border border-border-color overflow-hidden"
-                        >
-                            <video src={videoAsset.url} className="w-full h-full object-cover bg-black" />
-                            <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white p-4 text-center">
-                                <p className="font-bold">{videoAsset.name}</p>
-                                <p className="text-sm mt-2">View Feedback</p>
-                            </div>
-                        </Link>
-                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteVideo(videoAsset.id); }} className="absolute -top-1 -right-1 p-1 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 z-10">
-                            <CancelIcon className="w-4 h-4" />
-                        </button>
-                        <button 
-                            onClick={() => handleToggleVideoApproval(videoAsset.id)}
-                            className="absolute top-2 left-2 h-6 w-6 rounded-full flex items-center justify-center text-white ring-2 ring-background transition-all"
-                            title={videoCollection.approvedVideoIds?.includes(videoAsset.id) ? 'Unapprove' : 'Approve'}
-                        >
-                             {videoCollection.approvedVideoIds?.includes(videoAsset.id) ? (
-                                <div className="h-full w-full rounded-full bg-green-500 flex items-center justify-center">
-                                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.052-.143z" clipRule="evenodd" /></svg>
-                                </div>
-                             ) : (
-                                <div className="h-full w-full rounded-full bg-gray-500/50 backdrop-blur-sm opacity-0 group-hover:opacity-100 flex items-center justify-center">
-                                     <CheckCircleIcon className="w-5 h-5 text-white/80"/>
-                                </div>
-                             )}
-                        </button>
-                    </div>
-                ))}
+                 <div className="flex-1 relative h-2 bg-gray-700 rounded cursor-pointer group"
+                      onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const pos = (e.clientX - rect.left) / rect.width;
+                          handleSeek(pos * duration);
+                      }}
+                 >
+                     {/* Progress Bar */}
+                     <div 
+                        className="absolute top-0 left-0 h-full bg-primary rounded pointer-events-none" 
+                        style={{ width: `${(currentTime / duration) * 100}%` }}
+                     />
+                     
+                     {/* Comment Markers */}
+                     {comments.map(comment => (
+                         comment.timestamp !== undefined && !comment.resolved && (
+                             <div 
+                                key={comment.id}
+                                className="absolute top-0 w-1 h-full bg-yellow-400 z-10 hover:h-4 hover:-top-1 transition-all"
+                                style={{ left: `${(comment.timestamp / duration) * 100}%` }}
+                                title={comment.commentText}
+                             />
+                         )
+                     ))}
+                 </div>
+                 
+                 <button 
+                    onClick={startComment}
+                    className="bg-primary text-background px-3 py-1 text-xs font-bold rounded hover:bg-primary-hover whitespace-nowrap"
+                 >
+                     + Add Comment
+                 </button>
             </div>
         </div>
-    );
+      </div>
+
+      {/* Right Column: Sidebar */}
+      <div className="w-96 bg-glass border-l border-border-color flex flex-col">
+        <div className="p-4 border-b border-border-color">
+            <h2 className="text-lg font-bold text-text-primary">{feedbackItem.name}</h2>
+            <p className="text-sm text-text-secondary mt-1">{feedbackItem.description}</p>
+        </div>
+
+        {/* New Comment Form */}
+        {commentTimestamp !== null && (
+            <div className="p-4 bg-primary/10 border-b border-primary/20">
+                <div className="flex justify-between items-center mb-2">
+                     <h3 className="text-sm font-semibold text-primary">Comment at {formatTime(commentTimestamp)}</h3>
+                </div>
+                <form onSubmit={handleAddComment}>
+                    <textarea 
+                        value={newCommentText}
+                        onChange={(e) => setNewCommentText(e.target.value)}
+                        placeholder="Type your feedback..."
+                        className="w-full p-2 rounded bg-glass-light border border-border-color text-sm mb-2 focus:ring-1 focus:ring-primary outline-none"
+                        rows={3}
+                        autoFocus
+                    />
+                    <div className="flex justify-end gap-2">
+                         <button 
+                            type="button" 
+                            onClick={() => setCommentTimestamp(null)}
+                            className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="submit" 
+                            className="px-3 py-1 bg-primary text-background text-xs font-bold rounded hover:bg-primary-hover"
+                        >
+                            Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        )}
+
+        {/* Comments List */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+             {comments.length === 0 ? (
+                <p className="text-center text-text-secondary text-sm">No comments yet.</p>
+            ) : (
+                comments.map((comment) => (
+                    <div 
+                        key={comment.id} 
+                        className={`p-3 rounded-lg border bg-glass-light border-border-color hover:border-primary/50 transition-all cursor-pointer`}
+                        onClick={() => comment.timestamp !== undefined && handleSeek(comment.timestamp)}
+                    >
+                        <div className="flex justify-between items-start mb-1">
+                            <span className="font-bold text-xs text-primary bg-primary/20 px-2 py-0.5 rounded mr-2">
+                                {comment.timestamp !== undefined ? formatTime(comment.timestamp) : '0:00'}
+                            </span>
+                            <span className="text-xs text-text-secondary">{new Date(comment.createdAt?.seconds * 1000).toLocaleString()}</span>
+                        </div>
+                        <p className={`text-sm text-text-primary mb-2 ${comment.resolved ? 'line-through text-text-secondary' : ''}`}>{comment.commentText}</p>
+                        
+                         <div className="flex justify-end items-center mt-2">
+                             <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleResolveToggle(comment.id, comment.resolved);
+                                }}
+                                className={`text-xs px-2 py-1 rounded ${comment.resolved ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-secondary/20 text-text-secondary hover:bg-secondary/30'}`}
+                             >
+                                 {comment.resolved ? 'Resolved' : 'Mark Resolved'}
+                             </button>
+                        </div>
+                    </div>
+                ))
+            )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default FeedbackVideoDetailPage;
