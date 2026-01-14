@@ -4,9 +4,12 @@ import { useParams } from 'react-router-dom';
 import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved } from '../utils/feedbackUtils';
 import { FeedbackItem, FeedbackItemComment } from '../types';
 import { useData } from '../contexts/DataContext';
+import FeedbackSidebar from '../components/feedback/FeedbackSidebar';
 import { PlayIcon } from '../components/icons/PlayIcon';
 import { PauseIcon } from '../components/icons/PauseIcon';
 import { ArrowRightIcon } from '../components/icons/ArrowRightIcon';
+import { CommentsIcon } from '../components/icons/CommentsIcon';
+import { ActivityIcon } from '../components/icons/ActivityIcon';
 
 const FeedbackVideoDetailPage = () => {
   const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
@@ -21,10 +24,12 @@ const FeedbackVideoDetailPage = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // New Comment State
+  // Sidebar & Interaction State
   const [newCommentText, setNewCommentText] = useState('');
   const [commentTimestamp, setCommentTimestamp] = useState<number | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sidebarView, setSidebarView] = useState<'comments' | 'activity'>('comments');
+  const [sidebarPosition, setSidebarPosition] = useState<'right' | 'bottom'>('right');
 
   useEffect(() => {
     if (projectId && feedbackItemId) {
@@ -34,6 +39,7 @@ const FeedbackVideoDetailPage = () => {
       });
 
       const unsubscribe = subscribeToComments(projectId, feedbackItemId, (fetchedComments) => {
+        // Sort by timestamp for video
         const sortedComments = fetchedComments.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
         setComments(sortedComments);
       });
@@ -79,6 +85,7 @@ const FeedbackVideoDetailPage = () => {
           setCommentTimestamp(videoRef.current.currentTime);
           setNewCommentText('');
           setIsSidebarOpen(true);
+          setSidebarView('comments');
       }
   };
 
@@ -94,15 +101,15 @@ const FeedbackVideoDetailPage = () => {
       });
       setNewCommentText('');
       setCommentTimestamp(null);
-      // Optionally resume play?
     } catch (error) {
       console.error("Failed to add comment", error);
     }
   };
-  
-  const handleResolveToggle = async (commentId: string, currentStatus: boolean) => {
-      if (!projectId || !feedbackItemId) return;
-      await toggleCommentResolved(projectId, feedbackItemId, commentId, currentStatus);
+
+  const handleCommentClick = (comment: FeedbackItemComment) => {
+      if (comment.timestamp !== undefined) {
+          handleSeek(comment.timestamp);
+      }
   };
 
   const formatTime = (seconds: number) => {
@@ -115,26 +122,27 @@ const FeedbackVideoDetailPage = () => {
   if (!feedbackItem) return <div className="p-10 text-center text-text-secondary">Feedback Item Not Found</div>;
 
   return (
-    <div className="flex h-[calc(100vh-100px)] overflow-hidden relative">
-      {/* Left Column: Video Player */}
-      <div className="flex-1 bg-black flex flex-col justify-center relative p-4">
+    <div className={`flex overflow-hidden relative ${sidebarPosition === 'bottom' ? 'flex-col h-[calc(100vh-100px)]' : 'flex-row h-[calc(100vh-100px)]'}`}>
+      
+      {/* 1. Main Viewer (Video) */}
+      <div className="flex-1 bg-black flex flex-col justify-center relative p-4 overflow-hidden">
         <div className="relative w-full h-full flex flex-col justify-center">
              <video 
                 ref={videoRef}
                 src={feedbackItem.assetUrl} 
-                className="w-full max-h-[calc(100%-60px)] object-contain"
+                className="w-full max-h-[calc(100%-60px)] object-contain mx-auto"
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onClick={togglePlay}
             />
             
             {/* Custom Controls / Seek Bar */}
-            <div className="h-12 bg-gray-900 flex items-center px-4 gap-4 mt-2 rounded">
+            <div className="h-12 bg-gray-900 flex items-center px-4 gap-4 mt-2 rounded max-w-4xl mx-auto w-full">
                  <button onClick={togglePlay} className="text-white hover:text-primary">
                     {isPlaying ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6" />}
                  </button>
                  
-                 <div className="text-xs text-white w-20 text-center">
+                 <div className="text-xs text-white w-20 text-center font-mono">
                      {formatTime(currentTime)} / {formatTime(duration)}
                  </div>
 
@@ -172,9 +180,16 @@ const FeedbackVideoDetailPage = () => {
                  </button>
             </div>
         </div>
+
+        {/* Toolbar Overlay */}
+        <div className="absolute top-4 left-4 z-20 flex gap-2">
+             <button onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} className="p-2 bg-glass/80 rounded-lg text-white hover:bg-glass border border-white/10" title="Rotate Layout">
+                 <div className={`w-4 h-4 border-2 border-current ${sidebarPosition === 'right' ? 'border-b-transparent' : 'border-r-transparent'}`}></div>
+             </button>
+        </div>
       </div>
 
-       {/* Toggle Sidebar Button */}
+       {/* Toggle Sidebar Button (When Closed) */}
       {!isSidebarOpen && (
           <button 
             onClick={() => setIsSidebarOpen(true)}
@@ -184,23 +199,28 @@ const FeedbackVideoDetailPage = () => {
           </button>
       )}
 
-      {/* Right Column: Sidebar */}
-      <div className={`${isSidebarOpen ? 'w-96 translate-x-0' : 'w-0 translate-x-full'} transition-all duration-300 ease-in-out bg-glass border-l border-border-color flex flex-col overflow-hidden relative`}>
-        <div className="p-4 border-b border-border-color flex justify-between items-start">
-            <div>
-                <h2 className="text-lg font-bold text-text-primary">{feedbackItem.name}</h2>
-                <p className="text-sm text-text-secondary mt-1">{feedbackItem.description}</p>
+      {/* 2. Sidebar Area */}
+      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-glass border-border-color flex flex-col overflow-hidden relative shadow-xl z-20`}>
+        {/* Header */}
+        <div className="p-4 border-b border-border-color flex justify-between items-center bg-glass flex-shrink-0">
+            <div className="truncate pr-2">
+                <h2 className="font-bold text-text-primary truncate">{feedbackItem.name}</h2>
+                <div className="flex gap-4 text-xs text-text-secondary mt-1">
+                    <button onClick={() => setSidebarView('comments')} className={`${sidebarView === 'comments' ? 'text-primary font-bold' : 'hover:text-text-primary'}`}>Comments</button>
+                    <button onClick={() => setSidebarView('activity')} className={`${sidebarView === 'activity' ? 'text-primary font-bold' : 'hover:text-text-primary'}`}>Activity</button>
+                </div>
             </div>
-            <button onClick={() => setIsSidebarOpen(false)} className="text-text-secondary hover:text-text-primary">
-                 <ArrowRightIcon className="w-5 h-5" />
+            <button onClick={() => setIsSidebarOpen(false)} className="text-text-secondary hover:text-text-primary p-1">
+                 <ArrowRightIcon className={`w-5 h-5 ${sidebarPosition === 'bottom' ? 'rotate-90' : ''}`} />
              </button>
         </div>
 
         {/* New Comment Form */}
         {commentTimestamp !== null && (
-            <div className="p-4 bg-primary/10 border-b border-primary/20 animate-in slide-in-from-right duration-200">
+            <div className="p-4 bg-primary/10 border-b border-primary/20 flex-shrink-0 animate-in fade-in slide-in-from-top-2">
                 <div className="flex justify-between items-center mb-2">
                      <h3 className="text-sm font-semibold text-primary">Comment at {formatTime(commentTimestamp)}</h3>
+                     <button onClick={() => setCommentTimestamp(null)} className="text-xs text-text-secondary hover:text-text-primary">Cancel</button>
                 </div>
                 <form onSubmit={handleAddComment}>
                     <textarea 
@@ -211,14 +231,7 @@ const FeedbackVideoDetailPage = () => {
                         rows={3}
                         autoFocus
                     />
-                    <div className="flex justify-end gap-2">
-                         <button 
-                            type="button" 
-                            onClick={() => setCommentTimestamp(null)}
-                            className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
-                        >
-                            Cancel
-                        </button>
+                    <div className="flex justify-end">
                         <button 
                             type="submit" 
                             className="px-3 py-1 bg-primary text-background text-xs font-bold rounded hover:bg-primary-hover"
@@ -230,45 +243,15 @@ const FeedbackVideoDetailPage = () => {
             </div>
         )}
 
-        {/* Comments List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-             {comments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center p-4 text-text-secondary">
-                    <p className="mb-2 text-3xl">🎥</p>
-                    <p className="text-sm">Pause the video at any time to add a timestamped comment.</p>
-                </div>
-            ) : (
-                comments.map((comment) => (
-                    <div 
-                        key={comment.id} 
-                        className={`p-3 rounded-lg border bg-glass-light border-border-color hover:border-primary/50 transition-all cursor-pointer`}
-                        onClick={() => comment.timestamp !== undefined && handleSeek(comment.timestamp)}
-                    >
-                        <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-xs text-primary bg-primary/20 px-2 py-0.5 rounded mr-2">
-                                {comment.timestamp !== undefined ? formatTime(comment.timestamp) : '0:00'}
-                            </span>
-                            <span className="text-xs text-text-secondary">{new Date(comment.createdAt?.seconds * 1000).toLocaleString()}</span>
-                        </div>
-                        <p className={`text-sm text-text-primary mb-2 ${comment.resolved ? 'line-through text-text-secondary' : ''}`}>{comment.commentText}</p>
-                        
-                         <div className="flex justify-end items-center mt-2 pt-2 border-t border-border-color/50">
-                             <span className="text-xs text-text-secondary flex items-center gap-1 mr-auto">
-                                <div className="w-4 h-4 rounded-full bg-secondary/30"></div> User
-                             </span> 
-                             <button 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleResolveToggle(comment.id, comment.resolved);
-                                }}
-                                className={`text-xs px-2 py-1 rounded ${comment.resolved ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-secondary/20 text-text-secondary hover:bg-secondary/30'}`}
-                             >
-                                 {comment.resolved ? 'Resolved' : 'Mark Resolved'}
-                             </button>
-                        </div>
-                    </div>
-                ))
-            )}
+        {/* List Content */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+            <FeedbackSidebar 
+                view={sidebarView}
+                comments={comments}
+                onCommentClick={handleCommentClick}
+                onClose={() => {}} // Controlled by outer header
+                position={sidebarPosition}
+            />
         </div>
       </div>
     </div>

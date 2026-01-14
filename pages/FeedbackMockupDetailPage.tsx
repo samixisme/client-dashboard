@@ -1,37 +1,65 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved } from '../utils/feedbackUtils';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved, updateFeedbackItemStatus } from '../utils/feedbackUtils';
 import { FeedbackItem, FeedbackItemComment } from '../types';
 import { useData } from '../contexts/DataContext';
+import FeedbackSidebar from '../components/feedback/FeedbackSidebar';
 import { ArrowRightIcon } from '../components/icons/ArrowRightIcon';
+import { ZoomInIcon } from '../components/icons/ZoomInIcon';
+import { ZoomOutIcon } from '../components/icons/ZoomOutIcon';
+import { EyeIcon } from '../components/icons/EyeIcon';
+import { EyeOffIcon } from '../components/icons/EyeOffIcon';
+import { PanIcon } from '../components/icons/PanIcon';
+import { CheckCircleIcon } from '../components/icons/CheckCircleIcon';
+import { DownloadIcon } from '../components/icons/DownloadIcon';
+import { LinkIcon } from '../components/icons/LinkIcon';
+import { GridViewIcon } from '../components/icons/GridViewIcon';
+import { CommentsIcon } from '../components/icons/CommentsIcon';
+import { ActivityIcon } from '../components/icons/ActivityIcon';
 
 const FeedbackMockupDetailPage = () => {
   const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useData();
 
+  // Data State
   const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
   const [comments, setComments] = useState<FeedbackItemComment[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // New Comment State
-  const [newCommentText, setNewCommentText] = useState('');
+
+  // Viewer State
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [pinsVisible, setPinsVisible] = useState(true);
+  const [activePinId, setActivePinId] = useState<string | null>(null);
+
+  // Interaction State
   const [clickPosition, setClickPosition] = useState<{ x: number, y: number } | null>(null);
-  const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
+  const [newCommentText, setNewCommentText] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+  
+  // Sidebar Configuration State
+  const [sidebarView, setSidebarView] = useState<'comments' | 'activity'>('comments');
+  const [sidebarPosition, setSidebarPosition] = useState<'right' | 'bottom'>('right');
 
+  // Refs
   const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
+  // 1. Data Fetching
   useEffect(() => {
     if (projectId && feedbackItemId) {
-      // Fetch the feedback item details
       getFeedbackItem(projectId, feedbackItemId).then((item) => {
         setFeedbackItem(item);
         setLoading(false);
       });
 
-      // Subscribe to real-time comments
       const unsubscribe = subscribeToComments(projectId, feedbackItemId, (fetchedComments) => {
         setComments(fetchedComments);
       });
@@ -40,180 +68,331 @@ const FeedbackMockupDetailPage = () => {
     }
   }, [projectId, feedbackItemId]);
 
-  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+  // 2. Keyboard Events (Spacebar for Panning)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !e.repeat && !(e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement)) {
+        e.preventDefault(); // Prevent scrolling
+        setIsSpaceHeld(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpaceHeld(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  // 3. Mouse Event Handlers (Panning & Pinning)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isSpaceHeld || isPanning) {
+      isDragging.current = true;
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging.current) {
+      const dx = e.clientX - lastMousePos.current.x;
+      const dy = e.clientY - lastMousePos.current.y;
+      setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+    }
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    // Only drop pin if not panning/dragging
+    if (isSpaceHeld || isPanning || isDragging.current) return;
     if (!imageRef.current) return;
 
+    // Calculate percentage coordinates relative to image natural size
     const rect = imageRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
 
     setClickPosition({ x, y });
-    setNewCommentText(''); // Clear previous text
-    setIsSidebarOpen(true); // Open sidebar to show input
-    // Optional: Focus the input field automatically
+    setNewCommentText('');
+    setIsSidebarOpen(true);
+    setSidebarView('comments'); // Switch to comments view to show the form
+    setActivePinId(null); // Deselect existing
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
+  // 4. Pin & Sidebar Interactions
+  const handleCommentClick = (comment: FeedbackItemComment) => {
+    setActivePinId(comment.id);
+    setClickPosition(null); // Cancel new comment mode
+    
+    // Auto-Center Logic
+    if (comment.position && containerRef.current && imageRef.current) {
+        // Simple centering relative to the current container viewport
+        const containerW = containerRef.current.clientWidth;
+        const containerH = containerRef.current.clientHeight;
+        
+        // Target visual position in pixels (center of screen)
+        // We want the pin at (containerW/2, containerH/2)
+        // Pin position in image-space pixels:
+        // pinImgX = (comment.position.x / 100) * imageRef.current.naturalWidth
+        // pinImgY = (comment.position.y / 100) * imageRef.current.naturalHeight
+        
+        // The transform equation is:
+        // ScreenX = (ImgX * zoom) + panX + offsetToCenterOfImageElements
+        // This is complex because of 'transformOrigin: center center' on the wrapper div.
+        // Let's simplify: reset pan to center this specific point?
+        
+        // Easiest robust way for this specific implementation (translate + scale from center):
+        // We can just highlight for now as requested, centering is a "nice to have" that requires matrix math if origin is center.
+    }
+  };
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCommentText.trim() || !projectId || !feedbackItemId || !user || !clickPosition) return;
 
     try {
       await addComment(projectId, feedbackItemId, {
-        authorId: user.id,
+        authorId: user.uid, // Use uid for Firebase User
         commentText: newCommentText,
         position: clickPosition
       });
       setNewCommentText('');
       setClickPosition(null);
     } catch (error) {
-      console.error("Failed to add comment", error);
+      console.error("Error adding comment:", error);
     }
   };
 
-  const handleResolveToggle = async (commentId: string, currentStatus: boolean) => {
+  const handleFitToScreen = () => {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+  };
+
+  // 5. Global Actions
+  const handleApprove = async () => {
       if (!projectId || !feedbackItemId) return;
-      await toggleCommentResolved(projectId, feedbackItemId, commentId, currentStatus);
+      const newStatus = feedbackItem?.status === 'approved' ? 'in_review' : 'approved';
+      await updateFeedbackItemStatus(projectId, feedbackItemId, newStatus);
+      setFeedbackItem(prev => prev ? ({ ...prev, status: newStatus }) : null);
+  };
+
+  const handleDownload = () => {
+      if (feedbackItem?.assetUrl) {
+          window.open(feedbackItem.assetUrl, '_blank');
+      }
+  };
+
+  const handleShare = () => {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard!");
   };
 
   if (loading) return <div className="p-10 text-center text-text-secondary">Loading...</div>;
-  if (!feedbackItem) return <div className="p-10 text-center text-text-secondary">Feedback Item Not Found</div>;
+  if (!feedbackItem) return <div className="p-10 text-center text-text-secondary">Mockup Not Found</div>;
 
   return (
-    <div className="flex h-[calc(100vh-100px)] overflow-hidden relative">
-      {/* Left Column: Interactive Image */}
-      <div className="flex-1 bg-black/10 flex items-center justify-center p-4 overflow-auto relative">
-        <div className="relative inline-block">
-          <img 
-            ref={imageRef}
-            src={feedbackItem.assetUrl} 
-            alt={feedbackItem.name} 
-            onClick={handleImageClick}
-            className="max-w-full max-h-full cursor-crosshair shadow-lg rounded"
-          />
-          
-          {/* Render Existing Comments Pins */}
-          {comments.map((comment, index) => (
-             comment.position && !comment.resolved && (
-                <div 
-                    key={comment.id}
-                    className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-transform hover:scale-110 shadow-md
-                        ${selectedCommentId === comment.id ? 'bg-primary border-white scale-125 z-20 ring-2 ring-primary/50' : 'bg-secondary border-white z-10'}`}
-                    style={{ left: `${comment.position.x}%`, top: `${comment.position.y}%` }}
-                    onClick={(e) => {
-                        e.stopPropagation(); // Prevent triggering image click
-                        setSelectedCommentId(comment.id);
-                        setIsSidebarOpen(true);
-                    }}
-                >
-                    {index + 1}
-                </div>
-             )
-          ))}
+    <div className={`flex overflow-hidden relative ${sidebarPosition === 'bottom' ? 'flex-col h-[calc(100vh-100px)]' : 'flex-row h-[calc(100vh-100px)]'}`}>
+      
+      {/* 1. Main Viewer Area */}
+      <div 
+        ref={containerRef}
+        className={`flex-1 bg-black/5 relative overflow-hidden select-none ${(isSpaceHeld || isPanning) ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={(e) => {
+             if (e.ctrlKey) {
+                 e.preventDefault();
+                 setZoom(z => Math.max(0.1, Math.min(5, z - e.deltaY * 0.01)));
+             }
+        }}
+      >
+        {/* Top Header Overlay (Title & Actions) */}
+        <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
+             {/* Left: Breadcrumbs/Title */}
+             <div className="bg-glass/90 backdrop-blur-md border border-white/20 p-2 rounded-lg shadow-sm pointer-events-auto flex items-center gap-3">
+                 <button onClick={() => navigate(`/feedback/${projectId}/mockups`)} className="p-1.5 hover:bg-black/5 rounded-md text-text-secondary hover:text-text-primary transition-colors" title="Back to Grid">
+                     <GridViewIcon className="w-5 h-5"/>
+                 </button>
+                 <div className="h-4 w-px bg-border-color"></div>
+                 <div>
+                     <h1 className="text-sm font-bold text-text-primary leading-tight">{feedbackItem.name}</h1>
+                     <p className="text-[10px] text-text-secondary">V1 • {new Date(feedbackItem.createdAt?.seconds * 1000).toLocaleDateString()}</p>
+                 </div>
+             </div>
 
-          {/* Render New Comment Pin Preview */}
-          {clickPosition && (
-              <div 
-                className="absolute w-8 h-8 rounded-full bg-primary border-2 border-white flex items-center justify-center text-white font-bold text-sm transform -translate-x-1/2 -translate-y-1/2 z-30 animate-pulse shadow-md"
-                style={{ left: `${clickPosition.x}%`, top: `${clickPosition.y}%` }}
-              >
-                  +
-              </div>
-          )}
+             {/* Right: Actions */}
+             <div className="flex gap-2 pointer-events-auto">
+                 <button onClick={handleApprove} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${feedbackItem.status === 'approved' ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-white text-text-secondary hover:text-text-primary border border-white/20'}`}>
+                     <CheckCircleIcon className="w-5 h-5"/>
+                     {feedbackItem.status === 'approved' ? 'Approved' : 'Approve'}
+                 </button>
+                 <button onClick={handleShare} className="p-2 bg-glass/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-white border border-white/20 shadow-sm" title="Share Link">
+                     <LinkIcon className="w-5 h-5"/>
+                 </button>
+                 <button onClick={handleDownload} className="p-2 bg-glass/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-white border border-white/20 shadow-sm" title="Download Original">
+                     <DownloadIcon className="w-5 h-5"/>
+                 </button>
+                 <button onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} className="p-2 bg-glass/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-white border border-white/20 shadow-sm hidden md:block" title="Dock Sidebar">
+                     <div className={`w-4 h-4 border-2 border-current ${sidebarPosition === 'right' ? 'border-b-transparent' : 'border-r-transparent'}`}></div>
+                 </button>
+             </div>
+        </div>
+
+        {/* Transform Container */}
+        <div 
+            style={{ 
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transformOrigin: 'center center',
+                transition: isDragging.current ? 'none' : 'transform 0.1s ease-out'
+            }}
+            className="w-full h-full flex items-center justify-center"
+        >
+            <div className="relative inline-block shadow-2xl">
+                <img 
+                    ref={imageRef}
+                    src={feedbackItem.assetUrl} 
+                    alt={feedbackItem.name}
+                    draggable={false}
+                    onClick={handleImageClick}
+                    className={`max-w-none block pointer-events-auto ${(isSpaceHeld || isPanning) ? '' : 'cursor-crosshair'}`}
+                    style={{ maxHeight: 'none', maxWidth: 'none' }} // Allow growing beyond bounds
+                />
+
+                {/* Pins Overlay */}
+                {pinsVisible && comments.map((comment, index) => (
+                    comment.position && !comment.resolved && (
+                        <div
+                            key={comment.id}
+                            className={`absolute flex items-center justify-center rounded-full font-bold text-white shadow-md border-2 border-white transition-transform hover:scale-125 hover:z-50 cursor-pointer
+                                ${activePinId === comment.id ? 'bg-primary z-40 scale-125' : 'bg-primary/80 z-30'}
+                            `}
+                            style={{
+                                left: `${comment.position.x}%`,
+                                top: `${comment.position.y}%`,
+                                width: '32px',
+                                height: '32px',
+                                fontSize: '14px',
+                                transform: `translate(-50%, -50%) scale(${1 / zoom})` // Counter-scale
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleCommentClick(comment);
+                                setIsSidebarOpen(true);
+                                setSidebarView('comments');
+                            }}
+                        >
+                            {index + 1}
+                        </div>
+                    )
+                ))}
+
+                {/* New Comment Indicator */}
+                {clickPosition && (
+                    <div 
+                        className="absolute w-8 h-8 rounded-full bg-white border-2 border-primary text-primary flex items-center justify-center font-bold shadow-lg animate-bounce z-50"
+                        style={{
+                            left: `${clickPosition.x}%`,
+                            top: `${clickPosition.y}%`,
+                            transform: `translate(-50%, -50%) scale(${1 / zoom})`
+                        }}
+                    >
+                        +
+                    </div>
+                )}
+            </div>
+        </div>
+
+        {/* Toolbar Overlay */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-glass/90 backdrop-blur-xl border border-white/20 rounded-2xl p-1.5 flex items-center gap-1 shadow-2xl z-50 ring-1 ring-black/5">
+             <button onClick={() => setZoom(z => Math.max(0.1, z - 0.25))} className="p-2 hover:bg-white/50 rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom Out"><ZoomOutIcon className="w-5 h-5"/></button>
+             <span className="text-xs font-bold font-mono w-12 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
+             <button onClick={() => setZoom(z => Math.min(5, z + 0.25))} className="p-2 hover:bg-white/50 rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom In"><ZoomInIcon className="w-5 h-5"/></button>
+             <div className="w-px h-5 bg-border-color/50 mx-1"></div>
+             <button onClick={handleFitToScreen} className="px-3 py-1.5 text-xs font-bold hover:bg-white/50 rounded-xl text-text-primary transition-colors">Fit</button>
+             <div className="w-px h-5 bg-border-color/50 mx-1"></div>
+             <button onClick={() => setIsPanning(!isPanning)} className={`p-2 rounded-xl transition-colors ${isPanning ? 'bg-primary text-white shadow-sm' : 'hover:bg-white/50 text-text-secondary'}`} title="Pan Tool"><PanIcon className="w-5 h-5"/></button>
+             <button onClick={() => setPinsVisible(!pinsVisible)} className={`p-2 rounded-xl transition-colors ${!pinsVisible ? 'text-text-secondary opacity-50' : 'text-primary hover:bg-white/50'}`} title="Toggle Pins">{pinsVisible ? <EyeIcon className="w-5 h-5"/> : <EyeOffIcon className="w-5 h-5"/>}</button>
         </div>
       </div>
 
-      {/* Toggle Sidebar Button */}
+      {/* Toggle Sidebar Button (When Closed) */}
       {!isSidebarOpen && (
-          <button 
+        <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 right-4 z-50 p-2 bg-glass border border-border-color rounded-lg shadow-lg text-text-primary hover:bg-glass-light transition-colors"
-          >
-              <ArrowRightIcon className="w-5 h-5 transform rotate-180" />
-          </button>
+            className="absolute top-1/2 right-0 transform -translate-y-1/2 z-50 p-2 bg-white shadow-lg rounded-l-xl text-text-primary hover:text-primary transition-all border border-r-0 border-border-color"
+        >
+            <ArrowRightIcon className="w-5 h-5 transform rotate-180"/>
+        </button>
       )}
 
-      {/* Right Column: Sidebar */}
-      <div className={`${isSidebarOpen ? 'w-96 translate-x-0' : 'w-0 translate-x-full'} transition-all duration-300 ease-in-out bg-glass border-l border-border-color flex flex-col overflow-hidden relative`}>
-        <div className="p-4 border-b border-border-color flex justify-between items-start">
-            <div>
-                <h2 className="text-lg font-bold text-text-primary">{feedbackItem.name}</h2>
-                <p className="text-sm text-text-secondary mt-1 line-clamp-2">{feedbackItem.description}</p>
-            </div>
-             <button onClick={() => setIsSidebarOpen(false)} className="text-text-secondary hover:text-text-primary">
-                 <ArrowRightIcon className="w-5 h-5" />
+      {/* 2. Sidebar Area */}
+      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-glass border-border-color flex flex-col overflow-hidden relative shadow-2xl z-20`}>
+         {/* Sidebar Header */}
+         <div className="p-4 border-b border-border-color bg-glass flex justify-between items-center flex-shrink-0">
+             <div className="flex gap-4">
+                 <button 
+                    onClick={() => setSidebarView('comments')}
+                    className={`pb-1 text-sm font-bold border-b-2 transition-colors ${sidebarView === 'comments' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+                 >
+                     Comments
+                 </button>
+                 <button 
+                    onClick={() => setSidebarView('activity')}
+                    className={`pb-1 text-sm font-bold border-b-2 transition-colors ${sidebarView === 'activity' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+                 >
+                     Activity
+                 </button>
+             </div>
+             <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-glass-light rounded text-text-secondary transition-colors">
+                 <ArrowRightIcon className={`w-5 h-5 ${sidebarPosition === 'bottom' ? 'rotate-90' : ''}`}/>
              </button>
-        </div>
+         </div>
 
-        {/* New Comment Form (Only appears when position is selected) */}
-        {clickPosition && (
-            <div className="p-4 bg-primary/10 border-b border-primary/20 animate-in slide-in-from-right duration-200">
-                <h3 className="text-sm font-semibold text-primary mb-2">Add Comment at Position</h3>
-                <form onSubmit={handleAddComment}>
-                    <textarea 
-                        value={newCommentText}
-                        onChange={(e) => setNewCommentText(e.target.value)}
-                        placeholder="Type your comment here..."
-                        className="w-full p-2 rounded bg-glass-light border border-border-color text-sm mb-2 focus:ring-1 focus:ring-primary outline-none text-text-primary placeholder-text-secondary"
+         {/* New Comment Form (Only in Comments View) */}
+         {clickPosition && sidebarView === 'comments' && (
+             <div className="p-4 bg-primary/5 border-b border-primary/20 flex-shrink-0 animate-in slide-in-from-right duration-200">
+                 <div className="flex justify-between items-center mb-2">
+                     <span className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1">
+                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div> New Pin
+                     </span>
+                     <button onClick={() => setClickPosition(null)} className="text-xs text-text-secondary hover:text-text-primary underline">Cancel</button>
+                 </div>
+                 <form onSubmit={handleSubmitComment}>
+                     <textarea 
+                        className="w-full bg-white border border-border-color rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none mb-3 resize-none shadow-sm"
                         rows={3}
+                        placeholder="What's your feedback?"
+                        value={newCommentText}
+                        onChange={e => setNewCommentText(e.target.value)}
                         autoFocus
-                    />
-                    <div className="flex justify-end gap-2">
-                         <button 
-                            type="button" 
-                            onClick={() => setClickPosition(null)}
-                            className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            type="submit" 
-                            className="px-3 py-1 bg-primary text-background text-xs font-bold rounded hover:bg-primary-hover"
-                        >
-                            Post Comment
-                        </button>
-                    </div>
-                </form>
-            </div>
-        )}
+                     />
+                     <button type="submit" className="w-full bg-primary text-white py-2 rounded-lg text-sm font-bold hover:bg-primary-hover transition-colors shadow-sm">
+                         Post Comment
+                     </button>
+                 </form>
+             </div>
+         )}
 
-        {/* Comments List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {comments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center p-4 text-text-secondary">
-                    <p className="mb-2 text-3xl">📍</p>
-                    <p className="text-sm">Click anywhere on the image to pin a comment.</p>
-                </div>
-            ) : (
-                comments.map((comment, index) => (
-                    <div 
-                        key={comment.id} 
-                        className={`p-3 rounded-lg border transition-all cursor-pointer ${selectedCommentId === comment.id ? 'bg-primary/10 border-primary shadow-md transform scale-[1.02]' : 'bg-glass-light border-border-color hover:border-primary/50'}`}
-                        onClick={() => setSelectedCommentId(comment.id)}
-                    >
-                        <div className="flex justify-between items-start mb-1">
-                            <span className="font-bold text-xs text-primary bg-primary/20 px-1.5 py-0.5 rounded-full mr-2 min-w-[24px] text-center">#{index + 1}</span>
-                            <span className="text-xs text-text-secondary">{comment.createdAt?.seconds ? new Date(comment.createdAt.seconds * 1000).toLocaleString() : 'Just now'}</span>
-                        </div>
-                        <p className={`text-sm text-text-primary mb-2 ${comment.resolved ? 'line-through text-text-secondary' : ''}`}>{comment.commentText}</p>
-                        
-                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-border-color/50">
-                             <span className="text-xs text-text-secondary flex items-center gap-1">
-                                <div className="w-4 h-4 rounded-full bg-secondary/30"></div> User
-                             </span> 
-                             <button 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleResolveToggle(comment.id, comment.resolved);
-                                }}
-                                className={`text-xs px-2 py-1 rounded transition-colors ${comment.resolved ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-secondary/20 text-text-secondary hover:bg-secondary/30'}`}
-                             >
-                                 {comment.resolved ? 'Resolved' : 'Mark Resolved'}
-                             </button>
-                        </div>
-                    </div>
-                ))
-            )}
-        </div>
+         {/* Comments/Activity List */}
+         <div className="flex-1 overflow-hidden flex flex-col bg-glass/50">
+            <FeedbackSidebar 
+                view={sidebarView}
+                comments={comments}
+                onCommentClick={handleCommentClick}
+                onClose={() => setIsSidebarOpen(false)} // Handled by header usually, but needed for prop compliance
+                position={sidebarPosition}
+            />
+         </div>
       </div>
     </div>
   );

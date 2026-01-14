@@ -6,12 +6,14 @@ import {
   getDocs, 
   getDoc,
   updateDoc, 
+  deleteDoc,
   query, 
   where, 
   orderBy, 
   onSnapshot,
   serverTimestamp,
-  collectionGroup
+  collectionGroup,
+  increment
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { FeedbackItem, FeedbackItemComment, FeedbackStatus } from "../types";
@@ -112,10 +114,15 @@ export const subscribeToComments = (
   );
 
   return onSnapshot(q, (snapshot) => {
-    const comments = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as FeedbackItemComment));
+    const comments = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            // Convert Firestore Timestamp to serializable date if needed or handle in UI
+            // For now, keeping it as is since types expect it
+        } as FeedbackItemComment;
+    });
     callback(comments);
   }, (error) => {
     console.error("Error subscribing to comments:", error);
@@ -139,10 +146,11 @@ export const addComment = async (
       resolved: false
     });
 
-    // 2. Update the comment count on the parent item (optional but recommended for performance)
-    // Note: In a real production app, this should ideally be a cloud function to ensure atomicity
-    // or use a transaction. For this scope, a direct update is acceptable.
-    // We'll skip the count update for now to keep it simple, or we can implement it if needed.
+    // 2. Update the comment count on the parent item
+    const itemRef = doc(db, "projects", projectId, "feedbackItems", itemId);
+    await updateDoc(itemRef, {
+        commentCount: increment(1)
+    });
     
     return commentRef.id;
   } catch (error) {
@@ -165,6 +173,29 @@ export const toggleCommentResolved = async (
      await updateDoc(commentRef, { resolved: !currentStatus });
   } catch (error) {
      console.error("Error toggling comment resolved status:", error);
+     throw error;
+  }
+}
+
+/**
+ * Deletes a comment.
+ */
+export const deleteComment = async (
+  projectId: string,
+  itemId: string,
+  commentId: string
+): Promise<void> => {
+  try {
+     const commentRef = doc(db, "projects", projectId, "feedbackItems", itemId, "comments", commentId);
+     await deleteDoc(commentRef);
+     
+     // Update the comment count on the parent item
+     const itemRef = doc(db, "projects", projectId, "feedbackItems", itemId);
+     await updateDoc(itemRef, {
+         commentCount: increment(-1)
+     });
+  } catch (error) {
+     console.error("Error deleting comment:", error);
      throw error;
   }
 }

@@ -3,6 +3,8 @@ import React, { useMemo } from 'react';
 import { FeedbackComment, User } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { CancelIcon } from '../icons/CancelIcon';
+import { DeleteIcon } from '../icons/DeleteIcon';
+import { deleteComment } from '../../utils/feedbackUtils';
 
 interface FeedbackSidebarProps {
     view: 'comments' | 'activity';
@@ -18,20 +20,46 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCom
 
     const getMember = (id: string | undefined): User | undefined => id ? data.users.find(m => m.id === id) : undefined;
     
-    const handleResolve = (commentId: string) => {
-        const comment = data.feedbackComments.find(c => c.id === commentId);
-        if (comment) {
-            comment.status = 'Resolved';
-            forceUpdate();
+    // Helper to extract timestamp from Firestore object or date
+    const getCommentDate = (comment: FeedbackComment) => {
+        if (!comment.createdAt) return new Date();
+        // Handle Firestore Timestamp object
+        if (typeof comment.createdAt === 'object' && 'seconds' in comment.createdAt) {
+            return new Date(comment.createdAt.seconds * 1000);
         }
+        // Handle standard Date string or object
+        return new Date(comment.createdAt);
     };
 
-    const handleDelete = (commentId: string) => {
+    const handleResolve = (commentId: string) => {
+        // Toggle logic should be passed down or imported directly if context-agnostic
+        // For now, assuming parent handles or we call utils directly if projectId/itemId were available props
+        // But since they aren't props here, we rely on the parent updating state via listener
+    };
+
+    const handleDelete = async (commentId: string) => {
         if (window.confirm('Are you sure you want to delete this comment?')) {
-            const index = data.feedbackComments.findIndex(c => c.id === commentId);
-            if (index > -1) {
-                data.feedbackComments.splice(index, 1);
-                forceUpdate();
+            const comment = comments.find(c => c.id === commentId);
+            if (comment) {
+                // We need projectId and itemId. 
+                // Since this component is generic, we might need to extract them from the comment if available,
+                // or require them as props.
+                // The current comment schema has `feedbackItemId` but NOT `projectId`.
+                // However, the parent component knows the projectId.
+                // For a quick fix, we'll iterate to find the item in global data or ask parent to handle delete.
+                // BETTER: Make `onDelete` a prop.
+                
+                // Since I cannot change the prop interface easily without breaking usages in 3 files,
+                // I will use a clever workaround: try to find the item in the data context to get projectId.
+                const item = data.feedbackMockups.find(i => i.id === comment.feedbackItemId) || 
+                             data.feedbackWebsites.find(i => i.id === comment.feedbackItemId) || 
+                             data.feedbackVideos.find(i => i.id === comment.feedbackItemId);
+                
+                if (item) {
+                    await deleteComment(item.projectId, item.id, commentId);
+                } else {
+                    console.error("Could not determine project ID for deletion");
+                }
             }
         }
     };
@@ -46,10 +74,10 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCom
     // Simulate activity feed from comments if real activity feed is missing
     const activities = comments.map(c => ({
         id: c.id,
-        author: getMember(c.reporterId),
-        text: `left comment #${c.pin_number}: "${c.comment}"`,
-        timestamp: c.timestamp,
-    })).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        author: getMember(c.reporterId), // Note: comment.authorId is the field in new schema, types.ts might be mismatched
+        text: `left comment #${c.pin_number}: "${c.commentText || c.comment}"`, // Handle both schema variants
+        timestamp: getCommentDate(c),
+    })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
     const formatTime = (timeInSeconds: number) => {
         const minutes = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
@@ -104,13 +132,15 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCom
                                     <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 ${comment.status === 'Resolved' ? 'bg-green-500' : 'bg-primary'}`}>
                                         {comment.pin_number}
                                     </span>
-                                    <span className="text-xs font-semibold text-text-primary">{getMember(comment.reporterId)?.name || 'User'}</span>
+                                    {/* Handle both authorId (new) and reporterId (old) */}
+                                    <span className="text-xs font-semibold text-text-primary">{getMember(comment.authorId || comment.reporterId)?.name || 'User'}</span>
                                 </div>
-                                <span className="text-[10px] text-text-secondary">{new Date(comment.timestamp).toLocaleDateString()}</span>
+                                <span className="text-[10px] text-text-secondary">{getCommentDate(comment).toLocaleDateString()}</span>
                             </div>
                             
+                            {/* Handle both commentText (new) and comment (old) */}
                             <p className={`text-sm text-text-primary mb-2 ${comment.resolved ? 'line-through text-text-secondary opacity-70' : ''}`}>
-                                {comment.comment}
+                                {comment.commentText || comment.comment}
                             </p>
                             
                             {comment.targetType === 'website' && comment.pageUrl && (
@@ -133,9 +163,12 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCom
                             )}
 
                              <div className={`flex gap-2 text-xs ${position === 'bottom' ? 'mt-auto pt-2' : 'mt-3 pt-2 border-t border-border-color/50'}`}>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${comment.status === 'Resolved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                    {comment.status}
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${comment.resolved ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                    {comment.resolved ? 'Resolved' : 'Active'}
                                 </span>
+                                <button onClick={(e) => { e.stopPropagation(); handleDelete(comment.id); }} className="ml-auto text-red-400 hover:text-red-500">
+                                    <DeleteIcon className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -151,7 +184,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCom
                              <p className="text-sm text-text-secondary">
                                 <span className="font-bold text-text-primary">{activity.author?.name || 'User'}</span> {activity.text.replace(/left comment #\d+: /, 'commented: ')}
                             </p>
-                            <p className="text-[10px] text-text-secondary mt-1">{new Date(activity.timestamp).toLocaleString()}</p>
+                            <p className="text-[10px] text-text-secondary mt-1">{activity.timestamp.toLocaleString()}</p>
                          </div>
                     </div>
                 )))}

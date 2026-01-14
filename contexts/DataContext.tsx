@@ -1,6 +1,8 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { db, auth } from '../utils/firebase';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity } from '../types';
 
 // Import all data sources
@@ -53,6 +55,7 @@ interface DataContextType {
     data: typeof dataStore;
     loading: boolean;
     error: Error | null;
+    user: FirebaseUser | null;
     updateData: (key: DataStoreKey, newData: any[]) => void;
     forceUpdate: () => void;
 }
@@ -63,6 +66,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [version, setVersion] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    const [user, setUser] = useState<FirebaseUser | null>(null);
+
+    useEffect(() => {
+        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser);
+        });
+        return () => unsubscribeAuth();
+    }, []);
 
     useEffect(() => {
         setLoading(true);
@@ -171,7 +182,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [forceUpdate]);
 
     return (
-        <DataContext.Provider value={{ data: dataStore, loading, error, updateData, forceUpdate }}>
+        <DataContext.Provider value={{ data: dataStore, loading, error, updateData, forceUpdate, user }}>
             {children}
         </DataContext.Provider>
     );
