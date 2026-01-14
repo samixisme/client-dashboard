@@ -1,3 +1,4 @@
+
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -7,8 +8,9 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 const firebaseConfig = {
   apiKey: "AIzaSyDKQu4JYoxz3eub4KXe73EyteEf-gX8uhQ",
   authDomain: "client-dashboard-v2.firebaseapp.com",
+  databaseURL: "https://client-dashboard-v2-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "client-dashboard-v2",
-  storageBucket: "gs://client-dashboard-v2.firebasestorage.app",
+  storageBucket: "client-dashboard-v2.firebasestorage.app",
   messagingSenderId: "779958789032",
   appId: "1:779958789032:web:76c240c04e6a886645339d"
 };
@@ -17,7 +19,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Initialize App Check
-// Note: Replace 'your-recaptcha-site-key' with your actual reCAPTCHA v3 site key
+// IMPORTANT: Make sure '6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9' is your actual reCAPTCHA v3 site key from the Google Cloud console.
+// Self-host your reCAPTCHA v3 site key in an environment variable for security.
+if (window.location.hostname === "localhost") {
+  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
 initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9'),
   isTokenAutoRefreshEnabled: true
