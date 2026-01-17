@@ -1,81 +1,76 @@
-
 import React, { useMemo } from 'react';
-import { FeedbackComment, User } from '../../types';
+import { FeedbackComment, FeedbackItemComment, User } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { CancelIcon } from '../icons/CancelIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
-import { deleteComment } from '../../utils/feedbackUtils';
 
 interface FeedbackSidebarProps {
     view: 'comments' | 'activity';
-    comments: FeedbackComment[];
-    onCommentClick: (comment: FeedbackComment) => void;
+    comments: (FeedbackComment | FeedbackItemComment)[];
+    onCommentClick: (comment: FeedbackComment | FeedbackItemComment) => void;
     onClose: () => void;
     onNavigate?: (path: string) => void;
+    onDelete: (commentId: string) => void; 
+    onResolve?: (commentId: string) => void; 
     position: 'right' | 'bottom';
 }
 
-const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCommentClick, onClose, onNavigate, position }) => {
-    const { data, forceUpdate } = useData();
+const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCommentClick, onClose, onNavigate, onDelete, onResolve, position }) => {
+    const { data } = useData();
 
     const getMember = (id: string | undefined): User | undefined => id ? data.users.find(m => m.id === id) : undefined;
     
-    // Helper to extract timestamp from Firestore object or date
-    const getCommentDate = (comment: FeedbackComment) => {
+    // Helpers to normalize data between FeedbackComment and FeedbackItemComment
+    const getCommentText = (c: FeedbackComment | FeedbackItemComment) => 
+        (c as FeedbackItemComment).commentText || (c as FeedbackComment).comment;
+
+    const getAuthorId = (c: FeedbackComment | FeedbackItemComment) => 
+        (c as FeedbackItemComment).authorId || (c as FeedbackComment).reporterId;
+
+    const getVideoTime = (c: FeedbackComment | FeedbackItemComment) => 
+        (c as FeedbackItemComment).timestamp ?? (c as FeedbackComment).startTime;
+
+    const getPageUrl = (c: FeedbackComment | FeedbackItemComment) => 
+        (c as FeedbackItemComment).pageUrl || (c as FeedbackComment).pageUrl;
+
+    const isVideoComment = (c: FeedbackComment | FeedbackItemComment) => 
+        (c as FeedbackComment).targetType === 'video' || getVideoTime(c) !== undefined;
+
+    const getCommentDate = (comment: FeedbackComment | FeedbackItemComment) => {
         if (!comment.createdAt) return new Date();
-        // Handle Firestore Timestamp object
         if (typeof comment.createdAt === 'object' && 'seconds' in comment.createdAt) {
             return new Date(comment.createdAt.seconds * 1000);
         }
-        // Handle standard Date string or object
         return new Date(comment.createdAt);
     };
 
-    const handleResolve = (commentId: string) => {
-        // Toggle logic should be passed down or imported directly if context-agnostic
-        // For now, assuming parent handles or we call utils directly if projectId/itemId were available props
-        // But since they aren't props here, we rely on the parent updating state via listener
+    const handleDeleteClick = (e: React.MouseEvent, commentId: string) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this comment?')) {
+            onDelete(commentId);
+        }
     };
 
-    const handleDelete = async (commentId: string) => {
-        if (window.confirm('Are you sure you want to delete this comment?')) {
-            const comment = comments.find(c => c.id === commentId);
-            if (comment) {
-                // We need projectId and itemId. 
-                // Since this component is generic, we might need to extract them from the comment if available,
-                // or require them as props.
-                // The current comment schema has `feedbackItemId` but NOT `projectId`.
-                // However, the parent component knows the projectId.
-                // For a quick fix, we'll iterate to find the item in global data or ask parent to handle delete.
-                // BETTER: Make `onDelete` a prop.
-                
-                // Since I cannot change the prop interface easily without breaking usages in 3 files,
-                // I will use a clever workaround: try to find the item in the data context to get projectId.
-                const item = data.feedbackMockups.find(i => i.id === comment.feedbackItemId) || 
-                             data.feedbackWebsites.find(i => i.id === comment.feedbackItemId) || 
-                             data.feedbackVideos.find(i => i.id === comment.feedbackItemId);
-                
-                if (item) {
-                    await deleteComment(item.projectId, item.id, commentId);
-                } else {
-                    console.error("Could not determine project ID for deletion");
-                }
-            }
+    const handleResolveClick = (e: React.MouseEvent, commentId: string) => {
+        e.stopPropagation();
+        if (onResolve) {
+            onResolve(commentId);
         }
     };
 
     const sortedComments = useMemo(() => {
-        if (comments.length > 0 && comments[0].targetType === 'video') {
-            return [...comments].sort((a, b) => (a.startTime || 0) - (b.startTime || 0));
+        // If it looks like a video comment list (has timestamps), sort by timestamp
+        const hasTime = comments.some(c => getVideoTime(c) !== undefined);
+        if (hasTime) {
+            return [...comments].sort((a, b) => (getVideoTime(a) || 0) - (getVideoTime(b) || 0));
         }
         return comments;
     }, [comments]);
     
-    // Simulate activity feed from comments if real activity feed is missing
     const activities = comments.map(c => ({
         id: c.id,
-        author: getMember(c.reporterId), // Note: comment.authorId is the field in new schema, types.ts might be mismatched
-        text: `left comment #${c.pin_number}: "${c.commentText || c.comment}"`, // Handle both schema variants
+        author: getMember(getAuthorId(c)),
+        text: `left comment #${c.pin_number || '•'}: "${getCommentText(c)}"`,
         timestamp: getCommentDate(c),
     })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
@@ -84,7 +79,6 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCom
         const seconds = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
         return `${minutes}:${seconds}`;
     };
-
 
     const containerClasses = position === 'right' 
         ? 'w-96 flex-shrink-0 bg-glass border-l border-border-color flex flex-col h-full'
@@ -117,62 +111,70 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCom
                             <p className="text-2xl mb-2">💬</p>
                             <p className="text-sm">No comments yet.</p>
                         </div>
-                    ) : sortedComments.map(comment => (
-                    <div key={comment.id} onClick={() => onCommentClick(comment)} className={itemClasses}>
-                        {comment.targetType === 'video' && comment.startTime !== undefined && (
-                             <div className="px-3 py-1 bg-primary/10 border-b border-border-color flex-shrink-0 flex justify-between items-center">
-                                <span className="text-xs font-bold text-primary flex items-center gap-1">
-                                    ⏱ {formatTime(comment.startTime)}
-                                </span>
-                            </div>
-                        )}
-                        <div className={`p-3 ${position === 'bottom' ? 'flex-1 flex flex-col' : ''}`}>
-                            <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-center gap-2">
-                                    <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 ${comment.status === 'Resolved' ? 'bg-green-500' : 'bg-primary'}`}>
-                                        {comment.pin_number}
+                    ) : sortedComments.map(comment => {
+                        const videoTime = getVideoTime(comment);
+                        const pageUrl = getPageUrl(comment);
+                        const commentText = getCommentText(comment);
+                        const authorId = getAuthorId(comment);
+
+                        return (
+                        <div key={comment.id} onClick={() => onCommentClick(comment)} className={itemClasses}>
+                            {videoTime !== undefined && (
+                                 <div className="px-3 py-1 bg-primary/10 border-b border-border-color flex-shrink-0 flex justify-between items-center">
+                                    <span className="text-xs font-bold text-primary flex items-center gap-1">
+                                        ⏱ {formatTime(videoTime)}
                                     </span>
-                                    {/* Handle both authorId (new) and reporterId (old) */}
-                                    <span className="text-xs font-semibold text-text-primary">{getMember(comment.authorId || comment.reporterId)?.name || 'User'}</span>
-                                </div>
-                                <span className="text-[10px] text-text-secondary">{getCommentDate(comment).toLocaleDateString()}</span>
-                            </div>
-                            
-                            {/* Handle both commentText (new) and comment (old) */}
-                            <p className={`text-sm text-text-primary mb-2 ${comment.resolved ? 'line-through text-text-secondary opacity-70' : ''}`}>
-                                {comment.commentText || comment.comment}
-                            </p>
-                            
-                            {comment.targetType === 'website' && comment.pageUrl && (
-                                <div className="mt-2 flex justify-between items-center bg-glass p-1.5 rounded border border-border-color/50">
-                                    <span className="text-[10px] text-text-secondary truncate max-w-[150px]">
-                                        {comment.pageUrl}
-                                    </span>
-                                    {onNavigate && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onNavigate(comment.pageUrl || '/');
-                                            }}
-                                            className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap"
-                                        >
-                                            Go to
-                                        </button>
-                                    )}
                                 </div>
                             )}
+                            <div className={`p-3 ${position === 'bottom' ? 'flex-1 flex flex-col' : ''}`}>
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 ${comment.status === 'Resolved' || comment.resolved ? 'bg-green-500' : 'bg-primary'}`}>
+                                            {comment.pin_number || '•'}
+                                        </span>
+                                        <span className="text-xs font-semibold text-text-primary">{getMember(authorId)?.name || 'User'}</span>
+                                    </div>
+                                    <span className="text-[10px] text-text-secondary">{getCommentDate(comment).toLocaleDateString()}</span>
+                                </div>
+                                
+                                <p className={`text-sm text-text-primary mb-2 ${(comment as any).resolved || (comment as any).status === 'Resolved' ? 'line-through text-text-secondary opacity-70' : ''}`}>
+                                    {commentText}
+                                </p>
+                                
+                                {pageUrl && (
+                                    <div className="mt-2 flex justify-between items-center bg-glass p-1.5 rounded border border-border-color/50">
+                                        <span className="text-[10px] text-text-secondary truncate max-w-[150px]">
+                                            {pageUrl}
+                                        </span>
+                                        {onNavigate && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onNavigate(pageUrl || '/');
+                                                }}
+                                                className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap"
+                                            >
+                                                Go to
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
 
-                             <div className={`flex gap-2 text-xs ${position === 'bottom' ? 'mt-auto pt-2' : 'mt-3 pt-2 border-t border-border-color/50'}`}>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${comment.resolved ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                    {comment.resolved ? 'Resolved' : 'Active'}
-                                </span>
-                                <button onClick={(e) => { e.stopPropagation(); handleDelete(comment.id); }} className="ml-auto text-red-400 hover:text-red-500">
-                                    <DeleteIcon className="w-4 h-4" />
-                                </button>
+                                 <div className={`flex gap-2 text-xs ${position === 'bottom' ? 'mt-auto pt-2' : 'mt-3 pt-2 border-t border-border-color/50'}`}>
+                                    <button 
+                                        onClick={(e) => handleResolveClick(e, comment.id)}
+                                        className={`text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity ${(comment as any).resolved || (comment as any).status === 'Resolved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}
+                                    >
+                                        {(comment as any).resolved || (comment as any).status === 'Resolved' ? 'Resolved' : 'Active'}
+                                    </button>
+                                    <button onClick={(e) => handleDeleteClick(e, comment.id)} className="ml-auto text-red-400 hover:text-red-500 p-1 hover:bg-red-500/10 rounded">
+                                        <DeleteIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )))}
+                    )
+                }))}
 
                 {view === 'activity' && (
                     activities.length === 0 ? (

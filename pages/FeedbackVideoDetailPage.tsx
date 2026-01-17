@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved } from '../utils/feedbackUtils';
+import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved, deleteComment } from '../utils/feedbackUtils';
 import { FeedbackItem, FeedbackItemComment } from '../types';
 import { useData } from '../contexts/DataContext';
 import FeedbackSidebar from '../components/feedback/FeedbackSidebar';
@@ -94,8 +94,11 @@ const FeedbackVideoDetailPage = () => {
     if (!newCommentText.trim() || !projectId || !feedbackItemId || !user || commentTimestamp === null) return;
 
     try {
+      const authorId = user.uid || user.id;
+      if (!authorId) return;
+
       await addComment(projectId, feedbackItemId, {
-        authorId: user.id,
+        authorId: authorId,
         commentText: newCommentText,
         timestamp: commentTimestamp
       });
@@ -111,6 +114,24 @@ const FeedbackVideoDetailPage = () => {
           handleSeek(comment.timestamp);
       }
   };
+
+  // ADDED: Delete and Resolve Handlers
+  const handleDeleteComment = async (commentId: string) => {
+      if (!projectId || !feedbackItemId) return;
+      try {
+          await deleteComment(projectId, feedbackItemId, commentId);
+      } catch (error) {
+          console.error("Failed to delete comment:", error);
+      }
+  };
+
+  const handleResolveComment = async (commentId: string) => {
+      if (!projectId || !feedbackItemId) return;
+      const comment = comments.find(c => c.id === commentId);
+      if (comment) {
+          await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.resolved);
+      }
+  }
 
   const formatTime = (seconds: number) => {
       const mins = Math.floor(seconds / 60);
@@ -250,6 +271,8 @@ const FeedbackVideoDetailPage = () => {
                 comments={comments}
                 onCommentClick={handleCommentClick}
                 onClose={() => {}} // Controlled by outer header
+                onDelete={handleDeleteComment} // Passed
+                onResolve={handleResolveComment} // Passed
                 position={sidebarPosition}
             />
         </div>

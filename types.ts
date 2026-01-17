@@ -317,6 +317,7 @@ export interface FeedbackItem {
   createdBy: string;
   createdAt: any; // Timestamp or Date or serializable object
   commentCount?: number;
+  pages?: {id: string, name: string, url: string}[]; // New pages field
 }
 
 export interface FeedbackItemComment {
@@ -328,6 +329,11 @@ export interface FeedbackItemComment {
   resolved: boolean;
   position?: { x: number; y: number }; // ONLY for 'mockup' type
   timestamp?: number; // ONLY for 'video' type (time in seconds)
+  pin_number?: number;
+  device?: string;
+  pageUrl?: string;
+  x_coordinate?: number;
+  y_coordinate?: number;
 }
 
 

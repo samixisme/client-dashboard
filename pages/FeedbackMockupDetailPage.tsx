@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved, updateFeedbackItemStatus } from '../utils/feedbackUtils';
+import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved, updateFeedbackItemStatus, deleteComment } from '../utils/feedbackUtils';
 import { FeedbackItem, FeedbackItemComment } from '../types';
 import { useData } from '../contexts/DataContext';
 import FeedbackSidebar from '../components/feedback/FeedbackSidebar';
@@ -131,27 +131,6 @@ const FeedbackMockupDetailPage = () => {
   const handleCommentClick = (comment: FeedbackItemComment) => {
     setActivePinId(comment.id);
     setClickPosition(null); // Cancel new comment mode
-    
-    // Auto-Center Logic
-    if (comment.position && containerRef.current && imageRef.current) {
-        // Simple centering relative to the current container viewport
-        const containerW = containerRef.current.clientWidth;
-        const containerH = containerRef.current.clientHeight;
-        
-        // Target visual position in pixels (center of screen)
-        // We want the pin at (containerW/2, containerH/2)
-        // Pin position in image-space pixels:
-        // pinImgX = (comment.position.x / 100) * imageRef.current.naturalWidth
-        // pinImgY = (comment.position.y / 100) * imageRef.current.naturalHeight
-        
-        // The transform equation is:
-        // ScreenX = (ImgX * zoom) + panX + offsetToCenterOfImageElements
-        // This is complex because of 'transformOrigin: center center' on the wrapper div.
-        // Let's simplify: reset pan to center this specific point?
-        
-        // Easiest robust way for this specific implementation (translate + scale from center):
-        // We can just highlight for now as requested, centering is a "nice to have" that requires matrix math if origin is center.
-    }
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -159,8 +138,11 @@ const FeedbackMockupDetailPage = () => {
     if (!newCommentText.trim() || !projectId || !feedbackItemId || !user || !clickPosition) return;
 
     try {
+      const authorId = user.uid || user.id;
+      if (!authorId) return;
+
       await addComment(projectId, feedbackItemId, {
-        authorId: user.uid, // Use uid for Firebase User
+        authorId: authorId, 
         commentText: newCommentText,
         position: clickPosition
       });
@@ -170,6 +152,26 @@ const FeedbackMockupDetailPage = () => {
       console.error("Error adding comment:", error);
     }
   };
+
+  // NEW: Robust Delete Handler passed to Sidebar
+  const handleDeleteComment = async (commentId: string) => {
+      if (!projectId || !feedbackItemId) return;
+      try {
+          await deleteComment(projectId, feedbackItemId, commentId);
+          // Optimistic update handled by listener or we can manually filter if needed, 
+          // but listener is safer. The listener in useEffect will update 'comments'.
+      } catch (error) {
+          console.error("Failed to delete comment:", error);
+      }
+  };
+
+  const handleResolveComment = async (commentId: string) => {
+      if (!projectId || !feedbackItemId) return;
+      const comment = comments.find(c => c.id === commentId);
+      if (comment) {
+          await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.resolved);
+      }
+  }
 
   const handleFitToScreen = () => {
       setZoom(1);
@@ -389,7 +391,9 @@ const FeedbackMockupDetailPage = () => {
                 view={sidebarView}
                 comments={comments}
                 onCommentClick={handleCommentClick}
-                onClose={() => setIsSidebarOpen(false)} // Handled by header usually, but needed for prop compliance
+                onClose={() => setIsSidebarOpen(false)}
+                onDelete={handleDeleteComment} // Passed down to sidebar
+                onResolve={handleResolveComment}
                 position={sidebarPosition}
             />
          </div>

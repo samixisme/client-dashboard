@@ -79,6 +79,23 @@ export const updateFeedbackItemStatus = async (
 };
 
 /**
+ * Updates the pages list of a specific website feedback item.
+ */
+export const updateFeedbackItemPages = async (
+  projectId: string,
+  itemId: string,
+  pages: {id: string, name: string, url: string}[]
+): Promise<void> => {
+  try {
+    const itemRef = doc(db, "projects", projectId, "feedbackItems", itemId);
+    await updateDoc(itemRef, { pages });
+  } catch (error) {
+    console.error("Error updating feedback item pages:", error);
+    throw error;
+  }
+}
+
+/**
  * Fetches a single feedback item.
  */
 export const getFeedbackItem = async (projectId: string, itemId: string): Promise<FeedbackItem | null> => {
@@ -118,9 +135,8 @@ export const subscribeToComments = (
         const data = doc.data();
         return {
             id: doc.id,
+            feedbackItemId: itemId, // Inject itemId to ensure delete works
             ...data,
-            // Convert Firestore Timestamp to serializable date if needed or handle in UI
-            // For now, keeping it as is since types expect it
         } as FeedbackItemComment;
     });
     callback(comments);
@@ -186,6 +202,7 @@ export const deleteComment = async (
   commentId: string
 ): Promise<void> => {
   try {
+     console.log("Deleting comment:", commentId, "from item:", itemId, "in project:", projectId);
      const commentRef = doc(db, "projects", projectId, "feedbackItems", itemId, "comments", commentId);
      await deleteDoc(commentRef);
      
