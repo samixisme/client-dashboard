@@ -5,29 +5,37 @@
   "dependencies": {
     "@google/genai": "^1.30.0",
     "@hello-pangea/dnd": "16.6.0",
+    "@types/express": "^5.0.6",
     "@types/gsap": "^1.20.2",
-    "@types/react": "^19.2.8",
-    "@types/react-dom": "^19.2.3",
-    "@types/react-router-dom": "^5.3.3",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
     "date-fns": "^4.1.0",
+    "express": "^5.2.1",
     "firebase": "^12.7.0",
     "gsap": "^3.13.0",
+    "node-fetch": "^3.3.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-phone-number-input": "^3.4.14",
-    "react-router-dom": "^6.23.1"
+    "react-router-dom": "^6.23.1",
+    "ts-node-dev": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.10.9",
     "@vitejs/plugin-react": "^4.2.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vite": "^5.2.8"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "concurrently \"npm:dev:vite\" \"npm:dev:api\"",
+    "dev:vite": "vite",
+    "dev:api": "ts-node-dev --project tsconfig.server.json --respawn api/server.ts",
+    "build": "vite build && cp dist/feedback.js public/feedback.js",
     "lint": "eslint .",
     "serve": "vite preview"
   }
