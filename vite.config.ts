@@ -37,7 +37,12 @@ export default defineConfig(({ mode }) => {
               return assetInfo.name === 'feedback' ? 'feedback.js' : 'assets/[name]-[hash].js'
             },
             chunkFileNames: `assets/[name]-[hash].js`,
-            assetFileNames: `assets/[name]-[hash].[ext]`
+            assetFileNames: (assetInfo) => {
+              if (assetInfo.name && (assetInfo.name === 'feedback.css' || assetInfo.name === 'index.css')) {
+                 return 'feedback.css'; 
+              }
+              return `assets/[name]-[hash].[ext]`;
+            }
           }
         }
       }

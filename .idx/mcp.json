@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "context7": {
+      "httpUrl": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-577f467f-b1e7-48ef-b67e-bd790e7f7be3",
+        "Accept": "application/json, text/event-stream"
+      }
+    },
+    "firebase": {
+      "command": "npx",
+      "args": [
+        
+        "-y",
+        "firebase-tools@latest",
+        "experimental:mcp",
+        "--only",
+        "auth,firestore"
+      ]
+    },
+      "sequentialthinking": {
+        "command": "docker",
+        "args": [
+          "run",
+          "--rm",
+          "-i",
+          "mcp/sequentialthinking"
+        ]
+    }
+  }
+}

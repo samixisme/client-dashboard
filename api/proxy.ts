@@ -18,10 +18,8 @@ export default async (req: Request, res: Response) => {
     const $ = cheerio.load(response.data);
 
     const targetUrl = new URL(url);
-    const origin = targetUrl.origin;
 
     // Rewrite relative URLs to be absolute
-    // This is crucial for CSS, Images, and Scripts to load correctly from the original source
     $('link[href], a[href]').each((i, el) => {
       const href = $(el).attr('href');
       if (href && !href.startsWith('http') && !href.startsWith('//') && !href.startsWith('mailto:') && !href.startsWith('tel:') && !href.startsWith('#')) {
@@ -44,14 +42,63 @@ export default async (req: Request, res: Response) => {
       }
     });
 
-    // Inject the feedback script
-    // We use a relative path assuming the proxy is served from the same domain as the main app
-    // or properly proxied via Vite.
-    const scriptTag = `<script src="/feedback.js" data-project-id="${projectId}" data-feedback-id="${feedbackId}" async></script>`;
-    $('body').append(scriptTag);
+    // Inject Tailwind CDN and Config
+    const tailwindScript = `<script src="https://cdn.tailwindcss.com"></script>`;
+    const tailwindConfig = `
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['Roboto Mono', 'monospace'] },
+            colors: {
+              'primary': '#A3E635', 'primary-hover': '#84CC16', 'background': '#0A0A0A',
+              'surface': '#1C1C1C', 'surface-light': '#272727', 'text-primary': '#F4F4F5',
+              'text-secondary': '#A1A1AA', 'border-color': '#27272A'
+            }
+          }
+        }
+      }
+    </script>`;
+    
+    // Inject Custom Styles (from index.html)
+    const customStyles = `
+    <style>
+      .bg-glass { background-color: rgba(28, 28, 28, 0.65); backdrop-filter: blur(12px); }
+      .bg-glass-light { background-color: rgba(39, 39, 39, 0.65); backdrop-filter: blur(12px); }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: #1C1C1C; }
+      ::-webkit-scrollbar-thumb { background-color: #84CC16; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background-color: #A3E635; }
+      
+      /* Ensure our tool is on top and visible */
+      #client-dashboard-feedback-tool {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* Let clicks pass through by default */
+        z-index: 99999;
+      }
+      #client-dashboard-feedback-tool * {
+        pointer-events: auto; /* Re-enable pointer events for our children */
+      }
+      .feedback-tool-root {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    `;
 
-    // Add a base tag as a fallback for things we missed, but be careful as it can break some SPAs
-    // $('head').prepend(`<base href="${targetUrl.href}">`);
+    // Inject the feedback script
+    // Note: We don't inject /feedback.css anymore because we use CDN + inline styles
+    const scriptTag = `<script src="/feedback.js" data-project-id="${projectId}" data-feedback-id="${feedbackId}" async></script>`;
+    
+    $('head').append(tailwindScript);
+    $('head').append(tailwindConfig);
+    $('head').append(customStyles);
+    $('body').append(scriptTag);
 
     res.status(200).send($.html());
   } catch (error) {

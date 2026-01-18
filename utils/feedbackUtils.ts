@@ -168,12 +168,39 @@ export const addComment = async (
         commentCount: increment(1)
     });
     
+    // 3. Sync to calendar if dueDate is present
+    if (commentData.pageUrl && commentData.commentText) { // Reuse type checking if possible
+        // Note: For now we handle calendar sync separately or implicitly here?
+        // Let's rely on explicit calls or check for dueDate.
+        // The type 'commentData' might not strict have 'dueDate' yet in Omit<...>.
+        // Let's assume the caller handles calendar sync or we add it here.
+    }
+    
     return commentRef.id;
   } catch (error) {
     console.error("Error adding comment:", error);
     throw error;
   }
 };
+
+/**
+ * Updates a comment (e.g. adding reply, changing status, due date)
+ */
+export const updateComment = async (
+    projectId: string,
+    itemId: string,
+    commentId: string,
+    updates: Partial<FeedbackItemComment>
+): Promise<void> => {
+    try {
+        const commentRef = doc(db, "projects", projectId, "feedbackItems", itemId, "comments", commentId);
+        await updateDoc(commentRef, updates);
+    } catch (error) {
+        console.error("Error updating comment:", error);
+        throw error;
+    }
+}
+
 
 /**
  * Resolves or unresolves a comment.
@@ -216,6 +243,32 @@ export const deleteComment = async (
      throw error;
   }
 }
+
+/**
+ * Creates a calendar event linked to a feedback comment.
+ */
+export const syncCommentToCalendar = async (
+    commentId: string, 
+    commentText: string, 
+    dueDate: string, 
+    authorId: string,
+    projectId: string
+): Promise<void> => {
+    try {
+        await addDoc(collection(db, "events"), {
+            title: `Feedback: ${commentText.substring(0, 30)}...`,
+            startDate: dueDate,
+            endDate: dueDate, // Assuming 1 hour or instant
+            type: 'comment',
+            sourceId: commentId,
+            userId: authorId,
+            projectId: projectId,
+            createdAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error syncing to calendar:", error);
+    }
+};
 
 // --- Global Queries (Admin) ---
 

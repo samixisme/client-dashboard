@@ -13,9 +13,10 @@ interface FeedbackSidebarProps {
     onDelete: (commentId: string) => void; 
     onResolve?: (commentId: string) => void; 
     position: 'right' | 'bottom';
+    onGoToPage?: (url: string, device: string) => void; // Task 3.2
 }
 
-const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCommentClick, onClose, onNavigate, onDelete, onResolve, position }) => {
+const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCommentClick, onClose, onNavigate, onDelete, onResolve, position, onGoToPage }) => {
     const { data } = useData();
 
     const getMember = (id: string | undefined): User | undefined => id ? data.users.find(m => m.id === id) : undefined;
@@ -146,15 +147,17 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ view, comments, onCom
                                         <span className="text-[10px] text-text-secondary truncate max-w-[150px]">
                                             {pageUrl}
                                         </span>
-                                        {onNavigate && (
+                                        {/* Task 3.2: Deep-Link Button */}
+                                        {(onGoToPage || onNavigate) && (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    onNavigate(pageUrl || '/');
+                                                    if (onGoToPage && pageUrl) onGoToPage(pageUrl, (comment as any).deviceView || 'desktop');
+                                                    else if (onNavigate) onNavigate(pageUrl || '/');
                                                 }}
                                                 className="text-[10px] font-bold text-primary hover:underline whitespace-nowrap"
                                             >
-                                                Go to
+                                                Go to Page ↗
                                             </button>
                                         )}
                                     </div>

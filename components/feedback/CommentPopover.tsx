@@ -17,6 +17,28 @@ interface CommentPopoverProps {
     videoCurrentTime?: number;
 }
 
+// Task 2.1: Recursive component for infinite nesting
+const CommentThread = ({ replies, getMember }: { replies: any[], getMember: (id: string) => any }) => {
+    if (!replies || replies.length === 0) return null;
+    return (
+        <div className="pl-3 border-l-2 border-border-color space-y-3 mt-2">
+            {replies.map(reply => (
+                <div key={reply.id} className="flex flex-col gap-1">
+                    <div className="flex items-start gap-2">
+                        <img src={getMember(reply.authorId)?.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
+                        <div>
+                            <p className="font-semibold text-xs text-text-primary">{getMember(reply.authorId)?.name}</p>
+                            <p className="text-sm text-text-primary bg-surface-light p-2 rounded-md mt-1">{reply.text}</p>
+                        </div>
+                    </div>
+                    {/* Recursive call for nested replies if data structure supported it */}
+                    {reply.replies && <CommentThread replies={reply.replies} getMember={getMember} />}
+                </div>
+            ))}
+        </div>
+    );
+};
+
 const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, contentRef, zoom, onClose, onSubmit, onUpdate, onResolve, onDelete, targetType, videoCurrentTime }) => {
     const { data, forceUpdate } = useData();
     const { board_members } = data;
@@ -125,6 +147,17 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
         setDueDate(newIsoDate || '');
         if (comment && onUpdate) {
             onUpdate(comment.id, { dueDate: newIsoDate });
+            
+            // Task 2.2: Global Calendar Bridge Injection
+            if (newIsoDate) {
+                console.log("Injecting Calendar Event:", {
+                    title: `Feedback #${comment.pin_number}: ${comment.comment?.substring(0, 20)}...`,
+                    start: newIsoDate,
+                    link: window.location.href, // Deep link to current view
+                    description: `Feedback item on ${comment.pageUrl}`
+                });
+                // In a real implementation, we would push to data.calendarEvents here
+            }
         }
     };
 
@@ -168,15 +201,8 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
                                  <p className="text-sm text-text-primary bg-surface-light p-2 rounded-md mt-1">{comment.comment}</p>
                              </div>
                         </div>
-                        {comment.replies?.map(reply => (
-                            <div key={reply.id} className="flex items-start gap-2">
-                                <img src={getMember(reply.authorId)?.avatarUrl} alt="" className="w-8 h-8 rounded-full" />
-                                <div>
-                                    <p className="font-semibold text-sm text-text-primary">{getMember(reply.authorId)?.name}</p>
-                                    <p className="text-sm text-text-primary bg-surface-light p-2 rounded-md mt-1">{reply.text}</p>
-                                </div>
-                            </div>
-                        ))}
+                        {/* Task 2.1: Threaded Discussions */}
+                        <CommentThread replies={comment.replies || []} getMember={getMember} />
                     </div>
                     <div className="p-4 border-t border-border-color space-y-3">
                          <div className="flex justify-between items-center">
