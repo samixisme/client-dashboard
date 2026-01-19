@@ -91,7 +91,7 @@ export interface Comment {
 export interface Activity {
     id: string;
     objectId: string;
-    objectType: 'task' | 'comment' | 'roadmap_item';
+    objectType: 'task' | 'comment' | 'roadmap_item' | 'feedback_item';
     description: string;
     timestamp: string;
     comment_timestamp_seconds?: number;
@@ -334,6 +334,14 @@ export interface FeedbackItemComment {
   pageUrl?: string;
   x_coordinate?: number;
   y_coordinate?: number;
+  dueDate?: string;
+  status?: 'Active' | 'Resolved';
+  replies?: {
+      id: string;
+      authorId: string;
+      text: string;
+      timestamp: string;
+  }[];
 }
 
 

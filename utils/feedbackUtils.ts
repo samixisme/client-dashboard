@@ -61,17 +61,73 @@ export const addFeedbackItem = async (
   }
 };
 
+// --- Activities ---
+
+/**
+ * Logs an activity to the global activities collection (or project subcollection if preferred, but usually global for easy querying)
+ * We will use a top-level 'activities' collection for simplicity based on DataContext usage.
+ */
+export const logActivity = async (
+  projectId: string,
+  objectId: string,
+  objectType: 'feedback_item', // Restrict for now, or use generic
+  description: string,
+  userId: string
+): Promise<void> => {
+    try {
+        await addDoc(collection(db, "projects", projectId, "activities"), {
+            objectId,
+            objectType,
+            description,
+            userId,
+            timestamp: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error logging activity:", error);
+    }
+}
+
+/**
+ * Subscribes to activities for a specific object (e.g. feedback item).
+ */
+export const subscribeToActivities = (
+    projectId: string,
+    objectId: string,
+    callback: (activities: any[]) => void
+) => {
+    const q = query(
+        collection(db, "projects", projectId, "activities"),
+        where("objectId", "==", objectId),
+        orderBy("timestamp", "desc")
+    );
+
+    return onSnapshot(q, (snapshot) => {
+        const activities = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        callback(activities);
+    }, (error) => {
+        console.error("Error subscribing to activities:", error);
+    });
+}
+
 /**
  * Updates the status of a specific feedback item.
  */
 export const updateFeedbackItemStatus = async (
   projectId: string, 
   itemId: string, 
-  status: FeedbackStatus
+  status: FeedbackStatus,
+  userId?: string // Optional user ID for logging
 ): Promise<void> => {
   try {
     const itemRef = doc(db, "projects", projectId, "feedbackItems", itemId);
     await updateDoc(itemRef, { status });
+    
+    if (userId) {
+        await logActivity(projectId, itemId, 'feedback_item', `changed status to ${status}`, userId);
+    }
   } catch (error) {
     console.error("Error updating feedback item status:", error);
     throw error;
@@ -154,9 +210,14 @@ export const addComment = async (
   commentData: Omit<FeedbackItemComment, "id" | "createdAt" | "feedbackItemId" | "resolved">
 ): Promise<string> => {
   try {
+    // Sanitize data to remove undefined values
+    const cleanData = Object.fromEntries(
+        Object.entries(commentData).filter(([_, v]) => v !== undefined)
+    );
+
     // 1. Add the comment
     const commentRef = await addDoc(collection(db, "projects", projectId, "feedbackItems", itemId, "comments"), {
-      ...commentData,
+      ...cleanData,
       feedbackItemId: itemId,
       createdAt: serverTimestamp(),
       resolved: false

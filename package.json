@@ -33,7 +33,7 @@
   },
   "scripts": {
     "dev": "concurrently \"npm:dev:vite\" \"npm:dev:api\"",
-    "dev:vite": "vite",
+    "dev:vite": "vite --config vite.server.config.ts",
     "dev:api": "ts-node-dev --project tsconfig.server.json --respawn api/server.ts",
     "build": "vite build && cp dist/feedback.js public/feedback.js",
     "lint": "eslint .",

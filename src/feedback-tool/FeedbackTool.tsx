@@ -1,33 +1,9 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import FeedbackSidebar from '../../components/feedback/FeedbackSidebar';
 import CommentPopover from '../../components/feedback/CommentPopover';
-import { subscribeToComments, addComment, deleteComment, toggleCommentResolved, updateComment, syncCommentToCalendar } from '../../utils/feedbackUtils';
-import { FeedbackItemComment, FeedbackComment } from '../../types';
+import { subscribeToComments, addComment, deleteComment, updateComment, syncCommentToCalendar } from '../../utils/feedbackUtils';
+import { FeedbackItemComment, FeedbackComment, User } from '../../types';
 import { db, auth } from '../../utils/firebase';
-
-// Function to generate a unique CSS selector for an element
-const getCssSelector = (el: HTMLElement): string => {
-  if (!(el instanceof Element)) return '';
-  const path: string[] = [];
-  while (el.nodeType === Node.ELEMENT_NODE) {
-    let selector = el.nodeName.toLowerCase();
-    if (el.id) {
-      selector += '#' + el.id;
-      path.unshift(selector);
-      break;
-    } else {
-      let sib: Element | null = el;
-      let nth = 1;
-      while (sib = sib.previousElementSibling) {
-        if (sib.nodeName.toLowerCase() === selector) nth++;
-      }
-      if (nth !== 1) selector += `:nth-of-type(${nth})`;
-    }
-    path.unshift(selector);
-    el = el.parentNode as HTMLElement;
-  }
-  return path.join(' > ');
-};
+import { collection, getDocs } from 'firebase/firestore'; 
 
 interface Pin {
   id: string;
@@ -37,12 +13,13 @@ interface Pin {
 }
 
 const FeedbackTool = () => {
+  console.log("FeedbackTool: Mounting..."); 
+
   const [projectId, setProjectId] = useState<string | null>(null);
   const [feedbackItemId, setFeedbackItemId] = useState<string | null>(null);
   const [comments, setComments] = useState<FeedbackItemComment[]>([]);
   const [isCommenting, setIsCommenting] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [sidebarDock, setSidebarDock] = useState<'right' | 'bottom'>('right');
+  const [users, setUsers] = useState<User[]>([]); 
   
   // State from Host
   const [device, setDevice] = useState<string>('desktop');
@@ -53,11 +30,11 @@ const FeedbackTool = () => {
       isOpen: boolean;
       x: number;
       y: number;
-      comment?: FeedbackItemComment; // If editing/replying/viewing
+      comment?: FeedbackItemComment; 
       isNew?: boolean;
   }>({ isOpen: false, x: 0, y: 0 });
 
-  const contentRef = useRef<HTMLDivElement>(null); // Ref for popover positioning context
+  const contentRef = useRef<HTMLDivElement>(null); 
   
   // Highlighting
   const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
@@ -69,31 +46,92 @@ const FeedbackTool = () => {
   useEffect(() => {
     const script = document.querySelector('script[src*="feedback.js"]');
     if (script) {
-      setProjectId(script.getAttribute('data-project-id'));
-      setFeedbackItemId(script.getAttribute('data-feedback-id'));
+      const pid = script.getAttribute('data-project-id');
+      const fid = script.getAttribute('data-feedback-id');
+      console.log("FeedbackTool: Config found", { pid, fid });
+      setProjectId(pid);
+      setFeedbackItemId(fid);
+    } else {
+        const scriptModule = document.querySelector('script[data-project-id]');
+         if (scriptModule) {
+            const pid = scriptModule.getAttribute('data-project-id');
+            const fid = scriptModule.getAttribute('data-feedback-id');
+            console.log("FeedbackTool: Config found (module)", { pid, fid });
+            setProjectId(pid);
+            setFeedbackItemId(fid);
+        } else {
+            console.warn("FeedbackTool: Script tag not found or missing attributes");
+        }
     }
   }, []);
 
-  // Listen for messages from Host
+  // Fetch Users
   useEffect(() => {
-      const handleMessage = (event: MessageEvent) => {
-           if (event.data?.type === 'FEEDBACK_TOOL_UPDATE') {
-               if (event.data.payload.device) setDevice(event.data.payload.device);
-               if (event.data.payload.interactionMode) setInteractionMode(event.data.payload.interactionMode);
-           }
-      };
-      window.addEventListener('message', handleMessage);
-      return () => window.removeEventListener('message', handleMessage);
+    const fetchUsers = async () => {
+        try {
+            console.log("FeedbackTool: Fetching users...");
+            const usersSnapshot = await getDocs(collection(db, 'users'));
+            const fetchedUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+            console.log("FeedbackTool: Users fetched", fetchedUsers.length);
+            setUsers(fetchedUsers);
+        } catch (error) {
+            console.error("FeedbackTool: Error fetching users:", error);
+        }
+    };
+    
+    fetchUsers();
   }, []);
 
   // Subscribe to comments
   useEffect(() => {
     if (!projectId || !feedbackItemId) return;
-    const unsubscribe = subscribeToComments(projectId, feedbackItemId, (newComments) => {
+    
+    console.log("FeedbackTool: Subscribing to comments...");
+    const unsubscribeComments = subscribeToComments(projectId, feedbackItemId, (newComments) => {
+      console.log("FeedbackTool: Comments updated", newComments.length);
       setComments(newComments);
     });
-    return () => unsubscribe();
+
+    return () => {
+        unsubscribeComments();
+    };
   }, [projectId, feedbackItemId]);
+
+  // Listen for messages from Host
+  useEffect(() => {
+      const handleMessage = (event: MessageEvent) => {
+           if (event.data?.type === 'FEEDBACK_TOOL_UPDATE') {
+               console.log("FeedbackTool: Received update", event.data.payload);
+               if (event.data.payload.device) setDevice(event.data.payload.device);
+               if (event.data.payload.interactionMode) {
+                   setInteractionMode(event.data.payload.interactionMode);
+                   setIsCommenting(event.data.payload.interactionMode === 'comment');
+               }
+           }
+           if (event.data?.type === 'SCROLL_TO_PIN') {
+               const { x, y, commentId } = event.data.payload;
+               window.scrollTo({
+                   top: y - window.innerHeight / 2,
+                   behavior: 'smooth'
+               });
+               
+               if (commentId) {
+                   const comment = comments.find(c => c.id === commentId);
+                   if (comment) {
+                       setPopover({
+                           isOpen: true,
+                           x: comment.x_coordinate || x,
+                           y: comment.y_coordinate || y,
+                           comment: comment,
+                           isNew: false
+                       });
+                   }
+               }
+           }
+      };
+      window.addEventListener('message', handleMessage);
+      return () => window.removeEventListener('message', handleMessage);
+  }, [comments]); // Added comments to dependency so we can find the comment
 
   // Filter comments by device
   const visibleComments = useMemo(() => {
@@ -146,6 +184,7 @@ const FeedbackTool = () => {
     const target = e.target as HTMLElement;
     if (target.closest('#client-dashboard-feedback-tool')) return;
 
+    // Prevent default browser behavior (jumping)
     e.preventDefault();
     e.stopPropagation();
 
@@ -158,11 +197,15 @@ const FeedbackTool = () => {
         y,
         isNew: true
     });
-    setIsCommenting(false);
+    // Do NOT disable commenting mode after one click, let user continue? 
+    // Usually tools stay in comment mode until toggled off.
+    // But for now, let's keep it active.
+    // setIsCommenting(false); 
   }, [isCommenting, projectId, feedbackItemId, interactionMode]);
 
   useEffect(() => {
     if (isCommenting && interactionMode === 'comment') {
+        // Capture phase to intercept before other handlers
         document.addEventListener('click', handlePageClick, true);
     } else {
         document.removeEventListener('click', handlePageClick, true);
@@ -177,26 +220,29 @@ const FeedbackTool = () => {
       
       try {
           if (popover.isNew) {
-               const pinNumber = visibleComments.length + 1;
+               const existingPinsOnPageAndDevice = comments.filter(
+                   (c) => c.pageUrl === window.location.pathname && c.device === device
+               );
+               const maxPinNumber = existingPinsOnPageAndDevice.reduce((max, p) => Math.max(max, p.pin_number || 0), 0);
+
                const commentId = await addComment(projectId, feedbackItemId, {
                    authorId: userId,
                    commentText: text,
-                   resolved: false,
                    x_coordinate: popover.x,
                    y_coordinate: popover.y,
-                   pin_number: pinNumber,
+                   pin_number: maxPinNumber + 1, 
                    pageUrl: window.location.pathname,
                    device: device,
-                   dueDate: details?.dueDate
+                   dueDate: details?.dueDate,
+                   status: 'Active', 
+                   replies: [] 
                });
                
                if (details?.dueDate) {
                    await syncCommentToCalendar(commentId, text, details.dueDate, userId, projectId);
                }
           } else if (popover.comment) {
-              // Handle Reply (implemented in CommentPopover via onUpdate usually, but let's see)
-              // The CommentPopover handles replies internally in state or we need to add a reply endpoint.
-              // For now, assume reply adds to array or updateComment is used.
+              // Handle Reply (implemented in CommentPopover via onUpdate usually)
           }
           setPopover({ isOpen: false, x: 0, y: 0 });
       } catch (err) {
@@ -205,43 +251,22 @@ const FeedbackTool = () => {
       }
   };
   
-  const handleCommentUpdate = async (commentId: string, updates: Partial<FeedbackItemComment>) => {
+  const handleCommentUpdate = async (commentId: string, updates: Partial<FeedbackComment>) => {
       if (!projectId || !feedbackItemId) return;
-      await updateComment(projectId, feedbackItemId, commentId, updates);
-      if (updates.dueDate) {
-          // Sync update to calendar? (Ideally yes, but keeping it simple)
+      
+      const itemUpdates: any = { ...updates };
+      if (updates.comment) {
+          itemUpdates.commentText = updates.comment;
+          delete itemUpdates.comment;
       }
-  };
 
-
-  // Sidebar Actions
-  const handleSidebarCommentClick = (comment: FeedbackComment | FeedbackItemComment) => {
-     const c = comment as FeedbackItemComment;
-     // If pageUrl differs, navigate
-     if (c.pageUrl && c.pageUrl !== window.location.pathname) {
-         // Send message to Host to navigate
-         window.parent.postMessage({
-             type: 'FEEDBACK_TOOL_NAVIGATE',
-             payload: { url: c.pageUrl } // This needs to be absolute or relative correctly handled
-         }, '*');
-     }
-     
-     // Scroll to pin
-     if (c.x_coordinate !== undefined && c.y_coordinate !== undefined) {
-         window.scrollTo({
-             top: c.y_coordinate - window.innerHeight / 2,
-             behavior: 'smooth'
-         });
-         
-         // Open Popover for this comment
-         setPopover({
-             isOpen: true,
-             x: c.x_coordinate,
-             y: c.y_coordinate,
-             comment: c,
-             isNew: false
-         });
-     }
+      await updateComment(projectId, feedbackItemId, commentId, itemUpdates);
+      if (updates.dueDate) {
+          const commentToUpdate = comments.find(c => c.id === commentId);
+          if (commentToUpdate && commentToUpdate.commentText) {
+            await syncCommentToCalendar(commentId, commentToUpdate.commentText, updates.dueDate, userId, projectId);
+          }
+      }
   };
 
   const handleDeleteComment = async (commentId: string) => {
@@ -254,19 +279,43 @@ const FeedbackTool = () => {
       if (!projectId || !feedbackItemId) return;
       const comment = comments.find(c => c.id === commentId);
       if (comment) {
-          await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.resolved);
+          const newStatus = comment.status === 'Resolved' ? 'Active' : 'Resolved';
+          await updateComment(projectId, feedbackItemId, commentId, { status: newStatus, resolved: newStatus === 'Resolved' });
       }
   };
 
-  if (!projectId || !feedbackItemId) return null;
+  const handlePinClick = (comment: FeedbackItemComment) => {
+     // Notify host to open sidebar and select this comment
+     window.parent.postMessage({
+         type: 'PIN_CLICKED',
+         payload: { commentId: comment.id }
+     }, '*');
+
+     if (comment.x_coordinate !== undefined && comment.y_coordinate !== undefined) {
+         setPopover({
+             isOpen: true,
+             x: comment.x_coordinate,
+             y: comment.y_coordinate,
+             comment: comment,
+             isNew: false
+         });
+     }
+  };
+
+
+  if (!projectId || !feedbackItemId) {
+      console.log("FeedbackTool: Missing project or feedback ID", { projectId, feedbackItemId });
+      return null;
+  }
 
   return (
     <div 
         className="feedback-tool-root font-sans" 
+        id="client-dashboard-feedback-tool"
         ref={contentRef}
         style={{ 
-            pointerEvents: interactionMode === 'navigate' ? 'none' : 'auto',
-            position: 'absolute', width: '100%', height: '100%', top: 0, left: 0
+            pointerEvents: 'none', 
+            position: 'absolute', width: '100%', height: '100%', top: 0, left: 0, zIndex: 2147483647
         }}
     >
         {/* Highlight Overlay */}
@@ -281,7 +330,7 @@ const FeedbackTool = () => {
                     border: '2px solid #3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     pointerEvents: 'none',
-                    zIndex: 9999
+                    zIndex: 2147483646
                 }}
             />
         )}
@@ -290,7 +339,7 @@ const FeedbackTool = () => {
         {pins.map(pin => {
             const comment = comments.find(c => c.id === pin.id);
             if (!comment) return null;
-            const isResolved = comment.resolved;
+            const isResolved = comment.status === 'Resolved';
             return (
                 <div
                     key={pin.id}
@@ -298,76 +347,37 @@ const FeedbackTool = () => {
                         position: 'absolute',
                         top: pin.y,
                         left: pin.x,
-                        zIndex: 10000,
+                        zIndex: 2147483647,
                         transform: 'translate(-50%, -50%)',
-                        pointerEvents: 'auto', // Always clickable
+                        pointerEvents: 'auto', 
                         opacity: isResolved ? 0.5 : 1
                     }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-lg cursor-pointer transition-transform hover:scale-110 ${isResolved ? 'bg-green-500' : 'bg-blue-600'}`}
                     title={comment.commentText}
-                    onClick={(e) => { e.stopPropagation(); handleSidebarCommentClick(comment); }}
+                    onClick={(e) => { e.stopPropagation(); handlePinClick(comment); }}
                 >
                     {pin.number}
                 </div>
             );
         })}
 
-        {/* Floating Toggle Button (if sidebar is closed) */}
-        {!isSidebarOpen && (
-            <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="fixed top-4 right-4 z-[10001] bg-black text-white px-4 py-2 rounded shadow-lg hover:bg-gray-800 pointer-events-auto"
-            >
-                Show Feedback
-            </button>
-        )}
-
-        {/* Sidebar */}
-        {isSidebarOpen && (
-            <div 
-                className={`fixed z-[10001] shadow-2xl bg-white border-border-color pointer-events-auto flex flex-col transition-all duration-300 ${sidebarDock === 'right' ? 'top-0 right-0 h-full w-96 border-l' : 'bottom-0 left-0 w-full h-72 border-t'}`}
-            >
-                {/* Dock Toggle & Close */}
-                <div className="absolute top-2 right-2 flex gap-2 z-10">
-                    <button 
-                        onClick={() => setSidebarDock(prev => prev === 'right' ? 'bottom' : 'right')}
-                        className="p-1 rounded bg-gray-100 hover:bg-gray-200 text-xs"
-                        title="Toggle Dock Position"
-                    >
-                        {sidebarDock === 'right' ? 'Bottom Dock' : 'Right Dock'}
-                    </button>
-                    <button onClick={() => setIsSidebarOpen(false)} className="p-1 rounded hover:bg-red-100 text-red-500">&times;</button>
-                </div>
-
-                <FeedbackSidebar 
-                    view="comments"
-                    comments={visibleComments}
-                    onCommentClick={handleSidebarCommentClick}
-                    onClose={() => setIsSidebarOpen(false)}
-                    onDelete={handleDeleteComment}
-                    onResolve={handleResolveComment}
-                    onUpdate={handleCommentUpdate} 
-                    position={sidebarDock}
-                />
-                
-                {/* Comment Toggle Btn */}
-                <div className={`p-4 bg-white border-gray-200 ${sidebarDock === 'right' ? 'border-t' : 'border-r w-48 flex-shrink-0 flex items-center'}`}>
-                    <button 
-                        onClick={() => setIsCommenting(!isCommenting)}
-                        disabled={interactionMode === 'navigate'}
-                        className={`w-full py-2 px-4 rounded font-medium transition-colors ${interactionMode === 'navigate' ? 'bg-gray-300 cursor-not-allowed' : isCommenting ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                    >
-                         {interactionMode === 'navigate' ? 'Switch to Comment Mode' : isCommenting ? 'Cancel Commenting' : 'Add Comment'}
-                    </button>
-                </div>
-            </div>
-        )}
-
         {/* Popover */}
         {popover.isOpen && (
-            <div className="pointer-events-auto">
+            <div className="pointer-events-auto" style={{ position: 'relative', zIndex: 2147483647 }}>
                 <CommentPopover 
-                    comment={popover.comment || null}
+                    comment={popover.comment ? {
+                        id: popover.comment.id,
+                        projectId: projectId || '',
+                        targetId: feedbackItemId || '',
+                        targetType: 'website',
+                        comment: popover.comment.commentText,
+                        reporterId: popover.comment.authorId,
+                        status: popover.comment.status || 'Active',
+                        timestamp: typeof popover.comment.createdAt === 'string' ? popover.comment.createdAt : new Date().toISOString(),
+                        pin_number: popover.comment.pin_number || 0,
+                        dueDate: popover.comment.dueDate,
+                        replies: popover.comment.replies
+                    } as FeedbackComment : null}
                     coords={{ x: popover.x, y: popover.y }}
                     contentRef={contentRef}
                     zoom={1}
@@ -377,6 +387,7 @@ const FeedbackTool = () => {
                     onResolve={handleResolveComment}
                     onDelete={handleDeleteComment}
                     targetType="website"
+                    users={users} 
                 />
             </div>
         )}

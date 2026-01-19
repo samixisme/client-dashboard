@@ -47,6 +47,7 @@ const dataStore = {
     moodboardItems: initialMoodboardItems,
     calendar_events: initialCalendarEvents,
     time_logs: initialTimeLogs,
+    board_members: initialUsers, // Alias for users, used in some components
 };
 
 type DataStoreKey = keyof typeof dataStore;
@@ -100,6 +101,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             onSnapshot(qUsers, (snapshot) => {
                 const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
                 dataStore.users = [...initialUsers, ...fetchedUsers];
+                dataStore.board_members = dataStore.users; // Sync alias
                 setVersion(v => v + 1);
             }, (err) => console.error("Error fetching users: ", err)),
 
@@ -190,8 +192,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useData = (): DataContextType => {
     const context = useContext(DataContext);
+    // Modified to return a mock context if used outside of provider (e.g., in Feedback Tool)
     if (!context) {
-        throw new Error('useData must be used within a DataProvider');
+        // Return a minimal safe context
+        return {
+            data: dataStore, // Return the static dataStore which might have some mock data
+            loading: false,
+            error: null,
+            user: null,
+            updateData: () => {},
+            forceUpdate: () => {}
+        };
     }
     return context;
 };

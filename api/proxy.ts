@@ -93,8 +93,22 @@ export default async (req: Request, res: Response) => {
 
     // Inject the feedback script
     // Note: We don't inject /feedback.css anymore because we use CDN + inline styles
-    const scriptTag = `<script src="/feedback.js" data-project-id="${projectId}" data-feedback-id="${feedbackId}" async></script>`;
+    // In dev, point to the source directly so we don't need to rebuild.
+    // We MUST inject Vite client and React Refresh preamble for HMR and React to work.
+    const viteClient = `<script type="module" src="/@vite/client"></script>`;
+    const reactRefresh = `
+    <script type="module">
+      import RefreshRuntime from "/@react-refresh"
+      RefreshRuntime.injectIntoGlobalHook(window)
+      window.$RefreshReg$ = () => {}
+      window.$RefreshSig$ = () => (type) => type
+      window.__vite_plugin_react_preamble_installed__ = true
+    </script>
+    `;
+    const scriptTag = `<script type="module" src="/src/feedback-tool/index.tsx" data-project-id="${projectId}" data-feedback-id="${feedbackId}"></script>`;
     
+    $('head').append(viteClient);
+    $('head').append(reactRefresh);
     $('head').append(tailwindScript);
     $('head').append(tailwindConfig);
     $('head').append(customStyles);

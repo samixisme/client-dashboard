@@ -9,6 +9,7 @@ import { FeedbackComment } from '../../types';
 export type Breakpoint = 'desktop' | 'notebook' | 'tablet' | 'phone';
 export type InteractionMode = 'navigate' | 'comment';
 export type SidebarDock = 'right' | 'bottom';
+export type SidebarView = 'comments' | 'activity'; // Task 3.3: Added SidebarView type
 
 const FeedbackItemPage = () => {
   const { projectId, itemId } = useParams<{ projectId: string; itemId: string }>();
@@ -22,6 +23,9 @@ const FeedbackItemPage = () => {
   
   // Task 3.1: Sidebar Docking State
   const [sidebarDock, setSidebarDock] = useState<SidebarDock>('right');
+
+  // Task 3.3: Sidebar View State
+  const [sidebarView, setSidebarView] = useState<SidebarView>('comments');
   
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -128,7 +132,8 @@ const FeedbackItemPage = () => {
 
         {/* Sidebar */}
         <FeedbackSidebar 
-            view="comments"
+            view={sidebarView} // Task 3.3: Pass sidebarView state
+            onViewChange={setSidebarView} // Task 3.3: Pass handler to change view
             comments={sidebarComments}
             onCommentClick={(c) => console.log('Clicked comment', c)}
             onClose={() => {}}
