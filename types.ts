@@ -225,6 +225,8 @@ export interface UserSettings {
 
 // Feedback Feature Types
 export type DeviceView = 'desktop' | 'notebook' | 'tablet' | 'phone';
+export type SidebarPosition = 'right' | 'bottom';
+export type SidebarView = 'comments' | 'activity' | null;
 
 export interface WebsitePage {
     id: string;

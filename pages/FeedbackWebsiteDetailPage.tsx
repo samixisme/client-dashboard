@@ -35,6 +35,46 @@ const FeedbackWebsiteDetailPage = () => {
   const [activities, setActivities] = useState<any[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { data } = useData();
+  const [scale, setScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+      const calculateScale = () => {
+          if (!containerRef.current) return;
+          // Available space inside the padding (p-8 = 32px * 2 = 64px)
+          const availableWidth = containerRef.current.clientWidth - 64; 
+          const availableHeight = containerRef.current.clientHeight - 64;
+
+          let targetWidth = 0;
+          
+          switch (device) {
+              case 'phone': targetWidth = 375; break;
+              case 'tablet': targetWidth = 768; break;
+              case 'notebook': targetWidth = 1440; break;
+              case 'desktop': 
+                  setScale(1); 
+                  return;
+          }
+
+          // Calculate scale to fit width, but also check height if we want to ensure it fully fits "inside"
+          // For now, prioritising width fit as usually vertical scroll is expected, 
+          // but "fit inside a glass frame" might imply full containment. 
+          // Let's scale based on width primarily to ensure side padding.
+          const newScale = Math.min(1, availableWidth / targetWidth);
+          setScale(newScale);
+      };
+
+      const observer = new ResizeObserver(calculateScale);
+      if (containerRef.current) observer.observe(containerRef.current);
+      
+      calculateScale();
+      window.addEventListener('resize', calculateScale); // Fallback
+      
+      return () => {
+          observer.disconnect();
+          window.removeEventListener('resize', calculateScale);
+      };
+  }, [device, isSidebarOpen, sidebarPosition]);
 
   // Fetch Logic
   useEffect(() => {
@@ -184,11 +224,16 @@ const FeedbackWebsiteDetailPage = () => {
 
   // Styles based on device
   const getContainerStyle = () => {
+      const baseStyles: React.CSSProperties = {
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+      };
+
       switch (device) {
-          case 'phone': return { width: '375px', height: '100%', borderRight: '1px solid #ccc', borderLeft: '1px solid #ccc' };
-          case 'tablet': return { width: '768px', height: '100%', borderRight: '1px solid #ccc', borderLeft: '1px solid #ccc' };
-          case 'notebook': return { width: '1440px', height: '100%', borderRight: '1px solid #ccc', borderLeft: '1px solid #ccc' };
-          case 'desktop': default: return { width: '100%', height: '100%' };
+          case 'phone': return { ...baseStyles, width: '375px', height: '100%', borderRight: '1px solid #ccc', borderLeft: '1px solid #ccc' };
+          case 'tablet': return { ...baseStyles, width: '768px', height: '100%', borderRight: '1px solid #ccc', borderLeft: '1px solid #ccc' };
+          case 'notebook': return { ...baseStyles, width: '1440px', height: '100%', borderRight: '1px solid #ccc', borderLeft: '1px solid #ccc' };
+          case 'desktop': default: return { ...baseStyles, width: '100%', height: '100%' };
       }
   };
 
@@ -302,16 +347,19 @@ const FeedbackWebsiteDetailPage = () => {
          )}
 
          {/* Iframe Canvas */}
-         <div className="w-full h-full overflow-auto flex justify-center"> {/* Padding removed */}
+         <div ref={containerRef} className="w-full h-full overflow-auto flex items-center justify-center p-8">
              {proxyUrl && (
                 <div 
                     style={getContainerStyle()} 
-                    className="bg-white shadow-2xl transition-all duration-300 relative shrink-0"
+                    className="relative shrink-0 transition-all duration-300 rounded-lg overflow-hidden ring-1 ring-white/10 shadow-2xl"
                 >
+                    {/* Glass Gutter Frame */}
+                    <div className="absolute inset-0 pointer-events-none z-10 rounded-lg ring-1 ring-inset ring-white/10 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"></div>
+                    
                     <iframe 
                         ref={iframeRef}
                         src={proxyUrl} 
-                        className="w-full h-full border-0"
+                        className="w-full h-full border-0 bg-white"
                         title="Feedback Website Proxy"
                         sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
                         style={{ pointerEvents: 'auto' }} 

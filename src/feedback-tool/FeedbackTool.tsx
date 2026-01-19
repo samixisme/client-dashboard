@@ -148,43 +148,10 @@ const FeedbackTool = () => {
       }));
   }, [visibleComments]);
 
-  // Handle Hover
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isCommenting || interactionMode === 'navigate') {
-        if (hoveredElement) setHoveredElement(null);
-        return;
-    }
-    const target = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
-    if (target && !target.closest('#client-dashboard-feedback-tool')) {
-        setHoveredElement(target);
-    } else {
-        setHoveredElement(null);
-    }
-  }, [isCommenting, interactionMode, hoveredElement]);
-
-  useEffect(() => {
-    if (isCommenting && interactionMode === 'comment') {
-        document.addEventListener('mousemove', handleMouseMove);
-        document.body.style.cursor = 'crosshair';
-    } else {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.body.style.cursor = 'default';
-        setHoveredElement(null);
-    }
-    return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.body.style.cursor = 'default';
-    };
-  }, [isCommenting, interactionMode, handleMouseMove]);
-
-  // Handle Click to Comment
-  const handlePageClick = useCallback((e: MouseEvent) => {
+  // Handle Click to Comment (via Shield)
+  const handleShieldClick = (e: React.MouseEvent) => {
     if (!isCommenting || !projectId || !feedbackItemId || interactionMode === 'navigate') return;
 
-    const target = e.target as HTMLElement;
-    if (target.closest('#client-dashboard-feedback-tool')) return;
-
-    // Prevent default browser behavior (jumping)
     e.preventDefault();
     e.stopPropagation();
 
@@ -197,21 +164,21 @@ const FeedbackTool = () => {
         y,
         isNew: true
     });
-    // Do NOT disable commenting mode after one click, let user continue? 
-    // Usually tools stay in comment mode until toggled off.
-    // But for now, let's keep it active.
-    // setIsCommenting(false); 
-  }, [isCommenting, projectId, feedbackItemId, interactionMode]);
+    // We stay in commenting mode for multiple comments
+  };
 
-  useEffect(() => {
-    if (isCommenting && interactionMode === 'comment') {
-        // Capture phase to intercept before other handlers
-        document.addEventListener('click', handlePageClick, true);
-    } else {
-        document.removeEventListener('click', handlePageClick, true);
-    }
-    return () => document.removeEventListener('click', handlePageClick, true);
-  }, [isCommenting, interactionMode, handlePageClick]);
+  // Handle Hover (via Shield)
+  const handleShieldMouseMove = (e: React.MouseEvent) => {
+     const elements = document.elementsFromPoint(e.clientX, e.clientY);
+     // Find the first element that is NOT part of the feedback tool
+     const target = elements.find(el => !el.closest('#client-dashboard-feedback-tool')) as HTMLElement;
+     
+     if (target && target !== hoveredElement) {
+         setHoveredElement(target);
+     } else if (!target) {
+         setHoveredElement(null);
+     }
+  };
 
 
   // Popover Actions
@@ -318,22 +285,47 @@ const FeedbackTool = () => {
             position: 'absolute', width: '100%', height: '100%', top: 0, left: 0, zIndex: 2147483647
         }}
     >
-        {/* Highlight Overlay */}
-        {hoveredElement && isCommenting && interactionMode === 'comment' && (
-            <div 
+        {/* Click Shield - ONLY active when commenting */}
+        {isCommenting && interactionMode === 'comment' && (
+            <div
+                onClick={handleShieldClick}
+                onMouseMove={handleShieldMouseMove}
                 style={{
-                    position: 'absolute',
-                    top: hoveredElement.getBoundingClientRect().top + window.scrollY,
-                    left: hoveredElement.getBoundingClientRect().left + window.scrollX,
-                    width: hoveredElement.getBoundingClientRect().width,
-                    height: hoveredElement.getBoundingClientRect().height,
-                    border: '2px solid #3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    pointerEvents: 'none',
-                    zIndex: 2147483646
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 2147483645, // Below pins/popover (max int) but above everything else
+                    cursor: 'crosshair',
+                    pointerEvents: 'auto', // Capture clicks
+                    background: 'transparent' // Invisible
                 }}
             />
         )}
+        
+        {/* Green Halo */}
+        {isCommenting && hoveredElement && (() => {
+            const rect = hoveredElement.getBoundingClientRect();
+            const docTop = rect.top + window.scrollY;
+            const docLeft = rect.left + window.scrollX;
+            return (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: docTop,
+                        left: docLeft,
+                        width: rect.width,
+                        height: rect.height,
+                        border: '2px solid #A3E635', // Primary Green
+                        backgroundColor: 'rgba(163, 230, 53, 0.2)', // Slight fill
+                        pointerEvents: 'none',
+                        zIndex: 2147483646,
+                        transition: 'all 0.1s ease-out'
+                    }}
+                />
+            );
+        })()}
 
         {/* Pins */}
         {pins.map(pin => {
@@ -352,7 +344,7 @@ const FeedbackTool = () => {
                         pointerEvents: 'auto', 
                         opacity: isResolved ? 0.5 : 1
                     }}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-lg cursor-pointer transition-transform hover:scale-110 ${isResolved ? 'bg-green-500' : 'bg-blue-600'}`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-black font-bold shadow-lg cursor-pointer transition-transform hover:scale-110 ${isResolved ? 'bg-green-500' : 'bg-[#A3E635]'}`}
                     title={comment.commentText}
                     onClick={(e) => { e.stopPropagation(); handlePinClick(comment); }}
                 >

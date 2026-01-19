@@ -42,6 +42,9 @@ export default async (req: Request, res: Response) => {
       }
     });
 
+    // Remove CSP to allow our scripts
+    $('meta[http-equiv="Content-Security-Policy"]').remove();
+
     // Inject Tailwind CDN and Config
     const tailwindScript = `<script src="https://cdn.tailwindcss.com"></script>`;
     const tailwindConfig = `
