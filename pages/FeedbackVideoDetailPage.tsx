@@ -158,16 +158,16 @@ const FeedbackVideoDetailPage = () => {
             />
             
             {/* Custom Controls / Seek Bar */}
-            <div className="h-12 bg-gray-900 flex items-center px-4 gap-4 mt-2 rounded max-w-4xl mx-auto w-full">
-                 <button onClick={togglePlay} className="text-white hover:text-primary">
+            <div className="h-12 bg-surface flex items-center px-4 gap-4 mt-2 rounded max-w-4xl mx-auto w-full border border-border-color">
+                 <button onClick={togglePlay} className="text-text-primary hover:text-primary transition-colors">
                     {isPlaying ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6" />}
                  </button>
                  
-                 <div className="text-xs text-white w-20 text-center font-mono">
+                 <div className="text-xs text-text-primary w-20 text-center font-mono">
                      {formatTime(currentTime)} / {formatTime(duration)}
                  </div>
 
-                 <div className="flex-1 relative h-2 bg-gray-700 rounded cursor-pointer group"
+                 <div className="flex-1 relative h-2 bg-surface-light rounded cursor-pointer group"
                       onClick={(e) => {
                           const rect = e.currentTarget.getBoundingClientRect();
                           const pos = (e.clientX - rect.left) / rect.width;
@@ -195,7 +195,7 @@ const FeedbackVideoDetailPage = () => {
                  
                  <button 
                     onClick={startComment}
-                    className="bg-primary text-background px-3 py-1 text-xs font-bold rounded hover:bg-primary-hover whitespace-nowrap"
+                    className="bg-primary text-black px-3 py-1 text-xs font-bold rounded hover:bg-primary-hover whitespace-nowrap transition-colors"
                  >
                      + Add Comment
                  </button>
@@ -204,7 +204,7 @@ const FeedbackVideoDetailPage = () => {
 
         {/* Toolbar Overlay */}
         <div className="absolute top-4 left-4 z-20 flex gap-2">
-             <button onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} className="p-2 bg-glass/80 rounded-lg text-white hover:bg-glass border border-white/10" title="Rotate Layout">
+             <button onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} className="p-2 bg-surface/80 rounded-lg text-text-primary hover:bg-surface border border-border-color" title="Rotate Layout">
                  <div className={`w-4 h-4 border-2 border-current ${sidebarPosition === 'right' ? 'border-b-transparent' : 'border-r-transparent'}`}></div>
              </button>
         </div>
@@ -214,16 +214,16 @@ const FeedbackVideoDetailPage = () => {
       {!isSidebarOpen && (
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-4 right-4 z-50 p-2 bg-glass border border-border-color rounded-lg shadow-lg text-text-primary hover:bg-glass-light transition-colors"
+            className="absolute top-4 right-4 z-50 p-2 bg-surface border border-border-color rounded-lg shadow-lg text-text-primary hover:bg-surface-light transition-colors"
           >
               <ArrowRightIcon className="w-5 h-5 transform rotate-180" />
           </button>
       )}
 
       {/* 2. Sidebar Area */}
-      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-glass border-border-color flex flex-col overflow-hidden relative shadow-xl z-20`}>
+      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-surface border-border-color flex flex-col overflow-hidden relative shadow-xl z-20`}>
         {/* Header */}
-        <div className="p-4 border-b border-border-color flex justify-between items-center bg-glass flex-shrink-0">
+        <div className="p-4 border-b border-border-color flex justify-between items-center bg-surface flex-shrink-0">
             <div className="truncate pr-2">
                 <h2 className="font-bold text-text-primary truncate">{feedbackItem.name}</h2>
                 <div className="flex gap-4 text-xs text-text-secondary mt-1">
@@ -248,14 +248,14 @@ const FeedbackVideoDetailPage = () => {
                         value={newCommentText}
                         onChange={(e) => setNewCommentText(e.target.value)}
                         placeholder="Type your feedback..."
-                        className="w-full p-2 rounded bg-glass-light border border-border-color text-sm mb-2 focus:ring-1 focus:ring-primary outline-none"
+                        className="w-full p-2 rounded bg-surface-light border border-border-color text-sm mb-2 focus:ring-1 focus:ring-primary outline-none text-text-primary placeholder:text-text-secondary"
                         rows={3}
                         autoFocus
                     />
                     <div className="flex justify-end">
                         <button 
                             type="submit" 
-                            className="px-3 py-1 bg-primary text-background text-xs font-bold rounded hover:bg-primary-hover"
+                            className="px-3 py-1 bg-primary text-black text-xs font-bold rounded hover:bg-primary-hover transition-colors"
                         >
                             Post
                         </button>

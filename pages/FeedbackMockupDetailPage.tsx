@@ -206,7 +206,7 @@ const FeedbackMockupDetailPage = () => {
       {/* 1. Main Viewer Area */}
       <div 
         ref={containerRef}
-        className={`flex-1 bg-black/5 relative overflow-hidden select-none ${(isSpaceHeld || isPanning) ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+        className={`flex-1 bg-background relative overflow-hidden select-none ${(isSpaceHeld || isPanning) ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -221,8 +221,8 @@ const FeedbackMockupDetailPage = () => {
         {/* Top Header Overlay (Title & Actions) */}
         <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
              {/* Left: Breadcrumbs/Title */}
-             <div className="bg-glass/90 backdrop-blur-md border border-white/20 p-2 rounded-lg shadow-sm pointer-events-auto flex items-center gap-3">
-                 <button onClick={() => navigate(`/feedback/${projectId}/mockups`)} className="p-1.5 hover:bg-black/5 rounded-md text-text-secondary hover:text-text-primary transition-colors" title="Back to Grid">
+             <div className="bg-surface/90 backdrop-blur-md border border-border-color p-2 rounded-lg shadow-sm pointer-events-auto flex items-center gap-3">
+                 <button onClick={() => navigate(`/feedback/${projectId}/mockups`)} className="p-1.5 hover:bg-surface-light rounded-md text-text-secondary hover:text-text-primary transition-colors" title="Back to Grid">
                      <GridViewIcon className="w-5 h-5"/>
                  </button>
                  <div className="h-4 w-px bg-border-color"></div>
@@ -234,17 +234,17 @@ const FeedbackMockupDetailPage = () => {
 
              {/* Right: Actions */}
              <div className="flex gap-2 pointer-events-auto">
-                 <button onClick={handleApprove} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${feedbackItem.status === 'approved' ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-white text-text-secondary hover:text-text-primary border border-white/20'}`}>
+                 <button onClick={handleApprove} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all ${feedbackItem.status === 'approved' ? 'bg-green-500 text-black hover:bg-green-600' : 'bg-surface text-text-secondary hover:text-text-primary border border-border-color'}`}>
                      <CheckCircleIcon className="w-5 h-5"/>
                      {feedbackItem.status === 'approved' ? 'Approved' : 'Approve'}
                  </button>
-                 <button onClick={handleShare} className="p-2 bg-glass/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-white border border-white/20 shadow-sm" title="Share Link">
+                 <button onClick={handleShare} className="p-2 bg-surface/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm" title="Share Link">
                      <LinkIcon className="w-5 h-5"/>
                  </button>
-                 <button onClick={handleDownload} className="p-2 bg-glass/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-white border border-white/20 shadow-sm" title="Download Original">
+                 <button onClick={handleDownload} className="p-2 bg-surface/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm" title="Download Original">
                      <DownloadIcon className="w-5 h-5"/>
                  </button>
-                 <button onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} className="p-2 bg-glass/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-white border border-white/20 shadow-sm hidden md:block" title="Dock Sidebar">
+                 <button onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} className="p-2 bg-surface/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm hidden md:block" title="Dock Sidebar">
                      <div className={`w-4 h-4 border-2 border-current ${sidebarPosition === 'right' ? 'border-b-transparent' : 'border-r-transparent'}`}></div>
                  </button>
              </div>
@@ -275,7 +275,7 @@ const FeedbackMockupDetailPage = () => {
                     comment.position && !comment.resolved && (
                         <div
                             key={comment.id}
-                            className={`absolute flex items-center justify-center rounded-full font-bold text-white shadow-md border-2 border-white transition-transform hover:scale-125 hover:z-50 cursor-pointer
+                            className={`absolute flex items-center justify-center rounded-full font-bold text-black shadow-md border-2 border-black transition-transform hover:scale-125 hover:z-50 cursor-pointer
                                 ${activePinId === comment.id ? 'bg-primary z-40 scale-125' : 'bg-primary/80 z-30'}
                             `}
                             style={{
@@ -301,7 +301,7 @@ const FeedbackMockupDetailPage = () => {
                 {/* New Comment Indicator */}
                 {clickPosition && (
                     <div 
-                        className="absolute w-8 h-8 rounded-full bg-white border-2 border-primary text-primary flex items-center justify-center font-bold shadow-lg animate-bounce z-50"
+                        className="absolute w-8 h-8 rounded-full bg-surface border-2 border-primary text-primary flex items-center justify-center font-bold shadow-lg animate-bounce z-50"
                         style={{
                             left: `${clickPosition.x}%`,
                             top: `${clickPosition.y}%`,
@@ -315,15 +315,15 @@ const FeedbackMockupDetailPage = () => {
         </div>
 
         {/* Toolbar Overlay */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-glass/90 backdrop-blur-xl border border-white/20 rounded-2xl p-1.5 flex items-center gap-1 shadow-2xl z-50 ring-1 ring-black/5">
-             <button onClick={() => setZoom(z => Math.max(0.1, z - 0.25))} className="p-2 hover:bg-white/50 rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom Out"><ZoomOutIcon className="w-5 h-5"/></button>
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-surface/90 backdrop-blur-xl border border-border-color rounded-2xl p-1.5 flex items-center gap-1 shadow-2xl z-50 ring-1 ring-black/5">
+             <button onClick={() => setZoom(z => Math.max(0.1, z - 0.25))} className="p-2 hover:bg-surface-light rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom Out"><ZoomOutIcon className="w-5 h-5"/></button>
              <span className="text-xs font-bold font-mono w-12 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
-             <button onClick={() => setZoom(z => Math.min(5, z + 0.25))} className="p-2 hover:bg-white/50 rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom In"><ZoomInIcon className="w-5 h-5"/></button>
+             <button onClick={() => setZoom(z => Math.min(5, z + 0.25))} className="p-2 hover:bg-surface-light rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom In"><ZoomInIcon className="w-5 h-5"/></button>
              <div className="w-px h-5 bg-border-color/50 mx-1"></div>
-             <button onClick={handleFitToScreen} className="px-3 py-1.5 text-xs font-bold hover:bg-white/50 rounded-xl text-text-primary transition-colors">Fit</button>
+             <button onClick={handleFitToScreen} className="px-3 py-1.5 text-xs font-bold hover:bg-surface-light rounded-xl text-text-primary transition-colors">Fit</button>
              <div className="w-px h-5 bg-border-color/50 mx-1"></div>
-             <button onClick={() => setIsPanning(!isPanning)} className={`p-2 rounded-xl transition-colors ${isPanning ? 'bg-primary text-white shadow-sm' : 'hover:bg-white/50 text-text-secondary'}`} title="Pan Tool"><PanIcon className="w-5 h-5"/></button>
-             <button onClick={() => setPinsVisible(!pinsVisible)} className={`p-2 rounded-xl transition-colors ${!pinsVisible ? 'text-text-secondary opacity-50' : 'text-primary hover:bg-white/50'}`} title="Toggle Pins">{pinsVisible ? <EyeIcon className="w-5 h-5"/> : <EyeOffIcon className="w-5 h-5"/>}</button>
+             <button onClick={() => setIsPanning(!isPanning)} className={`p-2 rounded-xl transition-colors ${isPanning ? 'bg-primary text-black font-bold shadow-sm' : 'hover:bg-surface-light text-text-secondary'}`} title="Pan Tool"><PanIcon className="w-5 h-5"/></button>
+             <button onClick={() => setPinsVisible(!pinsVisible)} className={`p-2 rounded-xl transition-colors ${!pinsVisible ? 'text-text-secondary opacity-50' : 'text-primary hover:bg-surface-light'}`} title="Toggle Pins">{pinsVisible ? <EyeIcon className="w-5 h-5"/> : <EyeOffIcon className="w-5 h-5"/>}</button>
         </div>
       </div>
 
@@ -331,16 +331,16 @@ const FeedbackMockupDetailPage = () => {
       {!isSidebarOpen && (
         <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-1/2 right-0 transform -translate-y-1/2 z-50 p-2 bg-white shadow-lg rounded-l-xl text-text-primary hover:text-primary transition-all border border-r-0 border-border-color"
+            className="absolute top-1/2 right-0 transform -translate-y-1/2 z-50 p-2 bg-surface shadow-lg rounded-l-xl text-text-primary hover:text-primary transition-all border border-r-0 border-border-color"
         >
             <ArrowRightIcon className="w-5 h-5 transform rotate-180"/>
         </button>
       )}
 
       {/* 2. Sidebar Area */}
-      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-glass border-border-color flex flex-col overflow-hidden relative shadow-2xl z-20`}>
+      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-surface border-border-color flex flex-col overflow-hidden relative shadow-2xl z-20`}>
          {/* Sidebar Header */}
-         <div className="p-4 border-b border-border-color bg-glass flex justify-between items-center flex-shrink-0">
+         <div className="p-4 border-b border-border-color bg-surface flex justify-between items-center flex-shrink-0">
              <div className="flex gap-4">
                  <button 
                     onClick={() => setSidebarView('comments')}
@@ -355,7 +355,7 @@ const FeedbackMockupDetailPage = () => {
                      Activity
                  </button>
              </div>
-             <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-glass-light rounded text-text-secondary transition-colors">
+             <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-surface-light rounded text-text-secondary transition-colors">
                  <ArrowRightIcon className={`w-5 h-5 ${sidebarPosition === 'bottom' ? 'rotate-90' : ''}`}/>
              </button>
          </div>
@@ -371,14 +371,14 @@ const FeedbackMockupDetailPage = () => {
                  </div>
                  <form onSubmit={handleSubmitComment}>
                      <textarea 
-                        className="w-full bg-white border border-border-color rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none mb-3 resize-none shadow-sm"
+                        className="w-full bg-surface-light border border-border-color rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none mb-3 resize-none shadow-sm text-text-primary placeholder:text-text-secondary"
                         rows={3}
                         placeholder="What's your feedback?"
                         value={newCommentText}
                         onChange={e => setNewCommentText(e.target.value)}
                         autoFocus
                      />
-                     <button type="submit" className="w-full bg-primary text-white py-2 rounded-lg text-sm font-bold hover:bg-primary-hover transition-colors shadow-sm">
+                     <button type="submit" className="w-full bg-primary text-black py-2 rounded-lg text-sm font-bold hover:bg-primary-hover transition-colors shadow-sm">
                          Post Comment
                      </button>
                  </form>
@@ -386,7 +386,7 @@ const FeedbackMockupDetailPage = () => {
          )}
 
          {/* Comments/Activity List */}
-         <div className="flex-1 overflow-hidden flex flex-col bg-glass/50">
+         <div className="flex-1 overflow-hidden flex flex-col bg-surface/50">
             <FeedbackSidebar 
                 view={sidebarView}
                 comments={comments}

@@ -2,6 +2,7 @@ import React, { useState, useLayoutEffect, useRef, useEffect } from 'react';
 import { FeedbackComment, User } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { DeleteIcon } from '../icons/DeleteIcon';
+import { CalendarIcon } from '../icons/CalendarIcon';
 
 interface CommentPopoverProps {
     comment: FeedbackComment | null;
@@ -18,7 +19,6 @@ interface CommentPopoverProps {
     users?: User[]; // Optional prop for direct user data injection
 }
 
-// Reusable user avatar/name component if needed
 const UserInfo = ({ userId, getMember }: { userId: string, getMember: (id: string) => User | undefined }) => {
     const user = getMember(userId);
     return (
@@ -26,7 +26,7 @@ const UserInfo = ({ userId, getMember }: { userId: string, getMember: (id: strin
             {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt={user.name} className="w-6 h-6 rounded-full" />
             ) : (
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
                     {user?.name?.[0] || 'U'}
                 </div>
             )}
@@ -35,7 +35,6 @@ const UserInfo = ({ userId, getMember }: { userId: string, getMember: (id: strin
     );
 };
 
-// Thread component
 const CommentThread = ({ replies, getMember }: { replies: any[], getMember: (id: string) => any }) => {
     if (!replies || replies.length === 0) return null;
     return (
@@ -43,7 +42,7 @@ const CommentThread = ({ replies, getMember }: { replies: any[], getMember: (id:
             {replies.map(reply => (
                 <div key={reply.id} className="flex flex-col gap-1">
                     <UserInfo userId={reply.authorId} getMember={getMember} />
-                    <p className="text-sm text-text-primary bg-white/5 p-2 rounded-md ml-8">{reply.text}</p>
+                    <p className="text-sm text-text-primary bg-glass-light p-2 rounded-md ml-8">{reply.text}</p>
                     {reply.replies && <CommentThread replies={reply.replies} getMember={getMember} />}
                 </div>
             ))}
@@ -56,19 +55,21 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
     
     const [newReply, setNewReply] = useState('');
     const popoverRef = useRef<HTMLDivElement>(null);
-    const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 }); // Start invisible to prevent flash
+    const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
     
     const [startTime, setStartTime] = useState(comment?.startTime ?? videoCurrentTime ?? 0);
     const [endTime, setEndTime] = useState(comment?.endTime ?? (videoCurrentTime ? videoCurrentTime + 5 : 5));
     const [isEditingTime, setIsEditingTime] = useState(false);
     const [dueDate, setDueDate] = useState(comment?.dueDate || '');
+    const [localStatus, setLocalStatus] = useState<'Active' | 'Resolved'>(comment?.status || 'Active');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         setDueDate(comment?.dueDate || '');
+        if (comment) {
+            setLocalStatus(comment.status || 'Active');
+        }
     }, [comment]);
-
-
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useLayoutEffect(() => {
         if (!contentRef.current || !popoverRef.current) return;
@@ -96,7 +97,6 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
                 opacity: 1
             });
 
-            // Focus textarea after positioning to prevent scroll jump
             if (!comment && textareaRef.current) {
                 setTimeout(() => {
                     textareaRef.current?.focus({ preventScroll: true });
@@ -119,7 +119,7 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
         if (comment && newReply.trim()) {
             const reply = {
                 id: `rep-${Date.now()}`,
-                authorId: 'user-1', // Hardcoded admin
+                authorId: 'user-1',
                 text: newReply,
                 timestamp: new Date().toISOString(),
                 replies: [], 
@@ -127,18 +127,10 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
             if (!comment.replies) comment.replies = [];
             comment.replies.push(reply);
             
-            // Call onUpdate to persist
             if (onUpdate) {
                 onUpdate(comment.id, { replies: comment.replies });
             }
-
             setNewReply('');
-        }
-    };
-    
-    const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        if (comment && onUpdate) {
-            onUpdate(comment.id, { status: e.target.value as 'Active' | 'Resolved' });
         }
     };
     
@@ -179,131 +171,140 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
     return (
         <div 
             ref={popoverRef} 
-            style={{
-                ...style,
-                backgroundColor: '#1C1C1C',
-                color: '#F4F4F5',
-                borderColor: '#27272A'
-            }}
-            className="comment-popover z-50 w-72 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] border flex flex-col backdrop-blur-md"
+            style={style}
+            className="comment-popover z-50 w-80 rounded-lg shadow-lg bg-surface/80 border border-border-color flex flex-col backdrop-blur-md text-text-primary"
             onClick={e => e.stopPropagation()}
         >
             {comment ? (
                 <>
-                    <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderColor: '#27272A' }} className="px-3 py-2 border-b flex justify-between items-center rounded-t-xl">
+                    <div className="px-4 py-2 border-b border-border-color flex justify-between items-center rounded-t-lg bg-surface/50">
                          <div className="flex items-center gap-2">
-                             <span style={{ backgroundColor: '#A3E635', color: '#000000' }} className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold">
+                             <span className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-primary text-black">
                                 {comment.pin_number}
                              </span>
-                             <span className="text-[10px] text-text-secondary">
+                             <span className="text-xs text-text-secondary">
                                 {new Date(comment.timestamp || Date.now()).toLocaleDateString()}
                              </span>
                         </div>
-                        <button onClick={onClose} className="text-text-secondary hover:text-white transition-colors">
+                        <button onClick={onClose} className="p-1 text-primary hover:text-primary-hover transition-colors">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
 
                      {comment.targetType === 'video' && (
-                        <div className="px-3 pt-2 text-xs text-text-secondary flex items-center justify-between">
-                            {/* ... video controls ... */}
+                        <div className="px-4 pt-3 text-sm text-text-secondary flex items-center justify-between">
                             {isEditingTime ? (
-                                <div className="flex items-center gap-1">
-                                    <input type="number" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} className="w-10 text-center bg-glass-light border border-border-color rounded px-1 py-0.5 text-[10px]" />
+                                <div className="flex items-center gap-2">
+                                    <input type="number" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} className="w-14 text-center bg-surface-light border border-border-color rounded px-2 py-1 text-xs" />
                                     <span>-</span>
-                                    <input type="number" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} className="w-10 text-center bg-glass-light border border-border-color rounded px-1 py-0.5 text-[10px]" />
+                                    <input type="number" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} className="w-14 text-center bg-surface-light border border-border-color rounded px-2 py-1 text-xs" />
                                 </div>
                             ) : (
                                 <div>
-                                    Time: <span className="font-mono text-text-primary">{formatTime(comment.startTime || 0)} - {formatTime(comment.endTime || 0)}</span>
+                                    Time: <span className="font-mono text-white">{formatTime(comment.startTime || 0)} - {formatTime(comment.endTime || 0)}</span>
                                 </div>
                             )}
                              {isEditingTime ? 
-                                <button onClick={handleTimeSave} className="text-[10px] font-bold text-primary hover:underline">Save</button> :
-                                <button onClick={() => setIsEditingTime(true)} className="text-[10px] font-bold text-primary hover:underline">Edit</button>
+                                <button onClick={handleTimeSave} className="text-xs font-bold text-primary hover:underline">Save</button> :
+                                <button onClick={() => setIsEditingTime(true)} className="text-xs font-bold text-primary hover:underline">Edit</button>
                             }
                         </div>
                     )}
 
-                    <div className="p-3 space-y-3 max-h-[250px] overflow-y-auto custom-scrollbar">
-                        <div className="flex flex-col gap-1.5">
+                    <div className="p-4 space-y-4 max-h-64 overflow-y-auto custom-scrollbar">
+                        <div className="flex flex-col gap-2">
                              <UserInfo userId={comment.reporterId} getMember={getMember} />
-                             <p style={{ color: '#F4F4F5' }} className="text-xs ml-8">{comment.comment}</p>
+                             <p className="text-sm ml-8 text-text-primary">{comment.comment}</p>
                         </div>
                         <CommentThread replies={comment.replies || []} getMember={getMember} />
                     </div>
 
-                    <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderColor: '#27272A' }} className="p-3 border-t space-y-3 rounded-b-xl">
+                    <div className="p-4 border-t border-border-color space-y-4 rounded-b-lg bg-surface/50">
                          <div className="flex justify-between items-center">
-                            {/* Status Switch */}
                             <div 
-                                className="relative flex items-center bg-black/50 rounded-full p-0.5 border border-white/10 w-24 h-6 cursor-pointer"
-                                onClick={() => onResolve?.(comment.id)}
+                                className="relative flex items-center bg-surface-light rounded-full p-1 border border-border-color w-28 h-8 cursor-pointer"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newStatus = localStatus === 'Active' ? 'Resolved' : 'Active';
+                                    setLocalStatus(newStatus);
+                                    onResolve?.(comment.id);
+                                }}
                             >
                                 <div 
-                                    className={`absolute top-0.5 bottom-0.5 w-11 rounded-full transition-all duration-300 shadow-sm ${comment.status === 'Resolved' ? 'left-[calc(100%-1.375rem-2px)] bg-green-500' : 'left-0.5 bg-yellow-500'}`}
+                                    className={`absolute top-1 bottom-1 w-12 rounded-full transition-all duration-300 shadow-md ${localStatus === 'Resolved' ? 'left-14 bg-green-500' : 'left-1 bg-yellow-500'}`}
                                 />
-                                <span className={`relative z-10 w-1/2 text-center text-[9px] font-bold transition-colors ${comment.status !== 'Resolved' ? 'text-black' : 'text-text-secondary'}`}>Active</span>
-                                <span className={`relative z-10 w-1/2 text-center text-[9px] font-bold transition-colors ${comment.status === 'Resolved' ? 'text-black' : 'text-text-secondary'}`}>Resolved</span>
+                                <span className={`relative z-10 w-1/2 text-center text-xs font-bold transition-colors ${localStatus !== 'Resolved' ? 'text-black' : 'text-text-secondary'}`}>Active</span>
+                                <span className={`relative z-10 w-1/2 text-center text-xs font-bold transition-colors ${localStatus === 'Resolved' ? 'text-black' : 'text-text-secondary'}`}>Resolved</span>
                             </div>
 
                              <div className="flex gap-2 items-center">
-                                 <button onClick={() => onDelete?.(comment.id)} className="p-1 rounded-md text-red-400 hover:text-red-300 transition-colors" title="Delete Comment">
-                                    <DeleteIcon className="w-3.5 h-3.5"/>
+                                 <button onClick={() => onDelete?.(comment.id)} className="p-1 text-primary hover:text-primary-hover transition-colors" title="Delete Comment">
+                                    <DeleteIcon className="w-4 h-4"/>
                                  </button>
                              </div>
                         </div>
                         
-                        {/* Page URL Display */}
                         {(comment as any).pageUrl && (
-                            <div className="text-[10px] text-text-secondary truncate flex items-center gap-1 bg-white/5 p-1 rounded">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            <div className="text-xs text-text-secondary truncate flex items-center gap-2 bg-surface-light p-2 rounded-md">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                                 <span className="truncate">{(comment as any).pageUrl}</span>
                             </div>
                         )}
                         
-                        <div className="flex flex-col gap-1">
-                            <label className="text-[9px] uppercase tracking-wider font-bold text-text-secondary">Due Date</label>
-                            <input
-                                type="datetime-local"
-                                value={getSafeDateForInput(dueDate)}
-                                onChange={handleDueDateChange}
-                                style={{ backgroundColor: '#0A0A0A', color: '#F4F4F5', borderColor: '#27272A' }}
-                                className="w-full p-1.5 rounded-lg text-[10px] border focus:outline-none transition-colors"
-                            />
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-text-secondary">Due Date</label>
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-primary">
+                                    <CalendarIcon className="w-4 h-4" />
+                                </div>
+                                <input
+                                    type="datetime-local"
+                                    value={getSafeDateForInput(dueDate)}
+                                    onChange={handleDueDateChange}
+                                    className="w-full pl-9 p-2 rounded-md text-xs bg-surface-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-text-primary"
+                                />
+                                {dueDate && (
+                                    <button 
+                                        onClick={() => { setDueDate(''); if(comment && onUpdate) onUpdate(comment.id, { dueDate: undefined }); }}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white"
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="relative">
-                            <textarea 
-                                value={newReply} 
-                                onChange={e => setNewReply(e.target.value)} 
-                                placeholder="Write a comment..." 
-                                rows={1} 
-                                style={{ backgroundColor: '#0A0A0A', color: '#F4F4F5', borderColor: '#27272A' }}
-                                className="w-full p-2 pr-8 rounded-lg text-xs border focus:outline-none resize-none transition-colors placeholder:text-text-secondary/50"
-                            />
-                            <button 
-                                onClick={handleReplySubmit} 
-                                disabled={!newReply.trim()}
-                                style={{ backgroundColor: '#A3E635', color: '#000000' }}
-                                className="absolute bottom-1.5 right-1.5 p-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-colors"
-                            >
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                            </button>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-text-secondary">Add a comment</label>
+                            <div className="relative">
+                                <textarea 
+                                    value={newReply} 
+                                    onChange={e => setNewReply(e.target.value)} 
+                                    placeholder="Write a comment..." 
+                                    rows={2} 
+                                    className="w-full p-2 pr-10 rounded-md text-sm bg-surface-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary resize-none transition-colors placeholder:text-text-secondary text-text-primary"
+                                />
+                                <button
+                                    onClick={handleReplySubmit}
+                                    disabled={!newReply.trim()}
+                                    className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-full text-primary hover:bg-surface-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </>
             ) : (
-                <form onSubmit={(e) => { e.preventDefault(); onSubmit(newReply, { ...(targetType === 'video' ? { startTime, endTime } : {}), dueDate: dueDate || undefined }); }} className="p-3 space-y-3">
-                     <h4 className="font-bold text-text-primary text-center text-sm">New Comment</h4>
+                <form onSubmit={(e) => { e.preventDefault(); onSubmit(newReply, { ...(targetType === 'video' ? { startTime, endTime } : {}), dueDate: dueDate || undefined }); }} className="p-4 space-y-4">
+                     <h4 className="font-bold text-white text-center text-lg">New Comment</h4>
                      
                       {targetType === 'video' && (
-                        // ... video inputs ...
-                        <div className="flex items-center justify-center gap-2 text-xs">
+                        <div className="flex items-center justify-center gap-2 text-sm">
                             <label className="text-text-secondary">Time:</label>
-                            <input type="number" step="1" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} className="w-12 text-center bg-glass-light border border-border-color rounded px-1 py-0.5" />
+                            <input type="number" step="1" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} className="w-16 text-center bg-surface-light border border-border-color rounded-md px-2 py-1 text-text-primary" />
                             <span className="text-text-secondary">-</span>
-                            <input type="number" step="1" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} className="w-12 text-center bg-glass-light border border-border-color rounded px-1 py-0.5" />
+                            <input type="number" step="1" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} className="w-16 text-center bg-surface-light border border-border-color rounded-md px-2 py-1 text-text-primary" />
                         </div>
                     )}
 
@@ -312,25 +313,37 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
                         value={newReply} 
                         onChange={e => setNewReply(e.target.value)} 
                         placeholder="Write a comment..." 
-                        rows={3} 
-                        style={{ backgroundColor: '#0A0A0A', color: '#F4F4F5', borderColor: '#27272A' }}
-                        className="w-full p-2 rounded-lg text-xs border focus:outline-none resize-none placeholder:text-text-secondary/50"
+                        rows={4} 
+                        className="w-full p-2 rounded-md text-sm bg-surface-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary resize-none placeholder:text-text-secondary text-text-primary"
                     ></textarea>
                       
-                    <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase tracking-wider font-bold text-text-secondary">Due Date (Optional)</label>
-                        <input
-                            type="datetime-local"
-                            value={getSafeDateForInput(dueDate)}
-                            onChange={handleDueDateChange}
-                            style={{ backgroundColor: '#0A0A0A', color: '#F4F4F5', borderColor: '#27272A' }}
-                            className="w-full p-1.5 rounded-lg text-[10px] border focus:outline-none"
-                        />
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-text-secondary">Due Date (Optional)</label>
+                        <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-primary">
+                                <CalendarIcon className="w-4 h-4" />
+                            </div>
+                            <input
+                                type="datetime-local"
+                                value={getSafeDateForInput(dueDate)}
+                                onChange={handleDueDateChange}
+                                className="w-full pl-9 p-2 rounded-md text-xs bg-surface-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-text-primary"
+                            />
+                            {dueDate && (
+                                <button 
+                                    type="button"
+                                    onClick={() => setDueDate('')}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white"
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                     <div className="flex justify-end gap-2 pt-1">
-                        <button type="button" onClick={onClose} style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#F4F4F5' }} className="px-2 py-1 text-[10px] font-bold rounded-md hover:bg-white/20 transition-colors">Cancel</button>
-                        <button type="submit" style={{ backgroundColor: '#A3E635', color: '#000000' }} className="px-2 py-1 text-[10px] font-bold rounded-md hover:opacity-90 transition-colors">Post</button>
+                     <div className="flex justify-end gap-2 pt-2">
+                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold rounded-md bg-surface-light hover:bg-surface transition-colors text-text-primary">Cancel</button>
+                        <button type="submit" className="px-4 py-2 text-sm font-bold rounded-md bg-primary text-black hover:bg-primary-hover transition-colors">Post</button>
                     </div>
                 </form>
             )}
