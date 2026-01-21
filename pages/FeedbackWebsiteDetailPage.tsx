@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getFeedbackItem, subscribeToComments, subscribeToActivities, deleteComment, toggleCommentResolved, updateComment } from '../utils/feedbackUtils';
+import { auth } from '../utils/firebase';
 import { FeedbackItem, FeedbackItemComment, FeedbackComment, User } from '../types';
 import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
 import { ArrowRightIcon } from '../components/icons/ArrowRightIcon';
@@ -16,6 +17,8 @@ type InteractionMode = 'navigate' | 'comment';
 const FeedbackWebsiteDetailPage = () => {
   const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const path = searchParams.get('path') || '';
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [proxyUrl, setProxyUrl] = useState<string | null>(null);
@@ -41,25 +44,23 @@ const FeedbackWebsiteDetailPage = () => {
   useEffect(() => {
       const calculateScale = () => {
           if (!containerRef.current) return;
-          // Available space inside the padding (p-8 = 32px * 2 = 64px)
           const availableWidth = containerRef.current.clientWidth - 64; 
-          const availableHeight = containerRef.current.clientHeight - 64;
 
           let targetWidth = 0;
           
           switch (device) {
-              case 'phone': targetWidth = 375; break;
-              case 'tablet': targetWidth = 768; break;
-              case 'notebook': targetWidth = 1440; break;
+              case 'phone': 
+              case 'tablet': 
+                  // Phone and tablet views: no scaling, show actual responsive layout
+                  setScale(1); 
+                  return;
+              case 'notebook': targetWidth = 1280; break;
               case 'desktop': 
                   setScale(1); 
                   return;
           }
 
-          // Calculate scale to fit width, but also check height if we want to ensure it fully fits "inside"
-          // For now, prioritising width fit as usually vertical scroll is expected, 
-          // but "fit inside a glass frame" might imply full containment. 
-          // Let's scale based on width primarily to ensure side padding.
+          // Only scale notebook if it doesn't fit
           const newScale = Math.min(1, availableWidth / targetWidth);
           setScale(newScale);
       };
@@ -89,7 +90,21 @@ const FeedbackWebsiteDetailPage = () => {
         const fetchedItem = await getFeedbackItem(projectId, feedbackItemId);
         if (fetchedItem && fetchedItem.assetUrl) {
           setItem(fetchedItem);
-          const url = `/api/proxy?url=${encodeURIComponent(fetchedItem.assetUrl)}&projectId=${projectId}&feedbackId=${feedbackItemId}`;
+          
+          // Construct target URL with path
+          let targetUrl = fetchedItem.assetUrl;
+          if (path) {
+              if (path.startsWith('http://') || path.startsWith('https://')) {
+                  targetUrl = path;
+              } else {
+                  // Ensure clean slash handling
+                  const baseUrl = targetUrl.endsWith('/') ? targetUrl.slice(0, -1) : targetUrl;
+                  const pathPart = path.startsWith('/') ? path : `/${path}`;
+                  targetUrl = `${baseUrl}${pathPart}`;
+              }
+          }
+
+          const url = `/api/proxy?url=${encodeURIComponent(targetUrl)}&projectId=${projectId}&feedbackId=${feedbackItemId}`;
           setProxyUrl(url);
         } else {
           setError("Feedback item not found or it has no associated URL.");
@@ -103,7 +118,7 @@ const FeedbackWebsiteDetailPage = () => {
     };
 
     fetchItem();
-  }, [projectId, feedbackItemId]);
+  }, [projectId, feedbackItemId, path]);
 
   // Subscriptions
   useEffect(() => {
@@ -134,11 +149,15 @@ const FeedbackWebsiteDetailPage = () => {
 
   const toggleFullscreen = () => {
       if (!document.fullscreenElement) {
-          rootRef.current?.requestFullscreen().catch(err => {
-              console.error(`Error attempting to enable fullscreen: ${err.message}`);
-          });
+          if (rootRef.current) {
+              rootRef.current.requestFullscreen().catch(err => {
+                  console.error(`Error attempting to enable fullscreen: ${err.message}`);
+              });
+          }
       } else {
-          document.exitFullscreen();
+          document.exitFullscreen().catch(err => {
+              console.error(`Error attempting to exit fullscreen: ${err.message}`);
+          });
       }
   };
 
@@ -217,23 +236,66 @@ const FeedbackWebsiteDetailPage = () => {
        }
   };
 
-  // Filter comments by device for Sidebar
+  const handleUpdateComment = async (commentId: string, updates: Partial<FeedbackItemComment>) => {
+      if (projectId && feedbackItemId) {
+          await updateComment(projectId, feedbackItemId, commentId, updates);
+      }
+  };
+
+  // Filter comments by device and Page for Sidebar
   const visibleComments = useMemo(() => {
-      return comments.filter(c => !c.device || c.device === device);
-  }, [comments, device]);
+      return comments.filter(c => {
+          const deviceMatch = !c.device || c.device === device;
+          
+          // Path Logic
+          // We must match c.pageUrl with the current 'path' or 'item.assetUrl' + 'path'
+          // Since c.pageUrl is now stored as FULL URL (mostly), and 'path' is mostly relative (e.g. /blog)
+          // We can check if c.pageUrl ENDS WITH path (loose check) OR equals (strict check)
+          
+          // 1. Get current Full Target URL (best guess)
+          let currentFullUrl = item?.assetUrl || '';
+          if (path) {
+              if (path.startsWith('http')) currentFullUrl = path;
+              else {
+                   const baseUrl = currentFullUrl.endsWith('/') ? currentFullUrl.slice(0, -1) : currentFullUrl;
+                   const pathPart = path.startsWith('/') ? path : `/${path}`;
+                   currentFullUrl = `${baseUrl}${pathPart}`;
+              }
+          }
+          
+          // Normalize for comparison (strip trailing slash)
+          const normCurrent = currentFullUrl.endsWith('/') && currentFullUrl.length > 1 ? currentFullUrl.slice(0, -1) : currentFullUrl;
+          const normComment = c.pageUrl && c.pageUrl.endsWith('/') && c.pageUrl.length > 1 ? c.pageUrl.slice(0, -1) : c.pageUrl || '';
+
+          // If comment URL isn't set, maybe show it everywhere? Or nowhere? Usually assume it belongs to root if empty.
+          if (!normComment) return deviceMatch;
+
+          return deviceMatch && normComment === normCurrent;
+      });
+  }, [comments, device, path, item]);
 
   // Styles based on device
-  const getContainerStyle = () => {
-      const baseStyles: React.CSSProperties = {
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-      };
-
+  const getContainerStyle = (): React.CSSProperties => {
       switch (device) {
-          case 'phone': return { ...baseStyles, width: '375px', height: '100%', borderRight: '1px solid #27272A', borderLeft: '1px solid #27272A' };
-          case 'tablet': return { ...baseStyles, width: '768px', height: '100%', borderRight: '1px solid #27272A', borderLeft: '1px solid #27272A' };
-          case 'notebook': return { ...baseStyles, width: '1440px', height: '100%', borderRight: '1px solid #27272A', borderLeft: '1px solid #27272A' };
-          case 'desktop': default: return { ...baseStyles, width: '100%', height: '100%' };
+          case 'phone': return { 
+              width: '375px', 
+              height: '700px',
+              transform: 'scale(0.75)',
+              transformOrigin: 'center center',
+          };
+          case 'tablet': return { 
+              width: '768px', 
+              height: '850px',
+              transform: 'scale(0.7)',
+              transformOrigin: 'center center',
+          };
+          case 'notebook': return { 
+              width: '1280px', 
+              height: '800px',
+              transform: `scale(${scale})`,
+              transformOrigin: 'center center',
+          };
+          case 'desktop': default: return { width: '100%', height: '100%' };
       }
   };
 
@@ -265,6 +327,16 @@ const FeedbackWebsiteDetailPage = () => {
     );
   }
 
+  const handleGoToPage = (targetPath: string, deviceView?: string) => {
+      navigate(`/feedback/${projectId}/website/${feedbackItemId}/view?path=${encodeURIComponent(targetPath)}`);
+      if (deviceView) {
+          const normalizedDevice = deviceView.toLowerCase();
+          if (['desktop', 'notebook', 'tablet', 'phone'].includes(normalizedDevice)) {
+               setDevice(normalizedDevice as DeviceType);
+          }
+      }
+  };
+
   return (
     <div ref={rootRef} className={`flex overflow-hidden relative w-full ${isFullscreen ? 'h-screen bg-background' : 'h-[calc(100vh-100px)]'} ${sidebarPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}>
       
@@ -293,6 +365,22 @@ const FeedbackWebsiteDetailPage = () => {
 
              {/* Right: Actions */}
              <div className="flex gap-2 pointer-events-auto">
+                 <button 
+                    onClick={() => {
+                        if (iframeRef.current) {
+                            iframeRef.current.src = iframeRef.current.src;
+                        }
+                    }} 
+                    className="p-2 bg-surface/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm" 
+                    title="Refresh Preview"
+                 >
+                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                         <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                         <path d="M3 3v5h5"/>
+                         <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                         <path d="M16 16h5v5"/>
+                     </svg>
+                 </button>
                  <button onClick={toggleFullscreen} className="p-2 bg-surface/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm" title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
                      {isFullscreen ? <ExitFullscreenIcon className="w-5 h-5"/> : <FullscreenIcon className="w-5 h-5"/>}
                  </button>
@@ -303,35 +391,75 @@ const FeedbackWebsiteDetailPage = () => {
          </div>
 
          {/* Bottom Toolbar Overlay (Devices & Modes) */}
-         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-surface/90 backdrop-blur-xl border border-border-color rounded-2xl p-1.5 flex items-center gap-1 shadow-2xl z-50 ring-1 ring-black/5">
+         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-2 z-50">
              {/* Device Switcher */}
-             <div className="flex gap-1">
-                {(['desktop', 'notebook', 'tablet', 'phone'] as DeviceType[]).map((d) => (
-                    <button
-                        key={d}
-                        onClick={() => setDevice(d)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all capitalize ${device === d ? 'bg-primary text-black font-bold shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-surface-light'}`}
-                    >
-                        {d === 'desktop' ? 'Full' : d}
-                    </button>
-                ))}
+             <div className="bg-surface/90 backdrop-blur-md border border-border-color rounded-lg p-1 flex items-center gap-1 shadow-sm">
+                {/* Desktop/Full */}
+                <button
+                    onClick={() => setDevice('desktop')}
+                    className={`p-2 rounded-md transition-all ${device === 'desktop' ? 'bg-primary text-black' : 'text-text-secondary hover:text-primary hover:bg-surface-light'}`}
+                    title="Full Width"
+                >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                </button>
+                {/* Notebook */}
+                <button
+                    onClick={() => setDevice('notebook')}
+                    className={`p-2 rounded-md transition-all ${device === 'notebook' ? 'bg-primary text-black' : 'text-text-secondary hover:text-primary hover:bg-surface-light'}`}
+                    title="Notebook"
+                >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>
+                    </svg>
+                </button>
+                {/* Tablet */}
+                <button
+                    onClick={() => setDevice('tablet')}
+                    className={`p-2 rounded-md transition-all ${device === 'tablet' ? 'bg-primary text-black' : 'text-text-secondary hover:text-primary hover:bg-surface-light'}`}
+                    title="Tablet"
+                >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                        <line x1="12" y1="18" x2="12.01" y2="18"/>
+                    </svg>
+                </button>
+                {/* Phone */}
+                <button
+                    onClick={() => setDevice('phone')}
+                    className={`p-2 rounded-md transition-all ${device === 'phone' ? 'bg-primary text-black' : 'text-text-secondary hover:text-primary hover:bg-surface-light'}`}
+                    title="Phone"
+                >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                        <line x1="12" y1="18" x2="12.01" y2="18"/>
+                    </svg>
+                </button>
              </div>
              
-             <div className="w-px h-5 bg-border-color/50 mx-2"></div>
-             
              {/* Mode Switcher */}
-             <div className="flex gap-1">
+             <div className="bg-surface/90 backdrop-blur-md border border-border-color rounded-lg p-1 flex items-center gap-1 shadow-sm">
                  <button
                     onClick={() => setInteractionMode('navigate')}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all flex items-center gap-2 ${interactionMode === 'navigate' ? 'bg-primary text-black font-bold shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-surface-light'}`}
+                    className={`p-2 rounded-md transition-all ${interactionMode === 'navigate' ? 'bg-primary text-black' : 'text-text-secondary hover:text-primary hover:bg-surface-light'}`}
+                    title="Navigate Mode"
                  >
-                    👆 Navigate
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+                        <path d="M13 13l6 6"/>
+                    </svg>
                  </button>
                  <button
                     onClick={() => setInteractionMode('comment')}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-all flex items-center gap-2 ${interactionMode === 'comment' ? 'bg-primary text-black font-bold shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-surface-light'}`}
+                    className={`p-2 rounded-md transition-all ${interactionMode === 'comment' ? 'bg-primary text-black' : 'text-text-secondary hover:text-primary hover:bg-surface-light'}`}
+                    title="Comment Mode"
                  >
-                    💬 Comment
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
                  </button>
              </div>
          </div>
@@ -347,7 +475,7 @@ const FeedbackWebsiteDetailPage = () => {
          )}
 
          {/* Iframe Canvas */}
-         <div ref={containerRef} className="w-full h-full overflow-auto flex items-center justify-center p-8">
+         <div ref={containerRef} className="w-full h-full overflow-hidden flex items-center justify-center p-8">
              {proxyUrl && (
                 <div 
                     style={getContainerStyle()} 
@@ -371,42 +499,21 @@ const FeedbackWebsiteDetailPage = () => {
 
       {/* Sidebar (Host Side) */}
       <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-surface border-border-color flex flex-col overflow-hidden relative shadow-2xl z-20`}>
-         {/* Sidebar Header */}
-         <div className="p-4 border-b border-border-color bg-surface flex justify-between items-center flex-shrink-0">
-             <div className="flex gap-4">
-                 <button 
-                    onClick={() => setSidebarView('comments')}
-                    className={`pb-1 text-sm font-bold border-b-2 transition-colors ${sidebarView === 'comments' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
-                 >
-                     Comments
-                 </button>
-                 <button 
-                    onClick={() => setSidebarView('activity')}
-                    className={`pb-1 text-sm font-bold border-b-2 transition-colors ${sidebarView === 'activity' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
-                 >
-                     Activity
-                 </button>
-             </div>
-             <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-surface-light rounded text-text-secondary transition-colors">
-                 <ArrowRightIcon className={`w-5 h-5 ${sidebarPosition === 'bottom' ? 'rotate-90' : ''}`}/>
-             </button>
-         </div>
-
-         {/* Sidebar Content */}
-         <div className="flex-1 overflow-hidden flex flex-col bg-surface/50">
-             <FeedbackSidebar 
-                view={sidebarView} 
-                onViewChange={setSidebarView} 
-                comments={visibleComments}
-                externalActivities={activities}
-                onCommentClick={handleSidebarCommentClick}
-                onClose={() => setIsSidebarOpen(false)}
-                onDelete={handleDeleteComment}
-                onResolve={handleResolveComment}
-                position={sidebarPosition}
-                users={data?.users || []}
-            />
-         </div>
+         <FeedbackSidebar 
+            view={sidebarView} 
+            onViewChange={setSidebarView} 
+            comments={visibleComments}
+            externalActivities={activities}
+            onCommentClick={handleSidebarCommentClick}
+            onClose={() => setIsSidebarOpen(false)}
+            onDelete={handleDeleteComment}
+            onResolve={handleResolveComment}
+            onUpdate={handleUpdateComment}
+            onGoToPage={handleGoToPage}
+            position={sidebarPosition}
+            users={data?.users || []}
+            currentUserId={auth.currentUser?.uid}
+         />
       </div>
     </div>
   );

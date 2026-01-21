@@ -319,7 +319,7 @@ export interface FeedbackItem {
   createdBy: string;
   createdAt: any; // Timestamp or Date or serializable object
   commentCount?: number;
-  pages?: {id: string, name: string, url: string}[]; // New pages field
+  pages?: {id: string, name: string, url: string, approved?: boolean}[]; // New pages field
 }
 
 export interface FeedbackItemComment {

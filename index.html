@@ -1,68 +1,151 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
-            fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['Roboto Mono', 'monospace'] },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              mono: ["Roboto Mono", "monospace"],
+            },
             colors: {
-              'primary': '#A3E635', 'primary-hover': '#84CC16', 'background': '#0A0A0A',
-              'surface': '#1C1C1C', 'surface-light': '#272727', 'text-primary': '#F4F4F5',
-              'text-secondary': '#A1A1AA', 'border-color': '#27272A'
-            }
-          }
-        }
-      }
+              primary: "#A3E635",
+              "primary-hover": "#84CC16",
+              background: "#0A0A0A",
+              surface: "#1C1C1C",
+              "surface-light": "#272727",
+              "text-primary": "#F4F4F5",
+              "text-secondary": "#A1A1AA",
+              "border-color": "#27272A",
+            },
+          },
+        },
+      };
     </script>
     <style>
       body {
-        font-family: 'Inter', sans-serif;
-        background-color: #0A0A0A;
+        font-family: "Inter", sans-serif;
+        background-color: #0a0a0a;
       }
-      .bg-glass { background-color: rgba(28, 28, 28, 0.65); backdrop-filter: blur(12px); }
-      .bg-glass-light { background-color: rgba(39, 39, 39, 0.65); backdrop-filter: blur(12px); }
-      ::-webkit-scrollbar { width: 8px; height: 8px; }
-      ::-webkit-scrollbar-track { background: #1C1C1C; }
-      ::-webkit-scrollbar-thumb { background-color: #84CC16; border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background-color: #A3E635; }
+      .bg-glass {
+        background-color: rgba(28, 28, 28, 0.65);
+        backdrop-filter: blur(12px);
+      }
+      .bg-glass-light {
+        background-color: rgba(39, 39, 39, 0.65);
+        backdrop-filter: blur(12px);
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1c1c1c;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #84cc16;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #a3e635;
+      }
 
       /* Final, Correct Phone Input Styles */
       .PhoneInputCountrySelect {
         background-color: transparent !important;
-        color: #A1A1AA !important;
+        color: #a1a1aa !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
       }
       .PhoneInputCountrySelect option {
-        background-color: #1C1C1C !important;
-        color: #F4F4F5 !important;
+        background-color: #1c1c1c !important;
+        color: #f4f4f5 !important;
       }
       .PhoneInputInput {
         background-color: transparent;
         border: none;
         outline: none;
-        color: #F4F4F5;
+        color: #f4f4f5;
         width: 100%;
         margin-left: 0.5rem;
       }
       .PhoneInputInput::placeholder {
-        color: #A1A1AA;
+        color: #a1a1aa;
+      }
+
+      /* Date/Time Input Styling - Theme Colors */
+      input[type="date"],
+      input[type="time"],
+      input[type="datetime-local"] {
+        accent-color: #a3e635;
+        color-scheme: dark;
+      }
+      input[type="date"]::-webkit-calendar-picker-indicator,
+      input[type="time"]::-webkit-calendar-picker-indicator,
+      input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 0.7;
+        cursor: pointer;
+      }
+      input[type="date"]::-webkit-calendar-picker-indicator:hover,
+      input[type="time"]::-webkit-calendar-picker-indicator:hover,
+      input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+      }
+      /* Override select/option in date picker for Chrome */
+      input::-webkit-datetime-edit-fields-wrapper {
+        color: #f4f4f5;
+      }
+      input::-webkit-datetime-edit-text {
+        color: #a1a1aa;
+      }
+      input::-webkit-datetime-edit-month-field,
+      input::-webkit-datetime-edit-day-field,
+      input::-webkit-datetime-edit-year-field,
+      input::-webkit-datetime-edit-hour-field,
+      input::-webkit-datetime-edit-minute-field,
+      input::-webkit-datetime-edit-ampm-field {
+        color: #f4f4f5;
+      }
+      input::-webkit-datetime-edit-month-field:focus,
+      input::-webkit-datetime-edit-day-field:focus,
+      input::-webkit-datetime-edit-year-field:focus,
+      input::-webkit-datetime-edit-hour-field:focus,
+      input::-webkit-datetime-edit-minute-field:focus,
+      input::-webkit-datetime-edit-ampm-field:focus {
+        background-color: #a3e635;
+        color: #0a0a0a;
+        border-radius: 2px;
       }
     </style>
-    <script type="importmap">{ "imports": { "react": "https://aistudiocdn.com/react@^19.2.0", "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/", "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6", "react/": "https://aistudiocdn.com/react@^19.2.0/", "@hello-pangea/dnd": "https://aistudiocdn.com/@hello-pangea/dnd@^18.0.1", "@google/genai": "https://aistudiocdn.com/@google/genai@^0.15.0" } }</script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://aistudiocdn.com/react@^19.2.0",
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+          "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+          "react/": "https://aistudiocdn.com/react@^19.2.0/",
+          "@hello-pangea/dnd": "https://aistudiocdn.com/@hello-pangea/dnd@^18.0.1",
+          "@google/genai": "https://aistudiocdn.com/@google/genai@^0.15.0"
+        }
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
     <script type="module" src="/index.tsx"></script>
-    <link rel="stylesheet" href="/index.css">
-    <link rel="stylesheet" href="/shimmer.css">
+    <link rel="stylesheet" href="/index.css" />
+    <link rel="stylesheet" href="/shimmer.css" />
   </head>
   <body class="bg-background text-text-primary font-sans">
     <div id="root"></div>

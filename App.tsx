@@ -23,6 +23,8 @@ import FeedbackMockupsPage from './pages/FeedbackMockupsPage';
 import FeedbackWebsitesPage from './pages/FeedbackWebsitesPage';
 import FeedbackVideosPage from './pages/FeedbackVideosPage';
 import FeedbackMockupDetailPage from './pages/FeedbackMockupDetailPage';
+import FeedbackWebsitePagesSelectionPage from './pages/FeedbackWebsitePagesSelectionPage';
+
 import FeedbackWebsiteDetailPage from './pages/FeedbackWebsiteDetailPage';
 import FeedbackVideoDetailPage from './pages/FeedbackVideoDetailPage';
 import MoodboardsPage from './pages/MoodboardsPage';
@@ -291,7 +293,15 @@ function App() {
                          <FeedbackMockupDetailPage />
                       </MainLayout>
                    } />
+                   {/* Website Pages Selection */}
                    <Route path="/feedback/:projectId/website/:feedbackItemId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackWebsitePagesSelectionPage />
+                      </MainLayout>
+                   } />
+                   
+                   {/* Website Proxy View */}
+                   <Route path="/feedback/:projectId/website/:feedbackItemId/view" element={
                       <MainLayout onLogout={handleLogout}>
                          <FeedbackWebsiteDetailPage />
                       </MainLayout>

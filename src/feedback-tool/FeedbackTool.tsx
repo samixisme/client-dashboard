@@ -39,8 +39,21 @@ const FeedbackTool = () => {
   // Highlighting
   const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
   
-  // Auth
-  const userId = auth.currentUser?.uid || 'guest-user';
+  // Auth State
+  const [userId, setUserId] = useState<string>(auth.currentUser?.uid || '');
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+        if (user) {
+            console.log("FeedbackTool: User authenticated", user.uid);
+            setUserId(user.uid);
+        } else {
+            console.log("FeedbackTool: User not authenticated");
+            setUserId('guest-user'); 
+        }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Read config from script tag
   useEffect(() => {
@@ -133,9 +146,33 @@ const FeedbackTool = () => {
       return () => window.removeEventListener('message', handleMessage);
   }, [comments]); // Added comments to dependency so we can find the comment
 
-  // Filter comments by device
+  // Helper to get real URL
+  const getCurrentRealUrl = () => {
+       const params = new URLSearchParams(window.location.search);
+       // Normalize: remove trailing slash for consistency
+       const rawUrl = params.get('url') || window.location.href;
+       return rawUrl.endsWith('/') && rawUrl.length > 1 ? rawUrl.slice(0, -1) : rawUrl;
+  };
+
+  // Filter comments by device and Page URL
   const visibleComments = useMemo(() => {
-      return comments.filter(c => !c.device || c.device === device);
+      const currentUrl = getCurrentRealUrl();
+      return comments.filter(c => {
+          // Normalize comment URL too
+          const commentUrl = c.pageUrl && c.pageUrl.endsWith('/') && c.pageUrl.length > 1 
+              ? c.pageUrl.slice(0, -1) 
+              : c.pageUrl || '';
+              
+          // Match device AND page URL
+          const deviceMatch = !c.device || c.device === device;
+          
+          // Using strict equality on normalized URLs. 
+          // If old comments have '/api/proxy', they won't match currentUrl (which is real URL), so they will hide. 
+          // This effectively cleans up the view for the user automatically.
+          const urlMatch = commentUrl === currentUrl;
+          
+          return deviceMatch && urlMatch;
+      });
   }, [comments, device]);
 
   // Pins
@@ -187,8 +224,12 @@ const FeedbackTool = () => {
       
       try {
           if (popover.isNew) {
+
+               // Use consistent URL helper
+               const currentRealUrl = getCurrentRealUrl();
+
                const existingPinsOnPageAndDevice = comments.filter(
-                   (c) => c.pageUrl === window.location.pathname && c.device === device
+                   (c) => c.pageUrl === currentRealUrl && c.device === device
                );
                const maxPinNumber = existingPinsOnPageAndDevice.reduce((max, p) => Math.max(max, p.pin_number || 0), 0);
 
@@ -198,7 +239,7 @@ const FeedbackTool = () => {
                    x_coordinate: popover.x,
                    y_coordinate: popover.y,
                    pin_number: maxPinNumber + 1, 
-                   pageUrl: window.location.pathname,
+                   pageUrl: currentRealUrl,
                    device: device,
                    dueDate: details?.dueDate,
                    status: 'Active', 
@@ -269,6 +310,15 @@ const FeedbackTool = () => {
      }
   };
 
+
+  const activeComment = useMemo(() => {
+      // If we have an open popover with a specific comment ID, find the latest version in comments prop
+      if (!popover.isOpen || !popover.comment) return null;
+      // If it's a new comment (draft), strictly use the local state
+      if (popover.isNew) return popover.comment;
+      // Otherwise, try to find it in the live updates
+      return comments.find(c => c.id === popover.comment?.id) || popover.comment;
+  }, [popover.isOpen, popover.comment, popover.isNew, comments]);
 
   if (!projectId || !feedbackItemId) {
       console.log("FeedbackTool: Missing project or feedback ID", { projectId, feedbackItemId });
@@ -357,18 +407,18 @@ const FeedbackTool = () => {
         {popover.isOpen && (
             <div className="pointer-events-auto" style={{ position: 'relative', zIndex: 2147483647 }}>
                 <CommentPopover 
-                    comment={popover.comment ? {
-                        id: popover.comment.id,
+                    comment={activeComment ? {
+                        id: activeComment.id,
                         projectId: projectId || '',
                         targetId: feedbackItemId || '',
                         targetType: 'website',
-                        comment: popover.comment.commentText,
-                        reporterId: popover.comment.authorId,
-                        status: popover.comment.status || 'Active',
-                        timestamp: typeof popover.comment.createdAt === 'string' ? popover.comment.createdAt : new Date().toISOString(),
-                        pin_number: popover.comment.pin_number || 0,
-                        dueDate: popover.comment.dueDate,
-                        replies: popover.comment.replies
+                        comment: activeComment.commentText,
+                        reporterId: activeComment.authorId,
+                        status: activeComment.status || 'Active',
+                        timestamp: typeof activeComment.createdAt === 'string' ? activeComment.createdAt : new Date().toISOString(),
+                        pin_number: activeComment.pin_number || 0,
+                        dueDate: activeComment.dueDate,
+                        replies: activeComment.replies
                     } as FeedbackComment : null}
                     coords={{ x: popover.x, y: popover.y }}
                     contentRef={contentRef}
@@ -380,6 +430,7 @@ const FeedbackTool = () => {
                     onDelete={handleDeleteComment}
                     targetType="website"
                     users={users} 
+                    currentUserId={userId}
                 />
             </div>
         )}

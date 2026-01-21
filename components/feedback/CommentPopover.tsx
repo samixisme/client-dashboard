@@ -17,40 +17,117 @@ interface CommentPopoverProps {
     targetType?: 'website' | 'mockup' | 'video';
     videoCurrentTime?: number;
     users?: User[]; // Optional prop for direct user data injection
+    currentUserId?: string;
 }
 
-const UserInfo = ({ userId, getMember }: { userId: string, getMember: (id: string) => User | undefined }) => {
+// Styles for reusable components
+const sharedStyles = {
+    userInfo: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+    },
+    avatar: {
+        width: '24px',
+        height: '24px',
+        borderRadius: '50%',
+        objectFit: 'cover' as const,
+        flexShrink: 0
+    },
+    avatarPlaceholder: {
+        width: '24px',
+        height: '24px',
+        borderRadius: '50%',
+        backgroundColor: 'rgba(163, 230, 53, 0.2)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '10px',
+        fontWeight: 'bold',
+        color: '#A3E635',
+        flexShrink: 0
+    },
+    userName: {
+        fontSize: '11px', 
+        fontWeight: 600,
+        color: '#F4F4F5'
+    },
+    threadContainer: {
+        paddingLeft: '16px',
+        borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '12px',
+        marginTop: '12px'
+    },
+    replyItem: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '4px'
+    },
+    replyHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    deleteBtn: {
+        fontSize: '10px',
+        color: '#F87171',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '2px 4px',
+        opacity: 0.8
+    },
+    replyText: {
+        fontSize: '11px',
+        color: '#F4F4F5',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        padding: '8px',
+        borderRadius: '6px',
+        marginLeft: '32px',
+        marginTop: '0px',
+        lineHeight: 1.4
+    }
+};
+
+export const UserInfo = ({ userId, getMember }: { userId: string, getMember: (id: string) => User | undefined }) => {
     const user = getMember(userId);
     return (
-        <div className="flex items-center gap-2">
+        <div style={sharedStyles.userInfo}>
             {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} className="w-6 h-6 rounded-full" />
+                <img src={user.avatarUrl} alt={user.name} style={sharedStyles.avatar} />
             ) : (
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                <div style={sharedStyles.avatarPlaceholder}>
                     {user?.name?.[0] || 'U'}
                 </div>
             )}
-            <span className="font-semibold text-xs text-text-primary">{user?.name || 'Unknown User'}</span>
+            <span style={sharedStyles.userName}>{user?.name || 'Unknown User'}</span>
         </div>
     );
 };
 
-const CommentThread = ({ replies, getMember }: { replies: any[], getMember: (id: string) => any }) => {
+export const CommentThread = ({ replies, getMember, currentUserId, onDelete }: { replies: any[], getMember: (id: string) => any, currentUserId?: string, onDelete: (id: string) => void }) => {
     if (!replies || replies.length === 0) return null;
     return (
-        <div className="pl-4 border-l border-border-color space-y-3 mt-3">
+        <div style={sharedStyles.threadContainer}>
             {replies.map(reply => (
-                <div key={reply.id} className="flex flex-col gap-1">
-                    <UserInfo userId={reply.authorId} getMember={getMember} />
-                    <p className="text-sm text-text-primary bg-glass-light p-2 rounded-md ml-8">{reply.text}</p>
-                    {reply.replies && <CommentThread replies={reply.replies} getMember={getMember} />}
-                </div>
+                    <div key={reply.id} style={sharedStyles.replyItem}>
+                        <div style={sharedStyles.replyHeader}>
+                            <UserInfo userId={reply.authorId} getMember={getMember} />
+                            {currentUserId === reply.authorId && (
+                                <button onClick={() => onDelete(reply.id)} style={sharedStyles.deleteBtn}>Delete</button>
+                            )}
+                        </div>
+                        <p style={sharedStyles.replyText}>{reply.text}</p>
+                        {reply.replies && <CommentThread replies={reply.replies} getMember={getMember} currentUserId={currentUserId} onDelete={onDelete} />}
+                    </div>
             ))}
         </div>
     );
 };
 
-const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, contentRef, zoom, onClose, onSubmit, onUpdate, onResolve, onDelete, targetType, videoCurrentTime, users }) => {
+const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, contentRef, zoom, onClose, onSubmit, onUpdate, onResolve, onDelete, targetType, videoCurrentTime, users, currentUserId }) => {
     const board_members = users || [];
     
     const [newReply, setNewReply] = useState('');
@@ -64,12 +141,19 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
     const [localStatus, setLocalStatus] = useState<'Active' | 'Resolved'>(comment?.status || 'Active');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const [isEditingComment, setIsEditingComment] = useState(false);
+    const [editCommentText, setEditCommentText] = useState(comment?.comment || '');
+
+
     useEffect(() => {
         setDueDate(comment?.dueDate || '');
+    }, [comment?.dueDate]);
+
+    useEffect(() => {
         if (comment) {
             setLocalStatus(comment.status || 'Active');
         }
-    }, [comment]);
+    }, [comment?.status]);
 
     useLayoutEffect(() => {
         if (!contentRef.current || !popoverRef.current) return;
@@ -119,7 +203,7 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
         if (comment && newReply.trim()) {
             const reply = {
                 id: `rep-${Date.now()}`,
-                authorId: 'user-1',
+                authorId: currentUserId || 'guest-user',
                 text: newReply,
                 timestamp: new Date().toISOString(),
                 replies: [], 
@@ -148,6 +232,27 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
         setIsEditingTime(false);
     }
 
+    const handleCommentEditSave = () => {
+        if (comment && onUpdate && editCommentText.trim()) {
+            onUpdate(comment.id, { comment: editCommentText });
+            setIsEditingComment(false);
+        }
+    };
+
+    const handleReplyDelete = (replyId: string) => {
+        if (!comment || !onUpdate) return;
+        
+        const deleteRecursively = (replies: any[]): any[] => {
+            return replies.filter(r => r.id !== replyId).map(r => ({
+                ...r,
+                replies: r.replies ? deleteRecursively(r.replies) : []
+            }));
+        };
+
+        const newReplies = deleteRecursively(comment.replies || []);
+        onUpdate(comment.id, { replies: newReplies });
+    };
+
     const getMember = (id: string) => board_members.find(m => m.id === id);
 
     const getSafeDateForInput = (isoString?: string) => {
@@ -168,187 +273,431 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
         }
     };
 
+    // Inline styles to prevent CSS bleed from proxied websites
+    const styles = {
+        container: {
+            width: '288px',
+            borderRadius: '12px',
+            boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.7)',
+            backgroundColor: 'rgba(28, 28, 28, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            flexDirection: 'column' as const,
+            color: '#F4F4F5',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '12px',
+            zIndex: 9999,
+        },
+        header: {
+            padding: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+        },
+        title: {
+            fontSize: '14px',
+            fontWeight: 600,
+            color: '#A3E635',
+            margin: 0,
+            lineHeight: 1.4,
+        },
+        subtitle: {
+            fontSize: '11px',
+            color: '#A1A1AA',
+            margin: 0,
+        },
+        closeBtn: {
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            backgroundColor: '#272727',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#A1A1AA',
+            cursor: 'pointer',
+            padding: 0,
+        },
+        section: {
+            padding: '0 12px 12px 12px',
+        },
+        avatar: {
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            backgroundColor: '#A3E635',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            fontWeight: 700,
+            color: '#0A0A0A',
+            flexShrink: 0,
+        },
+        name: {
+            fontSize: '11px',
+            fontWeight: 600,
+            color: '#F4F4F5',
+            margin: 0,
+        },
+        commentText: {
+            fontSize: '11px',
+            color: '#F4F4F5',
+            margin: '4px 0 0 0',
+        },
+        actionsRow: {
+            padding: '0 12px 12px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            flexWrap: 'wrap' as const,
+        },
+        badge: {
+            padding: '2px 8px',
+            borderRadius: '9999px',
+            fontSize: '10px',
+            fontWeight: 700,
+            border: '1px solid #A3E635',
+            color: '#A3E635',
+            backgroundColor: 'transparent',
+        },
+        actionBtn: {
+            padding: '4px 10px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            fontWeight: 500,
+            backgroundColor: '#272727',
+            color: '#A3E635',
+            border: 'none',
+            cursor: 'pointer',
+        },
+        deleteBtn: {
+            padding: '4px 10px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            fontWeight: 500,
+            backgroundColor: '#272727',
+            color: '#F87171',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+        },
+        label: {
+            fontSize: '11px',
+            color: '#A1A1AA',
+            marginBottom: '4px',
+            display: 'block',
+        },
+        input: {
+            width: '100%',
+            padding: '6px 8px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            backgroundColor: 'rgba(39, 39, 39, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#F4F4F5',
+            outline: 'none',
+            boxSizing: 'border-box' as const,
+            colorScheme: 'dark',
+            accentColor: '#A3E635',
+        },
+        textarea: {
+            width: '100%',
+            padding: '6px 8px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            backgroundColor: 'rgba(39, 39, 39, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#F4F4F5',
+            outline: 'none',
+            resize: 'none' as const,
+            boxSizing: 'border-box' as const,
+            fontFamily: 'Inter, sans-serif',
+        },
+        toggleContainer: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+        },
+        toggleTrack: {
+            width: '36px',
+            height: '20px',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s',
+            position: 'relative' as const,
+        },
+        toggleThumb: {
+            width: '16px',
+            height: '16px',
+            borderRadius: '50%',
+            backgroundColor: '#FFFFFF',
+            position: 'absolute' as const,
+            top: '2px',
+            transition: 'left 0.2s',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        },
+        submitBtn: {
+            width: '100%',
+            padding: '8px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            fontWeight: 700,
+            backgroundColor: '#A3E635',
+            color: '#0A0A0A',
+            border: 'none',
+            cursor: 'pointer',
+        },
+        submitBtnDisabled: {
+            width: '100%',
+            padding: '8px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            fontWeight: 700,
+            backgroundColor: '#A3E635',
+            color: '#0A0A0A',
+            border: 'none',
+            opacity: 0.5,
+            cursor: 'not-allowed',
+        },
+    };
+
     return (
         <div 
             ref={popoverRef} 
-            style={style}
-            className="comment-popover z-50 w-80 rounded-lg shadow-lg bg-surface/80 border border-border-color flex flex-col backdrop-blur-md text-text-primary"
+            style={{...styles.container, ...style}}
             onClick={e => e.stopPropagation()}
+            className="comment-popover"
         >
+            <style>{`
+                .comment-popover textarea::placeholder {
+                    color: #A1A1AA !important;
+                }
+                .comment-popover input[type="datetime-local"] {
+                    color-scheme: dark;
+                }
+                .comment-popover input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+                    filter: invert(1) !important;
+                    opacity: 0.7;
+                    cursor: pointer;
+                }
+                .comment-popover input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+                    opacity: 1;
+                }
+            `}</style>
             {comment ? (
                 <>
-                    <div className="px-4 py-2 border-b border-border-color flex justify-between items-center rounded-t-lg bg-surface/50">
-                         <div className="flex items-center gap-2">
-                             <span className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-primary text-black">
-                                {comment.pin_number}
-                             </span>
-                             <span className="text-xs text-text-secondary">
-                                {new Date(comment.timestamp || Date.now()).toLocaleDateString()}
-                             </span>
+                    {/* Header */}
+                    <div style={styles.header}>
+                        <div>
+                            <h3 style={styles.title}>Comment #{comment.pin_number}</h3>
+                            <p style={styles.subtitle}>by {getMember(comment.reporterId)?.name || 'Unknown'}</p>
                         </div>
-                        <button onClick={onClose} className="p-1 text-primary hover:text-primary-hover transition-colors">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <button onClick={onClose} style={styles.closeBtn}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
 
-                     {comment.targetType === 'video' && (
-                        <div className="px-4 pt-3 text-sm text-text-secondary flex items-center justify-between">
+                    {/* Video Time */}
+                    {comment.targetType === 'video' && (
+                        <div style={{...styles.section, fontSize: '11px', color: '#A1A1AA', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                             {isEditingTime ? (
-                                <div className="flex items-center gap-2">
-                                    <input type="number" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} className="w-14 text-center bg-surface-light border border-border-color rounded px-2 py-1 text-xs" />
+                                <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
+                                    <input type="number" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} style={{...styles.input, width: '40px', textAlign: 'center'}} />
                                     <span>-</span>
-                                    <input type="number" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} className="w-14 text-center bg-surface-light border border-border-color rounded px-2 py-1 text-xs" />
+                                    <input type="number" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} style={{...styles.input, width: '40px', textAlign: 'center'}} />
                                 </div>
                             ) : (
-                                <div>
-                                    Time: <span className="font-mono text-white">{formatTime(comment.startTime || 0)} - {formatTime(comment.endTime || 0)}</span>
-                                </div>
+                                <div>Time: <span style={{color: '#F4F4F5', fontFamily: 'monospace'}}>{formatTime(comment.startTime || 0)} - {formatTime(comment.endTime || 0)}</span></div>
                             )}
-                             {isEditingTime ? 
-                                <button onClick={handleTimeSave} className="text-xs font-bold text-primary hover:underline">Save</button> :
-                                <button onClick={() => setIsEditingTime(true)} className="text-xs font-bold text-primary hover:underline">Edit</button>
-                            }
+                            <button onClick={isEditingTime ? handleTimeSave : () => setIsEditingTime(true)} style={{background: 'none', border: 'none', color: '#A3E635', fontSize: '11px', cursor: 'pointer'}}>
+                                {isEditingTime ? 'Save' : 'Edit'}
+                            </button>
                         </div>
                     )}
 
-                    <div className="p-4 space-y-4 max-h-64 overflow-y-auto custom-scrollbar">
-                        <div className="flex flex-col gap-2">
-                             <UserInfo userId={comment.reporterId} getMember={getMember} />
-                             <p className="text-sm ml-8 text-text-primary">{comment.comment}</p>
+                    {/* Comment Content */}
+                    <div style={styles.section}>
+                        <div style={{display: 'flex', alignItems: 'flex-start', gap: '8px'}}>
+                            {getMember(comment.reporterId)?.avatarUrl ? (
+                                <img src={getMember(comment.reporterId)?.avatarUrl} alt="" style={{...styles.avatar, backgroundColor: 'transparent'}} />
+                            ) : (
+                                <div style={styles.avatar}>
+                                    {getMember(comment.reporterId)?.name?.[0] || 'U'}
+                                </div>
+                            )}
+                            <div style={{flex: 1}}>
+                                <p style={styles.name}>{getMember(comment.reporterId)?.name || 'Unknown User'}</p>
+                                {isEditingComment ? (
+                                    <div className="mt-1">
+                                        <textarea 
+                                            value={editCommentText}
+                                            onChange={e => setEditCommentText(e.target.value)}
+                                            style={{...styles.textarea, marginBottom: '6px'}}
+                                            rows={2}
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => setIsEditingComment(false)} style={{...styles.actionBtn, backgroundColor: '#3F3F46', color: '#F4F4F5'}}>Cancel</button>
+                                            <button onClick={handleCommentEditSave} style={styles.actionBtn}>Save</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p style={styles.commentText}>{comment.comment}</p>
+                                )}
+                            </div>
                         </div>
-                        <CommentThread replies={comment.replies || []} getMember={getMember} />
                     </div>
 
-                    <div className="p-4 border-t border-border-color space-y-4 rounded-b-lg bg-surface/50">
-                         <div className="flex justify-between items-center">
+                    {/* Replies */}
+                    {comment.replies && comment.replies.length > 0 && (
+                         <div style={styles.section}>
+                             <h4 style={{...styles.subtitle, marginTop: '8px'}}>Replies</h4>
+                             <CommentThread replies={comment.replies} getMember={getMember} currentUserId={currentUserId} onDelete={handleReplyDelete} />
+                         </div>
+                    )}
+
+                    {/* Status Toggle */}
+                    <div style={{...styles.section, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                        <div style={styles.toggleContainer}>
+                            <span style={{fontSize: '11px', color: localStatus === 'Active' ? '#A3E635' : '#22C55E', fontWeight: 600}}>
+                                {localStatus}
+                            </span>
                             <div 
-                                className="relative flex items-center bg-surface-light rounded-full p-1 border border-border-color w-28 h-8 cursor-pointer"
-                                onClick={(e) => {
-                                    e.stopPropagation();
+                                onClick={() => {
                                     const newStatus = localStatus === 'Active' ? 'Resolved' : 'Active';
                                     setLocalStatus(newStatus);
                                     onResolve?.(comment.id);
                                 }}
+                                style={{
+                                    ...styles.toggleTrack,
+                                    backgroundColor: localStatus === 'Resolved' ? '#22C55E' : '#3F3F46',
+                                }}
                             >
-                                <div 
-                                    className={`absolute top-1 bottom-1 w-12 rounded-full transition-all duration-300 shadow-md ${localStatus === 'Resolved' ? 'left-14 bg-green-500' : 'left-1 bg-yellow-500'}`}
-                                />
-                                <span className={`relative z-10 w-1/2 text-center text-xs font-bold transition-colors ${localStatus !== 'Resolved' ? 'text-black' : 'text-text-secondary'}`}>Active</span>
-                                <span className={`relative z-10 w-1/2 text-center text-xs font-bold transition-colors ${localStatus === 'Resolved' ? 'text-black' : 'text-text-secondary'}`}>Resolved</span>
+                                <div style={{
+                                    ...styles.toggleThumb,
+                                    left: localStatus === 'Resolved' ? '18px' : '2px',
+                                }} />
                             </div>
+                        </div>
+                        <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                            <button 
+                                onClick={() => { setEditCommentText(comment.comment); setIsEditingComment(true); }} 
+                                style={{
+                                    ...styles.actionBtn, 
+                                    backgroundColor: '#272727', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '4px'
+                                }}
+                            >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                            <button onClick={() => onDelete?.(comment.id)} style={styles.deleteBtn}>
+                                <DeleteIcon style={{width: '12px', height: '12px'}}/> Delete
+                            </button>
+                        </div>
+                    </div>
 
-                             <div className="flex gap-2 items-center">
-                                 <button onClick={() => onDelete?.(comment.id)} className="p-1 text-primary hover:text-primary-hover transition-colors" title="Delete Comment">
-                                    <DeleteIcon className="w-4 h-4"/>
-                                 </button>
-                             </div>
-                        </div>
-                        
-                        {(comment as any).pageUrl && (
-                            <div className="text-xs text-text-secondary truncate flex items-center gap-2 bg-surface-light p-2 rounded-md">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                                <span className="truncate">{(comment as any).pageUrl}</span>
-                            </div>
-                        )}
-                        
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-text-secondary">Due Date</label>
-                            <div className="relative">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-primary">
-                                    <CalendarIcon className="w-4 h-4" />
-                                </div>
-                                <input
-                                    type="datetime-local"
-                                    value={getSafeDateForInput(dueDate)}
-                                    onChange={handleDueDateChange}
-                                    className="w-full pl-9 p-2 rounded-md text-xs bg-surface-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-text-primary"
-                                />
-                                {dueDate && (
-                                    <button 
-                                        onClick={() => { setDueDate(''); if(comment && onUpdate) onUpdate(comment.id, { dueDate: undefined }); }}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white"
-                                    >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+                    {/* Due Date */}
+                    <div style={styles.section}>
+                        <label style={styles.label}>Due Date</label>
+                        <input
+                            type="datetime-local"
+                            value={getSafeDateForInput(dueDate)}
+                            onChange={handleDueDateChange}
+                            style={styles.input}
+                        />
+                    </div>
 
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-text-secondary">Add a comment</label>
-                            <div className="relative">
-                                <textarea 
-                                    value={newReply} 
-                                    onChange={e => setNewReply(e.target.value)} 
-                                    placeholder="Write a comment..." 
-                                    rows={2} 
-                                    className="w-full p-2 pr-10 rounded-md text-sm bg-surface-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary resize-none transition-colors placeholder:text-text-secondary text-text-primary"
-                                />
-                                <button
-                                    onClick={handleReplySubmit}
-                                    disabled={!newReply.trim()}
-                                    className="absolute top-1/2 right-2 -translate-y-1/2 p-1.5 rounded-full text-primary hover:bg-surface-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                                </button>
-                            </div>
-                        </div>
+                    {/* Reply Input */}
+                    <div style={styles.section}>
+                        <textarea 
+                            value={newReply} 
+                            onChange={e => setNewReply(e.target.value)} 
+                            placeholder="Leave a comment..." 
+                            rows={2} 
+                            style={styles.textarea}
+                        />
+                    </div>
+
+                    {/* Submit Button */}
+                    <div style={styles.section}>
+                        <button
+                            onClick={handleReplySubmit}
+                            disabled={!newReply.trim()}
+                            style={newReply.trim() ? styles.submitBtn : styles.submitBtnDisabled}
+                        >
+                            Add Comment
+                        </button>
                     </div>
                 </>
             ) : (
-                <form onSubmit={(e) => { e.preventDefault(); onSubmit(newReply, { ...(targetType === 'video' ? { startTime, endTime } : {}), dueDate: dueDate || undefined }); }} className="p-4 space-y-4">
-                     <h4 className="font-bold text-white text-center text-lg">New Comment</h4>
-                     
-                      {targetType === 'video' && (
-                        <div className="flex items-center justify-center gap-2 text-sm">
-                            <label className="text-text-secondary">Time:</label>
-                            <input type="number" step="1" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} className="w-16 text-center bg-surface-light border border-border-color rounded-md px-2 py-1 text-text-primary" />
-                            <span className="text-text-secondary">-</span>
-                            <input type="number" step="1" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} className="w-16 text-center bg-surface-light border border-border-color rounded-md px-2 py-1 text-text-primary" />
-                        </div>
-                    )}
+                <div>
+                    {/* Header */}
+                    <div style={styles.header}>
+                        <h3 style={styles.title}>New Comment</h3>
+                        <button type="button" onClick={onClose} style={styles.closeBtn}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
 
-                     <textarea 
-                        ref={textareaRef}
-                        value={newReply} 
-                        onChange={e => setNewReply(e.target.value)} 
-                        placeholder="Write a comment..." 
-                        rows={4} 
-                        className="w-full p-2 rounded-md text-sm bg-surface-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary resize-none placeholder:text-text-secondary text-text-primary"
-                    ></textarea>
-                      
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-text-secondary">Due Date (Optional)</label>
-                        <div className="relative">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-primary">
-                                <CalendarIcon className="w-4 h-4" />
+                    <form onSubmit={(e) => { e.preventDefault(); onSubmit(newReply, { ...(targetType === 'video' ? { startTime, endTime } : {}), dueDate: dueDate || undefined }); }}>
+                        {/* Video Time */}
+                        {targetType === 'video' && (
+                            <div style={{...styles.section, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px'}}>
+                                <span style={{color: '#A1A1AA'}}>Time:</span>
+                                <input type="number" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} style={{...styles.input, width: '40px', textAlign: 'center'}} />
+                                <span style={{color: '#A1A1AA'}}>-</span>
+                                <input type="number" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} style={{...styles.input, width: '40px', textAlign: 'center'}} />
                             </div>
+                        )}
+
+                        {/* Comment Input */}
+                        <div style={styles.section}>
+                            <textarea 
+                                ref={textareaRef}
+                                value={newReply} 
+                                onChange={e => setNewReply(e.target.value)} 
+                                placeholder="Leave a comment..." 
+                                rows={2} 
+                                style={styles.textarea}
+                            />
+                        </div>
+                        
+                        {/* Due Date */}
+                        <div style={styles.section}>
+                            <label style={styles.label}>Due Date</label>
                             <input
                                 type="datetime-local"
                                 value={getSafeDateForInput(dueDate)}
                                 onChange={handleDueDateChange}
-                                className="w-full pl-9 p-2 rounded-md text-xs bg-surface-light border border-border-color focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-text-primary"
+                                style={styles.input}
                             />
-                            {dueDate && (
-                                <button 
-                                    type="button"
-                                    onClick={() => setDueDate('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white"
-                                >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </button>
-                            )}
                         </div>
-                    </div>
 
-                     <div className="flex justify-end gap-2 pt-2">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold rounded-md bg-surface-light hover:bg-surface transition-colors text-text-primary">Cancel</button>
-                        <button type="submit" className="px-4 py-2 text-sm font-bold rounded-md bg-primary text-black hover:bg-primary-hover transition-colors">Post</button>
-                    </div>
-                </form>
+                        {/* Submit Button */}
+                        <div style={styles.section}>
+                            <button 
+                                type="submit" 
+                                disabled={!newReply.trim()}
+                                style={newReply.trim() ? styles.submitBtn : styles.submitBtnDisabled}
+                            >
+                                Add Comment
+                            </button>
+                        </div>
+                    </form>
+                </div>
             )}
         </div>
     );
 };
 
 export default CommentPopover;
+
+

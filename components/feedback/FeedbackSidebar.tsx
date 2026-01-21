@@ -5,7 +5,7 @@ import { CancelIcon } from '../icons/CancelIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
 import { SidebarView } from './FeedbackItemPage'; 
-import CommentPopover from './CommentPopover'; 
+import CommentPopover, { CommentThread } from './CommentPopover';  
 
 // Reusing CommentPopover logic but adapting for Sidebar (Detail View)
 // We will extract the "Thread" logic later if needed, but for now we can render a "Detail" component here.
@@ -24,10 +24,11 @@ interface FeedbackSidebarProps {
     onNavigate?: (path: string) => void;
     onDelete: (commentId: string) => void; 
     onResolve?: (commentId: string) => void; 
-    onUpdate?: (commentId: string, updates: Partial<FeedbackComment>) => void; // Added for reply/update
+    onUpdate?: (commentId: string, updates: Partial<FeedbackComment | FeedbackItemComment>) => void; // Added for reply/update
     position: 'right' | 'bottom';
     onGoToPage?: (url: string, device: string) => void; 
     users?: User[]; 
+    currentUserId?: string;
 }
 
 const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({ 
@@ -43,7 +44,8 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
     onUpdate,
     position, 
     onGoToPage, 
-    users 
+    users,
+    currentUserId 
 }) => {
     const { data } = useData();
     const userList = users || data?.users || [];
@@ -52,6 +54,38 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
     // Internal state for selected comment (Detail View)
     const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState('');
+
+    useEffect(() => {
+        setReplyText('');
+        setIsEditing(false);
+        setEditText('');
+    }, [selectedCommentId]);
+
+    const handleEditSave = () => {
+        if (selectedCommentId && onUpdate && editText.trim()) {
+             onUpdate(selectedCommentId, { comment: editText });
+             setIsEditing(false);
+        }
+    };
+
+    const handleReplyDelete = (replyId: string) => {
+        if (!selectedCommentId || !onUpdate) return;
+        const comment = comments.find(c => c.id === selectedCommentId);
+        if (!comment) return;
+
+        const deleteRecursively = (replies: any[]): any[] => {
+             return replies.filter(r => r.id !== replyId).map(r => ({
+                 ...r,
+                 replies: r.replies ? deleteRecursively(r.replies) : []
+             }));
+        };
+
+        const newReplies = deleteRecursively((comment as FeedbackComment).replies || []);
+        onUpdate(comment.id, { replies: newReplies });
+    };
+
 
     const selectedComment = useMemo(() => 
         comments.find(c => c.id === selectedCommentId), 
@@ -80,7 +114,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
         
         const newReply = {
             id: `rep-${Date.now()}`,
-            authorId: 'user-1', // Mock current user or get from auth
+            authorId: currentUserId || 'guest-user',
             text: replyText,
             timestamp: new Date().toISOString(),
             replies: []
@@ -184,9 +218,18 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
         return `${minutes}:${seconds}`;
     };
 
+    const formatUrl = (url: string) => {
+        let fmt = url.replace(/^(https?:\/\/)/, '');
+        if (fmt.length > 30) {
+            fmt = fmt.substring(0, 27) + '...';
+        }
+        return fmt;
+    };
+
     return (
         <div className={containerClasses}>
-            {/* Header */}
+            {/* ... Header ... */} 
+
             <div className="flex justify-between items-center p-4 border-b border-border-color flex-shrink-0 bg-glass">
                 {selectedCommentId ? (
                      <div className="flex items-center gap-2">
@@ -226,6 +269,8 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                         </div>
                     ) : sortedComments.map(comment => {
                          const videoTime = getVideoTime(comment);
+                         const pageUrl = getPageUrl(comment);
+                         const deviceView = (comment as any).deviceView || 'Desktop';
                         return (
                             <div key={comment.id} onClick={() => handleCommentClickInternal(comment)} className={itemClasses}>
                                 {videoTime !== undefined && (
@@ -234,33 +279,40 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                                     </div>
                                 )}
                                 <div className={`p-3 ${position === 'bottom' ? 'flex-1 flex flex-col' : ''}`}>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 ${comment.status === 'Resolved' || (comment as any).resolved ? 'bg-green-500' : 'bg-primary'}`}>
-                                                {comment.pin_number || '•'}
-                                            </span>
-                                            <span className="text-xs font-semibold text-text-primary">{getMember(getAuthorId(comment))?.name || 'User'}</span>
-                                        </div>
-                                        <span className="text-[10px] text-text-secondary">{getCommentDate(comment).toLocaleDateString()}</span>
+                                    {/* Top Row: Number + Name + Device + Status */}
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 ${comment.status === 'Resolved' || (comment as any).resolved ? 'bg-green-500' : 'bg-primary'}`}>
+                                            {comment.pin_number || '•'}
+                                        </span>
+                                        <span className="text-sm font-semibold text-text-primary">{getMember(getAuthorId(comment))?.name || 'User'}</span>
+                                        <span className="text-[10px] px-2 py-0.5 rounded bg-surface-light text-text-secondary ml-auto">{deviceView}</span>
+                                        <span className={`text-xs font-semibold ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'text-green-400' : 'text-primary'}`}>
+                                            {(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'Resolved' : 'Active'}
+                                        </span>
                                     </div>
-                                    <p className={`text-sm text-text-primary mb-2 ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'line-through text-text-secondary opacity-70' : ''}`}>
+                                    
+                                    {/* Comment Text */}
+                                    <p className={`text-sm text-text-secondary mb-3 ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'line-through opacity-70' : ''}`}>
                                         {getCommentText(comment)}
                                     </p>
-                                    <div className={`flex gap-2 text-xs ${position === 'bottom' ? 'mt-auto pt-2' : 'mt-3 pt-2 border-t border-border-color/50'}`}>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); onResolve && onResolve(comment.id); }}
-                                            className={`text-[10px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}
-                                        >
-                                            {(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'Resolved' : 'Active'}
-                                        </button>
-                                        <button onClick={(e) => { e.stopPropagation(); if(window.confirm('Delete?')) onDelete(comment.id); }} className="ml-auto text-red-400 hover:text-red-500 p-1 hover:bg-red-500/10 rounded">
-                                            <DeleteIcon className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                    
+                                    {/* Page Row */}
+                                    {pageUrl && (
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-text-secondary">Page: <span className="text-text-primary" title={pageUrl}>{formatUrl(pageUrl)}</span></span>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); onGoToPage?.(pageUrl, deviceView); }}
+                                                className="text-primary hover:underline font-medium"
+                                            >
+                                                Go to page
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );
                     })
+
                 )}
 
                 {/* Detail View */}
@@ -275,22 +327,53 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                                         <span className="font-bold text-text-primary text-sm">{getMember(getAuthorId(selectedComment))?.name || 'User'}</span>
                                         <span className="text-xs text-text-secondary">{getCommentDate(selectedComment).toLocaleString()}</span>
                                     </div>
-                                    <p className="text-sm text-text-primary mt-1">{getCommentText(selectedComment)}</p>
+
+                                    {isEditing ? (
+                                        <div className="mt-2">
+                                            <textarea 
+                                                value={editText}
+                                                onChange={e => setEditText(e.target.value)}
+                                                className="w-full bg-glass-light border border-border-color rounded p-2 text-sm text-text-primary outline-none focus:border-primary resize-none"
+                                                rows={3}
+                                            />
+                                            <div className="flex justify-end gap-2 mt-2">
+                                                <button onClick={() => setIsEditing(false)} className="px-3 py-1 bg-surface-light text-text-secondary rounded text-xs hover:text-text-primary">Cancel</button>
+                                                <button onClick={handleEditSave} className="px-3 py-1 bg-primary text-background font-bold rounded text-xs hover:bg-primary-hover">Save</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-sm text-text-primary mt-1">{getCommentText(selectedComment)}</p>
+                                            <div className="flex gap-4 mt-2 border-t border-border-color pt-2">
+                                                 <button 
+                                                    onClick={() => { setEditText(getCommentText(selectedComment)); setIsEditing(true); }}
+                                                    className="text-xs text-text-secondary hover:text-primary transition-colors flex items-center gap-1"
+                                                 >
+                                                    Edit
+                                                 </button>
+                                                 <button 
+                                                    onClick={() => { onDelete?.(selectedComment.id); setSelectedCommentId(null); }}
+                                                    className="text-xs text-text-secondary hover:text-red-400 transition-colors flex items-center gap-1"
+                                                 >
+                                                    Delete
+                                                 </button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Thread */}
                         <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                            {(selectedComment as FeedbackComment).replies?.map((reply: any) => (
-                                <div key={reply.id} className="flex items-start gap-3 pl-4 border-l-2 border-border-color">
-                                    <img src={getMember(reply.authorId)?.avatarUrl} className="w-6 h-6 rounded-full bg-primary/20" />
-                                    <div className="flex-1 bg-glass-light/50 p-2 rounded-lg">
-                                        <span className="font-bold text-text-primary text-xs block">{getMember(reply.authorId)?.name || 'User'}</span>
-                                        <p className="text-sm text-text-primary mt-1">{reply.text}</p>
-                                    </div>
-                                </div>
-                            ))}
+                             {(selectedComment as FeedbackComment).replies && (
+                                 <CommentThread 
+                                     replies={(selectedComment as FeedbackComment).replies} 
+                                     getMember={getMember} 
+                                     currentUserId={currentUserId}
+                                     onDelete={handleReplyDelete} 
+                                 />
+                             )}
                         </div>
 
                         {/* Reply Input */}

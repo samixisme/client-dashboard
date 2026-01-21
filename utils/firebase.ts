@@ -22,7 +22,7 @@ const app = initializeApp(firebaseConfig);
 // IMPORTANT: Make sure '6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9' is your actual reCAPTCHA v3 site key from the Google Cloud console.
 // Self-host your reCAPTCHA v3 site key in an environment variable for security.
 if (window.location.hostname === "localhost") {
-  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = "d87f033a-8f4d-4340-8e8b-f96ebcd3ff7c";
 }
 initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9'),
@@ -44,7 +44,7 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
   if (!file) {
     throw new Error("No file provided for upload.");
   }
-  
+
   // Create a unique filename to prevent overwrites
   const uniqueFilename = `${Date.now()}-${file.name}`;
   const storageRef = ref(storage, `${path}/${uniqueFilename}`);
@@ -52,10 +52,10 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
   try {
     // Upload the file
     const uploadTask = await uploadBytes(storageRef, file);
-    
+
     // Get the public download URL
     const downloadURL = await getDownloadURL(uploadTask.ref);
-    
+
     return downloadURL;
   } catch (error) {
     console.error("Error uploading file:", error);
