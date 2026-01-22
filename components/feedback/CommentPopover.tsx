@@ -507,10 +507,13 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
                     {comment.targetType === 'video' && (
                         <div style={{...styles.section, fontSize: '11px', color: '#A1A1AA', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                             {isEditingTime ? (
-                                <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
-                                    <input type="number" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} style={{...styles.input, width: '40px', textAlign: 'center'}} />
-                                    <span>-</span>
-                                    <input type="number" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} style={{...styles.input, width: '40px', textAlign: 'center'}} />
+                                <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                    <span style={{color: '#A3E635', fontSize: '10px'}}>Start:</span>
+                                    <input type="number" value={Math.round(startTime)} onChange={e => setStartTime(parseFloat(e.target.value))} style={{...styles.input, width: '60px', textAlign: 'center', padding: '6px'}} />
+                                    <span style={{color: '#A1A1AA'}}>→</span>
+                                    <span style={{color: '#A3E635', fontSize: '10px'}}>End:</span>
+                                    <input type="number" value={Math.round(endTime)} onChange={e => setEndTime(parseFloat(e.target.value))} style={{...styles.input, width: '60px', textAlign: 'center', padding: '6px'}} />
+                                    <span style={{color: '#A1A1AA', fontSize: '10px'}}>sec</span>
                                 </div>
                             ) : (
                                 <div>Time: <span style={{color: '#F4F4F5', fontFamily: 'monospace'}}>{formatTime(comment.startTime || 0)} - {formatTime(comment.endTime || 0)}</span></div>

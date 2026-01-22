@@ -319,7 +319,9 @@ export interface FeedbackItem {
   createdBy: string;
   createdAt: any; // Timestamp or Date or serializable object
   commentCount?: number;
-  pages?: {id: string, name: string, url: string, approved?: boolean}[]; // New pages field
+  pages?: {id: string, name: string, url: string, approved?: boolean}[]; // For websites
+  images?: {id: string, name: string, url: string, approved?: boolean}[]; // For mockups
+  videos?: {id: string, name: string, url: string, approved?: boolean}[]; // For videos
 }
 
 export interface FeedbackItemComment {
@@ -331,6 +333,8 @@ export interface FeedbackItemComment {
   resolved: boolean;
   position?: { x: number; y: number }; // ONLY for 'mockup' type
   timestamp?: number; // ONLY for 'video' type (time in seconds)
+  startTime?: number; // Video comment start time in seconds
+  endTime?: number;   // Video comment end time in seconds
   pin_number?: number;
   device?: string;
   pageUrl?: string;

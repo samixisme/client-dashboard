@@ -140,13 +140,47 @@ export const updateFeedbackItemStatus = async (
 export const updateFeedbackItemPages = async (
   projectId: string,
   itemId: string,
-  pages: {id: string, name: string, url: string}[]
+  pages: {id: string, name: string, url: string, approved?: boolean}[]
 ): Promise<void> => {
   try {
     const itemRef = doc(db, "projects", projectId, "feedbackItems", itemId);
     await updateDoc(itemRef, { pages });
   } catch (error) {
     console.error("Error updating feedback item pages:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates the images list of a specific mockup feedback item.
+ */
+export const updateFeedbackItemImages = async (
+  projectId: string,
+  itemId: string,
+  images: {id: string, name: string, url: string, approved?: boolean}[]
+): Promise<void> => {
+  try {
+    const itemRef = doc(db, "projects", projectId, "feedbackItems", itemId);
+    await updateDoc(itemRef, { images });
+  } catch (error) {
+    console.error("Error updating feedback item images:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates the videos list of a specific video feedback item.
+ */
+export const updateFeedbackItemVideos = async (
+  projectId: string,
+  itemId: string,
+  videos: {id: string, name: string, url: string, approved?: boolean}[]
+): Promise<void> => {
+  try {
+    const itemRef = doc(db, "projects", projectId, "feedbackItems", itemId);
+    await updateDoc(itemRef, { videos });
+  } catch (error) {
+    console.error("Error updating feedback item videos:", error);
     throw error;
   }
 }
@@ -328,6 +362,67 @@ export const syncCommentToCalendar = async (
         });
     } catch (error) {
         console.error("Error syncing to calendar:", error);
+    }
+};
+
+/**
+ * Syncs a comment with a due date to the tasks collection.
+ * Creates a new task if none exists, updates if already linked, removes if due date is cleared.
+ */
+export const syncCommentToTask = async (
+    commentId: string,
+    commentText: string,
+    dueDate: string | null | undefined,
+    authorId: string,
+    projectId: string,
+    feedbackItemId: string,
+    feedbackItemName?: string
+): Promise<void> => {
+    try {
+        // Check if a task already exists for this comment
+        const tasksQuery = query(
+            collection(db, "tasks"),
+            where("sourceCommentId", "==", commentId)
+        );
+        const existingTasks = await getDocs(tasksQuery);
+        
+        if (dueDate) {
+            // Create or update task
+            const taskData = {
+                title: `[Feedback] ${commentText.substring(0, 50)}${commentText.length > 50 ? '...' : ''}`,
+                description: commentText,
+                dueDate: dueDate,
+                status: 'pending' as const,
+                priority: 'medium' as const,
+                assigneeId: authorId,
+                projectId: projectId,
+                sourceCommentId: commentId,
+                sourceFeedbackItemId: feedbackItemId,
+                sourceFeedbackItemName: feedbackItemName || 'Feedback Item',
+                sourceType: 'feedback_comment' as const,
+                updatedAt: serverTimestamp()
+            };
+            
+            if (existingTasks.empty) {
+                // Create new task
+                await addDoc(collection(db, "tasks"), {
+                    ...taskData,
+                    createdAt: serverTimestamp()
+                });
+            } else {
+                // Update existing task
+                const taskDoc = existingTasks.docs[0];
+                await updateDoc(doc(db, "tasks", taskDoc.id), taskData);
+            }
+        } else {
+            // Due date cleared - remove linked task
+            if (!existingTasks.empty) {
+                const taskDoc = existingTasks.docs[0];
+                await deleteDoc(doc(db, "tasks", taskDoc.id));
+            }
+        }
+    } catch (error) {
+        console.error("Error syncing comment to task:", error);
     }
 };
 

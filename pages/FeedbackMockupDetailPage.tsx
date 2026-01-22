@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved, updateFeedbackItemStatus, deleteComment } from '../utils/feedbackUtils';
-import { FeedbackItem, FeedbackItemComment } from '../types';
+import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved, updateFeedbackItemStatus, deleteComment, updateComment } from '../utils/feedbackUtils';
+import { FeedbackItem, FeedbackItemComment, User, FeedbackComment } from '../types';
 import { useData } from '../contexts/DataContext';
 import FeedbackSidebar from '../components/feedback/FeedbackSidebar';
+import CommentPopover from '../components/feedback/CommentPopover';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 import { ArrowRightIcon } from '../components/icons/ArrowRightIcon';
 import { ZoomInIcon } from '../components/icons/ZoomInIcon';
 import { ZoomOutIcon } from '../components/icons/ZoomOutIcon';
@@ -28,6 +31,8 @@ const FeedbackMockupDetailPage = () => {
   const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
   const [comments, setComments] = useState<FeedbackItemComment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   // Viewer State
   const [zoom, setZoom] = useState(1);
@@ -41,6 +46,13 @@ const FeedbackMockupDetailPage = () => {
   const [newCommentText, setNewCommentText] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+  
+  // Popover State
+  const [popover, setPopover] = useState<{
+      isOpen: boolean;
+      position: { x: number; y: number } | null;
+      comment: FeedbackItemComment | null;
+  }>({ isOpen: false, position: null, comment: null });
   
   // Sidebar Configuration State
   const [sidebarView, setSidebarView] = useState<'comments' | 'activity'>('comments');
@@ -67,6 +79,27 @@ const FeedbackMockupDetailPage = () => {
       return () => unsubscribe();
     }
   }, [projectId, feedbackItemId]);
+
+  // Fetch Users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const fetchedUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setUsers(fetchedUsers);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // Set current user ID
+  useEffect(() => {
+    if (user?.uid) {
+      setCurrentUserId(user.uid);
+    }
+  }, [user]);
 
   // 2. Keyboard Events (Spacebar for Panning)
   useEffect(() => {
@@ -131,6 +164,28 @@ const FeedbackMockupDetailPage = () => {
   const handleCommentClick = (comment: FeedbackItemComment) => {
     setActivePinId(comment.id);
     setClickPosition(null); // Cancel new comment mode
+    // Open popover with the comment
+    if (comment.position) {
+      setPopover({
+        isOpen: true,
+        position: comment.position,
+        comment: comment
+      });
+    }
+  };
+
+  const handleClosePopover = () => {
+    setPopover({ isOpen: false, position: null, comment: null });
+    setActivePinId(null);
+  };
+
+  const handleUpdateComment = async (commentId: string, updates: Partial<FeedbackItemComment>) => {
+    if (!projectId || !feedbackItemId) return;
+    try {
+      await updateComment(projectId, feedbackItemId, commentId, updates);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+    }
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -138,7 +193,7 @@ const FeedbackMockupDetailPage = () => {
     if (!newCommentText.trim() || !projectId || !feedbackItemId || !user || !clickPosition) return;
 
     try {
-      const authorId = user.uid || user.id;
+      const authorId = user.uid || currentUserId || 'guest-user';
       if (!authorId) return;
 
       await addComment(projectId, feedbackItemId, {
@@ -315,10 +370,21 @@ const FeedbackMockupDetailPage = () => {
         </div>
 
         {/* Toolbar Overlay */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-surface/90 backdrop-blur-xl border border-border-color rounded-2xl p-1.5 flex items-center gap-1 shadow-2xl z-50 ring-1 ring-black/5">
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-surface/90 backdrop-blur-xl border border-border-color rounded-2xl p-1.5 flex items-center gap-2 shadow-2xl z-50 ring-1 ring-black/5">
+             {/* Zoom Controls with Slider */}
              <button onClick={() => setZoom(z => Math.max(0.1, z - 0.25))} className="p-2 hover:bg-surface-light rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom Out"><ZoomOutIcon className="w-5 h-5"/></button>
-             <span className="text-xs font-bold font-mono w-12 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
+             <input
+                type="range"
+                min="10"
+                max="500"
+                step="10"
+                value={Math.round(zoom * 100)}
+                onChange={(e) => setZoom(parseInt(e.target.value) / 100)}
+                className="w-24 h-1.5 bg-border-color rounded-full appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
+                title={`Zoom: ${Math.round(zoom * 100)}%`}
+             />
              <button onClick={() => setZoom(z => Math.min(5, z + 0.25))} className="p-2 hover:bg-surface-light rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom In"><ZoomInIcon className="w-5 h-5"/></button>
+             <span className="text-xs font-bold font-mono w-12 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
              <div className="w-px h-5 bg-border-color/50 mx-1"></div>
              <button onClick={handleFitToScreen} className="px-3 py-1.5 text-xs font-bold hover:bg-surface-light rounded-xl text-text-primary transition-colors">Fit</button>
              <div className="w-px h-5 bg-border-color/50 mx-1"></div>
@@ -389,15 +455,56 @@ const FeedbackMockupDetailPage = () => {
          <div className="flex-1 overflow-hidden flex flex-col bg-surface/50">
             <FeedbackSidebar 
                 view={sidebarView}
+                onViewChange={setSidebarView}
                 comments={comments}
                 onCommentClick={handleCommentClick}
                 onClose={() => setIsSidebarOpen(false)}
-                onDelete={handleDeleteComment} // Passed down to sidebar
+                onDelete={handleDeleteComment}
                 onResolve={handleResolveComment}
+                onUpdate={handleUpdateComment}
                 position={sidebarPosition}
+                users={users}
+                currentUserId={currentUserId}
             />
          </div>
       </div>
+
+      {/* Comment Popover */}
+      {popover.isOpen && popover.comment && containerRef.current && (() => {
+        // Convert FeedbackItemComment to FeedbackComment format for CommentPopover
+        const adaptedComment = {
+          ...popover.comment,
+          // Map FeedbackItemComment fields to FeedbackComment fields
+          reporterId: popover.comment.authorId,
+          comment: popover.comment.commentText,
+          // Ensure pin_number is set
+          pin_number: popover.comment.pin_number || comments.findIndex(c => c.id === popover.comment?.id) + 1,
+          // Map other fields
+          targetType: 'mockup' as const,
+          projectId: projectId,
+          targetId: feedbackItemId
+        };
+        
+        return (
+          <CommentPopover
+            comment={adaptedComment as any}
+            coords={popover.position}
+            contentRef={containerRef}
+            zoom={zoom}
+            onClose={handleClosePopover}
+            onSubmit={() => {}} // Not used for existing comments
+            onUpdate={handleUpdateComment as any}
+            onResolve={() => handleResolveComment(popover.comment!.id)}
+            onDelete={() => {
+              handleDeleteComment(popover.comment!.id);
+              handleClosePopover();
+            }}
+            targetType="mockup"
+            users={users}
+            currentUserId={currentUserId}
+          />
+        );
+      })()}
     </div>
   );
 };

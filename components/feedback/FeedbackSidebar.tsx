@@ -128,13 +128,14 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
         setReplyText('');
     };
     
-    // Helper accessors
     const getCommentText = (c: FeedbackComment | FeedbackItemComment) => 
         (c as FeedbackItemComment).commentText || (c as FeedbackComment).comment;
     const getAuthorId = (c: FeedbackComment | FeedbackItemComment) => 
         (c as FeedbackItemComment).authorId || (c as FeedbackComment).reporterId;
     const getVideoTime = (c: FeedbackComment | FeedbackItemComment) => 
-        (c as FeedbackItemComment).timestamp ?? (c as FeedbackComment).startTime;
+        (c as FeedbackItemComment).startTime ?? (c as FeedbackItemComment).timestamp ?? (c as FeedbackComment).startTime;
+    const getVideoEndTime = (c: FeedbackComment | FeedbackItemComment) => 
+        (c as FeedbackItemComment).endTime ?? (c as FeedbackComment).endTime;
     const getPageUrl = (c: FeedbackComment | FeedbackItemComment) => 
         (c as FeedbackComment).pageUrl || (c as FeedbackComment).pageUrl;
     const getCommentDate = (comment: FeedbackComment | FeedbackItemComment) => {
@@ -269,13 +270,16 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                         </div>
                     ) : sortedComments.map(comment => {
                          const videoTime = getVideoTime(comment);
+                         const videoEndTime = getVideoEndTime(comment);
                          const pageUrl = getPageUrl(comment);
                          const deviceView = (comment as any).deviceView || 'Desktop';
                         return (
                             <div key={comment.id} onClick={() => handleCommentClickInternal(comment)} className={itemClasses}>
                                 {videoTime !== undefined && (
-                                     <div className="px-3 py-1 bg-primary/10 border-b border-border-color flex-shrink-0 flex justify-between items-center">
-                                        <span className="text-xs font-bold text-primary flex items-center gap-1">⏱ {formatTime(videoTime)}</span>
+                                     <div className="px-3 py-1.5 bg-primary/10 border-b border-border-color flex-shrink-0 flex justify-between items-center">
+                                        <span className="text-xs font-bold text-primary flex items-center gap-1">
+                                            ⏱ {formatTime(videoTime)}{videoEndTime !== undefined && ` - ${formatTime(videoEndTime)}`}
+                                        </span>
                                     </div>
                                 )}
                                 <div className={`p-3 ${position === 'bottom' ? 'flex-1 flex flex-col' : ''}`}>

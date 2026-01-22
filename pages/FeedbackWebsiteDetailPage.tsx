@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { getFeedbackItem, subscribeToComments, subscribeToActivities, deleteComment, toggleCommentResolved, updateComment } from '../utils/feedbackUtils';
+import { getFeedbackItem, subscribeToComments, subscribeToActivities, deleteComment, toggleCommentResolved, updateComment, updateFeedbackItemStatus } from '../utils/feedbackUtils';
 import { auth } from '../utils/firebase';
 import { FeedbackItem, FeedbackItemComment, FeedbackComment, User } from '../types';
 import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
@@ -365,6 +365,26 @@ const FeedbackWebsiteDetailPage = () => {
 
              {/* Right: Actions */}
              <div className="flex gap-2 pointer-events-auto">
+                 {/* Approve/Approved Toggle Button */}
+                 <button
+                     onClick={async () => {
+                         if (projectId && feedbackItemId && item) {
+                             const newStatus = item.status === 'approved' ? 'pending' : 'approved';
+                             setItem({ ...item, status: newStatus });
+                             await updateFeedbackItemStatus(projectId, feedbackItemId, newStatus, auth.currentUser?.uid);
+                         }
+                     }}
+                     className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${
+                         item?.status === 'approved' 
+                             ? 'bg-primary text-black' 
+                             : 'bg-surface/90 backdrop-blur-md text-text-primary hover:bg-primary/20 border border-border-color'
+                     }`}
+                 >
+                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                         <path d="M20 6L9 17l-5-5" />
+                     </svg>
+                     {item?.status === 'approved' ? 'Approved' : 'Approve'}
+                 </button>
                  <button 
                     onClick={() => {
                         if (iframeRef.current) {
