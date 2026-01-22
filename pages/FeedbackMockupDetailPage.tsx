@@ -34,6 +34,9 @@ const FeedbackMockupDetailPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
+  const path = searchParams.get('path');
+  const activeImageUrl = (path && feedbackItem) ? path : feedbackItem?.assetUrl;
+
   // Viewer State
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -212,7 +215,7 @@ const FeedbackMockupDetailPage = () => {
   const handleDeleteComment = async (commentId: string) => {
       if (!projectId || !feedbackItemId) return;
       try {
-          await deleteComment(projectId, feedbackItemId, commentId);
+          await deleteComment(projectId, feedbackItemId, commentId, currentUserId);
           // Optimistic update handled by listener or we can manually filter if needed, 
           // but listener is safer. The listener in useEffect will update 'comments'.
       } catch (error) {
@@ -224,7 +227,7 @@ const FeedbackMockupDetailPage = () => {
       if (!projectId || !feedbackItemId) return;
       const comment = comments.find(c => c.id === commentId);
       if (comment) {
-          await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.resolved);
+          await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.resolved, currentUserId);
       }
   }
 
@@ -242,8 +245,8 @@ const FeedbackMockupDetailPage = () => {
   };
 
   const handleDownload = () => {
-      if (feedbackItem?.assetUrl) {
-          window.open(feedbackItem.assetUrl, '_blank');
+      if (activeImageUrl) {
+          window.open(activeImageUrl, '_blank');
       }
   };
 
@@ -317,7 +320,7 @@ const FeedbackMockupDetailPage = () => {
             <div className="relative inline-block shadow-2xl">
                 <img 
                     ref={imageRef}
-                    src={feedbackItem.assetUrl} 
+                    src={activeImageUrl} 
                     alt={feedbackItem.name}
                     draggable={false}
                     onClick={handleImageClick}

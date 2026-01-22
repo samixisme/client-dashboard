@@ -34,10 +34,10 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
 
     // Subscribe to tasks from the tasks collection
     useEffect(() => {
+        // Simple query without orderBy to avoid needing composite index
         const tasksQuery = query(
             collection(db, "tasks"),
-            where("projectId", "==", projectId),
-            orderBy("createdAt", "desc")
+            where("projectId", "==", projectId)
         );
 
         const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
@@ -45,6 +45,14 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                 id: doc.id,
                 ...doc.data()
             } as Task));
+            
+            // Sort client-side by createdAt descending
+            fetchedTasks.sort((a, b) => {
+                const aTime = a.createdAt?.seconds || 0;
+                const bTime = b.createdAt?.seconds || 0;
+                return bTime - aTime;
+            });
+            
             setTasks(fetchedTasks);
             setLoading(false);
         }, (error) => {
@@ -110,7 +118,7 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Task</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Source</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Assigned To</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Created By</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Due Date</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Action</th>
@@ -118,7 +126,9 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                             </thead>
                             <tbody className="divide-y divide-border-color">
                                 {filteredTasks.map(task => {
-                                    const assignee = getUser(task.assigneeId);
+                                    const creator = getUser((task as any).creatorId || task.assigneeId);
+                                    const sourceType = task.sourceType || 'mockup';
+                                    const sourceLabel = sourceType === 'website' ? 'Website' : sourceType === 'video' ? 'Video' : 'Mockup';
                                     
                                     return (
                                         <tr key={task.id} className="hover:bg-glass-light transition-colors">
@@ -129,18 +139,24 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                                                {task.sourceFeedbackItemName || task.sourceType || 'Manual'}
+                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                                                    sourceType === 'website' ? 'bg-blue-500/20 text-blue-300' :
+                                                    sourceType === 'video' ? 'bg-purple-500/20 text-purple-300' :
+                                                    'bg-green-500/20 text-green-300'
+                                                }`}>
+                                                    {sourceLabel}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
-                                                    {assignee?.avatarUrl ? (
-                                                        <img src={assignee.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
+                                                    {creator?.avatarUrl ? (
+                                                        <img src={creator.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
                                                     ) : (
                                                         <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-                                                            {assignee?.name?.[0] || '?'}
+                                                            {creator?.name?.[0] || '?'}
                                                         </div>
                                                     )}
-                                                    <span className="text-sm text-text-primary">{assignee?.name || 'Unassigned'}</span>
+                                                    <span className="text-sm text-text-primary">{creator?.name || 'Unknown'}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
@@ -157,7 +173,7 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 {task.sourceFeedbackItemId ? (
                                                     <Link 
-                                                        to={`/feedback/${projectId}/mockup/${task.sourceFeedbackItemId}`} 
+                                                        to={`/feedback/${projectId}/${sourceType}/${task.sourceFeedbackItemId}`} 
                                                         className="text-primary hover:text-primary-hover"
                                                     >
                                                         View Source

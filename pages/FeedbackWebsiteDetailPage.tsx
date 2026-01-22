@@ -223,7 +223,7 @@ const FeedbackWebsiteDetailPage = () => {
 
   const handleDeleteComment = async (commentId: string) => {
       if (projectId && feedbackItemId) {
-          await deleteComment(projectId, feedbackItemId, commentId);
+          await deleteComment(projectId, feedbackItemId, commentId, auth.currentUser?.uid);
       }
   };
 
@@ -231,7 +231,7 @@ const FeedbackWebsiteDetailPage = () => {
        if (projectId && feedbackItemId) {
           const comment = comments.find(c => c.id === commentId);
           if (comment) {
-               await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.status === 'Resolved');
+               await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.status === 'Resolved', auth.currentUser?.uid);
           }
        }
   };

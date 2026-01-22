@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
     getFeedbackItem, 
     subscribeToComments, 
@@ -24,6 +24,7 @@ import { collection, getDocs } from 'firebase/firestore';
 const FeedbackVideoDetailPage = () => {
     const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { user } = useData();
 
     // Core Data
@@ -31,6 +32,9 @@ const FeedbackVideoDetailPage = () => {
     const [comments, setComments] = useState<FeedbackItemComment[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const path = searchParams.get('path');
+    const activeVideoUrl = (path && feedbackItem) ? path : feedbackItem?.assetUrl;
 
     // Video State
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -303,7 +307,7 @@ const FeedbackVideoDetailPage = () => {
 
     const handleDeleteComment = async (commentId: string) => {
         if (!projectId || !feedbackItemId) return;
-        await deleteComment(projectId, feedbackItemId, commentId);
+        await deleteComment(projectId, feedbackItemId, commentId, currentUserId);
         if (popover.comment?.id === commentId) {
             setPopover({ isOpen: false, x: 0, y: 0 });
         }
@@ -313,7 +317,7 @@ const FeedbackVideoDetailPage = () => {
         if (!projectId || !feedbackItemId) return;
         const comment = comments.find(c => c.id === commentId);
         if (comment) {
-            await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.resolved);
+            await toggleCommentResolved(projectId, feedbackItemId, commentId, comment.resolved, currentUserId);
         }
     };
 
@@ -513,7 +517,7 @@ const FeedbackVideoDetailPage = () => {
                     >
                         <video
                             ref={videoRef}
-                            src={feedbackItem.assetUrl}
+                            src={activeVideoUrl}
                             className="max-w-full max-h-[calc(100vh-350px)] object-contain"
                             onTimeUpdate={handleTimeUpdate}
                             onLoadedMetadata={handleLoadedMetadata}
@@ -640,6 +644,7 @@ const FeedbackVideoDetailPage = () => {
                 <div className="flex-1 overflow-hidden">
                     <FeedbackSidebar
                         view={sidebarView}
+                        onViewChange={setSidebarView}
                         comments={comments}
                         onCommentClick={handleCommentClick}
                         onClose={() => {}}

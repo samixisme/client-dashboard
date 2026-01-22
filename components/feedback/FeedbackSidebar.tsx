@@ -1,10 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { FeedbackComment, FeedbackItemComment, User } from '../../types';
+import { FeedbackComment, FeedbackItemComment, User, SidebarView } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { CancelIcon } from '../icons/CancelIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
-import { SidebarView } from './FeedbackItemPage'; 
 import CommentPopover, { CommentThread } from './CommentPopover';  
 
 // Reusing CommentPopover logic but adapting for Sidebar (Detail View)

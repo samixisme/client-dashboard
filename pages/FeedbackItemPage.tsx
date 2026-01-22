@@ -379,7 +379,7 @@ const FeedbackItemPage = () => {
         const newStatus = comment?.status === 'Resolved' ? 'Active' : 'Resolved';
 
         setLocalComments(prev => prev.map(c => c.id === commentId ? { ...c, status: newStatus } : c));
-        if(globalComment) globalComment.status = newStatus;
+        if(comment) comment.status = newStatus;
     };
 
     const handleDeleteComment = (commentId: string) => {
@@ -761,11 +761,17 @@ const FeedbackItemPage = () => {
                 {sidebarView && (
                     <FeedbackSidebar
                         view={sidebarView}
+                        onViewChange={setSidebarView}
                         comments={allCommentsForItem}
                         onCommentClick={onCommentClick}
                         onClose={() => setSidebarView(null)}
                         onNavigate={navigateToPage}
+                        onDelete={handleDeleteComment}
+                        onResolve={handleResolveComment}
+                        onUpdate={handleUpdateComment}
                         position={sidebarPosition}
+                        users={data.users}
+                        currentUserId="user-1"
                     />
                 )}
             </div>

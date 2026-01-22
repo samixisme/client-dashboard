@@ -9,7 +9,7 @@ import { AddIcon } from '../components/icons/AddIcon';
 import FeedbackTasksView from '../components/feedback/FeedbackTasksView';
 import FeedbackActivityView from '../components/feedback/FeedbackActivityView';
 import AddFeedbackRequestModal from '../components/feedback/AddFeedbackRequestModal';
-import { getFeedbackItems } from '../utils/feedbackUtils';
+import { getFeedbackItems, cleanupOrphanedData } from '../utils/feedbackUtils';
 
 const WidgetLink = ({ to, Icon, title, count, label }: { to: string, Icon: React.FC<any>, title: string, count: number, label: string }) => (
     <Link to={to} className="bg-glass p-6 rounded-lg shadow-md border border-border-color transition-all hover:shadow-lg hover:border-primary block">
@@ -31,6 +31,7 @@ const FeedbackProjectDetailPage = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [stats, setStats] = useState({ mockups: 0, websites: 0, videos: 0 });
+    const [isCleaningUp, setIsCleaningUp] = useState(false);
 
     const project = useMemo(() => projects.find(p => p.id === projectId), [projectId, projects]);
 
@@ -46,6 +47,20 @@ const FeedbackProjectDetailPage = () => {
         }
     }, [projectId, isModalOpen]); // Re-fetch when modal closes (new item added)
 
+    const handleCleanup = async () => {
+        if (!projectId) return;
+        if (window.confirm('Are you sure you want to clear all tasks and activity data for this project? This cannot be undone.')) {
+            setIsCleaningUp(true);
+            try {
+                const result = await cleanupOrphanedData(projectId);
+                alert(`Cleanup complete! Deleted ${result.tasksDeleted} tasks and ${result.activitiesDeleted} activities.`);
+            } catch (error) {
+                alert('Error during cleanup. Check console for details.');
+            }
+            setIsCleaningUp(false);
+        }
+    };
+
     if (!project) {
         return <div className="text-center p-10">Project not found.</div>;
     }
@@ -54,9 +69,18 @@ const FeedbackProjectDetailPage = () => {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-text-primary">{project.name} Feedback</h1>
-                 <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover flex items-center gap-2">
-                    <AddIcon className="h-4 w-4"/> New Feedback Request
-                </button>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleCleanup} 
+                        disabled={isCleaningUp}
+                        className="px-4 py-2 bg-red-500/20 text-red-400 text-sm font-bold rounded-lg hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50"
+                    >
+                        {isCleaningUp ? 'Cleaning...' : 'Clear Data'}
+                    </button>
+                    <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover flex items-center gap-2">
+                        <AddIcon className="h-4 w-4"/> New Feedback Request
+                    </button>
+                </div>
             </div>
             <p className="mt-2 text-text-secondary mb-8">Review and manage all feedback tasks and assets for this project.</p>
 

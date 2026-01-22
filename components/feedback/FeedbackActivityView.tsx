@@ -14,6 +14,8 @@ interface Activity {
     projectId: string;
     objectId?: string;
     objectType?: string;
+    feedbackItemId?: string;
+    sourceType?: 'mockup' | 'website' | 'video';
     timestamp?: any;
     createdAt?: any;
 }
@@ -24,14 +26,14 @@ const FeedbackActivityView = ({ projectId }: { projectId: string }) => {
 
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // Subscribe to activities from the activities collection
     useEffect(() => {
+        // Simple query without orderBy to avoid needing composite index
         const activitiesQuery = query(
             collection(db, "activities"),
-            where("projectId", "==", projectId),
-            orderBy("timestamp", "desc"),
-            limit(20)
+            where("projectId", "==", projectId)
         );
 
         const unsubscribe = onSnapshot(activitiesQuery, (snapshot) => {
@@ -39,11 +41,20 @@ const FeedbackActivityView = ({ projectId }: { projectId: string }) => {
                 id: doc.id,
                 ...doc.data()
             } as Activity));
-            setActivities(fetchedActivities);
+            
+            // Sort client-side by timestamp descending, limit to 20
+            fetchedActivities.sort((a, b) => {
+                const aTime = a.timestamp?.seconds || a.createdAt?.seconds || 0;
+                const bTime = b.timestamp?.seconds || b.createdAt?.seconds || 0;
+                return bTime - aTime;
+            });
+            
+            setActivities(fetchedActivities.slice(0, 20));
             setLoading(false);
-        }, (error) => {
-            console.error("Error fetching activities:", error);
-            // If index not ready or query fails, show empty state
+            setError(null);
+        }, (err) => {
+            console.error("Error fetching activities:", err);
+            setError(err.message);
             setLoading(false);
         });
 
@@ -67,8 +78,10 @@ const FeedbackActivityView = ({ projectId }: { projectId: string }) => {
     };
 
     const getActivityLink = (activity: Activity): string => {
-        if (activity.objectId && activity.objectType === 'feedback_item') {
-            return `/feedback/${projectId}/mockup/${activity.objectId}`;
+        const itemId = activity.feedbackItemId || activity.objectId;
+        const sourceType = activity.sourceType || 'mockup';
+        if (itemId) {
+            return `/feedback/${projectId}/${sourceType}/${itemId}`;
         }
         return `/feedback/${projectId}`;
     };

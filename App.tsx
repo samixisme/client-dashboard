@@ -23,10 +23,12 @@ import FeedbackMockupsPage from './pages/FeedbackMockupsPage';
 import FeedbackWebsitesPage from './pages/FeedbackWebsitesPage';
 import FeedbackVideosPage from './pages/FeedbackVideosPage';
 import FeedbackMockupDetailPage from './pages/FeedbackMockupDetailPage';
-import FeedbackWebsitePagesSelectionPage from './pages/FeedbackWebsitePagesSelectionPage';
-
-import FeedbackWebsiteDetailPage from './pages/FeedbackWebsiteDetailPage';
 import FeedbackVideoDetailPage from './pages/FeedbackVideoDetailPage';
+import FeedbackWebsiteDetailPage from './pages/FeedbackWebsiteDetailPage';
+import FeedbackWebsitePagesSelectionPage from './pages/FeedbackWebsitePagesSelectionPage';
+import FeedbackMockupScreensSelectionPage from './pages/FeedbackMockupScreensSelectionPage';
+import FeedbackVideoVersionsSelectionPage from './pages/FeedbackVideoVersionsSelectionPage';
+
 import MoodboardsPage from './pages/MoodboardsPage';
 import ProjectMoodboardsPage from './pages/ProjectMoodboardsPage';
 import MoodboardCanvasPage from './pages/MoodboardCanvasPage';
@@ -288,7 +290,13 @@ function App() {
                       </MainLayout>
                    } />
                    {/* Corrected Routes for new feedback system */}
+                   {/* Mockup Feedback Routes */}
                    <Route path="/feedback/:projectId/mockup/:feedbackItemId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackMockupScreensSelectionPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/mockup/:feedbackItemId/view" element={
                       <MainLayout onLogout={handleLogout}>
                          <FeedbackMockupDetailPage />
                       </MainLayout>
@@ -307,6 +315,11 @@ function App() {
                       </MainLayout>
                    } />
                    <Route path="/feedback/:projectId/video/:feedbackItemId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FeedbackVideoVersionsSelectionPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/feedback/:projectId/video/:feedbackItemId/view" element={
                       <MainLayout onLogout={handleLogout}>
                          <FeedbackVideoDetailPage />
                       </MainLayout>
