@@ -4,9 +4,8 @@ import { useCalendarEvents } from '../hooks/useCalendarEvents';
 import { useData } from '../contexts/DataContext';
 import { CalendarEvent } from '../types';
 import { createCalendarEvent, updateSourceItemDate, updateCalendarEventById, updateSourceItemAssignees } from '../utils/calendarSync';
-import { brands } from '../data/brandData';
-import { projects, tasks, boards, roadmapItems } from '../data/mockData';
-import { invoices, clients } from '../data/paymentsData';
+// import { projects, tasks, boards, roadmapItems } from '../data/mockData';
+// import { invoices, clients } from '../data/paymentsData';
 
 // --- Type Definitions ---
 type CalendarView = 'day' | 'week' | 'month' | '3-month' | '6-month';
@@ -18,11 +17,29 @@ interface LaidOutEvent extends CalendarEvent {
     track: number;
 }
 
-// --- Helper Functions ---
-const startOfDay = (date: Date | string | number): Date => {
+// String-based helper to avoid timezone matching issues
+const toDateKey = (date: Date | string): string => {
     const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
+    if (isNaN(d.getTime())) return '1970-01-01';
+    // IMPORANT: Use local time, do NOT use toISOString() which shifts to UTC
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const startOfDay = (date: Date | string | number | any): Date => {
+    if (!date) return new Date(0);
+    // Handle Firestore Timestamp objects directly if they slip through
+    let d: Date;
+    if (date.seconds !== undefined) d = new Date(date.seconds * 1000);
+    else if (date.toDate && typeof date.toDate === 'function') d = date.toDate();
+    else d = new Date(date);
+    
+    if (isNaN(d.getTime())) return new Date(0);
+    const result = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    result.setHours(0, 0, 0, 0);
+    return result;
 };
 
 const addDays = (date: Date, days: number): Date => {
@@ -36,8 +53,10 @@ const areDatesSame = (d1: Date, d2: Date) => d1.toDateString() === d2.toDateStri
 const startOfWeek = (date: Date): Date => {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day; // adjust when day is sunday
-    return new Date(d.setDate(diff));
+    const diff = d.getDate() - day;
+    const result = new Date(d.getFullYear(), d.getMonth(), diff);
+    result.setHours(0, 0, 0, 0);
+    return result;
 };
 
 
@@ -48,19 +67,29 @@ const getSortableTime = (dateStr: string | undefined): number => {
 };
 
 export const CalendarPage = () => {
-    // --- State Management ---
-    const [searchParams] = useSearchParams();
-    const brandId = searchParams.get('brandId');
-    const brand = brandId ? brands.find(b => b.id === brandId) : null;
-    
     // Get current user from context
     const { user, data } = useData();
     const currentUserId = user?.uid || 'user-1';
 
     // Use the hook instead of local state
-    const { events, loading } = useCalendarEvents(currentUserId);
-    
+    const { 
+        events, 
+        loading, 
+        projects, 
+        boards, 
+        tasks, 
+        roadmapItems, 
+        invoices, 
+        brands, 
+        clients, 
+        feedbackComments 
+    } = useCalendarEvents(currentUserId);
+
     // UI State
+    const [searchParams] = useSearchParams();
+    const brandId = searchParams.get('brandId');
+    const brand = brandId ? (brands || []).find((b: any) => b.id === brandId) : null;
+    
     const [currentDate, setCurrentDate] = useState(new Date()); 
     const [view, setView] = useState<CalendarView>('week');
     const [moreEventsInfo, setMoreEventsInfo] = useState<{ date: Date; events: CalendarEvent[] } | null>(null);
@@ -208,6 +237,12 @@ export const CalendarPage = () => {
         return '';
     };
 
+    const availableTasks = useMemo(() => {
+        if (!newEventData.projectId) return [];
+        const projectBoards = boards.filter(b => b.projectId === newEventData.projectId).map(b => b.id);
+        return tasks.filter(t => projectBoards.includes(t.boardId));
+    }, [newEventData.projectId, boards, tasks]);
+
     const filteredEvents = useMemo(() => {
         let eventsToFilter = events.filter(event => filters[event.type]);
         
@@ -222,24 +257,25 @@ export const CalendarPage = () => {
                     switch (event.type) {
                         case 'task': {
                             const task = tasks.find(t => t.id === event.sourceId);
-                            const board = task ? boards.find(b => b.id === task.boardId) : undefined;
-                            const project = board ? projects.find(p => p.id === board.projectId) : undefined;
+                            const bId = task?.boardId;
+                            const board = boards.find(b => b.id === bId);
+                            const project = projects.find(p => p.id === board?.projectId);
                             return project?.brandId;
                         }
                         case 'roadmap_item': {
                             const item = roadmapItems.find(i => i.id === event.sourceId);
-                            const project = item ? projects.find(p => p.id === item.projectId) : undefined;
+                            const project = projects.find(p => p.id === item?.projectId);
                             return project?.brandId;
                         }
                         case 'invoice': {
                             const invoice = invoices.find(i => i.id === event.sourceId);
                             if (!invoice) return undefined;
+                            // Ensure we check for brandId in invoices (some might have it directly)
+                            if (invoice.brandId) return invoice.brandId;
                             const client = clients.find(c => c.id === invoice.clientId);
                             return client?.brandId;
                         }
                         case 'comment': {
-                            // Assuming comments are tied to projects or feedback items which might have a project
-                            // For now, if a comment has a projectId, use that. Otherwise, it might not be brand-specific.
                             if (event.projectId) {
                                 const p = projects.find(proj => proj.id === event.projectId);
                                 if (p) return p.brandId;
@@ -252,17 +288,15 @@ export const CalendarPage = () => {
                 }
                 return undefined;
             };
-            eventsToFilter = eventsToFilter.filter(event => getBrandForEvent(event) === brandId);
+            eventsToFilter = eventsToFilter.filter(event => {
+                const b = getBrandForEvent(event);
+                if (!b) return true; // Show events with NO brand so they aren't lost
+                return b === brandId;
+            });
         }
 
         return eventsToFilter;
-    }, [events, filters, brandId]);
-    
-    const availableTasks = useMemo(() => {
-        if (!newEventData.projectId) return [];
-        const projectBoards = boards.filter(b => b.projectId === newEventData.projectId).map(b => b.id);
-        return tasks.filter(t => projectBoards.includes(t.boardId));
-    }, [newEventData.projectId]);
+    }, [events, filters, brandId, projects, boards, tasks, roadmapItems, invoices, clients]);
 
     const headerTitle = useMemo(() => {
         const options = { month: 'short', day: 'numeric', year: 'numeric' } as const;
@@ -284,27 +318,26 @@ export const CalendarPage = () => {
     }, [currentDate, view]);
     
     const layOutEventsForWeek = useCallback((weekStart: Date, weekEnd: Date) => {
+        const weekStartKey = toDateKey(weekStart);
+        const weekEndKey = toDateKey(weekEnd);
+
         const eventsInWeek = filteredEvents.filter(event => {
             if (!event.startDate || !event.endDate) return false;
-            const eventStart = startOfDay(event.startDate);
-            const eventEnd = startOfDay(event.endDate);
-            return eventStart <= weekEnd && eventEnd >= weekStart;
+            // String comparison is safer
+            const eventStartKey = toDateKey(event.startDate);
+            const eventEndKey = toDateKey(event.endDate);
+            
+            return eventStartKey <= weekEndKey && eventEndKey >= weekStartKey;
         }).sort((a, b) => {
-            const startA = getSortableTime(a.startDate);
-            const endA = getSortableTime(a.endDate);
-            const startB = getSortableTime(b.startDate);
-            const endB = getSortableTime(b.endDate);
-            const durationA = endA - startA;
-            const durationB = endB - startB;
-            if (durationA !== durationB) return durationB - durationA;
-            return startA - startB;
+            return (new Date(a.startDate).getTime() || 0) - (new Date(b.startDate).getTime() || 0);
         });
 
         const laidOutEvents: LaidOutEvent[] = [];
-        const tracks: (Date | null)[][] = Array.from({ length: 10 }, () => Array(7).fill(null));
+        const tracks: (Date | null)[][] = Array.from({ length: 15 }, () => Array(7).fill(null));
 
         eventsInWeek.forEach(event => {
             const eventStart = startOfDay(event.startDate);
+            // ... (rest of layout logic)
             const eventEnd = startOfDay(event.endDate);
             const startDayIndex = Math.max(0, Math.floor((eventStart.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)));
             const endDayIndex = Math.min(6, Math.floor((eventEnd.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)));
@@ -338,20 +371,25 @@ export const CalendarPage = () => {
 
     const monthData = useMemo(() => {
         if (view !== 'month') return [];
-        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const gridStartDate = startOfWeek(startOfMonth);
+        const startOfActiveMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const gridStartDate = startOfWeek(startOfActiveMonth);
 
         return Array.from({ length: 6 }, (_, weekIndex) => {
             const weekStart = addDays(gridStartDate, weekIndex * 7);
             const weekEnd = addDays(weekStart, 6);
-            const days = Array.from({ length: 7 }, (_, dayIndex) => addDays(weekStart, dayIndex));
+            weekEnd.setHours(23, 59, 59, 999);
+            const days = Array.from({ length: 7 }, (_, dayIndex) => {
+                const d = addDays(weekStart, dayIndex);
+                d.setHours(0, 0, 0, 0);
+                return d;
+            });
             const laidOutEvents = layOutEventsForWeek(weekStart, weekEnd);
             return { days, laidOutEvents };
         });
     }, [currentDate, view, layOutEventsForWeek]);
 
     const weekData = useMemo(() => {
-        if (view !== 'week') return { days: [], laidOutEvents: [] };
+        if (view !== 'week') return { days: [], allDayEvents: [], timedEvents: [] };
         const weekStart = startOfWeek(new Date(currentDate));
         const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
         const weekEnd = days[6];
@@ -360,59 +398,53 @@ export const CalendarPage = () => {
             e.startDate && e.endDate && 
             startOfDay(e.startDate) <= weekEnd && 
             startOfDay(e.endDate) >= weekStart
-        ).sort((a, b) => {
+        );
+
+        // Separate Roadmap and Timed Events
+        const allDayEventsRaw = eventsInWeek.filter(e => e.type === 'roadmap_item');
+        const timedEvents = eventsInWeek.filter(e => e.type !== 'roadmap_item');
+
+        // Layout All-Day Events (Roadmaps) for the Header
+        const allDayLaidOut: LaidOutEvent[] = [];
+        const tracks: (Date | null)[][] = Array.from({ length: 10 }, () => Array(7).fill(null));
+
+        allDayEventsRaw.sort((a, b) => {
             const startA = getSortableTime(a.startDate);
-            const endA = getSortableTime(a.endDate);
+            const durationA = getSortableTime(a.endDate) - startA;
             const startB = getSortableTime(b.startDate);
-            const endB = getSortableTime(b.endDate);
-            const durationA = endA - startA;
-            const durationB = endB - startB;
+            const durationB = getSortableTime(b.endDate) - startB;
             if (durationA !== durationB) return durationB - durationA;
             return startA - startB;
-        });
-
-        const laidOutEvents: LaidOutEvent[] = [];
-        const tracks: (CalendarEvent | null)[][] = []; 
-
-        eventsInWeek.forEach(event => {
+        }).forEach(event => {
             const eventStart = startOfDay(event.startDate);
             const eventEnd = startOfDay(event.endDate);
-
-            const weekRelativeStart = eventStart < weekStart ? weekStart : eventStart;
-            const weekRelativeEnd = eventEnd > weekEnd ? weekEnd : eventEnd;
-
-            const startDayIndex = weekRelativeStart.getDay();
-            const span = (weekRelativeEnd.getTime() - weekRelativeStart.getTime()) / (1000 * 60 * 60 * 24) + 1;
-
+            const startDayIndex = Math.max(0, Math.floor((eventStart.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)));
+            const endDayIndex = Math.min(6, Math.floor((eventEnd.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24)));
+            
             let trackIndex = 0;
             while (true) {
-                if (!tracks[trackIndex]) {
-                    tracks[trackIndex] = Array(7).fill(null);
-                }
-                let isAvailable = true;
-                for (let i = startDayIndex; i < startDayIndex + span; i++) {
-                    if (tracks[trackIndex][i % 7]) {
-                        isAvailable = false;
+                let available = true;
+                for (let i = startDayIndex; i <= endDayIndex; i++) {
+                    if (tracks[trackIndex] && tracks[trackIndex][i]) {
+                        available = false;
                         break;
                     }
                 }
-                if (isAvailable) break;
+                if (available) break;
                 trackIndex++;
             }
 
-            for (let i = startDayIndex; i < startDayIndex + span; i++) {
-                tracks[trackIndex][i % 7] = event;
+            for (let i = startDayIndex; i <= endDayIndex; i++) {
+                if (!tracks[trackIndex]) tracks[trackIndex] = Array(7).fill(null);
+                tracks[trackIndex][i] = eventStart;
             }
-
-            laidOutEvents.push({
-                ...event,
-                startCol: startDayIndex,
-                span: span,
-                track: trackIndex
-            });
+            
+            const startCol = startDayIndex;
+            const span = endDayIndex - startDayIndex + 1;
+            allDayLaidOut.push({ ...event, startCol, span, track: trackIndex });
         });
 
-        return { days, laidOutEvents };
+        return { days, allDayEvents: allDayLaidOut, timedEvents };
     }, [currentDate, filteredEvents, view]);
 
     // OLD Day Events Logic replaced by new renderDayView but kept variable if needed? No, removing.
@@ -425,19 +457,35 @@ export const CalendarPage = () => {
             const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
             const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
             const gridStartDate = startOfWeek(startOfMonth);
-            const days = Array.from({length: 42}, (_, i) => addDays(gridStartDate, i));
+            const days = Array.from({length: 42}, (_, i) => {
+                const d = addDays(gridStartDate, i);
+                d.setHours(0, 0, 0, 0);
+                return d;
+            });
             
             const eventsByDay: Record<string, CalendarEvent['type'][]> = {};
             filteredEvents.forEach(e => {
                 if (!e.startDate || !e.endDate) return;
                 let d = startOfDay(e.startDate);
-                while(d <= startOfDay(e.endDate)) {
+                const endD = startOfDay(e.endDate);
+                
+                // Safety: Avoid infinite loop if dates are invalid
+                if (isNaN(d.getTime()) || isNaN(endD.getTime())) return;
+                
+                
+                // Limit range to reasonable duration
+                let count = 0;
+                // Safety: Limit loop to avoid infinite cycles, allow up to 2 years span
+                while(d.getTime() <= endD.getTime() && count < 730) {
                     const key = d.toDateString();
                     if (!eventsByDay[key]) eventsByDay[key] = [];
                     if (!eventsByDay[key].includes(e.type)) {
                         eventsByDay[key].push(e.type);
                     }
                     d = addDays(d, 1);
+                    // Ensure we stick to midnight to match the grid
+                    d.setHours(0, 0, 0, 0); 
+                    count++;
                 }
             });
 
@@ -565,7 +613,7 @@ export const CalendarPage = () => {
                                                         }}
                                                     >
                                                         <p className="text-[11px] font-medium px-1 leading-tight">
-                                                            {event.type === 'roadmap_item' ? event.title : event.title.replace(/^(Task|Invoice|Estimate):\s*/, '')}
+                                                            {event.title}
                                                         </p>
                                                     </div>
                                                 );
@@ -582,55 +630,120 @@ export const CalendarPage = () => {
     };
 
     const renderWeekView = () => {
-        const EVENT_HEIGHT = 48; // px
-        const GRID_GAP = 4; // px
-    
+        const START_HOUR = 6;
+        const END_HOUR = 21;
+        const hours = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
+        const { days, allDayEvents, timedEvents } = weekData;
+
+        const getEventStyle = (event: CalendarEvent, dayStart: Date) => {
+            if (!event.startDate) return { top: '0px', height: '0px', display: 'none' };
+            const s = new Date(event.startDate);
+            const e = new Date(event.endDate);
+            const gridStart = startOfDay(dayStart);
+            
+            const startMinutes = (s.getTime() - gridStart.getTime()) / 60000;
+            const endMinutes = (e.getTime() - gridStart.getTime()) / 60000;
+            const viewStartMinutes = START_HOUR * 60;
+            const viewEndMinutes = (END_HOUR + 1) * 60;
+            
+            if (endMinutes <= viewStartMinutes || startMinutes >= viewEndMinutes) {
+                return { display: 'none' };
+            }
+
+            const clampedStart = Math.max(viewStartMinutes, startMinutes);
+            const clampedEnd = Math.min(viewEndMinutes, endMinutes);
+            const top = clampedStart - viewStartMinutes;
+            const height = Math.max(20, clampedEnd - clampedStart);
+
+            return { top: `${top}px`, height: `${height}px` };
+        };
+
+        const totalHeight = (END_HOUR - START_HOUR + 1) * 60;
+
         return (
-            <div className="rounded-2xl border border-border-color overflow-hidden flex flex-col flex-1">
-                <div className="overflow-auto flex-1">
-                    <div className="min-w-[56rem] flex flex-col h-full">
-                        {/* Week Header */}
-                        <div className="grid grid-cols-7 bg-glass border-b border-border-color flex-shrink-0 sticky top-0 z-10">
-                            {weekData.days.map(day => (
-                                <div key={day.toISOString()} onClick={() => { setCurrentDate(day); setView('day'); }} className="text-center p-4 border-r border-border-color last:border-r-0 cursor-pointer hover:bg-glass-light">
-                                    <p className="text-xs font-medium text-text-secondary">{day.toLocaleDateString('default', { weekday: 'short' }).toUpperCase()}</p>
-                                    <p className={`text-xl font-bold mt-2 ${areDatesSame(new Date(), day) ? 'text-primary' : 'text-text-primary'}`}>{day.getDate()}</p>
+            <div className="flex-1 flex flex-col bg-glass border border-border-color rounded-2xl overflow-hidden">
+                <div className="bg-glass-light border-b border-border-color sticky top-0 z-30">
+                    <div className="flex">
+                        <div className="w-16 flex-shrink-0 border-r border-border-color"></div>
+                        <div className="flex-1 grid grid-cols-7">
+                            {days.map(day => (
+                                <div key={day.toISOString()} onClick={() => { setCurrentDate(day); setView('day'); }} className="p-4 text-center border-r border-border-color last:border-r-0 cursor-pointer hover:bg-white/5 transition-colors">
+                                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">{day.toLocaleDateString('default', { weekday: 'short' })}</p>
+                                    <p className={`text-xl font-bold mt-1 ${areDatesSame(new Date(), day) ? 'text-primary' : 'text-text-primary'}`}>{day.getDate()}</p>
                                 </div>
                             ))}
                         </div>
-                
-                        {/* Week Body - Grid */}
-                        <div className="relative bg-background min-h-[40rem] flex-1">
-                            <div className="grid grid-cols-7 absolute w-full h-full">
-                                {/* Day columns for borders */}
-                                {weekData.days.map((day) => (
-                                    <div key={day.toISOString()} className="border-r border-border-color last:border-r-0 h-full"></div>
-                                ))}
+                    </div>
+                    {allDayEvents.length > 0 && (
+                        <div className="flex border-t border-border-color">
+                            <div className="w-16 flex-shrink-0 border-r border-border-color flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-text-secondary uppercase vertical-text">Roadmap</span>
                             </div>
-                            
-                            {/* Event container */}
-                            <div className="relative p-1 w-full h-full">
-                                {weekData.laidOutEvents.map(event => (
-                                    <div 
-                                        key={event.id} 
+                            <div className="flex-1 relative p-1" style={{ minHeight: `${Math.max(1, Math.max(...allDayEvents.map(e => e.track)) + 1) * 26 + 8}px` }}>
+                                {allDayEvents.map(event => (
+                                    <div
+                                        key={event.id}
                                         onDoubleClick={() => setSelectedEvent(event)}
-                                        className={`absolute px-2 py-1 rounded-lg flex items-center border-l-4 bg-glass shadow-sm cursor-pointer hover:shadow-lg ${eventColors[event.type].border}`}
+                                        className={`absolute rounded px-2 py-0.5 text-xs font-medium cursor-pointer transition-shadow hover:shadow-lg truncate border-l-4 ${eventColors[event.type].bg} ${eventColors[event.type].border} ${eventColors[event.type].text}`}
                                         style={{
-                                            top: `${event.track * (EVENT_HEIGHT + GRID_GAP) + GRID_GAP}px`,
+                                            top: `${event.track * 26 + 4}px`,
                                             left: `calc(${(event.startCol / 7) * 100}% + 2px)`,
                                             width: `calc(${(event.span / 7) * 100}% - 4px)`,
-                                            height: `${EVENT_HEIGHT}px`,
+                                            height: '22px'
                                         }}
                                     >
-                                        <div className="flex-1 overflow-hidden">
-                                            <p className="font-semibold text-sm text-text-primary leading-tight line-clamp-2">{event.title}</p>
-                                            <p className="text-xs text-text-secondary mt-0.5 truncate">
-                                                {formatEventDateRange(event.startDate, event.endDate)}
-                                            </p>
-                                        </div>
+                                        {event.title}
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                    <div className="flex relative" style={{ height: `${totalHeight}px` }}>
+                        <div className="w-16 flex-shrink-0 bg-glass-light border-r border-border-color sticky left-0 z-20">
+                            {hours.map(h => (
+                                <div key={h} className="h-[60px] text-right pr-3 text-[10px] font-medium text-text-secondary pt-1 pr-4">
+                                    {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex-1 grid grid-cols-7 relative">
+                            {days.map(day => (
+                                <div key={day.toISOString()} className="h-full border-r border-border-color last:border-r-0 relative">
+                                    {hours.map(h => (
+                                        <div key={h} className="h-[60px] border-b border-border-color/30 last:border-b-0"></div>
+                                    ))}
+                                    {timedEvents.filter(e => {
+                                        const s = new Date(e.startDate);
+                                        const end = new Date(e.endDate);
+                                        const dStart = startOfDay(day);
+                                        const dEnd = addDays(dStart, 1);
+                                        return s < dEnd && end >= dStart;
+                                    }).map(event => (
+                                        <div
+                                            key={event.id}
+                                            onDoubleClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
+                                            className={`absolute left-0 right-1 rounded-md border-l-4 px-2 py-1 text-xs cursor-pointer hover:shadow-lg transition-all z-10 overflow-hidden ${eventColors[event.type].bg} ${eventColors[event.type].border}`}
+                                            style={getEventStyle(event, day)}
+                                        >
+                                            <div className="font-bold text-text-primary leading-tight truncate">{event.title}</div>
+                                            <div className="text-[10px] text-text-secondary opacity-80">
+                                                {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {areDatesSame(day, new Date()) && new Date().getHours() >= START_HOUR && new Date().getHours() <= END_HOUR && (
+                                        <div 
+                                            className="absolute left-0 right-0 border-t-2 border-red-500 z-20 pointer-events-none"
+                                            style={{ top: `${((new Date().getHours() - START_HOUR) * 60) + new Date().getMinutes()}px` }}
+                                        >
+                                            <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -639,103 +752,166 @@ export const CalendarPage = () => {
     };
 
     const renderDayView = () => {
-        const hours = Array.from({ length: 24 }, (_, i) => i);
+        const START_HOUR = 6;
+        const END_HOUR = 21;
+        const hours = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
         const dayStart = startOfDay(currentDate);
+        const dayEnd = addDays(dayStart, 1);
         
-        // Filter events for this day
-        const dayEvents = filteredEvents.filter(e => {
-            if (!e.startDate || !e.endDate) return false;
+        // Split roadmap vs timed
+        const dayRoadmaps = filteredEvents.filter(e => {
+            if (e.type !== 'roadmap_item' || !e.startDate || !e.endDate) return false;
+            return Math.max(new Date(e.startDate).getTime(), dayStart.getTime()) < Math.min(new Date(e.endDate).getTime(), dayEnd.getTime());
+        });
+
+        const dayTimedEvents = filteredEvents.filter(e => {
+            if (e.type === 'roadmap_item' || !e.startDate || !e.endDate) return false;
             const s = new Date(e.startDate);
             const end = new Date(e.endDate);
-            return s < addDays(dayStart, 1) && end > dayStart;
+            return s < dayEnd && end > dayStart;
         });
 
         const getEventStyle = (event: CalendarEvent) => {
             const s = new Date(event.startDate);
             const end = new Date(event.endDate);
             
-            // Clamp to current day
-            const startMinutes = Math.max(0, (s.getTime() - dayStart.getTime()) / 60000);
-            const endMinutes = Math.min(1440, (end.getTime() - dayStart.getTime()) / 60000);
-            const duration = endMinutes - startMinutes;
+            // Minutes relative to the day grid start (midnight)
+            const startMinutes = (s.getTime() - dayStart.getTime()) / 60000;
+            const endMinutes = (end.getTime() - dayStart.getTime()) / 60000;
+            
+            // Restricted range
+            const viewStartMinutes = START_HOUR * 60;
+            const viewEndMinutes = (END_HOUR + 1) * 60;
+
+            if (endMinutes <= viewStartMinutes || startMinutes >= viewEndMinutes) {
+                return { display: 'none' };
+            }
+
+            const clampedStart = Math.max(viewStartMinutes, startMinutes);
+            const clampedEnd = Math.min(viewEndMinutes, endMinutes);
 
             return {
-                top: `${(startMinutes / 60) * 60}px`,
-                height: `${Math.max(20, (duration / 60) * 60)}px`,
+                top: `${clampedStart - viewStartMinutes}px`,
+                height: `${Math.max(20, clampedEnd - clampedStart)}px`,
             };
         };
 
+        const totalHeight = (END_HOUR - START_HOUR + 1) * 60;
+
         return (
-             <div className="flex-1 overflow-y-auto bg-background rounded-2xl border border-border-color reltaive">
-                <div className="relative min-h-[1440px]" style={{ height: '1440px' }}>
-                    {hours.map(h => (
-                        <div key={h} className="absolute w-full border-t border-border-color flex" style={{ top: `${h * 60}px`, height: '60px' }}>
-                            <span className="w-16 text-right pr-4 text-xs text-text-secondary -mt-2 bg-background z-10">{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h-12} PM`}</span>
-                            <div className="flex-1 border-l border-border-color/50 h-full"></div> 
-                        </div>
-                    ))}
-                    
-                    {/* Events */}
-                    <div className="absolute top-0 right-0 left-16 bottom-0">
-                         {dayEvents.map(event => (
-                            <div
-                                key={event.id}
-                                onDoubleClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
-                                className={`absolute rounded-lg border-l-4 px-2 py-1 text-xs cursor-pointer hover:z-20 hover:shadow-lg transition-all overflow-hidden ${eventColors[event.type].bg} ${eventColors[event.type].border}`}
-                                style={{ ...getEventStyle(event), width: '90%' }} 
-                            >
-                                <div className="font-bold text-text-primary">{event.title}</div>
-                                <div className="text-text-secondary flex gap-2">
-                                     <span>{formatEventDateRange(event.startDate, event.endDate).split('-')[0].trim()}</span>
-                                     {getProjectName(event) && <span className="opacity-75">• {getProjectName(event)}</span>}
-                                </div>
+             <div className="flex-1 flex flex-col bg-glass border border-border-color rounded-2xl overflow-hidden">
+                {/* Header for Day Roadmaps */}
+                {dayRoadmaps.length > 0 && (
+                    <div className="bg-glass-light border-b border-border-color sticky top-0 z-30">
+                        <div className="flex">
+                            <div className="w-16 flex-shrink-0 border-r border-border-color flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-text-secondary uppercase">ROADMAP</span>
                             </div>
-                         ))}
+                            <div className="flex-1 p-2 flex flex-col gap-1">
+                                {dayRoadmaps.map(event => (
+                                    <div
+                                        key={event.id}
+                                        onDoubleClick={() => setSelectedEvent(event)}
+                                        className={`rounded px-3 py-1 text-xs font-semibold cursor-pointer border-l-4 shadow-sm hover:shadow-md transition-shadow truncate ${eventColors[event.type].bg} ${eventColors[event.type].border} ${eventColors[event.type].text}`}
+                                    >
+                                        {event.title}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                    
-                    {/* Current Time Line */}
-                    {areDatesSame(currentDate, new Date()) && (
-                         <div 
-                            className="absolute left-16 right-0 border-t-2 border-red-500 z-10 pointer-events-none"
-                            style={{ top: `${(new Date().getHours() * 60) + new Date().getMinutes()}px` }}
-                         >
-                            <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full"></div>
-                         </div>
-                    )}
+                )}
+
+                <div className="flex-1 overflow-y-auto">
+                    <div className="relative" style={{ height: `${totalHeight}px` }}>
+                        {hours.map(h => (
+                            <div key={h} className="absolute w-full border-t border-border-color/30 flex" style={{ top: `${(h - START_HOUR) * 60}px`, height: '60px' }}>
+                                <span className="w-16 text-right pr-4 text-[10px] font-medium text-text-secondary -mt-2 bg-background z-10">{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h-12} PM`}</span>
+                                <div className="flex-1 border-l border-border-color/50 h-full"></div> 
+                            </div>
+                        ))}
+                        
+                        {/* Events */}
+                        <div className="absolute top-0 right-0 left-16 bottom-0">
+                             {dayTimedEvents.map(event => (
+                                <div
+                                    key={event.id}
+                                    onDoubleClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
+                                    className={`absolute rounded-lg border-l-4 px-3 py-2 text-xs cursor-pointer hover:z-20 hover:shadow-lg transition-all overflow-hidden ${eventColors[event.type].bg} ${eventColors[event.type].border}`}
+                                    style={{ ...getEventStyle(event), width: '90%' }} 
+                                >
+                                    <div className="font-bold text-text-primary text-sm leading-tight truncate">{event.title}</div>
+                                    <div className="text-text-secondary flex gap-2 mt-1">
+                                         <span>{new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                         {getProjectName(event) && <span className="opacity-75">• {getProjectName(event)}</span>}
+                                    </div>
+                                </div>
+                             ))}
+                        </div>
+                        
+                        {/* Current Time Line */}
+                        {areDatesSame(currentDate, new Date()) && new Date().getHours() >= START_HOUR && new Date().getHours() <= END_HOUR && (
+                             <div 
+                                className="absolute left-16 right-0 border-t-2 border-red-500 z-20 pointer-events-none"
+                                style={{ top: `${((new Date().getHours() - START_HOUR) * 60) + new Date().getMinutes()}px` }}
+                             >
+                                <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full"></div>
+                             </div>
+                        )}
+                    </div>
                 </div>
              </div>
         );
     };
-    
+
     const renderMultiMonthView = () => {
         const numMonths = view === '3-month' ? 3 : 6;
         return (
-            <div className={`grid grid-cols-1 ${numMonths === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-3'} gap-8`}>
-                {multiMonthData.map(({ monthDate, days, eventsByDay }) => (
-                    <div key={monthDate.toISOString()} className="bg-glass p-6 rounded-2xl border border-border-color">
-                        <h3 className="text-center font-semibold text-text-primary mb-2">{monthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
-                        <div className="grid grid-cols-7 text-center text-xs text-text-secondary mb-1">
-                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={i}>{d}</div>)}
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className={`grid grid-cols-1 ${numMonths > 1 ? 'md:grid-cols-2 lg:grid-cols-3' : ''} gap-6 pb-8`}>
+                    {multiMonthData.map(({ monthDate, days, eventsByDay }) => (
+                        <div key={monthDate.toISOString()} className="bg-glass/40 backdrop-blur-md p-6 rounded-2xl border border-border-color shadow-sm h-fit">
+                            <h3 className="text-center font-bold text-text-primary mb-4 text-lg">
+                                {monthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                            </h3>
+                            <div className="grid grid-cols-7 text-center text-[10px] font-black text-text-secondary mb-2 opacity-50">
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={i}>{d}</div>)}
+                            </div>
+                            <div className="grid grid-cols-7 text-center text-sm gap-y-1">
+                                {days.map(day => {
+                                    const isCurrentMonth = day.getMonth() === monthDate.getMonth();
+                                    const dayKey = day.toDateString();
+                                    const dayEventTypes = eventsByDay[dayKey] || [];
+                                    const isToday = areDatesSame(new Date(), day);
+                                    
+                                    return (
+                                        <div 
+                                            key={day.toISOString()} 
+                                            onClick={() => { setCurrentDate(day); setView('day'); }} 
+                                            className={`aspect-square flex flex-col items-center justify-center rounded-xl relative transition-all duration-200 group ${isCurrentMonth ? 'cursor-pointer hover:bg-white/10' : 'opacity-20 pointer-events-none'}`}
+                                        >
+                                            <span className={`w-7 h-7 flex items-center justify-center text-xs font-bold rounded-lg transition-colors ${isToday ? 'bg-primary text-background' : 'text-text-primary group-hover:text-primary'}`}>
+                                                {day.getDate()}
+                                            </span>
+                                            
+                                            {dayEventTypes.length > 0 ? (
+                                                <div className="absolute bottom-1.5 left-0 right-0 flex flex-wrap justify-center gap-1 px-1">
+                                                    {dayEventTypes.slice(0, 4).map((type, idx) => (
+                                                        <div key={idx} className={`w-2 h-2 rounded-full shadow-md ring-2 ring-white/20 ${eventColors[type]?.dot || 'bg-text-secondary'}`}></div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="absolute bottom-1.5 w-full flex justify-center opacity-10">
+                                                    <div className="w-1 h-1 rounded-full bg-text-secondary"></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
                         </div>
-                        <div className="grid grid-cols-7 text-center text-sm">
-                            {days.map(day => {
-                                const isCurrentMonth = day.getMonth() === monthDate.getMonth();
-                                const dayKey = day.toDateString();
-                                const dayEventTypes = eventsByDay[dayKey] || [];
-                                return (
-                                    <div key={day.toISOString()} onClick={() => { setCurrentDate(day); setView('day'); }} className={`py-1 rounded-full relative ${isCurrentMonth ? 'cursor-pointer hover:bg-glass-light' : 'text-text-secondary/50'}`}>
-                                        <span className={`${areDatesSame(new Date(), day) ? 'bg-primary text-background rounded-full' : ''} w-6 h-6 flex items-center justify-center mx-auto`}>{day.getDate()}</span>
-                                        {dayEventTypes.length > 0 && (
-                                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex gap-0.5">
-                                                {dayEventTypes.slice(0, 3).map(type => <div key={type} className={`w-1 h-1 rounded-full ${eventColors[type].dot}`}></div>)}
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         );
     };
@@ -791,8 +967,15 @@ export const CalendarPage = () => {
                         <button onClick={() => setIsCreateModalOpen(true)} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Create Event</button>
                     </div>
                 </div>
-                 
-                 <div className="flex-1 flex flex-col min-h-0 pb-6 relative">
+                                  <div className="flex-1 flex flex-col min-h-0 pb-6 relative">
+                    {loading && (
+                        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                <p className="text-sm font-bold text-text-primary animate-pulse">Syncing Calendar...</p>
+                            </div>
+                        </div>
+                    )}
                     {view === 'month' && renderMonthView()}
                     {view === 'week' && renderWeekView()} 
                     {view === 'day' && renderDayView()}
@@ -897,42 +1080,64 @@ export const CalendarPage = () => {
             </div>
 
             {isCreateModalOpen && (
-                 <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50" onClick={() => setIsCreateModalOpen(false)}>
-                    <form onSubmit={handleAdvancedCreateEvent} className="bg-glass w-full max-w-lg rounded-2xl shadow-xl border border-border-color p-8" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-xl font-bold text-text-primary mb-6">Create New Event</h3>
-                        <div className="space-y-4">
-                            <FormInput label="Event Name" type="text" value={newEventData.title} onChange={e => setNewEventData({...newEventData, title: e.target.value})} required />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormInput label="Start Date & Time" type="datetime-local" value={newEventData.startDate} onChange={e => setNewEventData({...newEventData, startDate: e.target.value})} required />
-                                <FormInput label="End Date & Time" type="datetime-local" value={newEventData.endDate} onChange={e => setNewEventData({...newEventData, endDate: e.target.value})} required />
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-background border border-border-color rounded-2xl w-full max-w-lg p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-xl font-bold mb-4">Create New Event</h2>
+                        <form onSubmit={handleAdvancedCreateEvent} className="space-y-4">
+                            <FormInput label="Event Title" value={newEventData.title} onChange={e => setNewEventData({ ...newEventData, title: e.target.value })} placeholder="Meeting with Client" autoFocus />
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormInput label="Start Date" type="datetime-local" value={newEventData.startDate} onChange={e => setNewEventData({ ...newEventData, startDate: e.target.value })} />
+                                <FormInput label="End Date" type="datetime-local" value={newEventData.endDate} onChange={e => setNewEventData({ ...newEventData, endDate: e.target.value })} />
                             </div>
-                            <FormInput label="Google Meet Link" type="url" placeholder="https://meet.google.com/..." value={newEventData.meetLink} onChange={e => setNewEventData({...newEventData, meetLink: e.target.value})} />
-                            <FormSelect label="Visibility (Brand)" value={newEventData.brandId} onChange={e => setNewEventData({...newEventData, brandId: e.target.value})}>
-                                <option value="">All Brands</option>
-                                {brands.map(brand => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
-                            </FormSelect>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormSelect label="Link to Project" value={newEventData.projectId} onChange={e => setNewEventData({...newEventData, projectId: e.target.value, taskId: ''})}>
-                                    <option value="">None</option>
-                                    {projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}
-                                </FormSelect>
-                                <FormSelect label="Link to Task" value={newEventData.taskId} onChange={e => setNewEventData({...newEventData, taskId: e.target.value})} disabled={!newEventData.projectId}>
-                                    <option value="">None</option>
-                                    {availableTasks.map(task => <option key={task.id} value={task.id}>{task.title}</option>)}
-                                </FormSelect>
-                             </div>
-                             <FormSelect label="Reminder" value={newEventData.reminder} onChange={e => setNewEventData({...newEventData, reminder: e.target.value})}>
-                                <option value="none">No reminder</option>
-                                <option value="15m">15 minutes before</option>
-                                <option value="1h">1 hour before</option>
-                                <option value="1d">1 day before</option>
-                            </FormSelect>
-                        </div>
-                        <div className="flex justify-end gap-2 mt-8">
-                            <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Cancel</button>
-                            <button type="submit" className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Create Event</button>
-                        </div>
-                    </form>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-text-secondary mb-1">Project (Optional)</label>
+                                <select 
+                                    className="w-full px-3 py-2 border border-border-color bg-glass-light rounded-lg text-sm text-text-primary focus:outline-none focus:ring-primary focus:border-primary"
+                                    value={newEventData.projectId}
+                                    onChange={e => setNewEventData({ ...newEventData, projectId: e.target.value, taskId: '' })}
+                                >
+                                    <option value="">Select Project</option>
+                                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                            </div>
+
+                            {availableTasks.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">Link to Task (Optional)</label>
+                                    <select 
+                                        className="w-full px-3 py-2 border border-border-color bg-glass-light rounded-lg text-sm text-text-primary focus:outline-none focus:ring-primary focus:border-primary"
+                                        value={newEventData.taskId}
+                                        onChange={e => setNewEventData({ ...newEventData, taskId: e.target.value })}
+                                    >
+                                        <option value="">Select Task</option>
+                                        {availableTasks.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                                    </select>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-medium text-text-secondary mb-1">Reminder</label>
+                                <select 
+                                    className="w-full px-3 py-2 border border-border-color bg-glass-light rounded-lg text-sm text-text-primary focus:outline-none focus:ring-primary focus:border-primary"
+                                    value={newEventData.reminder}
+                                    onChange={e => setNewEventData({ ...newEventData, reminder: e.target.value })}
+                                >
+                                    <option value="none">No Reminder</option>
+                                    <option value="15-min">15 minutes before</option>
+                                    <option value="1-hour">1 hour before</option>
+                                    <option value="1-day">1 day before</option>
+                                </select>
+                            </div>
+                            
+                             <FormInput label="Google Meet Link (Optional)" value={newEventData.meetLink} onChange={e => setNewEventData({ ...newEventData, meetLink: e.target.value })} placeholder="https://meet.google.com/..." />
+
+                            <div className="flex justify-end gap-3 pt-4">
+                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
+                                <button type="submit" className="px-6 py-2 bg-primary text-background font-bold rounded-lg hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">Create Event</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>

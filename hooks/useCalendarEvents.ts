@@ -10,11 +10,28 @@ export const useCalendarEvents = (userId: string) => {
     const [roadmapItems, setRoadmapItems] = useState<RoadmapItem[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [boards, setBoards] = useState<Board[]>([]);
+    const [clients, setClients] = useState<any[]>([]);
     const [feedbackComments, setFeedbackComments] = useState<any[]>([]); // Use 'any' or import FeedbackComment type
     const [loading, setLoading] = useState(true);
 
+    const ensureDateString = (date: any): string => {
+        if (!date) return '';
+        if (typeof date === 'string') return date;
+        if (date instanceof Timestamp) return date.toDate().toISOString();
+        if (date.toDate && typeof date.toDate === 'function') return date.toDate().toISOString(); // Handle object-like timestamps
+        if (date instanceof Date) return date.toISOString();
+        return String(date);
+    };
+    const [brandsList, setBrandsList] = useState<any[]>([]);
+
     useEffect(() => {
         const unsubscribeFunctions: (() => void)[] = [];
+
+        // 0. Brands
+        const brandsQuery = query(collection(db, 'brands'));
+        unsubscribeFunctions.push(onSnapshot(brandsQuery, (snapshot) => {
+            setBrandsList(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        }));
 
         // 1. Projects
         const authProjectsQuery = query(collection(db, 'projects')); 
@@ -24,7 +41,7 @@ export const useCalendarEvents = (userId: string) => {
         }));
 
         // 2. Boards
-        const boardsQuery = query(collection(db, 'boards'));
+        const boardsQuery = query(collectionGroup(db, 'boards'));
         unsubscribeFunctions.push(onSnapshot(boardsQuery, (snapshot) => {
             const fetchedBoards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Board));
             setBoards(fetchedBoards);
@@ -37,8 +54,8 @@ export const useCalendarEvents = (userId: string) => {
             setManualEvents(events);
         }));
 
-        // 4. Tasks
-        const tasksQuery = query(collection(db, 'tasks'), where('dueDate', '!=', null));
+        // 4. Tasks - Fetch all tasks, filter for dueDate in memory to avoid index requirement
+        const tasksQuery = query(collectionGroup(db, 'tasks'));
         unsubscribeFunctions.push(onSnapshot(tasksQuery, (snapshot) => {
             const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
             setTasks(fetchedTasks);
@@ -55,7 +72,13 @@ export const useCalendarEvents = (userId: string) => {
         const roadmapQuery = query(collectionGroup(db, 'roadmap'));
         unsubscribeFunctions.push(onSnapshot(roadmapQuery, (snapshot) => {
              const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoadmapItem));
-             setRoadmapItems(items);
+              setRoadmapItems(items);
+        }));
+
+        // 6.5 Clients
+        const clientsQuery = query(collection(db, 'clients'));
+        unsubscribeFunctions.push(onSnapshot(clientsQuery, (snapshot) => {
+            setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         }));
 
          // 7. Feedback Comments (that have due dates)
@@ -86,18 +109,27 @@ export const useCalendarEvents = (userId: string) => {
         const userBoardIds = boards.filter(b => userProjectIds.includes(b.projectId)).map(b => b.id);
 
         // Manual
-        normalizedEvents.push(...manualEvents);
+        manualEvents.forEach(event => {
+            normalizedEvents.push({
+                ...event,
+                startDate: ensureDateString(event.startDate),
+                endDate: ensureDateString(event.endDate || event.startDate),
+            });
+        });
 
         // Tasks
         tasks.forEach(task => {
             if (!task.dueDate) return;
             // Relaxed visibility: If project is visible to user
             if (userBoardIds.includes(task.boardId)) {
+                const start = ensureDateString(task.dueDate);
+                const end = ensureDateString((task as any).endDate || task.dueDate || start);
+                
                 normalizedEvents.push({
                     id: `task-${task.id}`,
-                    title: `Task: ${task.title}`,
-                    startDate: task.dueDate,
-                    endDate: task.dueDate,
+                    title: task.title,
+                    startDate: start,
+                    endDate: end,
                     type: 'task',
                     sourceId: task.id,
                     userId: 'system',
@@ -109,11 +141,12 @@ export const useCalendarEvents = (userId: string) => {
 
         // Invoices
         invoices.forEach(inv => {
+            const start = ensureDateString(inv.date);
             normalizedEvents.push({
                 id: `inv-${inv.id}`,
-                title: `Invoice #${inv.invoiceNumber}`,
-                startDate: inv.date,
-                endDate: inv.date,
+                title: inv.invoiceNumber,
+                startDate: start,
+                endDate: start, // Invoices are usually single day
                 type: 'invoice',
                 sourceId: inv.id,
                 userId: inv.userId,
@@ -122,13 +155,15 @@ export const useCalendarEvents = (userId: string) => {
 
         // Roadmap
         roadmapItems.forEach(item => {
-             // Relaxed filter: Show if project is visible
              if (userProjectIds.includes(item.projectId)) {
+                const start = ensureDateString(item.startDate);
+                const end = ensureDateString(item.endDate || item.startDate);
+                
                 normalizedEvents.push({
                     id: `road-${item.id}`,
-                    title: `Roadmap: ${item.title}`,
-                    startDate: item.startDate,
-                    endDate: item.endDate,
+                    title: item.title,
+                    startDate: start,
+                    endDate: end,
                     type: 'roadmap_item',
                     sourceId: item.id,
                     userId: 'system',
@@ -139,19 +174,17 @@ export const useCalendarEvents = (userId: string) => {
 
         // Feedback Comments
         feedbackComments.forEach(comment => {
-            // Visibility: Check project visibility
             if (comment.projectId && userProjectIds.includes(comment.projectId)) {
                 const titleText = comment.comment || comment.commentText || 'Feedback';
-                const authorId = comment.reporterId || comment.authorId;
-                
+                const start = ensureDateString(comment.dueDate);
                 normalizedEvents.push({
                     id: `comment-${comment.id}`,
-                    title: titleText, // Cleaned up: No "Comment #" prefix, no manual truncation
-                    startDate: comment.dueDate,
-                    endDate: comment.dueDate,
-                    type: 'comment', // Correct type
+                    title: titleText,
+                    startDate: start,
+                    endDate: ensureDateString(comment.dueDate || start),
+                    type: 'comment',
                     sourceId: comment.id,
-                    userId: authorId,
+                    userId: comment.reporterId || comment.authorId,
                     projectId: comment.projectId,
                     feedbackItemId: comment.feedbackItemId 
                 });
@@ -159,7 +192,7 @@ export const useCalendarEvents = (userId: string) => {
         });
 
         return normalizedEvents;
-    }, [manualEvents, tasks, invoices, roadmapItems, feedbackComments, projects, boards, userId]);
+    }, [manualEvents, tasks, invoices, roadmapItems, feedbackComments, projects, boards, userId, clients]);
 
-    return { events, loading };
+    return { events, loading, projects, boards, tasks, roadmapItems, invoices, brands: brandsList, clients, feedbackComments };
 };
