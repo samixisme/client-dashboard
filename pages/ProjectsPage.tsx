@@ -29,11 +29,12 @@ const StatusBadge: React.FC<{ status: ProjectStatus }> = ({ status }) => {
 
 const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
     const { data } = useData();
+    const navigate = useNavigate();
     const { brands, users, tasks, moodboards, boards, roadmapItems } = data;
     
     const brand = brands.find(b => b.id === project.brandId);
     const projectBoards = boards.filter(b => b.projectId === project.id);
-    const memberIds = [...new Set(projectBoards.flatMap(b => b.member_ids))];
+    const memberIds = [...new Set(projectBoards.flatMap(b => b.member_ids || []))];
     const members = users.filter(m => memberIds.includes(m.id));
     const projectBoardIds = projectBoards.map(b => b.id);
     const projectTasks = tasks.filter(t => projectBoardIds.includes(t.boardId));
@@ -51,16 +52,22 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
 
     const mainBoard = projectBoards[0];
 
+    const handleCardClick = (e: React.MouseEvent) => {
+        // Prevent navigation if clicking on inner interactive elements if they didn't stop propagation
+        if ((e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('button')) return;
+        if (mainBoard) navigate(`/board/${mainBoard.id}`);
+    };
+
     return (
-        <Link 
-            to={mainBoard ? `/board/${mainBoard.id}` : '#'}
-            className="bg-glass p-5 rounded-2xl border border-border-color flex flex-col gap-4 hover:border-primary transition-colors"
+        <div 
+            onClick={handleCardClick}
+            className="bg-glass p-5 rounded-2xl border border-border-color flex flex-col gap-4 hover:border-primary transition-colors cursor-pointer group"
         >
             <div className="flex justify-between items-start">
                 <div>
                     <p className="text-xs text-text-secondary">{brand?.name || 'No Brand'}</p>
                     <div className="flex items-center gap-2 mt-1">
-                        <h3 className="font-bold text-lg text-text-primary">{project.name}</h3>
+                        <h3 className="font-bold text-lg text-text-primary group-hover:text-primary transition-colors">{project.name}</h3>
                         <StatusBadge status={project.status} />
                     </div>
                 </div>
@@ -109,7 +116,7 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
                     {projectTasks.length} {projectTasks.length === 1 ? 'Task' : 'Tasks'}
                 </Link>
             </div>
-        </Link>
+        </div>
     );
 };
 
@@ -205,7 +212,8 @@ const ProjectsPage = () => {
             brandId,
             status: 'Active',
             createdAt: new Date().toISOString(),
-            logoUrl: logoUrl // Add logoUrl to saved data
+            logoUrl: logoUrl, // Add logoUrl to saved data
+            memberIds: []
         };
         
         await setDoc(doc(db, 'projects', docId), newProjectData);
@@ -241,7 +249,7 @@ const ProjectsPage = () => {
 
   const TaskRow: React.FC<{task: Task}> = ({task}) => {
     const stage = data.stages.find(s => s.id === task.stageId);
-    const assignees = data.users.filter(m => task.assignees.includes(m.id));
+    const assignees = data.users.filter(m => task.assignees?.includes(m.id));
 
     const priorityClasses = {
         High: 'text-red-400',

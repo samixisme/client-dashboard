@@ -15,7 +15,7 @@ interface TimerContextType {
     stopTimer: () => void;
 }
 
-const TimerContext = createContext<TimerContextType | undefined>(undefined);
+export const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
 export const TimerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { data, forceUpdate } = useData();

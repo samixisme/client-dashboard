@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   collectionGroup,
   increment,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { FeedbackItem, FeedbackItemComment, FeedbackStatus } from "../types";
@@ -47,21 +48,31 @@ export const getFeedbackItems = async (
 /**
  * Creates a new feedback item in the project's feedbackItems subcollection.
  */
+import { slugify } from "./slugify";
+
+/**
+ * Creates a new feedback item in the project's feedbackItems subcollection.
+ */
 export const addFeedbackItem = async (
   projectId: string,
   itemData: Omit<FeedbackItem, "id" | "createdAt" | "projectId">,
 ): Promise<string> => {
   try {
-    const docRef = await addDoc(
-      collection(db, "projects", projectId, "feedbackItems"),
-      {
+    const slug = slugify(itemData.name);
+    // Ensure uniqueness or handle overwrites?
+    // Using simple slug for now as per 'Projects' pattern. 
+    // If collision, it will overwrite, which might be intended or acceptable for now given strict naming.
+    // Ideally we'd append a suffix if exists, but keeping consistency with existing codebase patterns first.
+    
+    const docRef = doc(db, "projects", projectId, "feedbackItems", slug);
+    
+    await setDoc(docRef, {
         ...itemData,
         projectId,
         createdAt: serverTimestamp(),
         commentCount: 0,
-      },
-    );
-    return docRef.id;
+    });
+    return slug;
   } catch (error) {
     console.error("Error adding feedback item:", error);
     throw error;

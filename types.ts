@@ -10,6 +10,7 @@ export interface Project {
     status: ProjectStatus;
     createdAt: string; // ISO string
     logoUrl?: string;
+    memberIds: string[];
 }
 
 export interface Board {
@@ -115,6 +116,7 @@ export interface RoadmapItem {
         direction: 'asc' | 'desc';
     };
     backgroundPattern?: string;
+    quarter?: string; // e.g., 'Q1 2024'
 }
 
 export interface CustomField {
@@ -358,7 +360,26 @@ export interface Moodboard {
     name: string;
 }
 
-export type MoodboardItemType = 'text' | 'link' | 'image' | 'todo_list' | 'column' | 'connector' | 'color';
+export interface MoodboardItemStyle {
+    backgroundColor?: string;
+    textColor?: string;
+    borderColor?: string;
+    borderWidth?: number;       // px
+    borderRadius?: number;      // px
+    fontSize?: number;          // px
+    opacity?: number;           // 0-1
+    zIndex?: number;            // Layering
+    textAlign?: 'left' | 'center' | 'right';
+    boxShadow?: string;
+    padding?: number; // px
+    fontWeight?: 'normal' | 'bold';
+    fontStyle?: 'normal' | 'italic';
+    textDecoration?: 'none' | 'underline';
+    objectFit?: 'cover' | 'contain' | 'fill';
+    borderStyle?: 'solid' | 'dashed' | 'dotted';
+}
+
+export type MoodboardItemType = 'text' | 'link' | 'image' | 'todo_list' | 'column' | 'connector' | 'color' | 'card';
 
 export interface MoodboardItem {
     id: string;
@@ -371,6 +392,17 @@ export interface MoodboardItem {
         todos?: { id: string; text: string; completed: boolean }[];
         title?: string;
         hex?: string;
+        referenceId?: string;
+        resourceType?: string;
+        // Text enhancements
+        subtype?: 'h1' | 'h2' | 'p' | 'quote';
+        // Link enhancements
+        description?: string;
+        showPreview?: boolean;
+        customTitle?: string;
+        customImageUrl?: string;
+        // Column enhancements
+        layout?: 'vertical' | 'horizontal';
     };
     position: { x: number; y: number };
     size: { width: number; height: number };
@@ -378,10 +410,13 @@ export interface MoodboardItem {
     connector_ends?: {
         start_item_id: string;
         end_item_id: string;
+        startHandle?: 'top' | 'right' | 'bottom' | 'left';
+        endHandle?: 'top' | 'right' | 'bottom' | 'left';
     };
     creatorId?: string;
     createdAt?: string;
     updatedAt?: string;
+    style?: MoodboardItemStyle;
 }
 
 // Brand Feature Types
@@ -435,11 +470,14 @@ export interface CalendarEvent {
     title: string;
     startDate: string; // ISO string
     endDate: string; // ISO string
-    type: 'task' | 'invoice' | 'estimate' | 'roadmap_item' | 'manual';
+    type: 'task' | 'invoice' | 'estimate' | 'roadmap_item' | 'manual' | 'comment';
     sourceId: string | null;
     userId: string;
     brandId?: string;
     projectId?: string;
     taskId?: string;
     reminder?: string;
+    meetLink?: string; // Google Meet Link
+    feedbackItemId?: string; // For deep linking to feedback
+    assignees?: string[]; // IDs of assigned users
 }

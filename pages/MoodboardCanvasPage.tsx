@@ -1,33 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect, forwardRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { moodboards, moodboardItems as initialMoodboardItems } from '../data/moodboardData';
-import { Moodboard, MoodboardItem, MoodboardItemType } from '../types';
+import { useData } from '../contexts/DataContext';
+import { doc, writeBatch, collection, getDocs } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+import { Moodboard, MoodboardItem, MoodboardItemType, MoodboardItemStyle } from '../types';
 import MoodboardItemComponent from '../components/moodboard/MoodboardItemComponent';
 import ConnectorLine from '../components/moodboard/ConnectorLine';
 import MoodboardListView from '../components/moodboard/MoodboardListView';
 import DownloadMoodboardModal from '../components/moodboard/DownloadMoodboardModal';
-import EditItemModal from '../components/moodboard/EditItemModal';
-import { TextIcon } from '../components/icons/TextIcon';
-import { ImageIcon } from '../components/icons/ImageIcon';
-import { LinkIcon } from '../components/icons/LinkIcon';
-import { ColumnIcon } from '../components/icons/ColumnIcon';
-import { ConnectorIcon } from '../components/icons/ConnectorIcon';
-import { FullscreenIcon } from '../components/icons/FullscreenIcon';
-import { ExitFullscreenIcon } from '../components/icons/ExitFullscreenIcon';
-import { SaveIcon } from '../components/icons/SaveIcon';
-import { UndoIcon } from '../components/icons/UndoIcon';
-import { RedoIcon } from '../components/icons/RedoIcon';
-import { ZoomInIcon } from '../components/icons/ZoomInIcon';
-import { ZoomOutIcon } from '../components/icons/ZoomOutIcon';
-import { MoveIcon } from '../components/icons/MoveIcon';
-import { PanIcon } from '../components/icons/PanIcon';
-import { ColorPaletteIcon } from '../components/icons/ColorPaletteIcon';
+import InspectorPanel from '../components/moodboard/InspectorPanel';
+import ResourceSidebar from '../components/moodboard/ResourceSidebar';
+
+import { 
+    SidebarIcon, TextIcon, ImageIcon, LinkIcon, ColumnIcon, ConnectorIcon,
+    FullscreenIcon, ExitFullscreenIcon, SaveIcon, UndoIcon, RedoIcon,
+    ZoomInIcon, ZoomOutIcon, MoveIcon, PanIcon, ColorPaletteIcon, GridIcon,
+    KanbanViewIcon, ListIcon, DownloadIcon, CenterFocusIcon
+} from '../components/moodboard/Icons';
 import ColorPopover from '../components/moodboard/ColorPopover';
 import ViewSwitcher, { ViewOption } from '../components/board/ViewSwitcher';
-import { KanbanViewIcon } from '../components/icons/KanbanViewIcon';
-import { ListIcon } from '../components/icons/ListIcon';
-import { DownloadIcon } from '../components/icons/DownloadIcon';
-import { CenterFocusIcon } from '../components/icons/CenterFocusIcon';
 
 declare const htmlToImage: any;
 
@@ -39,9 +30,28 @@ const viewOptions: ViewOption[] = [
 const ZOOM_STEP = 0.1;
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 2;
+const SNAP_SIZE = 20;
+const CANVAS_SIZE = 5000;
+const CANVAS_OFFSET = CANVAS_SIZE / 2;
+
+const ToolbarButton = forwardRef<HTMLButtonElement, { onClick?: React.MouseEventHandler<HTMLButtonElement>; Icon: React.FC<any>; label: string; isActive?: boolean; disabled?: boolean }>(({ onClick, Icon, label, isActive = false, disabled = false }, ref) => (
+    <button 
+        ref={ref} 
+        onClick={(e) => {
+            if (onClick) onClick(e);
+        }} 
+        disabled={disabled} 
+        aria-label={label} 
+        title={label} 
+        className={`flex items-center p-2 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'bg-glass-light text-text-secondary'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary hover:text-white'}`}
+    >
+        <Icon className="h-5 w-5 flex-shrink-0" />
+    </button>
+));
 
 const MoodboardCanvasPage = () => {
     const { moodboardId } = useParams<{ moodboardId: string }>();
+    const { data } = useData();
     const [moodboard, setMoodboard] = useState<Moodboard | undefined>();
     
     // State history management
@@ -54,7 +64,7 @@ const MoodboardCanvasPage = () => {
     const canRedo = historyIndex < history.length - 1;
     const isDirty = historyIndex !== savedHistoryIndex;
 
-    const [connecting, setConnecting] = useState<{ startItemId: string | null }>({ startItemId: null });
+    const [connecting, setConnecting] = useState<{ startItemId: string | null; startHandle?: 'top' | 'right' | 'bottom' | 'left' }>({ startItemId: null });
 
     const fullscreenContainerRef = useRef<HTMLDivElement>(null);
     const viewportRef = useRef<HTMLDivElement>(null);
@@ -64,7 +74,6 @@ const MoodboardCanvasPage = () => {
     const [viewMode, setViewMode] = useState<'canvas' | 'list'>('canvas');
     const [interactionMode, setInteractionMode] = useState<'move' | 'pan'>('move');
     const [draggedItem, setDraggedItem] = useState<{ id: string, offset: { x: number, y: number } } | null>(null);
-    const [resizedItem, setResizedItem] = useState<{ id: string, initialSize: {width: number, height: number}, initialMousePos: {x: number, y: number} } | null>(null);
     const [panningState, setPanningState] = useState<{ startX: number; startY: number; scrollLeft: number; scrollTop: number; } | null>(null);
     const [draggedOverColumnId, setDraggedOverColumnId] = useState<string | null>(null);
     
@@ -74,41 +83,37 @@ const MoodboardCanvasPage = () => {
     // Zoom state
     const [zoom, setZoom] = useState(1);
     const [postZoomScroll, setPostZoomScroll] = useState<{x: number, y: number} | null>(null);
+    const [snapToGrid, setSnapToGrid] = useState(true);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(true);
+
+    // Inspector & Selection
+    const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+    const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+
+    // Transient State for performance optimization (Dragging/Resizing)
+    const [transientState, setTransientState] = useState<{
+        draggedItemId?: string;
+        currentPosition?: { x: number, y: number };
+        resizedItemId?: string;
+        currentSize?: { width: number, height: number };
+        initialMousePos?: { x: number, y: number };
+        initialSize?: { width: number, height: number };
+        offset?: { x: number, y: number };
+    }>({});
     
     // Color Popover State
     const [isColorPopoverOpen, setIsColorPopoverOpen] = useState(false);
     const colorButtonRef = useRef<HTMLButtonElement>(null);
-    
-    // Edit Modal State
-    const [editingItem, setEditingItem] = useState<MoodboardItem | null>(null);
-
 
     useEffect(() => {
         if (moodboardId) {
-            setMoodboard(moodboards.find(m => m.id === moodboardId));
-            
-            const savedItemsJSON = localStorage.getItem(`moodboard_items_${moodboardId}`);
-            if (savedItemsJSON) {
-                try {
-                    const savedItems = JSON.parse(savedItemsJSON);
-                    setHistory([savedItems]);
-                    setHistoryIndex(0);
-                    setSavedHistoryIndex(0);
-                } catch (error) {
-                    console.error("Failed to parse saved moodboard state:", error);
-                    const filteredItems = initialMoodboardItems.filter(i => i.moodboardId === moodboardId);
-                    setHistory([filteredItems]);
-                    setHistoryIndex(0);
-                    setSavedHistoryIndex(0);
-                }
-            } else {
-                const filteredItems = initialMoodboardItems.filter(i => i.moodboardId === moodboardId);
-                setHistory([filteredItems]);
-                setHistoryIndex(0);
-                setSavedHistoryIndex(0);
-            }
+            setMoodboard(data.moodboards.find(m => m.id === moodboardId));
+            const filteredItems = data.moodboardItems.filter(i => i.moodboardId === moodboardId);
+            setHistory([filteredItems]);
+            setHistoryIndex(0);
+            setSavedHistoryIndex(0);
         }
-    }, [moodboardId]);
+    }, [moodboardId, data.moodboards, data.moodboardItems]);
     
     const recenterCanvas = useCallback((smooth = false) => {
         if (!viewportRef.current || !items.length) return;
@@ -123,7 +128,12 @@ const MoodboardCanvasPage = () => {
             maxY = Math.max(maxY, item.position.y + item.size.height);
         });
 
-        if (minX === Infinity) return; // No items with position
+        if (minX === Infinity) {
+            console.log("recenterCanvas: No items found with position.");
+            return;
+        }
+
+        console.log(`recenterCanvas: Bounds [${minX}, ${minY}, ${maxX}, ${maxY}]`);
 
         const contentWidth = maxX - minX;
         const contentHeight = maxY - minY;
@@ -136,12 +146,17 @@ const MoodboardCanvasPage = () => {
         const zoomY = viewportHeight / (contentHeight + padding * 2);
         const newZoom = Math.max(MIN_ZOOM, Math.min(zoomX, zoomY, 1));
 
-        const contentCenterX = minX + contentWidth / 2;
-        const contentCenterY = minY + contentHeight / 2;
+        // Calculate center relative to CANVAS_OFFSET
+        const contentCenterX = minX + contentWidth / 2 + CANVAS_OFFSET;
+        const contentCenterY = minY + contentHeight / 2 + CANVAS_OFFSET;
+
+        console.log(`recenterCanvas: Center [${contentCenterX}, ${contentCenterY}] (Offset Applied), New Zoom: ${newZoom}`);
 
         const newScrollLeft = (contentCenterX * newZoom) - (viewportWidth / 2);
         const newScrollTop = (contentCenterY * newZoom) - (viewportHeight / 2);
         
+        console.log(`recenterCanvas: Target Scroll [${newScrollLeft}, ${newScrollTop}]`);
+
         setPostZoomScroll({ x: newScrollLeft, y: newScrollTop });
         setZoom(newZoom);
 
@@ -178,7 +193,7 @@ const MoodboardCanvasPage = () => {
                 const now = new Date().toISOString();
                 const currentIds = new Set(currentItems.map(i => i.id));
                 newItems = newItems.map(item => {
-                    if (!currentIds.has(item.id)) { // New item
+                    if (!currentIds.has(item.id)) {
                         return { ...item, createdAt: now, updatedAt: now, creatorId: 'user-1' };
                     }
                     const oldItem = currentItems.find(i => i.id === item.id);
@@ -188,7 +203,6 @@ const MoodboardCanvasPage = () => {
                     return item;
                 });
             }
-
 
             if (JSON.stringify(currentItems) === JSON.stringify(newItems) && !newHistoryEntry) {
                 return prevHistory;
@@ -221,12 +235,15 @@ const MoodboardCanvasPage = () => {
             
             const PADDING = 16;
             const HEADER_HEIGHT = 45;
+            const isHorizontal = column.content.layout === 'horizontal';
+            let currentX = PADDING;
             let currentY = HEADER_HEIGHT + PADDING;
             let maxWidth = 0;
+            let maxHeight = 0;
 
             for (const child of children) {
                 const childIndex = newItems.findIndex((i: MoodboardItem) => i.id === child.id);
-                const newChildX = column.position.x + PADDING;
+                const newChildX = column.position.x + currentX;
                 const newChildY = column.position.y + currentY;
                 
                 if (newItems[childIndex].position.x !== newChildX || newItems[childIndex].position.y !== newChildY) {
@@ -235,13 +252,18 @@ const MoodboardCanvasPage = () => {
                     needsUpdate = true;
                 }
                 
-                currentY += child.size.height + PADDING;
-                maxWidth = Math.max(maxWidth, child.size.width);
+                if (isHorizontal) {
+                    currentX += child.size.width + PADDING;
+                    maxHeight = Math.max(maxHeight, child.size.height);
+                } else {
+                    currentY += child.size.height + PADDING;
+                    maxWidth = Math.max(maxWidth, child.size.width);
+                }
             }
 
             const columnIndex = newItems.findIndex((i: MoodboardItem) => i.id === column.id);
-            const newHeight = children.length > 0 ? currentY : 150;
-            const newWidth = children.length > 0 ? maxWidth + PADDING * 2 : 250;
+            const newHeight = isHorizontal ? (HEADER_HEIGHT + PADDING + maxHeight + PADDING) : (children.length > 0 ? currentY : 150);
+            const newWidth = isHorizontal ? (children.length > 0 ? currentX : 250) : (children.length > 0 ? maxWidth + PADDING * 2 : 250);
 
             if (newItems[columnIndex].size.width !== newWidth || newItems[columnIndex].size.height !== newHeight) {
                 newItems[columnIndex].size.width = newWidth;
@@ -255,15 +277,14 @@ const MoodboardCanvasPage = () => {
         }
     }, [items]);
 
-
     const getCoords = (e: MouseEvent | TouchEvent) => 'touches' in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
     
     const getCanvasCoords = useCallback((e: MouseEvent | TouchEvent) => {
         if (!viewportRef.current) return { x: 0, y: 0 };
         const rect = viewportRef.current.getBoundingClientRect();
         const { x: mouseX, y: mouseY } = getCoords(e);
-        const canvasX = (mouseX - rect.left + viewportRef.current.scrollLeft) / zoom;
-        const canvasY = (mouseY - rect.top + viewportRef.current.scrollTop) / zoom;
+        const canvasX = (mouseX - rect.left + viewportRef.current.scrollLeft) / zoom - CANVAS_OFFSET;
+        const canvasY = (mouseY - rect.top + viewportRef.current.scrollTop) / zoom - CANVAS_OFFSET;
         return { x: canvasX, y: canvasY };
     }, [zoom]);
 
@@ -277,81 +298,113 @@ const MoodboardCanvasPage = () => {
             return;
         }
 
-        if ((draggedItem || resizedItem) && interactionMode === 'move') e.preventDefault();
+        if ((transientState.draggedItemId || transientState.resizedItemId) && interactionMode === 'move') e.preventDefault();
         
         const { x: canvasMouseX, y: canvasMouseY } = getCanvasCoords(e);
 
-        if (draggedItem) {
-            const itemBeingDragged = items.find(i => i.id === draggedItem.id);
-            if(itemBeingDragged) {
-                const itemCenter = {
-                    x: canvasMouseX - draggedItem.offset.x + itemBeingDragged.size.width / 2,
-                    y: canvasMouseY - draggedItem.offset.y + itemBeingDragged.size.height / 2
-                };
-                let newDraggedOverColumnId: string | null = null;
-                const columns = items.filter(i => i.type === 'column' && i.id !== draggedItem.id);
-                for (const column of columns) {
-                    if (itemCenter.x > column.position.x && itemCenter.x < column.position.x + column.size.width &&
-                        itemCenter.y > column.position.y && itemCenter.y < column.position.y + column.size.height) {
-                        newDraggedOverColumnId = column.id;
-                        break;
-                    }
-                }
-                setDraggedOverColumnId(newDraggedOverColumnId);
+        if (transientState.draggedItemId && transientState.offset) {
+            let newX = canvasMouseX - transientState.offset.x;
+            let newY = canvasMouseY - transientState.offset.y;
+
+            if (snapToGrid) {
+                newX = Math.round(newX / SNAP_SIZE) * SNAP_SIZE;
+                newY = Math.round(newY / SNAP_SIZE) * SNAP_SIZE;
             }
 
-            setItems(prevItems => prevItems.map(item =>
-                item.id === draggedItem.id
-                    ? { ...item, position: { x: canvasMouseX - draggedItem.offset.x, y: canvasMouseY - draggedItem.offset.y } }
-                    : item
-            ));
-        }
-        if (resizedItem) {
-            const dx = (canvasMouseX - resizedItem.initialMousePos.x);
-            const dy = (canvasMouseY - resizedItem.initialMousePos.y);
+            setTransientState(prev => {
+                if(prev.currentPosition?.x === newX && prev.currentPosition?.y === newY) return prev;
+                return {
+                    ...prev,
+                    currentPosition: { x: newX, y: newY }
+                };
+            });
+            
+             const itemBeingDragged = items.find(i => i.id === transientState.draggedItemId);
+             if(itemBeingDragged) {
+                 const currentWidth = itemBeingDragged.size.width;
+                 const currentHeight = itemBeingDragged.size.height;
+                 const itemCenter = {
+                     x: newX + currentWidth / 2,
+                     y: newY + currentHeight / 2
+                 };
+                 let newDraggedOverColumnId: string | null = null;
+                 const columns = items.filter(i => i.type === 'column' && i.id !== transientState.draggedItemId);
+                 for (const column of columns) {
+                     if (itemCenter.x > column.position.x && itemCenter.x < column.position.x + column.size.width &&
+                         itemCenter.y > column.position.y && itemCenter.y < column.position.y + column.size.height) {
+                         newDraggedOverColumnId = column.id;
+                         break;
+                     }
+                 }
+                 setDraggedOverColumnId(newDraggedOverColumnId);
+             }
 
-            setItems(prevItems => prevItems.map(item => {
-                if (item.id === resizedItem.id) {
-                    const newWidth = Math.max(100, resizedItem.initialSize.width + dx);
-                    const newHeight = Math.max(50, resizedItem.initialSize.height + dy);
-                    return { ...item, size: { width: newWidth, height: newHeight } };
-                }
-                return item;
-            }));
+        } else if (transientState.resizedItemId && transientState.initialMousePos && transientState.initialSize) {
+            const dx = (canvasMouseX - transientState.initialMousePos.x);
+            const dy = (canvasMouseY - transientState.initialMousePos.y);
+
+            let newWidth = Math.max(100, transientState.initialSize.width + dx);
+            let newHeight = Math.max(50, transientState.initialSize.height + dy);
+
+            if (snapToGrid) {
+                newWidth = Math.round(newWidth / SNAP_SIZE) * SNAP_SIZE;
+                newHeight = Math.round(newHeight / SNAP_SIZE) * SNAP_SIZE;
+            }
+
+            setTransientState(prev => {
+                 if(prev.currentSize?.width === newWidth && prev.currentSize?.height === newHeight) return prev;
+                 return {
+                    ...prev,
+                    currentSize: { width: newWidth, height: newHeight }
+                };
+            });
         }
-    }, [draggedItem, resizedItem, getCanvasCoords, panningState, interactionMode, setItems, items]);
+    }, [transientState, getCanvasCoords, panningState, interactionMode, items, snapToGrid]);
 
     const handlePointerUp = useCallback(() => {
         document.body.classList.remove('is-dragging');
 
-        if (draggedItem) {
+        if (transientState.draggedItemId && transientState.currentPosition) {
             setItems(prevItems => prevItems.map(item => 
-                item.id === draggedItem.id 
-                    ? { ...item, parentId: draggedOverColumnId || undefined } 
+                item.id === transientState.draggedItemId 
+                    ? { ...item, position: transientState.currentPosition!, parentId: draggedOverColumnId || undefined } 
                     : item
             ), true);
-        } else if (resizedItem) {
-            setItems(current => current, true);
+        } else if (transientState.resizedItemId && transientState.currentSize) {
+            setItems(prevItems => prevItems.map(item =>
+                item.id === transientState.resizedItemId
+                    ? { ...item, size: transientState.currentSize! }
+                    : item
+            ), true);
         }
         
-        setDraggedItem(null);
-        setResizedItem(null);
+        setTransientState({});
         setPanningState(null);
         setDraggedOverColumnId(null);
-    }, [draggedItem, resizedItem, setItems, draggedOverColumnId]);
+    }, [transientState, setItems, draggedOverColumnId]);
     
     const handleItemDragStart = useCallback((itemId: string, e: React.MouseEvent | React.TouchEvent) => {
         if (interactionMode !== 'move') return;
         if(connecting.startItemId === 'pending') { setConnecting({ startItemId: itemId }); return; }
         if(connecting.startItemId) return;
+        
+        // Dragging doesn't toggle selection but ensures the dragged item is the "selected" context for the drag
+        if (selectedItemId !== itemId) setSelectedItemId(itemId);
+        // Dragging does NOT open inspector
+        setIsInspectorOpen(false);
 
         const item = items.find(i => i.id === itemId);
         if (!item) return;
 
         const { x: canvasMouseX, y: canvasMouseY } = getCanvasCoords(e.nativeEvent);
         document.body.classList.add('is-dragging');
-        setDraggedItem({ id: itemId, offset: { x: canvasMouseX - item.position.x, y: canvasMouseY - item.position.y } });
-    }, [interactionMode, items, getCanvasCoords, connecting.startItemId]);
+        
+        setTransientState({
+            draggedItemId: itemId,
+            offset: { x: canvasMouseX - item.position.x, y: canvasMouseY - item.position.y },
+            currentPosition: item.position 
+        });
+    }, [interactionMode, items, getCanvasCoords, connecting.startItemId, selectedItemId]);
 
 
     useEffect(() => {
@@ -366,6 +419,50 @@ const MoodboardCanvasPage = () => {
             document.removeEventListener('touchend', handlePointerUp);
         };
     }, [handlePointerMove, handlePointerUp]);
+    
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const data = e.dataTransfer.getData('app/moodboard-item');
+        if (!data) return;
+
+        try {
+            const payload = JSON.parse(data);
+            if (payload.type === 'resource') {
+                const { x, y } = getCanvasCoords(e.nativeEvent);
+                const now = new Date().toISOString();
+                
+                // Determine content based on resource type
+                let content: any = {
+                    resourceType: payload.resourceType,
+                    referenceId: payload.resourceId,
+                    title: payload.resourceData.name || payload.resourceData.title || 'Resource',
+                    text: payload.resourceData.description || payload.resourceData.text || '',
+                };
+
+                const newItem: MoodboardItem = {
+                    id: `item-${Date.now()}`,
+                    moodboardId: moodboardId!,
+                    type: 'card', 
+                    content,
+                    position: { x: x - 100, y: y - 50 }, // Center on mouse roughly
+                    size: { width: 250, height: 150 },
+                    creatorId: 'user-1',
+                    createdAt: now,
+                    updatedAt: now,
+                };
+                
+                setItems(prev => [...prev, newItem], true);
+                setSelectedItemId(newItem.id);
+            }
+        } catch (err) {
+            console.error('Failed to parse drop data', err);
+        }
+    };
 
     const handlePanStart = (e: React.MouseEvent | React.TouchEvent) => {
         if (interactionMode !== 'pan' || (e.target as HTMLElement).closest('.moodboard-item-component')) return;
@@ -378,25 +475,50 @@ const MoodboardCanvasPage = () => {
 
     const handleAddItem = (type: MoodboardItemType) => {
         if (!moodboardId || !viewportRef.current) return;
+
         const now = new Date().toISOString();
         const newItem: MoodboardItem = {
             id: `item-${Date.now()}`, moodboardId, type,
             content: type === 'column' ? { title: 'New Column'} : {},
-            position: { x: (viewportRef.current.scrollLeft + 100) / zoom, y: (viewportRef.current.scrollTop + 100) / zoom },
+            // Use current viewport center for new item, converted to canvas coords
+            position: { 
+                x: (viewportRef.current.scrollLeft + viewportRef.current.clientWidth/2) / zoom - CANVAS_OFFSET, 
+                y: (viewportRef.current.scrollTop + viewportRef.current.clientHeight/2) / zoom - CANVAS_OFFSET
+            },
             size: type === 'image' ? { width: 400, height: 300 } : { width: 250, height: 150 },
             creatorId: 'user-1', createdAt: now, updatedAt: now,
         };
+        // Scroll to new item? The user requested "Navigate to item".
+        // We'll update state, and then scroll.
         setItems(prev => [...prev, newItem], true);
+        
+        // Center on new item
+        // Calculate center relative to CANVAS_OFFSET
+        const itemCenterX = newItem.position.x + newItem.size.width / 2 + CANVAS_OFFSET;
+        const itemCenterY = newItem.position.y + newItem.size.height / 2 + CANVAS_OFFSET;
+
+        const newScrollLeft = (itemCenterX * zoom) - (viewportRef.current.clientWidth / 2);
+        const newScrollTop = (itemCenterY * zoom) - (viewportRef.current.clientHeight / 2);
+
+        setPostZoomScroll({ x: newScrollLeft, y: newScrollTop });
+        
+        setSelectedItemId(newItem.id);
+        setIsInspectorOpen(true); // Auto-open inspector for new items
     };
     
     const handleDeleteItem = (itemIdToDelete: string) => {
         setItems(prevItems => prevItems.filter(item => {
             if (item.id === itemIdToDelete) return false;
+            // Also delete connected lines
             if (item.type === 'connector' && item.connector_ends && (item.connector_ends.start_item_id === itemIdToDelete || item.connector_ends.end_item_id === itemIdToDelete)) {
                 return false;
             }
             return true;
         }), true);
+        if(selectedItemId === itemIdToDelete) {
+            setSelectedItemId(null);
+            setIsInspectorOpen(false);
+        }
     };
     
     const handleDownloadItem = useCallback(async (item: MoodboardItem) => {
@@ -425,8 +547,7 @@ const MoodboardCanvasPage = () => {
     }, []);
 
     const handleUpdateItem = (updatedItem: MoodboardItem) => {
-        setItems(prevItems => prevItems.map(item => item.id === updatedItem.id ? updatedItem : item), true);
-        setEditingItem(null);
+        setItems(prevItems => prevItems.map(item => item.id === updatedItem.id ? updatedItem : item), false);
     };
 
     const addColorItem = (hex: string, name?: string) => {
@@ -435,7 +556,10 @@ const MoodboardCanvasPage = () => {
          return {
             id: `item-${Date.now()}-${Math.random()}`, moodboardId, type: 'color' as MoodboardItemType,
             content: { text: name, hex },
-            position: { x: (viewportRef.current.scrollLeft / zoom) + 100 + Math.random()*200, y: (viewportRef.current.scrollTop / zoom) + 100 + Math.random()*200 },
+            position: { 
+                x: (viewportRef.current.scrollLeft + viewportRef.current.clientWidth/2) / zoom - CANVAS_OFFSET + Math.random()*200 - 100, 
+                y: (viewportRef.current.scrollTop + viewportRef.current.clientHeight/2) / zoom - CANVAS_OFFSET + Math.random()*200 - 100
+            },
             size: { width: 100, height: 100 },
             creatorId: 'user-1', createdAt: now, updatedAt: now,
         };
@@ -466,6 +590,68 @@ const MoodboardCanvasPage = () => {
         setConnecting({ startItemId: null });
     };
 
+    const handleConnectHandle = (itemId: string, handle: 'top' | 'right' | 'bottom' | 'left', e: React.MouseEvent) => {
+        e.stopPropagation();
+        
+        // If not strictly in "Connect Mode" (via toolbar), we could auto-enter it? 
+        // For now, let's assume we must be in connecting mode OR we clicked a handle which implies intent.
+        // Actually, handles only show if isConnecting is true. So we are safe.
+
+        if (connecting.startItemId === 'pending') {
+             // Starting a connection
+             setConnecting({ startItemId: itemId, startHandle: handle });
+             return;
+        }
+
+        if (connecting.startItemId && connecting.startItemId !== itemId) {
+            // Completing a connection
+            const now = new Date().toISOString();
+            const newConnector: MoodboardItem = {
+                id: `conn-${Date.now()}`, moodboardId: moodboardId!, type: 'connector', content: {},
+                position: { x: 0, y: 0 }, size: { width: 0, height: 0 },
+                connector_ends: { 
+                    start_item_id: connecting.startItemId, 
+                    end_item_id: itemId,
+                    startHandle: connecting.startHandle,
+                    endHandle: handle 
+                },
+                creatorId: 'user-1', createdAt: now, updatedAt: now,
+            };
+            setItems(prev => [...prev, newConnector], true);
+            setConnecting({ startItemId: null });
+        }
+    };
+    
+    const handleReorderChild = (childId: string, direction: 'up' | 'down') => {
+        setItems(prevItems => {
+            const index = prevItems.findIndex(i => i.id === childId);
+            if (index === -1) return prevItems;
+            
+            const child = prevItems[index];
+            if (!child.parentId) return prevItems;
+
+            // Find siblings in current order
+            const siblings = prevItems
+                .map((item, idx) => ({ item, idx }))
+                .filter(({ item }) => item.parentId === child.parentId);
+            
+            const siblingIndex = siblings.findIndex(s => s.item.id === childId);
+            if (siblingIndex === -1) return prevItems;
+
+            const targetSiblingIndex = direction === 'up' ? siblingIndex - 1 : siblingIndex + 1;
+            if (targetSiblingIndex < 0 || targetSiblingIndex >= siblings.length) return prevItems;
+
+            const targetSibling = siblings[targetSiblingIndex];
+            
+            // Swap in the main array
+            const newItems = [...prevItems];
+            newItems[index] = targetSibling.item;
+            newItems[targetSibling.idx] = child;
+            
+            return newItems;
+        }, true); // Create history entry? Maybe strictly UI interaction, but order matters. Yes.
+    };
+
     const toggleFullscreen = () => {
         const element = fullscreenContainerRef.current;
         if (!element) return;
@@ -479,10 +665,40 @@ const MoodboardCanvasPage = () => {
     const handleUndo = () => canUndo && setHistoryIndex(i => i - 1);
     const handleRedo = () => canRedo && setHistoryIndex(i => i + 1);
     
-    const handleSave = () => {
+    const handleSave = async () => {
         if (isDirty && moodboardId) {
-            localStorage.setItem(`moodboard_items_${moodboardId}`, JSON.stringify(history[historyIndex]));
-            setSavedHistoryIndex(historyIndex);
+            const moodboard = data.moodboards.find(m => m.id === moodboardId);
+            if (!moodboard) return;
+            
+            const projectId = moodboard.projectId;
+            const currentItems = history[historyIndex];
+            const batch = writeBatch(db);
+            const itemsCollectionRef = collection(db, 'projects', projectId, 'moodboards', moodboardId, 'moodboard_items');
+
+            try {
+                const existingSnapshot = await getDocs(itemsCollectionRef);
+                const existingIds = new Set(existingSnapshot.docs.map(d => d.id));
+                const currentIds = new Set(currentItems.map(i => i.id));
+
+                existingSnapshot.docs.forEach(d => {
+                    if (!currentIds.has(d.id)) {
+                        batch.delete(d.ref);
+                    }
+                });
+
+                currentItems.forEach(item => {
+                    const ref = doc(db, 'projects', projectId, 'moodboards', moodboardId, 'moodboard_items', item.id);
+                    const itemData = JSON.parse(JSON.stringify(item));
+                    delete itemData.moodboardId;
+                    batch.set(ref, itemData, { merge: true });
+                });
+
+                await batch.commit();
+                setSavedHistoryIndex(historyIndex);
+            } catch (error) {
+                console.error("Error saving moodboard:", error);
+                alert("Failed to save changes. Please try again.");
+            }
         }
     };
     
@@ -504,11 +720,13 @@ const MoodboardCanvasPage = () => {
                 const mouseX = e.clientX - rect.left;
                 const mouseY = e.clientY - rect.top;
 
-                const canvasPointX = (viewport.scrollLeft + mouseX) / oldZoom;
-                const canvasPointY = (viewport.scrollTop + mouseY) / oldZoom;
+                const canvasPointX = (viewport.scrollLeft + mouseX) / oldZoom - CANVAS_OFFSET;
+                const canvasPointY = (viewport.scrollTop + mouseY) / oldZoom - CANVAS_OFFSET;
 
-                const newScrollLeft = (canvasPointX * newZoom) - mouseX;
-                const newScrollTop = (canvasPointY * newZoom) - mouseY;
+                // New logical scroll (relative to origin)
+                // newScroll = (CanvasPoint + Offset) * NewZoom - Mouse
+                const newScrollLeft = ((canvasPointX + CANVAS_OFFSET) * newZoom) - mouseX;
+                const newScrollTop = ((canvasPointY + CANVAS_OFFSET) * newZoom) - mouseY;
 
                 setPostZoomScroll({ x: newScrollLeft, y: newScrollTop });
                 setZoom(newZoom);
@@ -533,53 +751,58 @@ const MoodboardCanvasPage = () => {
         const viewportCenterX = viewport.clientWidth / 2;
         const viewportCenterY = viewport.clientHeight / 2;
 
-        const canvasPointX = (viewport.scrollLeft + viewportCenterX) / oldZoom;
-        const canvasPointY = (viewport.scrollTop + viewportCenterY) / oldZoom;
+        const canvasPointX = (viewport.scrollLeft + viewportCenterX) / oldZoom - CANVAS_OFFSET;
+        const canvasPointY = (viewport.scrollTop + viewportCenterY) / oldZoom - CANVAS_OFFSET;
 
-        const newScrollLeft = (canvasPointX * newZoom) - viewportCenterX;
-        const newScrollTop = (canvasPointY * newZoom) - viewportCenterY;
+        const newScrollLeft = ((canvasPointX + CANVAS_OFFSET) * newZoom) - viewportCenterX;
+        const newScrollTop = ((canvasPointY + CANVAS_OFFSET) * newZoom) - viewportCenterY;
         
         setPostZoomScroll({ x: newScrollLeft, y: newScrollTop });
         setZoom(newZoom);
     };
 
     if (!moodboard) return <div>Moodboard not found</div>;
-    
-    const ToolbarButton = forwardRef<HTMLButtonElement, { onClick?: React.MouseEventHandler<HTMLButtonElement>; Icon: React.FC<any>; label: string; isActive?: boolean; disabled?: boolean }>(({ onClick, Icon, label, isActive = false, disabled = false }, ref) => (
-         <button ref={ref} onClick={onClick} disabled={disabled} aria-label={label} title={label} className={`flex items-center p-2 rounded-md transition-colors ${isActive ? 'bg-primary text-white' : 'bg-glass-light text-text-secondary'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary hover:text-white'}`}>
-            <Icon className="h-5 w-5 flex-shrink-0" />
-        </button>
-    ));
-
-    const canvasContent = (
-        <div ref={canvasRef} className="relative w-[5000px] h-[5000px] transform-origin-top-left" style={{ transform: `scale(${zoom})` }}>
-            <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
-                {items.filter(i => i.type === 'connector').map(connector => <ConnectorLine key={connector.id} connector={connector} items={items} onDelete={handleDeleteItem} />)}
-            </svg>
-            {items.filter(i => i.type !== 'connector').map(item => <MoodboardItemComponent key={item.id} item={item} items={items} onDragStart={handleItemDragStart} onResizeStart={(e) => { if (interactionMode !== 'move') return; e.stopPropagation(); document.body.classList.add('is-dragging'); const { x, y } = getCanvasCoords(e.nativeEvent); setResizedItem({ id: item.id, initialSize: item.size, initialMousePos: { x, y }}); }} onClick={(e) => handleItemClick(item.id, e)} onDelete={handleDeleteItem} onDownloadRequest={handleDownloadItem} onEdit={setEditingItem} isConnecting={connecting.startItemId === item.id || connecting.startItemId === 'pending'} interactionMode={interactionMode} draggedOverColumnId={draggedOverColumnId} />)}
-        </div>
-    );
 
     const bottomToolbar = (
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 p-2 rounded-lg bg-glass border border-border-color shadow-lg">
-            <div className="flex items-center gap-1">
-                <ToolbarButton onClick={handleSave} Icon={SaveIcon} label={isDirty ? "Save changes" : "No changes to save"} disabled={!isDirty} />
-                <ToolbarButton onClick={handleUndo} Icon={UndoIcon} label="Undo" disabled={!canUndo} />
-                <ToolbarButton onClick={handleRedo} Icon={RedoIcon} label="Redo" disabled={!canRedo} />
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4 p-2 rounded-lg bg-glass border border-border-color shadow-lg z-30">
+            {/* Library Toggle */}
+            <div className="flex items-center">
+                 <ToolbarButton onClick={() => setIsLibraryOpen(!isLibraryOpen)} Icon={SidebarIcon} label={isLibraryOpen ? "Hide Library" : "Show Library"} isActive={isLibraryOpen} />
             </div>
+            
+            <div className="w-px h-8 bg-border-color"></div>
+
+            {/* Creation Group */}
             <div className="flex items-center gap-1">
                 <ToolbarButton onClick={() => handleAddItem('text')} Icon={TextIcon} label="Add Text" />
                 <ToolbarButton onClick={() => handleAddItem('image')} Icon={ImageIcon} label="Add Image" />
                 <ToolbarButton onClick={() => handleAddItem('link')} Icon={LinkIcon} label="Add Link" />
                 <ToolbarButton onClick={() => handleAddItem('column')} Icon={ColumnIcon} label="Add Column" />
-                <ToolbarButton onClick={() => setConnecting({ startItemId: connecting.startItemId ? null : 'pending' })} Icon={ConnectorIcon} label={connecting.startItemId ? 'Cancel Connecting' : 'Connect Items'} isActive={!!connecting.startItemId} />
                 <ToolbarButton ref={colorButtonRef} onClick={() => setIsColorPopoverOpen(true)} Icon={ColorPaletteIcon} label="Add Colors" />
             </div>
-            <div className="flex items-center gap-1">
-                <ToolbarButton onClick={() => handleZoomAction(zoom - ZOOM_STEP)} Icon={ZoomOutIcon} label="Zoom Out" disabled={zoom <= MIN_ZOOM}/>
-                <button onClick={() => handleZoomAction(1)} title="Reset zoom" className="text-sm font-semibold w-12 text-center text-text-secondary hover:text-text-primary transition-colors rounded-md py-2">{Math.round(zoom * 100)}%</button>
-                <ToolbarButton onClick={() => handleZoomAction(zoom + ZOOM_STEP)} Icon={ZoomInIcon} label="Zoom In" disabled={zoom >= MAX_ZOOM}/>
+
+            <div className="w-px h-8 bg-border-color"></div>
+
+            {/* Interaction Group */}
+             <div className="flex items-center">
+                <ToolbarButton onClick={() => setConnecting({ startItemId: connecting.startItemId ? null : 'pending' })} Icon={ConnectorIcon} label={connecting.startItemId ? 'Cancel Connecting' : 'Connect Items'} isActive={!!connecting.startItemId} />
             </div>
+        </div>
+    );
+
+    const zoomControls = (
+         <div className="absolute bottom-6 right-6 flex items-center gap-1 p-2 rounded-lg bg-glass border border-border-color shadow-lg z-30">
+            <ToolbarButton onClick={() => handleZoomAction(zoom - ZOOM_STEP)} Icon={ZoomOutIcon} label="Zoom Out" disabled={zoom <= MIN_ZOOM}/>
+            <button onClick={() => handleZoomAction(1)} title="Reset zoom" className="text-sm font-semibold w-12 text-center text-text-secondary hover:text-text-primary transition-colors rounded-md py-2">{Math.round(zoom * 100)}%</button>
+            <ToolbarButton onClick={() => handleZoomAction(zoom + ZOOM_STEP)} Icon={ZoomInIcon} label="Zoom In" disabled={zoom >= MAX_ZOOM}/>
+            {viewMode === 'canvas' && (
+                <>
+                    <div className="w-px h-6 bg-border-color mx-1"></div>
+                     <button onClick={() => recenterCanvas(true)} title="Recenter Content" className="p-2 rounded-lg text-text-secondary hover:bg-glass-light hover:text-primary transition-colors">
+                        <CenterFocusIcon className="h-5 w-5"/>
+                    </button>
+                </>
+            )}
         </div>
     );
 
@@ -587,7 +810,7 @@ const MoodboardCanvasPage = () => {
         <div className={`flex-shrink-0 flex justify-between items-center ${isFullscreen ? 'p-4' : 'pb-4'}`}>
             <div className="flex items-center gap-4">
                 <h1 className="text-xl md:text-3xl font-bold text-text-primary">{moodboard.name}</h1>
-                <div className="flex items-center bg-glass rounded-lg p-1 border border-border-color">
+                 <div className="flex items-center bg-glass rounded-lg p-1 border border-border-color">
                     <button onClick={() => setInteractionMode('move')} title="Move/Select Mode" className={`p-2 rounded-md ${interactionMode === 'move' ? 'bg-primary text-background' : 'text-text-secondary hover:bg-glass-light'}`}>
                         <MoveIcon className="h-5 w-5" />
                     </button>
@@ -596,12 +819,24 @@ const MoodboardCanvasPage = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Center Actions */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-glass border border-border-color p-1 rounded-lg shadow-sm z-30">
+                <ToolbarButton onClick={handleSave} Icon={SaveIcon} label={isDirty ? "Save changes" : "No changes to save"} disabled={!isDirty} />
+                <div className="w-px h-4 bg-border-color"></div>
+                <ToolbarButton onClick={handleUndo} Icon={UndoIcon} label="Undo" disabled={!canUndo} />
+                <ToolbarButton onClick={handleRedo} Icon={RedoIcon} label="Redo" disabled={!canRedo} />
+                <div className="w-px h-4 bg-border-color"></div>
+                 <button 
+                  onClick={() => setSnapToGrid(!snapToGrid)}
+                  title={snapToGrid ? "Disable Grid Snapping" : "Enable Grid Snapping"} 
+                  className={`p-2 rounded-md transition-colors ${snapToGrid ? 'bg-primary/20 text-primary' : 'bg-glass-light text-text-secondary hover:text-text-primary'}`}
+                >
+                    <GridIcon className="h-5 w-5" />
+                </button>
+            </div>
+
             <div className="flex items-center gap-2">
-                {viewMode === 'canvas' && isFullscreen && (
-                    <button onClick={() => recenterCanvas(true)} title="Recenter Content" className="p-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors">
-                        <CenterFocusIcon className="h-5 w-5"/>
-                    </button>
-                )}
                 <ViewSwitcher currentView={viewMode} onSwitchView={(v) => setViewMode(v as any)} options={viewOptions} widthClass="w-36"/>
                 <ToolbarButton onClick={() => setIsDownloadModalOpen(true)} Icon={DownloadIcon} label="Download Moodboard" />
                 <ToolbarButton onClick={toggleFullscreen} Icon={isFullscreen ? ExitFullscreenIcon : FullscreenIcon} label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'} />
@@ -611,48 +846,166 @@ const MoodboardCanvasPage = () => {
 
     return (
         <div ref={fullscreenContainerRef} className={`h-full flex flex-col relative ${isFullscreen ? 'bg-background fixed inset-0 z-50' : ''}`}>
+             {!isFullscreen && header} {/* Render header outside in normal mode */}
+            
             {viewMode === 'canvas' ? (
-                isFullscreen ? (
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                        {header}
-                        <div className="flex-1 relative overflow-hidden">
-                            <div className="absolute z-20 bottom-4 left-1/2 -translate-x-1/2 hidden md:flex">{bottomToolbar}</div>
-                            <div ref={viewportRef} className={`absolute inset-0 ${interactionMode === 'pan' ? (panningState ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'} overflow-auto bg-glass border border-border-color rounded-lg`} onMouseDown={handlePanStart} onTouchStart={handlePanStart}>
-                                {canvasContent}
-                            </div>
-                        </div>
+                 <div className="flex-1 flex overflow-hidden">
+                    {/* Resource Sidebar - Dockable */}
+                    <div 
+                        className={`transition-all duration-300 ease-in-out border-r border-border-color overflow-hidden ${isLibraryOpen ? 'w-64 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full border-r-0'}`}
+                    >
+                         <div className="w-64 h-full">
+                            <ResourceSidebar />
+                         </div>
                     </div>
-                ) : (
-                    <>
-                        {header}
-                        <div className="flex-1 flex flex-col min-h-0">
-                            <div ref={viewportRef} className={`flex-1 relative mb-4 ${interactionMode === 'pan' ? (panningState ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'} overflow-auto bg-glass border border-border-color rounded-lg`} onMouseDown={handlePanStart} onTouchStart={handlePanStart}>
-                                {canvasContent}
+
+                    <div className="flex-1 flex flex-col relative min-w-0">
+                         {isFullscreen && header} 
+
+                        {/* CANVAS */}
+                        <div 
+                            ref={viewportRef}
+                            className={`flex-1 overflow-auto relative bg-glass-light custom-scrollbar cursor-${interactionMode === 'pan' ? 'grab' : 'default'} ${panningState ? 'cursor-grabbing' : ''}`}
+                            onMouseDown={handlePanStart}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
+                            onDoubleClick={(e) => {
+                                // Double clicking on background can deselect
+                                if(e.target === viewportRef.current || e.target === canvasRef.current?.parentElement) {
+                                  setSelectedItemId(null);
+                                  setIsInspectorOpen(false);
+                                }
+                            }}
+                        >
+                            <div 
+                                style={{ 
+                                    width: `${CANVAS_SIZE * zoom}px`, 
+                                    height: `${CANVAS_SIZE * zoom}px`, 
+                                    minWidth: '100%', 
+                                    minHeight: '100%',
+                                    position: 'relative',
+                                    overflow: 'hidden' // Ensure no unexpected overflow
+                                }}
+                            >
+                                <div ref={canvasRef} className="absolute top-0 left-0" style={{ 
+                                    width: `${CANVAS_SIZE}px`, 
+                                    height: `${CANVAS_SIZE}px`, 
+                                    transform: `scale(${zoom})`, 
+                                    transformOrigin: 'top left' 
+                                }}>
+                                    <div className="absolute top-0 left-0 w-full h-full" style={{ transform: `translate(${CANVAS_OFFSET}px, ${CANVAS_OFFSET}px)` }}>
+                                        <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 1, overflow: 'visible' }}>
+                                            {items.filter(i => i.type === 'connector').map(connector => <ConnectorLine key={connector.id} connector={connector} items={items} onDelete={handleDeleteItem} />)}
+                                        </svg>
+                                        {items.filter(i => i.type !== 'connector').map(item => (
+                                            <MoodboardItemComponent 
+                                                key={item.id} 
+                                                item={item} 
+                                                items={items} 
+                                                onDragStart={handleItemDragStart} 
+                                                onResizeStart={(e) => { 
+                                                    if (interactionMode !== 'move') return; 
+                                                    e.stopPropagation(); 
+                                                    document.body.classList.add('is-dragging'); 
+                                                    const { x, y } = getCanvasCoords(e.nativeEvent); 
+                                                    setTransientState({
+                                                        resizedItemId: item.id,
+                                                        initialSize: item.size,
+                                                        initialMousePos: { x, y },
+                                                        currentSize: item.size
+                                                    });
+                                                }} 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    // Single Click: Select only, do NOT open inspector unless already open
+                                                    setSelectedItemId(item.id);
+                                                    // We don't change isInspectorOpen here, so if it's closed it stays closed.
+                                                    // If user wants to edit they must double click or click "Edit"
+                                                }}
+                                                onDoubleClick={(e) => {
+                                                    e.stopPropagation();
+                                                    console.log("Double Clicked Item:", item.id);
+                                                    setSelectedItemId(item.id);
+                                                    setIsInspectorOpen(true);
+                                                }}
+                                                onDelete={handleDeleteItem} 
+                                                onDownloadRequest={handleDownloadItem} 
+                                                onEdit={(item) => {
+                                                    console.log("onEdit triggered for item:", item.id);
+                                                    setSelectedItemId(item.id);
+                                                    setIsInspectorOpen(true);
+                                                }}
+                                                isConnecting={connecting.startItemId !== null} // Show handles if we are in any connecting state (pending or active) 
+                                                interactionMode={interactionMode} 
+                                                draggedOverColumnId={draggedOverColumnId} 
+                                                overridePosition={transientState.draggedItemId === item.id ? transientState.currentPosition : undefined}
+                                                overrideSize={transientState.resizedItemId === item.id ? transientState.currentSize : undefined}
+                                                isSelected={selectedItemId === item.id}
+                                                onConnectHandle={handleConnectHandle}
+                                            />
+                                        ))}
+                                    </div>
+
+                                </div>
                             </div>
-                            <div className="flex-shrink-0 hidden md:flex justify-center">{bottomToolbar}</div>
                         </div>
-                    </>
-                )
+
+                         {/* Overlay UI */}
+
+                         {/* Bottom Toolbar (Creation) */}
+                         {!isDownloadModalOpen && bottomToolbar}
+
+                         {/* Zoom Controls (Bottom Right) */}
+                         {!isDownloadModalOpen && zoomControls}
+
+                         {/* Inspector Panel */}
+                         {isInspectorOpen && selectedItemId && (
+                            <InspectorPanel 
+                                item={items.find(i => i.id === selectedItemId) || null} 
+                                onUpdate={handleUpdateItem}
+                                onClose={() => { setSelectedItemId(null); setIsInspectorOpen(false); }}
+                                onDelete={handleDeleteItem}
+                                onDownload={handleDownloadItem}
+                                items={items}
+                                onReorderChild={handleReorderChild}
+                            />
+                         )}
+                         
+                         {/* Color Popover */}
+                         {isColorPopoverOpen && (
+                             <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-40">
+                                 <ColorPopover 
+                                     isOpen={true}
+                                     anchorEl={colorButtonRef.current}
+                                     onAddColor={(hex) => {
+                                         handleAddColor(hex);
+                                         setIsColorPopoverOpen(false);
+                                     }}
+                                     onAddMultipleColors={(colors) => {
+                                         handleAddMultipleColors(colors);
+                                         setIsColorPopoverOpen(false);
+                                     }}
+                                     onClose={() => setIsColorPopoverOpen(false)}
+                                 />
+                             </div>
+                         )}
+                         
+                         {isDownloadModalOpen && (
+                             <DownloadMoodboardModal
+                                 isOpen={isDownloadModalOpen}
+                                 items={items}
+                                 canvasRef={canvasRef}
+                                 onClose={() => setIsDownloadModalOpen(false)}
+                             />
+                         )}
+
+                    </div>
+                </div>
             ) : (
-                <>
-                    {header}
-                    <div className="flex-1 overflow-y-auto">
-                      <MoodboardListView items={items} />
-                    </div>
-                </>
+                <div className="flex-1 overflow-hidden p-6">
+                    <MoodboardListView items={items} />
+                </div>
             )}
-
-            {editingItem && (
-                <EditItemModal
-                    isOpen={!!editingItem}
-                    item={editingItem}
-                    onClose={() => setEditingItem(null)}
-                    onSave={handleUpdateItem}
-                />
-            )}
-
-            {isColorPopoverOpen && <ColorPopover isOpen={isColorPopoverOpen} onClose={() => setIsColorPopoverOpen(false)} anchorEl={colorButtonRef.current} onAddColor={handleAddColor} onAddMultipleColors={handleAddMultipleColors} />}
-            {isDownloadModalOpen && <DownloadMoodboardModal isOpen={isDownloadModalOpen} onClose={() => setIsDownloadModalOpen(false)} items={items} canvasRef={canvasRef} />}
         </div>
     );
 };

@@ -141,7 +141,7 @@ const RoadmapPage = () => {
             attachments: [],
             labelIds: [],
         };
-        const docId = slugify(newItemData.title);
+        const docId = `${slugify(newItemData.title)}-${Date.now()}`;
         await setDoc(doc(db, 'projects', projectId, 'roadmap', docId), newItemData);
     };
     

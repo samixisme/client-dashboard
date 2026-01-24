@@ -127,7 +127,21 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                             <tbody className="divide-y divide-border-color">
                                 {filteredTasks.map(task => {
                                     const creator = getUser((task as any).creatorId || task.assigneeId);
-                                    const sourceType = task.sourceType || 'mockup';
+                                    
+                                    // Dynamically determine source type if not present or default
+                                    let sourceType = task.sourceType;
+                                    const itemId = task.sourceFeedbackItemId;
+                                    
+                                    if (!sourceType || sourceType === 'mockup') {
+                                        // Attempt to auto-detect
+                                        if (itemId) {
+                                            if (data.feedbackWebsites.some(w => w.id === itemId)) sourceType = 'website';
+                                            else if (data.feedbackVideos.some(v => v.id === itemId || (v.videos && v.videos.some(sub => sub.id === itemId)))) sourceType = 'video';
+                                            else if (data.feedbackMockups.some(m => m.id === itemId)) sourceType = 'mockup';
+                                        }
+                                    }
+                                    sourceType = sourceType || 'mockup'; // Fallback
+
                                     const sourceLabel = sourceType === 'website' ? 'Website' : sourceType === 'video' ? 'Video' : 'Mockup';
                                     
                                     return (

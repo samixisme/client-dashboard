@@ -6,6 +6,9 @@ import { Moodboard } from '../types';
 import { MoodboardIcon } from '../components/icons/MoodboardIcon';
 import AddMoodboardModal from '../components/moodboard/AddMoodboardModal';
 import { AddIcon } from '../components/icons/AddIcon';
+import { collection, serverTimestamp, setDoc, doc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+import { slugify } from '../utils/slugify';
 
 // FIX: Moved MoodboardCard outside of ProjectMoodboardsPage and used React.FC to fix typing issue with 'key' prop.
 const MoodboardCard: React.FC<{ moodboard: Moodboard }> = ({ moodboard }) => {
@@ -37,15 +40,19 @@ const ProjectMoodboardsPage = () => {
     
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    const handleCreateMoodboard = (name: string) => {
+    const handleCreateMoodboard = async (name: string) => {
         if (name.trim() && projectId) {
-            const newMoodboard: Moodboard = {
-                id: `mood-${Date.now()}`,
-                projectId,
-                name,
-            };
-            data.moodboards.push(newMoodboard); // Persist to mock data
-            forceUpdate();
+            try {
+                // Save to: /projects/{projectId}/moodboards/{auto-id}
+                const slug = slugify(name);
+                await setDoc(doc(db, 'projects', projectId, 'moodboards', slug), {
+                    name,
+                    createdAt: serverTimestamp(),
+                });
+                // Real-time listener in DataContext will update UI
+            } catch (error) {
+                console.error("Error creating moodboard:", error);
+            }
             setIsAddModalOpen(false);
         }
     };

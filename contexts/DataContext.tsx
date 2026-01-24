@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity } from '../types';
+import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem } from '../types';
 
 // Import all data sources
 import { projects as initialProjects, boards as initialBoards, stages as initialStages, tasks as initialTasks, tags as initialTags, comments as initialComments, activities as initialActivities, roadmapItems as initialRoadmapItems, custom_fields as initialCustomFields, board_notification_settings as initialBoardNotificationSettings, users as initialUsers, time_logs as initialTimeLogs } from '../data/mockData';
@@ -91,6 +91,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const qRoadmapItems = query(collectionGroup(db, 'roadmap'));
         const qComments = query(collectionGroup(db, 'comments'));
         const qActivities = query(collectionGroup(db, 'activities'));
+        const qMoodboards = query(collectionGroup(db, 'moodboards'));
+        const qMoodboardItems = query(collectionGroup(db, 'moodboard_items'));
 
         const unsubscribers = [
             onSnapshot(qBrands, (snapshot) => {
@@ -159,6 +161,53 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 dataStore.activities = [...initialActivities, ...fetchedActivities];
                 setVersion(v => v + 1);
             }, (err) => console.error("Error fetching activities: ", err)),
+
+            onSnapshot(qMoodboards, (snapshot) => {
+                const fetchedMoodboards = snapshot.docs.map(doc => {
+                    // Extract projectId from path projects/{projectId}/moodboards/{moodboardId}
+                    const pathSegments = doc.ref.path.split('/');
+                    const projectId = pathSegments[1];
+                    return { id: doc.id, projectId, ...doc.data() } as Moodboard;
+                });
+                dataStore.moodboards = [...initialMoodboards, ...fetchedMoodboards];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching moodboards: ", err)),
+
+            onSnapshot(qMoodboardItems, (snapshot) => {
+                const fetchedItems = snapshot.docs.map(doc => {
+                    // Extract moodboardId from path projects/{pid}/moodboards/{mid}/moodboard_items/{iid}
+                    const pathSegments = doc.ref.path.split('/');
+                    const moodboardId = pathSegments[3];
+                    return { id: doc.id, moodboardId, ...doc.data() } as MoodboardItem;
+                });
+                dataStore.moodboardItems = [...initialMoodboardItems, ...fetchedItems];
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching moodboard items: ", err)),
+
+            // Corrected: Listen to the single 'feedbackItems' collectionGroup
+            onSnapshot(query(collectionGroup(db, 'feedbackItems')), (snapshot) => {
+                const fetchedItems = snapshot.docs.map(doc => {
+                     const pathSegments = doc.ref.path.split('/');
+                     const projectId = pathSegments[1];
+                     return { id: doc.id, projectId, ...doc.data() } as any; 
+                });
+                
+                // Distribute to specific arrays based on type
+                dataStore.feedbackWebsites = [...initialFeedbackWebsites, ...fetchedItems.filter(i => i.type === 'website')];
+                dataStore.feedbackMockups = [...initialFeedbackMockups, ...fetchedItems.filter(i => i.type === 'mockup')];
+                dataStore.feedbackVideos = [...initialFeedbackVideos, ...fetchedItems.filter(i => i.type === 'video')];
+                
+                setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching feedback items: ", err)),
+
+            // Listen to comments (feedback items subcollection)
+            onSnapshot(query(collectionGroup(db, 'comments')), (snapshot) => {
+                 const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+                 // Filter to ensure we only get feedback comments if 'comments' is reused elsewhere?
+                 // For now, assume global comments are feedback comments or compatible.
+                 dataStore.feedbackComments = [...initialFeedbackComments, ...fetchedItems];
+                 setVersion(v => v + 1);
+            }, (err) => console.error("Error fetching feedback comments: ", err)),
         ];
 
         Promise.all(unsubscribers.map(unsub => new Promise(res => setTimeout(res, 200)))).finally(() => setLoading(false));

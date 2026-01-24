@@ -22,6 +22,7 @@ import { CalendarIcon } from '../components/icons/CalendarIcon';
 import { doc, addDoc, updateDoc, deleteDoc, collection, setDoc } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { slugify } from '../utils/slugify';
+import { deleteStageDeep, deleteTaskDeep } from '../utils/dataCleanup';
 
 export type ViewMode = 'kanban' | 'list' | 'table' | 'calendar';
 
@@ -158,7 +159,8 @@ const ProjectBoardPage = () => {
 
         if (project && boardId && taskToDelete && !taskId.startsWith('task-')) {
             try {
-                await deleteDoc(doc(db, 'projects', project.id, 'boards', boardId, 'tasks', taskId));
+                // Use Deep Delete to remove subcollections (comments, logs)
+                await deleteTaskDeep(project.id, boardId, taskId);
             } catch (e) {
                 console.error("Error deleting task from Firestore", e);
             }

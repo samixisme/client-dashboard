@@ -9,6 +9,7 @@ import { doc, deleteDoc, updateDoc, setDoc, addDoc, collection } from 'firebase/
 import { db } from '../../utils/firebase';
 import { Project, Board, Stage } from '../../types';
 import { slugify } from '../../utils/slugify';
+import { deleteProjectDeep, purgeStaleData } from '../../utils/dataCleanup';
 
 const AdminProjectsPage: React.FC = () => {
   const { data, forceUpdate } = useData();
@@ -20,6 +21,9 @@ const AdminProjectsPage: React.FC = () => {
   // State for editing
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // State for cleanup
+  const [isCleaning, setIsCleaning] = useState(false);
 
   const filteredProjects = data.projects.filter(project => {
     if (!project || !project.name) {
@@ -37,6 +41,21 @@ const AdminProjectsPage: React.FC = () => {
       }
   };
 
+  const handleCleanData = async () => {
+      if (!confirm("Are you sure you want to scan for and delete all stale/orphaned data? This action cannot be undone.")) return;
+      setIsCleaning(true);
+      try {
+          const count = await purgeStaleData();
+          alert(`Cleanup complete! Deleted ${count} orphaned documents.`);
+          forceUpdate();
+      } catch (e) {
+          console.error(e);
+          alert("Cleanup failed. Check console.");
+      } finally {
+          setIsCleaning(false);
+      }
+  };
+
   const handleAddProject = async ({ name, description, brandId, logoUrl }: { name: string, description: string, brandId: string, logoUrl?: string }) => {
     try {
         const brand = data.brands.find(b => b.id === brandId);
@@ -51,7 +70,8 @@ const AdminProjectsPage: React.FC = () => {
             brandId,
             status: 'Active',
             createdAt: new Date().toISOString(),
-            logoUrl
+            logoUrl,
+            memberIds: []
         };
         
         await setDoc(doc(db, 'projects', docId), newProjectData);
@@ -118,14 +138,14 @@ const AdminProjectsPage: React.FC = () => {
       if (!projectToDelete) return;
 
       try {
-          await deleteDoc(doc(db, 'projects', projectToDelete.id));
-          // Optimistically remove from local state if needed, though DataContext listener should handle it
-          // data.projects = data.projects.filter(p => p.id !== projectToDelete.id);
+          // Perform deep delete to remove all subcollections and related data
+          await deleteProjectDeep(projectToDelete.id);
+          
           setIsDeleteModalOpen(false);
           setProjectToDelete(null);
       } catch (error) {
           console.error("Error deleting project: ", error);
-          alert("Failed to delete project.");
+          alert("Failed to delete project and its data.");
       }
   };
 
@@ -137,13 +157,22 @@ const AdminProjectsPage: React.FC = () => {
             <h2 className="text-2xl font-bold text-text-primary">Manage Projects</h2>
             <p className="text-text-secondary text-sm mt-1">Oversee all ongoing and past projects.</p>
         </div>
-        <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-lg shadow-primary/20"
-        >
-            <AddIcon className="h-4 w-4" />
-            Create Project
-        </button>
+        <div className="flex items-center gap-2">
+            <button 
+                onClick={handleCleanData}
+                disabled={isCleaning}
+                className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+            >
+                {isCleaning ? 'Cleaning...' : 'Cleanup DB'}
+            </button>
+            <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium shadow-lg shadow-primary/20"
+            >
+                <AddIcon className="h-4 w-4" />
+                Create Project
+            </button>
+        </div>
       </div>
 
       {/* Filter Bar */}

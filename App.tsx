@@ -34,7 +34,9 @@ import ProjectMoodboardsPage from './pages/ProjectMoodboardsPage';
 import MoodboardCanvasPage from './pages/MoodboardCanvasPage';
 import BrandsPage from './pages/BrandsPage';
 import BrandDetailPage from './pages/BrandDetailPage';
-import CalendarPage from './pages/CalendarPage';
+// Re-evaluating imports
+import { CalendarPage } from './pages/CalendarPage.tsx';
+import EventDetailsPage from './pages/EventDetailsPage';
 import BrandAssetCreatorPage from './pages/BrandAssetCreatorPage';
 import ProjectLayout from './components/layout/ProjectLayout';
 import PendingApprovalPage from './pages/PendingApprovalPage';
@@ -257,6 +259,11 @@ function App() {
                    <Route path="/calendar" element={
                       <MainLayout onLogout={handleLogout}>
                          <CalendarPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/calendar/event/:eventId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EventDetailsPage />
                       </MainLayout>
                    } />
                    <Route path="/brand-asset-creator" element={

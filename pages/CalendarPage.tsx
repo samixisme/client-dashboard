@@ -1,16 +1,16 @@
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { calendar_events as initialEvents } from '../data/calendarData';
+import { useCalendarEvents } from '../hooks/useCalendarEvents';
+import { useData } from '../contexts/DataContext';
 import { CalendarEvent } from '../types';
-import { createCalendarEvent, updateSourceItemDate, updateCalendarEventById } from '../utils/calendarSync';
+import { createCalendarEvent, updateSourceItemDate, updateCalendarEventById, updateSourceItemAssignees } from '../utils/calendarSync';
 import { brands } from '../data/brandData';
 import { projects, tasks, boards, roadmapItems } from '../data/mockData';
 import { invoices, clients } from '../data/paymentsData';
 
 // --- Type Definitions ---
 type CalendarView = 'day' | 'week' | 'month' | '3-month' | '6-month';
-const eventTypes: CalendarEvent['type'][] = ['task', 'invoice', 'estimate', 'roadmap_item', 'manual'];
+const eventTypes: CalendarEvent['type'][] = ['task', 'invoice', 'estimate', 'roadmap_item', 'manual', 'comment'];
 
 interface LaidOutEvent extends CalendarEvent {
     startCol: number;
@@ -18,7 +18,7 @@ interface LaidOutEvent extends CalendarEvent {
     track: number;
 }
 
-// --- Helper Functions (moved outside component) ---
+// --- Helper Functions ---
 const startOfDay = (date: Date | string | number): Date => {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -47,20 +47,30 @@ const getSortableTime = (dateStr: string | undefined): number => {
     return isNaN(time) ? 0 : time;
 };
 
-
-const CalendarPage = () => {
+export const CalendarPage = () => {
     // --- State Management ---
     const [searchParams] = useSearchParams();
     const brandId = searchParams.get('brandId');
     const brand = brandId ? brands.find(b => b.id === brandId) : null;
     
-    const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
-    const [currentDate, setCurrentDate] = useState(new Date("2025-11-14T12:00:00Z")); // Set to match image context
+    // Get current user from context
+    const { user, data } = useData();
+    const currentUserId = user?.uid || 'user-1';
+
+    // Use the hook instead of local state
+    const { events, loading } = useCalendarEvents(currentUserId);
+    
+    // UI State
+    const [currentDate, setCurrentDate] = useState(new Date()); 
     const [view, setView] = useState<CalendarView>('week');
     const [moreEventsInfo, setMoreEventsInfo] = useState<{ date: Date; events: CalendarEvent[] } | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+    const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
+    
     const [editedDates, setEditedDates] = useState({ startDate: '', endDate: '' });
+     const [editedAssingees, setEditedAssignees] = useState<string[]>([]);
+    const [editedMeetLink, setEditedMeetLink] = useState('');
 
     const [newEventData, setNewEventData] = useState({
         title: '',
@@ -69,10 +79,11 @@ const CalendarPage = () => {
         brandId: '',
         projectId: '',
         taskId: '',
-        reminder: 'none'
+        reminder: 'none',
+        meetLink: ''
     });
     const [filters, setFilters] = useState<Record<CalendarEvent['type'], boolean>>({
-        task: true, invoice: true, estimate: true, roadmap_item: true, manual: true,
+        task: true, invoice: true, estimate: true, roadmap_item: true, manual: true, comment: true,
     });
 
     useEffect(() => {
@@ -81,14 +92,26 @@ const CalendarPage = () => {
                 startDate: new Date(new Date(selectedEvent.startDate).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
                 endDate: new Date(new Date(selectedEvent.endDate).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
             });
+             setEditedAssignees(selectedEvent.assignees || []);
+            setEditedMeetLink(selectedEvent.meetLink || '');
+            setIsSidePanelOpen(true);
+        } else {
+             setIsSidePanelOpen(false);
         }
     }, [selectedEvent]);
+
+     const handleCloseSidePanel = () => {
+        setIsSidePanelOpen(false);
+        setTimeout(() => setSelectedEvent(null), 300); // Wait for animation
+    };
+
 
     const eventColors: Record<CalendarEvent['type'], { bg: string; text: string; border: string; dot: string; }> = {
         task: { bg: 'bg-blue-500/20', text: 'text-blue-300', border: 'border-blue-500', dot: 'bg-blue-500' },
         invoice: { bg: 'bg-green-500/20', text: 'text-green-300', border: 'border-green-500', dot: 'bg-green-500' },
         estimate: { bg: 'bg-yellow-500/20', text: 'text-yellow-300', border: 'border-yellow-500', dot: 'bg-yellow-500' },
         roadmap_item: { bg: 'bg-purple-500/20', text: 'text-purple-300', border: 'border-purple-500', dot: 'bg-purple-500' },
+        comment: { bg: 'bg-orange-500/20', text: 'text-orange-300', border: 'border-orange-500', dot: 'bg-orange-500' },
         manual: { bg: 'bg-gray-500/20', text: 'text-gray-300', border: 'border-gray-500', dot: 'bg-gray-400' },
     };
     
@@ -112,7 +135,7 @@ const CalendarPage = () => {
     };
     const today = () => setCurrentDate(new Date());
 
-    const handleAdvancedCreateEvent = (e: React.FormEvent) => {
+    const handleAdvancedCreateEvent = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newEventData.title.trim() || !newEventData.startDate || !newEventData.endDate) {
             alert('Please fill in title, start date, and end date.');
@@ -124,49 +147,77 @@ const CalendarPage = () => {
             endDate: new Date(newEventData.endDate).toISOString(),
             type: 'manual',
             sourceId: null,
-            userId: 'user-1',
+            userId: currentUserId,
             brandId: newEventData.brandId || undefined,
             projectId: newEventData.projectId || undefined,
             taskId: newEventData.taskId || undefined,
             reminder: newEventData.reminder !== 'none' ? newEventData.reminder : undefined,
+            meetLink: newEventData.meetLink || undefined, 
         };
-        const createdEvent = createCalendarEvent(newEventPayload, 'manual');
-        setEvents(prev => [...prev, createdEvent]);
+        
+        await createCalendarEvent(newEventPayload, 'manual');
         setIsCreateModalOpen(false);
-        // Reset form
-        setNewEventData({ title: '', startDate: '', endDate: '', brandId: '', projectId: '', taskId: '', reminder: 'none' });
+        setNewEventData({ title: '', startDate: '', endDate: '', brandId: '', projectId: '', taskId: '', reminder: 'none', meetLink: '' });
     };
     
-    const handleEventUpdate = useCallback(() => {
+    const handleEventUpdate = useCallback(async () => {
         if (!selectedEvent) return;
     
         const updatedEventData = {
             ...selectedEvent,
             startDate: new Date(editedDates.startDate).toISOString(),
             endDate: new Date(editedDates.endDate).toISOString(),
+             assignees: editedAssingees,
+            meetLink: editedMeetLink
         };
     
         if (selectedEvent.sourceId) {
-            updateSourceItemDate(selectedEvent.sourceId, selectedEvent.type, {
+            await updateSourceItemDate(selectedEvent.sourceId, selectedEvent.type, {
                 startDate: updatedEventData.startDate,
                 endDate: updatedEventData.endDate,
             });
+             await updateSourceItemAssignees(selectedEvent.sourceId, selectedEvent.type, editedAssingees);
         }
     
-        updateCalendarEventById(selectedEvent.id, updatedEventData);
-        
-        setEvents(prev => prev.map(e => e.id === selectedEvent.id ? updatedEventData : e));
-    
-        setSelectedEvent(null);
-    }, [selectedEvent, editedDates]);
+        await updateCalendarEventById(selectedEvent.id, updatedEventData);
+         handleCloseSidePanel();
+    }, [selectedEvent, editedDates, editedAssingees, editedMeetLink]);
 
     // --- Memoized Data & Calculations (TOP LEVEL) ---
+    // --- Memoized Data & Calculations (TOP LEVEL) ---
+     const getProjectName = (event: CalendarEvent) => {
+        if (event.projectId) {
+            const p = projects.find(proj => proj.id === event.projectId);
+            // If project ID is valid but not found in mock data, it might be a sync issue or just missing mock data.
+            // Return empty if not found so we don't spam "Unknown Project".
+            return p ? p.name : ''; 
+        }
+        if (event.sourceId) {
+            if (event.type === 'task') {
+                 const task = tasks.find(t => t.id === event.sourceId);
+                 const board = task ? boards.find(b => b.id === task.boardId) : undefined;
+                 const project = board ? projects.find(p => p.id === board.projectId) : undefined;
+                 return project ? project.name : '';
+            }
+            if (event.type === 'roadmap_item') {
+                 const item = roadmapItems.find(i => i.id === event.sourceId);
+                 const project = item ? projects.find(p => p.id === item.projectId) : undefined;
+                 return project ? project.name : '';
+            }
+        }
+        return '';
+    };
+
     const filteredEvents = useMemo(() => {
         let eventsToFilter = events.filter(event => filters[event.type]);
         
         if (brandId) {
             const getBrandForEvent = (event: CalendarEvent): string | undefined => {
                 if (event.brandId) return event.brandId;
+                if (event.projectId) {
+                    const p = projects.find(proj => proj.id === event.projectId);
+                    if (p) return p.brandId;
+                }
                 if (event.sourceId) {
                     switch (event.type) {
                         case 'task': {
@@ -185,6 +236,15 @@ const CalendarPage = () => {
                             if (!invoice) return undefined;
                             const client = clients.find(c => c.id === invoice.clientId);
                             return client?.brandId;
+                        }
+                        case 'comment': {
+                            // Assuming comments are tied to projects or feedback items which might have a project
+                            // For now, if a comment has a projectId, use that. Otherwise, it might not be brand-specific.
+                            if (event.projectId) {
+                                const p = projects.find(proj => proj.id === event.projectId);
+                                if (p) return p.brandId;
+                            }
+                            return undefined;
                         }
                         default:
                             return undefined;
@@ -355,18 +415,8 @@ const CalendarPage = () => {
         return { days, laidOutEvents };
     }, [currentDate, filteredEvents, view]);
 
-    const dayEvents = useMemo(() => {
-        if (view !== 'day') return [];
-        const currentDayStart = startOfDay(currentDate);
-        return filteredEvents
-            .filter(e => {
-                if (!e.startDate || !e.endDate) return false;
-                const eventStart = startOfDay(e.startDate);
-                const eventEnd = startOfDay(e.endDate);
-                return currentDayStart >= eventStart && currentDayStart <= eventEnd;
-            })
-            .sort((a, b) => getSortableTime(a.startDate) - getSortableTime(b.startDate));
-    }, [currentDate, filteredEvents, view]);
+    // OLD Day Events Logic replaced by new renderDayView but kept variable if needed? No, removing.
+
 
     const multiMonthData = useMemo(() => {
         if (view !== '3-month' && view !== '6-month') return [];
@@ -418,6 +468,19 @@ const CalendarPage = () => {
     };
     
     const getSourceLink = (event: CalendarEvent) => {
+        if (event.id.startsWith('comment-') || event.feedbackItemId) {
+            const itemId = event.feedbackItemId;
+            let type = 'mockup';
+            if (itemId) {
+                // Dynamically detect type if possible
+                if (data.feedbackWebsites.some(w => w.id === itemId)) type = 'website';
+                else if (data.feedbackVideos.some(v => v.id === itemId)) type = 'video';
+            }
+            if (event.projectId) {
+                return { text: 'View Feedback Item', to: `/feedback/${event.projectId}/${type}/${itemId}` };
+            }
+        }
+
         if (!event.sourceId) return null;
         switch (event.type) {
             case 'task':
@@ -430,9 +493,12 @@ const CalendarPage = () => {
                 }
                 return null;
             case 'roadmap_item':
+                if (event.projectId) {
+                     return { text: 'View on Roadmap', to: `/projects/${event.projectId}/roadmap` };
+                }
                 const item = roadmapItems.find(i => i.id === event.sourceId);
                 if (item) {
-                    return { text: 'View on Roadmap', to: `/projects/${item.projectId}/roadmap` };
+                     return { text: 'View on Roadmap', to: `/projects/${item.projectId}/roadmap` };
                 }
                 return null;
             case 'invoice':
@@ -489,7 +555,7 @@ const CalendarPage = () => {
                                                 return (
                                                     <div
                                                         key={event.id}
-                                                        onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
+                                                        onDoubleClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
                                                         className={`absolute rounded p-0.5 pointer-events-auto cursor-pointer ${colors.bg} ${colors.text} flex items-center`}
                                                         style={{
                                                             top: `calc(1.75rem + ${event.track * 1.5}rem)`,
@@ -498,7 +564,7 @@ const CalendarPage = () => {
                                                             height: '1.4rem',
                                                         }}
                                                     >
-                                                        <p className="truncate text-[11px] font-medium px-1">
+                                                        <p className="text-[11px] font-medium px-1 leading-tight">
                                                             {event.type === 'roadmap_item' ? event.title : event.title.replace(/^(Task|Invoice|Estimate):\s*/, '')}
                                                         </p>
                                                     </div>
@@ -547,7 +613,7 @@ const CalendarPage = () => {
                                 {weekData.laidOutEvents.map(event => (
                                     <div 
                                         key={event.id} 
-                                        onClick={() => setSelectedEvent(event)}
+                                        onDoubleClick={() => setSelectedEvent(event)}
                                         className={`absolute px-2 py-1 rounded-lg flex items-center border-l-4 bg-glass shadow-sm cursor-pointer hover:shadow-lg ${eventColors[event.type].border}`}
                                         style={{
                                             top: `${event.track * (EVENT_HEIGHT + GRID_GAP) + GRID_GAP}px`,
@@ -556,8 +622,8 @@ const CalendarPage = () => {
                                             height: `${EVENT_HEIGHT}px`,
                                         }}
                                     >
-                                        <div className="truncate flex-1">
-                                            <p className="font-semibold text-sm text-text-primary truncate">{event.title}</p>
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="font-semibold text-sm text-text-primary leading-tight line-clamp-2">{event.title}</p>
                                             <p className="text-xs text-text-secondary mt-0.5 truncate">
                                                 {formatEventDateRange(event.startDate, event.endDate)}
                                             </p>
@@ -572,18 +638,74 @@ const CalendarPage = () => {
         );
     };
 
-    const renderDayView = () => (
-        <div className="flex-1 p-6 bg-glass border border-border-color rounded-2xl overflow-y-auto">
-           {dayEvents.length > 0 ? (
-               dayEvents.map(event => (
-                   <div key={event.id} onClick={() => setSelectedEvent(event)} className={`p-4 mb-4 rounded-lg border-l-4 cursor-pointer hover:shadow-lg ${eventColors[event.type].bg} ${eventColors[event.type].border}`}>
-                       <p className="font-bold text-text-primary">{event.title}</p>
-                       <p className="text-sm text-text-secondary capitalize">{event.type.replace('_', ' ')}</p>
-                   </div>
-               ))
-           ) : <p className="text-text-secondary">No events scheduled for this day.</p>}
-       </div>
-   );
+    const renderDayView = () => {
+        const hours = Array.from({ length: 24 }, (_, i) => i);
+        const dayStart = startOfDay(currentDate);
+        
+        // Filter events for this day
+        const dayEvents = filteredEvents.filter(e => {
+            if (!e.startDate || !e.endDate) return false;
+            const s = new Date(e.startDate);
+            const end = new Date(e.endDate);
+            return s < addDays(dayStart, 1) && end > dayStart;
+        });
+
+        const getEventStyle = (event: CalendarEvent) => {
+            const s = new Date(event.startDate);
+            const end = new Date(event.endDate);
+            
+            // Clamp to current day
+            const startMinutes = Math.max(0, (s.getTime() - dayStart.getTime()) / 60000);
+            const endMinutes = Math.min(1440, (end.getTime() - dayStart.getTime()) / 60000);
+            const duration = endMinutes - startMinutes;
+
+            return {
+                top: `${(startMinutes / 60) * 60}px`,
+                height: `${Math.max(20, (duration / 60) * 60)}px`,
+            };
+        };
+
+        return (
+             <div className="flex-1 overflow-y-auto bg-background rounded-2xl border border-border-color reltaive">
+                <div className="relative min-h-[1440px]" style={{ height: '1440px' }}>
+                    {hours.map(h => (
+                        <div key={h} className="absolute w-full border-t border-border-color flex" style={{ top: `${h * 60}px`, height: '60px' }}>
+                            <span className="w-16 text-right pr-4 text-xs text-text-secondary -mt-2 bg-background z-10">{h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h-12} PM`}</span>
+                            <div className="flex-1 border-l border-border-color/50 h-full"></div> 
+                        </div>
+                    ))}
+                    
+                    {/* Events */}
+                    <div className="absolute top-0 right-0 left-16 bottom-0">
+                         {dayEvents.map(event => (
+                            <div
+                                key={event.id}
+                                onDoubleClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }}
+                                className={`absolute rounded-lg border-l-4 px-2 py-1 text-xs cursor-pointer hover:z-20 hover:shadow-lg transition-all overflow-hidden ${eventColors[event.type].bg} ${eventColors[event.type].border}`}
+                                style={{ ...getEventStyle(event), width: '90%' }} 
+                            >
+                                <div className="font-bold text-text-primary">{event.title}</div>
+                                <div className="text-text-secondary flex gap-2">
+                                     <span>{formatEventDateRange(event.startDate, event.endDate).split('-')[0].trim()}</span>
+                                     {getProjectName(event) && <span className="opacity-75">• {getProjectName(event)}</span>}
+                                </div>
+                            </div>
+                         ))}
+                    </div>
+                    
+                    {/* Current Time Line */}
+                    {areDatesSame(currentDate, new Date()) && (
+                         <div 
+                            className="absolute left-16 right-0 border-t-2 border-red-500 z-10 pointer-events-none"
+                            style={{ top: `${(new Date().getHours() * 60) + new Date().getMinutes()}px` }}
+                         >
+                            <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full"></div>
+                         </div>
+                    )}
+                </div>
+             </div>
+        );
+    };
     
     const renderMultiMonthView = () => {
         const numMonths = view === '3-month' ? 3 : 6;
@@ -635,66 +757,145 @@ const CalendarPage = () => {
     );
 
     // --- Main component return ---
-    return (
-        <div className="h-full flex flex-col">
-            <div className="flex flex-col md:flex-row justify-between md:items-center mb-6">
-                 <div>
-                    <h1 className="text-3xl font-bold text-text-primary">{brand ? `Calendar for ${brand.name}`: 'Calendar'}</h1>
-                    <p className="mt-1 text-text-secondary">A unified view of all your dated events.</p>
-                </div>
-                <div className="mt-4 md:mt-0 flex flex-col md:flex-row items-center gap-4 flex-wrap">
-                     <div className="flex items-center gap-2">
-                        <button onClick={() => navigateDate(-1)} className="px-3 py-2 bg-glass rounded-lg hover:bg-glass-light">&larr;</button>
-                        <button onClick={today} className="px-4 py-2 bg-glass rounded-lg hover:bg-glass-light text-sm font-semibold whitespace-nowrap">{headerTitle}</button>
-                        <button onClick={() => navigateDate(1)} className="px-3 py-2 bg-glass rounded-lg hover:bg-glass-light">&rarr;</button>
+     return (
+        <div className="h-full flex flex-row overflow-hidden relative">
+            <div className="flex-1 flex flex-col min-w-0 transition-all duration-300" style={{ marginRight: isSidePanelOpen ? '0' : '0' }}> 
+                 <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 p-4 md:p-0">
+                     <div>
+                        <h1 className="text-3xl font-bold text-text-primary">{brand ? `Calendar for ${brand.name}`: 'Calendar'}</h1>
+                        <p className="mt-1 text-text-secondary">A unified view of all your dated events.</p>
                     </div>
-                    <div className="flex items-center bg-glass rounded-lg p-1 border border-border-color flex-wrap">
-                        {(['month', 'week', 'day', '3-month', '6-month'] as CalendarView[]).map(v => (
-                             <button
-                                key={v}
-                                onClick={() => setView(v)}
-                                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${view === v ? 'bg-primary text-background font-bold' : 'text-text-secondary hover:bg-glass-light'}`}
-                            >
-                                {v.charAt(0).toUpperCase() + v.slice(1).replace('-month', ' Month')}
+                     <div className="mt-4 md:mt-0 flex flex-col md:flex-row items-center gap-4 flex-wrap">
+                        <div className="flex items-center gap-2">
+                             <button onClick={() => navigateDate(-1)} className="px-3 py-2 bg-glass rounded-lg hover:bg-glass-light">&larr;</button>
+                             <button onClick={today} className="px-4 py-2 bg-glass rounded-lg hover:bg-glass-light text-sm font-semibold whitespace-nowrap">{headerTitle}</button>
+                             <button onClick={() => navigateDate(1)} className="px-3 py-2 bg-glass rounded-lg hover:bg-glass-light">&rarr;</button>
+                           <div className="flex items-center bg-glass rounded-lg p-1 border border-border-color">
+                                {(['month', 'week', 'day', '3-month', '6-month'] as CalendarView[]).map(v => (
+                                     <button key={v} onClick={() => setView(v)} className={`px-3 py-1 text-sm font-medium rounded-md ${view === v ? 'bg-primary text-background' : 'text-text-secondary hover:bg-glass-light'}`}>{v.charAt(0).toUpperCase() + v.replace('-month', ' Month').slice(1)}</button>
+                                ))}
+                           </div>
+                        </div>
+                     </div>
+                 </div>
+                 
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div className="flex flex-wrap gap-2">
+                        {eventTypes.map(type => (
+                            <button key={type} onClick={() => handleFilterToggle(type)} className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${filters[type] ? `${eventColors[type].bg} ${eventColors[type].text.replace('300','400')} ${eventColors[type].border}` : 'bg-transparent text-text-secondary border-border-color hover:bg-glass-light'} ${filters[type] ? 'opacity-100' : 'opacity-60'}`}>
+                                {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </button>
                         ))}
                     </div>
-                </div>
-            </div>
-
-             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div className="flex flex-wrap gap-2">
-                    {eventTypes.map(type => (
-                        <button key={type} onClick={() => handleFilterToggle(type)} className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${filters[type] ? `${eventColors[type].bg} ${eventColors[type].text.replace('300','400')} ${eventColors[type].border}` : 'bg-transparent text-text-secondary border-border-color hover:bg-glass-light'} ${filters[type] ? 'opacity-100' : 'opacity-60'}`}>
-                            {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </button>
-                    ))}
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                    <button onClick={() => setIsCreateModalOpen(true)} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Create Event</button>
-                    <button className="px-4 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Sync to Google Calendar</button>
-                </div>
-            </div>
-
-            <div className="flex-1 flex flex-col min-h-0 pb-6">
-                {view === 'month' && renderMonthView()}
-                {view === 'week' && renderWeekView()}
-                {view === 'day' && renderDayView()}
-                {(view === '3-month' || view === '6-month') && renderMultiMonthView()}
-            </div>
-            
-            {moreEventsInfo && (
-                <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50" onClick={() => setMoreEventsInfo(null)}>
-                    <div className="bg-glass w-full max-w-md rounded-2xl shadow-xl border border-border-color p-6" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-text-primary mb-4">{moreEventsInfo.date.toDateString()}</h3>
-                        <div className="space-y-2 max-h-80 overflow-y-auto">
-                            {moreEventsInfo.events.map(event => (
-                                <div key={event.id} className={`p-2 rounded-lg text-sm ${eventColors[event.type].bg} ${eventColors[event.type].text}`}>{event.title}</div>
-                            ))}
-                        </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <button onClick={() => setIsCreateModalOpen(true)} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Create Event</button>
                     </div>
                 </div>
-            )}
+                 
+                 <div className="flex-1 flex flex-col min-h-0 pb-6 relative">
+                    {view === 'month' && renderMonthView()}
+                    {view === 'week' && renderWeekView()} 
+                    {view === 'day' && renderDayView()}
+                    {(view === '3-month' || view === '6-month') && renderMultiMonthView()}
+                 </div>
+            </div>
+
+            {/* SIDE PANEL (Right Drawer) */}
+            <div className={`fixed top-0 right-0 h-full w-96 bg-surface shadow-2xl border-l border-border-color transform transition-transform duration-300 z-50 ${isSidePanelOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                {selectedEvent ? (
+                    <div className="h-full flex flex-col overflow-y-auto p-6 bg-glass backdrop-blur-xl">
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h2 className="text-xl font-bold text-text-primary">{selectedEvent.title}</h2>
+                                <div className="flex gap-2 mt-2">
+                                     <span className={`px-2 py-0.5 rounded text-xs font-medium uppercase ${eventColors[selectedEvent.type].bg} ${eventColors[selectedEvent.type].text} border ${eventColors[selectedEvent.type].border}`}>
+                                         {selectedEvent.type.replace('_', ' ')}
+                                     </span>
+                                     {getProjectName(selectedEvent) && (
+                                         <span className="px-2 py-0.5 rounded text-xs font-medium uppercase bg-primary/10 text-primary border border-primary/20">
+                                             {getProjectName(selectedEvent)}
+                                         </span>
+                                     )}
+                                </div>
+                            </div>
+                            <button onClick={handleCloseSidePanel} className="text-text-secondary hover:text-text-primary text-2xl">&times;</button>
+                        </div>
+
+                        <div className="space-y-6 flex-1">
+                             {/* Always show basic info */}
+                             <div className="bg-glass-light rounded-xl p-4 border border-border-color">
+                                 <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-2">Details</h3>
+                                 <p className="text-lg font-medium text-text-primary mb-2">{selectedEvent.title}</p>
+                                 <p className="text-sm text-text-secondary">
+                                      {formatEventDateRange(selectedEvent.startDate, selectedEvent.endDate)}
+                                 </p>
+                             </div>
+                             <div className="space-y-4">
+                                <FormInput label="Start" type="datetime-local" value={editedDates.startDate} onChange={e => setEditedDates({...editedDates, startDate: e.target.value})} />
+                                <FormInput label="End" type="datetime-local" value={editedDates.endDate} onChange={e => setEditedDates({...editedDates, endDate: e.target.value})} />
+                             </div>
+                             
+                             <div>
+                                 <label className="block text-sm font-medium text-text-secondary mb-1">Google Meet</label>
+                                 <div className="flex gap-2">
+                                     <input type="url" placeholder="https://meet.google.com/..." value={editedMeetLink} onChange={e => setEditedMeetLink(e.target.value)} className="flex-1 px-3 py-2 bg-glass-light border border-border-color rounded-lg text-sm text-text-primary" />
+                                     {editedMeetLink && (
+                                         <a href={editedMeetLink} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-700">
+                                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                                         </a>
+                                     )}
+                                 </div>
+                             </div>
+                             
+                             <div>
+                                 <label className="block text-sm font-medium text-text-secondary mb-1">Assignees</label>
+                                 <div className="flex flex-wrap gap-2 mb-2">
+                                     {editedAssingees.map(uid => {
+                                         const u = data.users.find(user => user.id === uid);
+                                         return (
+                                             <span key={uid} className="flex items-center gap-1 bg-surface-light border border-border-color px-2 py-1 rounded-full text-xs">
+                                                 {u ? (u.firstName || u.name) : 'Unknown'}
+                                                 <button onClick={() => setEditedAssignees(prev => prev.filter(id => id !== uid))} className="hover:text-red-500">&times;</button>
+                                             </span>
+                                         );
+                                     })}
+                                 </div>
+                                 <select 
+                                     onChange={(e) => {
+                                         if(e.target.value && !editedAssingees.includes(e.target.value)) setEditedAssignees([...editedAssingees, e.target.value]);
+                                         e.target.value = '';
+                                     }}
+                                     className="w-full px-3 py-2 bg-glass-light border border-border-color rounded-lg text-sm text-text-primary"
+                                 >
+                                     <option value="">+ Add Assignee</option>
+                                     {data.users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+                                 </select>
+                             </div>
+
+                             <div className="space-y-2 pt-4 border-t border-border-color">
+                                 {getSourceLink(selectedEvent) && (
+                                     <Link to={getSourceLink(selectedEvent)!.to} className="block w-full py-2 text-center border border-primary text-primary rounded-lg font-medium hover:bg-primary/10">
+                                         {getSourceLink(selectedEvent)!.text}
+                                     </Link>
+                                 )}
+                                 <Link to={`/calendar/event/${selectedEvent.id}`} className="block w-full py-2 text-center border border-border-color text-text-secondary rounded-lg font-medium hover:bg-surface-light hover:text-text-primary">
+                                     View Full Details Page
+                                 </Link>
+                             </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-6 pt-4 border-t border-border-color">
+                            <button onClick={handleEventUpdate} className="flex-1 py-2 bg-primary text-background font-bold rounded-lg hover:bg-primary-hover">Save</button>
+                            <button onClick={handleCloseSidePanel} className="px-4 py-2 bg-surface-light text-text-primary font-medium rounded-lg hover:bg-border-color">Cancel</button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="h-full flex items-center justify-center text-text-secondary p-4 text-center">
+                        Select an event to view details
+                    </div>
+                )}
+            </div>
+
             {isCreateModalOpen && (
                  <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50" onClick={() => setIsCreateModalOpen(false)}>
                     <form onSubmit={handleAdvancedCreateEvent} className="bg-glass w-full max-w-lg rounded-2xl shadow-xl border border-border-color p-8" onClick={e => e.stopPropagation()}>
@@ -705,6 +906,7 @@ const CalendarPage = () => {
                                 <FormInput label="Start Date & Time" type="datetime-local" value={newEventData.startDate} onChange={e => setNewEventData({...newEventData, startDate: e.target.value})} required />
                                 <FormInput label="End Date & Time" type="datetime-local" value={newEventData.endDate} onChange={e => setNewEventData({...newEventData, endDate: e.target.value})} required />
                             </div>
+                            <FormInput label="Google Meet Link" type="url" placeholder="https://meet.google.com/..." value={newEventData.meetLink} onChange={e => setNewEventData({...newEventData, meetLink: e.target.value})} />
                             <FormSelect label="Visibility (Brand)" value={newEventData.brandId} onChange={e => setNewEventData({...newEventData, brandId: e.target.value})}>
                                 <option value="">All Brands</option>
                                 {brands.map(brand => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
@@ -733,47 +935,8 @@ const CalendarPage = () => {
                     </form>
                 </div>
             )}
-            {selectedEvent && (
-                <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50" onClick={() => setSelectedEvent(null)}>
-                    <div className="bg-glass w-full max-w-lg rounded-2xl shadow-xl border border-border-color p-8" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-start">
-                            <h3 className="text-xl font-bold text-text-primary mb-1 pr-4">{selectedEvent.title}</h3>
-                            <button onClick={() => setSelectedEvent(null)} className="text-text-secondary hover:text-text-primary text-2xl font-bold">&times;</button>
-                        </div>
-                        <div className={`text-sm font-medium px-2 py-0.5 rounded-full inline-block border ${eventColors[selectedEvent.type].bg} ${eventColors[selectedEvent.type].text} ${eventColors[selectedEvent.type].border}`}>
-                            {selectedEvent.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </div>
-                        
-                        <div className="mt-6 space-y-4">
-                            {getSourceLink(selectedEvent) && (
-                                <div>
-                                    <Link to={getSourceLink(selectedEvent)!.to} className="text-sm font-medium text-primary hover:underline flex items-center gap-2">
-                                        {getSourceLink(selectedEvent)!.text} &rarr;
-                                    </Link>
-                                </div>
-                            )}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormInput label="Start Date & Time" type="datetime-local" value={editedDates.startDate} onChange={e => setEditedDates({...editedDates, startDate: e.target.value})} required />
-                                <FormInput label="End Date & Time" type="datetime-local" value={editedDates.endDate} onChange={e => setEditedDates({...editedDates, endDate: e.target.value})} required />
-                            </div>
-                        </div>
-                        
-                        <div className="mt-4 pt-4 border-t border-border-color text-sm text-text-secondary space-y-1">
-                            {selectedEvent.brandId && <p><strong>Brand:</strong> {brands.find(b => b.id === selectedEvent.brandId)?.name}</p>}
-                            {selectedEvent.projectId && <p><strong>Project:</strong> {projects.find(p => p.id === selectedEvent.projectId)?.name}</p>}
-                            {selectedEvent.taskId && <p><strong>Task:</strong> {tasks.find(t => t.id === selectedEvent.taskId)?.title}</p>}
-                            {selectedEvent.reminder && <p><strong>Reminder:</strong> {selectedEvent.reminder}</p>}
-                        </div>
-
-                        <div className="flex justify-end gap-2 mt-8">
-                            <button type="button" onClick={() => setSelectedEvent(null)} className="px-4 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Cancel</button>
-                            <button type="button" onClick={handleEventUpdate} className="px-4 py-2 bg-primary text-background font-bold text-sm rounded-lg hover:bg-primary-hover">Save Changes</button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
 
-export default CalendarPage;
+// export default CalendarPage;
