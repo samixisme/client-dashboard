@@ -2,12 +2,29 @@ import { Request, Response } from 'express';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { URL } from 'url';
+import { validateUrl, validateId } from './urlValidator';
 
 export default async (req: Request, res: Response) => {
   const { url, projectId, feedbackId } = req.query;
 
+  // Validate URL parameter
   if (typeof url !== 'string') {
-    return res.status(400).send('URL is required');
+    return res.status(400).json({ error: 'URL parameter is required and must be a string' });
+  }
+
+  // SSRF Protection - Validate URL
+  const urlValidation = validateUrl(url);
+  if (!urlValidation.isValid) {
+    return res.status(400).json({ error: urlValidation.error });
+  }
+
+  // Validate projectId and feedbackId if provided
+  if (projectId && !validateId(projectId)) {
+    return res.status(400).json({ error: 'Invalid projectId format' });
+  }
+
+  if (feedbackId && !validateId(feedbackId)) {
+    return res.status(400).json({ error: 'Invalid feedbackId format' });
   }
 
   try {
@@ -118,8 +135,17 @@ export default async (req: Request, res: Response) => {
     $('body').append(scriptTag);
 
     res.status(200).send($.html());
-  } catch (error) {
-    console.error('Proxy Error:', error);
-    res.status(500).send('Error fetching or modifying the URL. Please check if the URL is correct and publicly accessible.');
+  } catch (error: any) {
+    // Log detailed error server-side only
+    console.error('Proxy Error:', {
+      message: error.message,
+      url: url,
+      timestamp: new Date().toISOString()
+    });
+
+    // Return generic error to client (no sensitive details)
+    res.status(500).json({
+      error: 'Error fetching or modifying the URL. Please check if the URL is correct and publicly accessible.'
+    });
   }
 };
