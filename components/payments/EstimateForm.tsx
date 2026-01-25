@@ -1,23 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clients as initialClients, invoices } from '../../data/paymentsData';
-import { Invoice, Client, ItemCategory, LineItem } from '../../types';
+import { clients as initialClients } from '../../data/paymentsData';
+import { Estimate, Client, ItemCategory, LineItem } from '../../types';
 import AddClientModal from './AddClientModal';
 import { createCalendarEvent } from '../../utils/calendarSync';
 import { useData } from '../../contexts/DataContext';
 
-interface InvoiceFormProps {
-    existingInvoice?: Invoice;
+interface EstimateFormProps {
+    existingEstimate?: Estimate;
 }
 
-const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
+const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
     const navigate = useNavigate();
     const { data, updateData } = useData();
     const [clients, setClients] = useState<Client[]>(data.clients || initialClients);
     const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-    const [invoice, setInvoice] = useState<Omit<Invoice, 'id' | 'invoiceNumber'> & { id?: string; invoiceNumber?: string }>(
-        existingInvoice || {
+    const [estimate, setEstimate] = useState<Omit<Estimate, 'id' | 'estimateNumber'> & { id?: string; estimateNumber?: string }>(
+        existingEstimate || {
             userId: 'user-1',
             clientId: '',
             date: new Date().toISOString().split('T')[0],
@@ -30,34 +30,34 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
     );
 
     useEffect(() => {
-        const subtotal = invoice.itemCategories.reduce((catTotal, category) => {
+        const subtotal = estimate.itemCategories.reduce((catTotal, category) => {
             const itemsTotal = category.items.reduce((itemTotal, item) => {
                 return itemTotal + (item.quantity * item.unitPrice);
             }, 0);
             return catTotal + itemsTotal;
         }, 0);
-        
-        setInvoice(inv => ({ ...inv, totals: { subtotal, totalNet: subtotal } }));
-    }, [invoice.itemCategories]);
+
+        setEstimate(est => ({ ...est, totals: { subtotal, totalNet: subtotal } }));
+    }, [estimate.itemCategories]);
 
     const handleClientChange = (clientId: string) => {
-        setInvoice({ ...invoice, clientId });
+        setEstimate({ ...estimate, clientId });
     };
-    
+
     const handleAddClient = (client: Client) => {
         const newClients = [...clients, client];
         setClients(newClients);
-        initialClients.push(client); // Persist to mock data
+        initialClients.push(client);
         handleClientChange(client.id);
     };
 
     const handleCategoryChange = (catId: string, name: string) => {
-        const newCategories = invoice.itemCategories.map(cat => cat.id === catId ? { ...cat, name } : cat);
-        setInvoice({ ...invoice, itemCategories: newCategories });
+        const newCategories = estimate.itemCategories.map(cat => cat.id === catId ? { ...cat, name } : cat);
+        setEstimate({ ...estimate, itemCategories: newCategories });
     };
 
     const handleItemChange = (catId: string, itemId: string, field: keyof Omit<LineItem, 'id'>, value: string | number | boolean) => {
-        const newCategories = invoice.itemCategories.map(cat => {
+        const newCategories = estimate.itemCategories.map(cat => {
             if (cat.id === catId) {
                 const newItems = cat.items.map(item => {
                     if (item.id === itemId) {
@@ -69,90 +69,89 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
             }
             return cat;
         });
-        setInvoice({ ...invoice, itemCategories: newCategories });
+        setEstimate({ ...estimate, itemCategories: newCategories });
     };
-    
+
     const addCategory = () => {
         const newCategory: ItemCategory = {
             id: `cat-${Date.now()}`,
             name: 'Nouvelle Désignation',
             items: []
         };
-        setInvoice({ ...invoice, itemCategories: [...invoice.itemCategories, newCategory]});
+        setEstimate({ ...estimate, itemCategories: [...estimate.itemCategories, newCategory]});
     };
-    
+
     const addItem = (catId: string) => {
         const newItem: LineItem = { id: `item-${Date.now()}`, name: '', quantity: 1, unitPrice: 0 };
-        const newCategories = invoice.itemCategories.map(cat => {
+        const newCategories = estimate.itemCategories.map(cat => {
             if (cat.id === catId) {
                 return { ...cat, items: [...cat.items, newItem] };
             }
             return cat;
         });
-        setInvoice({ ...invoice, itemCategories: newCategories });
+        setEstimate({ ...estimate, itemCategories: newCategories });
     };
 
     const removeCategory = (catId: string) => {
-        setInvoice({ ...invoice, itemCategories: invoice.itemCategories.filter(c => c.id !== catId) });
+        setEstimate({ ...estimate, itemCategories: estimate.itemCategories.filter(c => c.id !== catId) });
     };
-    
+
     const removeItem = (catId: string, itemId: string) => {
-        const newCategories = invoice.itemCategories.map(cat => {
+        const newCategories = estimate.itemCategories.map(cat => {
             if (cat.id === catId) {
                 return { ...cat, items: cat.items.filter(i => i.id !== itemId) };
             }
             return cat;
         });
-        setInvoice({ ...invoice, itemCategories: newCategories });
+        setEstimate({ ...estimate, itemCategories: newCategories });
     };
 
     const handleSave = () => {
-        if (!invoice.clientId) {
+        if (!estimate.clientId) {
             alert("Please select a client.");
             return;
         }
 
-        // Check if we're editing an existing invoice or creating a new one
-        if (existingInvoice) {
-            // Update existing invoice
-            const updatedInvoice: Invoice = {
-                ...existingInvoice,
-                ...invoice,
-                id: existingInvoice.id,
-                invoiceNumber: existingInvoice.invoiceNumber,
+        // Check if we're editing an existing estimate or creating a new one
+        if (existingEstimate) {
+            // Update existing estimate
+            const updatedEstimate: Estimate = {
+                ...existingEstimate,
+                ...estimate,
+                id: existingEstimate.id,
+                estimateNumber: existingEstimate.estimateNumber,
             };
 
             // Update in data context
-            const updatedInvoices = data.invoices.map(inv =>
-                inv.id === existingInvoice.id ? updatedInvoice : inv
+            const updatedEstimates = data.estimates.map(est =>
+                est.id === existingEstimate.id ? updatedEstimate : est
             );
-            updateData('invoices', updatedInvoices);
+            updateData('estimates', updatedEstimates);
 
-            alert('Invoice updated successfully!');
+            alert('Estimate updated successfully!');
         } else {
-            // Create new invoice
-            const newInvoiceNumber = `2024-${String((data.invoices?.length || 0) + 1).padStart(3, '0')}`;
-            const finalInvoice: Invoice = {
-                id: `inv-${Date.now()}`,
-                invoiceNumber: newInvoiceNumber,
-                ...invoice as Omit<Invoice, 'id' | 'invoiceNumber'>
+            // Create new estimate
+            const newEstimateNumber = `2024-${String((data.estimates?.length || 0) + 1).padStart(3, '0')}`;
+            const finalEstimate: Estimate = {
+                id: `est-${Date.now()}`,
+                estimateNumber: newEstimateNumber,
+                ...estimate as Omit<Estimate, 'id' | 'estimateNumber'>
             };
 
             // Add to data context
-            const updatedInvoices = [...(data.invoices || []), finalInvoice];
-            updateData('invoices', updatedInvoices);
+            const updatedEstimates = [...(data.estimates || []), finalEstimate];
+            updateData('estimates', updatedEstimates);
 
             // Sync to calendar
-            createCalendarEvent(finalInvoice, 'invoice');
+            createCalendarEvent(finalEstimate, 'estimate');
 
-            alert('Invoice created successfully!');
+            alert('Estimate created successfully!');
         }
 
-        console.log("Invoice saved:", finalInvoice);
-        navigate('/payments');
+        navigate('/payments?tab=estimates');
     };
 
-    const selectedClient = clients.find(c => c.id === invoice.clientId);
+    const selectedClient = clients.find(c => c.id === estimate.clientId);
 
     return (
         <div className="bg-glass p-8 rounded-lg shadow-md border border-border-color">
@@ -174,7 +173,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
                 </div>
                 <div>
                     <label htmlFor="client-select" className="block text-sm font-medium text-text-secondary mb-1">Select Client</label>
-                    <select id="client-select" value={invoice.clientId} onChange={e => handleClientChange(e.target.value)} className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    <select id="client-select" value={estimate.clientId} onChange={e => handleClientChange(e.target.value)} className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                         <option value="">-- Choose a client --</option>
                         {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
@@ -184,7 +183,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
 
             {/* Items Section */}
             <div className="space-y-4">
-                {invoice.itemCategories.map(cat => (
+                {estimate.itemCategories.map(cat => (
                     <div key={cat.id} className="p-4 rounded-lg bg-glass-light border border-border-color">
                         <div className="flex justify-between items-center mb-2">
                             <input type="text" value={cat.name} onChange={e => handleCategoryChange(cat.id, e.target.value)} className="font-bold text-text-primary bg-transparent text-lg focus:outline-none w-full" />
@@ -217,12 +216,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
             </button>
 
             {/* Asterisk Terms & Conditions Section */}
-            {invoice.itemCategories.some(cat => cat.items.some(item => item.hasAsterisk)) && (
+            {estimate.itemCategories.some(cat => cat.items.some(item => item.hasAsterisk)) && (
                 <div className="mt-8 p-4 bg-glass-light rounded-lg border border-border-color">
                     <h3 className="text-lg font-semibold text-text-primary mb-4">Asterisk Terms & Conditions</h3>
-                    <p className="text-sm text-text-secondary mb-4">Enter detailed terms and conditions for items marked with an asterisk. These will appear on a separate page in the invoice PDF.</p>
+                    <p className="text-sm text-text-secondary mb-4">Enter detailed terms and conditions for items marked with an asterisk. These will appear on a separate page in the estimate PDF.</p>
                     <div className="space-y-4">
-                        {invoice.itemCategories.flatMap(cat =>
+                        {estimate.itemCategories.flatMap(cat =>
                             cat.items.filter(item => item.hasAsterisk).map((item, index) => (
                                 <div key={item.id} className="p-3 bg-glass rounded-lg border border-border-color">
                                     <label className="block text-sm font-medium text-text-primary mb-2">
@@ -253,17 +252,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
                 <div className="text-right">
                     <div className="flex justify-end items-center">
                         <span className="text-text-secondary font-medium">Subtotal:</span>
-                        <span className="ml-4 w-32 text-text-primary font-semibold">{invoice.totals.subtotal.toFixed(2)} MAD</span>
+                        <span className="ml-4 w-32 text-text-primary font-semibold">{estimate.totals.subtotal.toFixed(2)} MAD</span>
                     </div>
                      <div className="flex justify-end items-center mt-2 text-xl">
                         <span className="text-text-primary font-bold">Total Net:</span>
-                        <span className="ml-4 w-32 text-primary font-bold">{invoice.totals.totalNet.toFixed(2)} MAD</span>
+                        <span className="ml-4 w-32 text-primary font-bold">{estimate.totals.totalNet.toFixed(2)} MAD</span>
                     </div>
                 </div>
             </div>
              <div className="flex justify-end gap-4 mt-8">
-                <button onClick={() => navigate('/payments')} className="px-6 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Cancel</button>
-                <button onClick={handleSave} className="px-6 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover">Save Invoice</button>
+                <button onClick={() => navigate('/payments?tab=estimates')} className="px-6 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Cancel</button>
+                <button onClick={handleSave} className="px-6 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover">Save Estimate</button>
              </div>
 
             {isClientModalOpen && <AddClientModal onClose={() => setIsClientModalOpen(false)} onAddClient={handleAddClient} />}
@@ -271,4 +270,4 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
     );
 };
 
-export default InvoiceForm;
+export default EstimateForm;

@@ -11,6 +11,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ onClose, onAddClient })
     const [client, setClient] = useState<Omit<Client, 'id' | 'userId'>>({
         name: '',
         adresse: '',
+        adresse2: '',
         ice: '',
         rc: '',
         if: '',
@@ -37,7 +38,8 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ onClose, onAddClient })
                 <h2 className="text-xl font-bold text-text-primary mb-6">Add New Client</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <InputField label="Name" name="name" value={client.name} onChange={handleChange} required />
-                    <InputField label="Adresse" name="adresse" value={client.adresse} onChange={handleChange} />
+                    <InputField label="Address Line 1" name="adresse" value={client.adresse} onChange={handleChange} />
+                    <InputField label="Address Line 2 (Optional)" name="adresse2" value={client.adresse2 || ''} onChange={handleChange} />
                     <InputField label="ICE" name="ice" value={client.ice} onChange={handleChange} />
                     <InputField label="RC" name="rc" value={client.rc} onChange={handleChange} />
                     <InputField label="IF" name="if" value={client.if} onChange={handleChange} />

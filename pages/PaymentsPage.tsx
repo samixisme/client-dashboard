@@ -6,6 +6,9 @@ import { useSearch } from '../contexts/SearchContext';
 import { useAdmin } from '../contexts/AdminContext';
 import { useData } from '../contexts/DataContext';
 import AdminPanel from '../components/admin/AdminPanel';
+import { InvoiceDownloadButton } from '../src/components/payments/InvoiceDownloadButton';
+import { EstimateDownloadButton } from '../src/components/payments/EstimateDownloadButton';
+import { userSettings } from '../data/paymentsData';
 
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -98,9 +101,9 @@ const PaymentsPage = () => {
                             Create New Invoice
                         </Link>
                     ) : (
-                         <button disabled className="px-4 py-2 bg-primary/50 text-white/70 text-sm font-medium rounded-lg cursor-not-allowed">
+                         <Link to="/payments/estimate/new" className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover">
                             Create New Estimate
-                        </button>
+                        </Link>
                     )}
                 </div>
             </div>
@@ -120,27 +123,92 @@ const PaymentsPage = () => {
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Date</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Status</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Total</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                         <tbody className="divide-y divide-border-color">
-                            {activeTab === 'invoices' && filteredInvoices.map((invoice) => (
+                        <tbody className="divide-y divide-border-color">
+                            {activeTab === 'invoices' && filteredInvoices.map((invoice) => {
+                                const client = clients.find(c => c.id === invoice.clientId);
+                                return (
                                 <tr key={invoice.id} className="hover:bg-glass-light">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">{invoice.invoiceNumber}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">{getClientName(invoice.clientId)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">{new Date(invoice.date).toLocaleDateString()}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={invoice.status} /></td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">{(invoice.totals?.totalNet ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' })}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div className="flex items-center gap-2">
+                                            {client && (
+                                                <InvoiceDownloadButton
+                                                    invoice={invoice}
+                                                    client={client}
+                                                    userSettings={userSettings}
+                                                    variant="secondary"
+                                                />
+                                            )}
+                                            <Link
+                                                to={`/payments/invoices/edit/${invoice.id}`}
+                                                className="px-3 py-1 text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded transition-colors"
+                                            >
+                                                Edit
+                                            </Link>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm('Are you sure you want to delete this invoice?')) {
+                                                        const updatedInvoices = allInvoices.filter(inv => inv.id !== invoice.id);
+                                                        updateData('invoices', updatedInvoices);
+                                                    }
+                                                }}
+                                                className="px-3 py-1 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded transition-colors"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
-                            ))}
-                             {activeTab === 'estimates' && filteredEstimates.map((estimate) => (
+                                );
+                            })}
+                             {activeTab === 'estimates' && filteredEstimates.map((estimate) => {
+                                const client = clients.find(c => c.id === estimate.clientId);
+                                return (
                                 <tr key={estimate.id} className="hover:bg-glass-light">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">{estimate.estimateNumber}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">{getClientName(estimate.clientId)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">{new Date(estimate.date).toLocaleDateString()}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={estimate.status} /></td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">{(estimate.totals?.totalNet ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' })}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div className="flex items-center gap-2">
+                                            {client && (
+                                                <EstimateDownloadButton
+                                                    estimate={estimate}
+                                                    client={client}
+                                                    userSettings={userSettings}
+                                                    variant="secondary"
+                                                />
+                                            )}
+                                            <Link
+                                                to={`/payments/estimates/edit/${estimate.id}`}
+                                                className="px-3 py-1 text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded transition-colors"
+                                            >
+                                                Edit
+                                            </Link>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm('Are you sure you want to delete this estimate?')) {
+                                                        const updatedEstimates = allEstimates.filter(est => est.id !== estimate.id);
+                                                        updateData('estimates', updatedEstimates);
+                                                    }
+                                                }}
+                                                className="px-3 py-1 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded transition-colors"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                          </tbody>
                     </table>
                 </div>

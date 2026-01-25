@@ -11,6 +11,9 @@ import './cursor.css';
 import DashboardPage from './pages/DashboardPage';
 import PaymentsPage from './pages/PaymentsPage';
 import CreateInvoicePage from './pages/CreateInvoicePage';
+import EditInvoicePage from './pages/EditInvoicePage';
+import CreateEstimatePage from './pages/CreateEstimatePage';
+import EditEstimatePage from './pages/EditEstimatePage';
 import FeedbackPage from './pages/FeedbackPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
@@ -254,6 +257,21 @@ function App() {
                    <Route path="/payments/invoice/new" element={
                       <MainLayout onLogout={handleLogout}>
                          <CreateInvoicePage />
+                      </MainLayout>
+                   } />
+                   <Route path="/payments/invoices/edit/:id" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EditInvoicePage />
+                      </MainLayout>
+                   } />
+                   <Route path="/payments/estimate/new" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <CreateEstimatePage />
+                      </MainLayout>
+                   } />
+                   <Route path="/payments/estimates/edit/:id" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EditEstimatePage />
                       </MainLayout>
                    } />
                    <Route path="/calendar" element={

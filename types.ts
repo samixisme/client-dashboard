@@ -156,6 +156,7 @@ export interface Client {
     brandId?: string;
     name: string;
     adresse: string;
+    adresse2?: string;
     ice: string;
     rc: string;
     if: string;
@@ -166,6 +167,8 @@ export interface LineItem {
     name: string;
     quantity: number;
     unitPrice: number;
+    hasAsterisk?: boolean;        // Mark if item has asterisk/special terms
+    asteriskNote?: string;         // Terms and conditions text for this item
 }
 
 export interface ItemCategory {
@@ -480,4 +483,34 @@ export interface CalendarEvent {
     meetLink?: string; // Google Meet Link
     feedbackItemId?: string; // For deep linking to feedback
     assignees?: string[]; // IDs of assigned users
+}
+
+// PDF Generation Types
+export interface InvoicePdfData {
+    invoice: Invoice;
+    client: Client;
+    userSettings: UserSettings;
+    itemsPerPage: InvoiceItemsPerPage;
+}
+
+export interface InvoiceItemsPerPage {
+    firstPage: InvoiceItemWithCategory[];
+    additionalPages?: InvoiceItemWithCategory[][];
+}
+
+export interface InvoiceItemWithCategory {
+    categoryName?: string;
+    item: {
+        name: string;
+        quantity: number;
+        unitPrice: number;
+    };
+}
+
+export interface PdfGenerationOptions {
+    filename?: string;
+    margin?: number;
+    image?: { type: string; quality: number };
+    html2canvas?: { scale: number; useCORS: boolean };
+    jsPDF?: { unit: string; format: string; orientation: string };
 }

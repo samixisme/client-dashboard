@@ -4,6 +4,7 @@
   "description": "A modern, professional admin dashboard application with a dark mode theme, sidebar navigation, and header. It simulates a multi-page experience with mock authentication.",
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
+    "@fontsource/space-grotesk": "^5.2.10",
     "@google/genai": "^1.30.0",
     "@hello-pangea/dnd": "16.6.0",
     "@types/express": "^5.0.6",
@@ -18,12 +19,14 @@
     "express": "^5.2.1",
     "firebase": "^12.7.0",
     "gsap": "^3.13.0",
+    "jspdf": "^4.0.0",
     "node-fetch": "^3.3.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-phone-number-input": "^3.4.14",
     "react-router-dom": "^6.23.1",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "written-number": "^0.11.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.9",
