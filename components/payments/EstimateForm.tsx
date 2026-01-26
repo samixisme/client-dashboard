@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clients as initialClients } from '../../data/paymentsData';
-import { Estimate, Client, ItemCategory, LineItem } from '../../types';
+import { Estimate, Client, ItemCategory, LineItem, User } from '../../types';
 import AddClientModal from './AddClientModal';
 import { createCalendarEvent } from '../../utils/calendarSync';
 import { useData } from '../../contexts/DataContext';
@@ -21,6 +21,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
             userId: 'user-1',
             clientId: '',
             date: new Date().toISOString().split('T')[0],
+            dueDate: undefined,
+            assignedUserIds: [],
             status: 'Draft',
             itemCategories: [],
             note: '',
@@ -130,8 +132,32 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
 
             alert('Estimate updated successfully!');
         } else {
-            // Create new estimate
-            const newEstimateNumber = `2024-${String((data.estimates?.length || 0) + 1).padStart(3, '0')}`;
+            // Create new estimate with client-based numbering
+            const selectedClient = clients.find(c => c.id === estimate.clientId);
+
+            // Generate client prefix (first 4 characters, uppercase, alphanumeric only)
+            let clientPrefix = 'XXXX';
+            if (selectedClient) {
+                const cleanName = selectedClient.name.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+                clientPrefix = cleanName.substring(0, 4).padEnd(4, 'X');
+            }
+
+            // Get date in YYMMDD format
+            const estimateDate = new Date(estimate.date);
+            const yy = String(estimateDate.getFullYear()).slice(-2);
+            const mm = String(estimateDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(estimateDate.getDate()).padStart(2, '0');
+
+            // Count estimates for this client on this date
+            const clientEstimatesToday = data.estimates.filter(est => {
+                const estDate = new Date(est.date);
+                return est.clientId === estimate.clientId &&
+                    estDate.toISOString().split('T')[0] === estimate.date;
+            });
+
+            const sequenceNum = String(clientEstimatesToday.length + 1).padStart(3, '0');
+            const newEstimateNumber = `${clientPrefix}-${yy}${mm}${dd}${sequenceNum}`;
+
             const finalEstimate: Estimate = {
                 id: `est-${Date.now()}`,
                 estimateNumber: newEstimateNumber,
@@ -179,6 +205,53 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                     </select>
                     <button onClick={() => setIsClientModalOpen(true)} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover">+ Add New Client</button>
                 </div>
+            </div>
+
+            {/* Date Section */}
+            <div className="grid grid-cols-2 gap-8 mb-8">
+                <div>
+                    <label htmlFor="estimate-date" className="block text-sm font-medium text-text-secondary mb-1">Estimate Date</label>
+                    <input
+                        id="estimate-date"
+                        type="date"
+                        value={estimate.date}
+                        onChange={e => setEstimate({ ...estimate, date: e.target.value })}
+                        className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    />
+                </div>
+                <div>
+                    <label htmlFor="estimate-due-date" className="block text-sm font-medium text-text-secondary mb-1">Due Date (Optional)</label>
+                    <input
+                        id="estimate-due-date"
+                        type="date"
+                        value={estimate.dueDate || ''}
+                        onChange={e => setEstimate({ ...estimate, dueDate: e.target.value || undefined })}
+                        className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    />
+                </div>
+            </div>
+
+            {/* Assigned Users Section */}
+            <div className="mb-8">
+                <label htmlFor="assigned-users" className="block text-sm font-medium text-text-secondary mb-1">Assign Users (Optional)</label>
+                <select
+                    id="assigned-users"
+                    multiple
+                    value={estimate.assignedUserIds || []}
+                    onChange={e => {
+                        const selected = Array.from(e.target.selectedOptions, option => option.value);
+                        setEstimate({ ...estimate, assignedUserIds: selected });
+                    }}
+                    className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    size={4}
+                >
+                    {(data.users || []).map((user: User) => (
+                        <option key={user.id} value={user.id}>
+                            {user.name || `${user.firstName} ${user.lastName}`}
+                        </option>
+                    ))}
+                </select>
+                <p className="mt-1 text-xs text-text-secondary">Hold Ctrl/Cmd to select multiple users. These users will receive calendar events for the due date.</p>
             </div>
 
             {/* Items Section */}

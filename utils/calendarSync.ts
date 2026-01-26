@@ -22,6 +22,27 @@ export const createCalendarEvent = async (item: SourceItem, type: EventType): Pr
                  // Create new task (implementation depends on task logic, skipping for now or assume handled elsewhere)
                  console.warn("Creating new task from calendar not fully supported in sync utility yet.");
              }
+        } else if (type === 'invoice' || type === 'estimate') {
+            // Handle invoice/estimate calendar events for due dates
+            const doc = item as Invoice | Estimate;
+
+            // Only create calendar event if there's a due date and assigned users
+            if (doc.dueDate && doc.assignedUserIds && doc.assignedUserIds.length > 0) {
+                const calendarEvent: Omit<CalendarEvent, 'id'> = {
+                    title: type === 'invoice'
+                        ? `Invoice Due: ${(doc as Invoice).invoiceNumber}`
+                        : `Estimate Due: ${(doc as Estimate).estimateNumber}`,
+                    startDate: doc.dueDate,
+                    endDate: doc.dueDate,
+                    type: type,
+                    sourceId: doc.id,
+                    userId: doc.userId,
+                    assignees: doc.assignedUserIds
+                };
+
+                const docRef = await addDoc(collection(db, 'calendar_events'), calendarEvent);
+                return { id: docRef.id, ...calendarEvent } as CalendarEvent;
+            }
         }
         // Add other cases as needed
         return null;

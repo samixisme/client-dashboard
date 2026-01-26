@@ -36,7 +36,7 @@ const PaymentsPage = () => {
     const { isAdminMode } = useAdmin();
     const { data, updateData } = useData();
     const { invoices: allInvoices, estimates: allEstimates, clients, brands } = data;
-    
+
     const tabFromUrl = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState<'invoices' | 'estimates'>(tabFromUrl === 'estimates' ? 'estimates' : 'invoices');
     const { searchQuery } = useSearch();
@@ -53,6 +53,22 @@ const PaymentsPage = () => {
     }, [searchParams]);
 
     const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || 'Unknown Client';
+
+    // Handle status change for invoices
+    const handleInvoiceStatusChange = (invoiceId: string, newStatus: string) => {
+        const updatedInvoices = allInvoices.map(inv =>
+            inv.id === invoiceId ? { ...inv, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : inv
+        );
+        updateData('invoices', updatedInvoices);
+    };
+
+    // Handle status change for estimates
+    const handleEstimateStatusChange = (estimateId: string, newStatus: string) => {
+        const updatedEstimates = allEstimates.map(est =>
+            est.id === estimateId ? { ...est, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : est
+        );
+        updateData('estimates', updatedEstimates);
+    };
     
     const brandClientIds = useMemo(() => {
         if (!brandId) return null;
@@ -97,11 +113,11 @@ const PaymentsPage = () => {
                 </div>
                 <div>
                     {activeTab === 'invoices' ? (
-                         <Link to="/payments/invoice/new" className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary">
+                         <Link to="/payments/invoice/new" className="px-4 py-2 bg-primary text-text-primary text-sm font-medium rounded-lg hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary">
                             Create New Invoice
                         </Link>
                     ) : (
-                         <Link to="/payments/estimate/new" className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover">
+                         <Link to="/payments/estimate/new" className="px-4 py-2 bg-primary text-text-primary text-sm font-medium rounded-lg hover:bg-primary-hover">
                             Create New Estimate
                         </Link>
                     )}
@@ -134,7 +150,18 @@ const PaymentsPage = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">{invoice.invoiceNumber}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">{getClientName(invoice.clientId)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">{new Date(invoice.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={invoice.status} /></td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <select
+                                            value={invoice.status}
+                                            onChange={(e) => handleInvoiceStatusChange(invoice.id, e.target.value)}
+                                            className="px-3 py-1 border border-border-color bg-glass-light text-text-primary rounded-lg text-xs font-medium focus:outline-none focus:ring-primary focus:border-primary"
+                                        >
+                                            <option value="Draft">Draft</option>
+                                            <option value="Sent">Sent</option>
+                                            <option value="Paid">Paid</option>
+                                            <option value="Overdue">Overdue</option>
+                                        </select>
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">{(invoice.totals?.totalNet ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' })}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                         <div className="flex items-center gap-2">
@@ -175,7 +202,18 @@ const PaymentsPage = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">{estimate.estimateNumber}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">{getClientName(estimate.clientId)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">{new Date(estimate.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm"><StatusBadge status={estimate.status} /></td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <select
+                                            value={estimate.status}
+                                            onChange={(e) => handleEstimateStatusChange(estimate.id, e.target.value)}
+                                            className="px-3 py-1 border border-border-color bg-glass-light text-text-primary rounded-lg text-xs font-medium focus:outline-none focus:ring-primary focus:border-primary"
+                                        >
+                                            <option value="Draft">Draft</option>
+                                            <option value="Sent">Sent</option>
+                                            <option value="Paid">Paid</option>
+                                            <option value="Overdue">Overdue</option>
+                                        </select>
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">{(estimate.totals?.totalNet ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' })}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                         <div className="flex items-center gap-2">

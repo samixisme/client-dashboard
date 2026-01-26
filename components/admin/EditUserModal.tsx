@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { User } from '../../types';
+import { User, Client } from '../../types';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
+import { useData } from '../../contexts/DataContext';
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -14,11 +15,14 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user }) 
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [groupsInput, setGroupsInput] = useState('');
   const modalRoot = document.getElementById('modal-root');
+  const { data } = useData();
 
   useEffect(() => {
     if (isOpen) {
       setEditedUser(user);
+      setGroupsInput((user.groups || []).join(', '));
       setError('');
       setIsLoading(false);
     }
@@ -35,10 +39,21 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user }) 
 
     try {
       const userRef = doc(db, 'users', user.id);
+
+      // Parse groups from comma-separated input
+      const groups = groupsInput
+        .split(',')
+        .map(g => g.trim())
+        .filter(g => g.length > 0);
+
       const dataToUpdate = {
         ...editedUser,
-        name: `${editedUser.firstName} ${editedUser.lastName}`.trim()
+        name: `${editedUser.firstName} ${editedUser.lastName}`.trim(),
+        groups: groups.length > 0 ? groups : undefined,
+        // Clear clientId if user is admin
+        clientId: editedUser.role === 'admin' ? undefined : editedUser.clientId
       };
+
       await updateDoc(userRef, dataToUpdate);
       onClose();
     } catch (err) {
@@ -63,10 +78,43 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user }) 
             <input type="text" placeholder="First Name" value={editedUser.firstName || ''} onChange={e => handleUpdate('firstName', e.target.value)} className="w-full bg-background border border-border-color rounded-lg px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary" />
             <input type="text" placeholder="Last Name" value={editedUser.lastName || ''} onChange={e => handleUpdate('lastName', e.target.value)} className="w-full bg-background border border-border-color rounded-lg px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary" />
             <input type="email" placeholder="Email" value={editedUser.email || ''} className="w-full bg-background border border-border-color rounded-lg px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary" disabled />
+
             <select value={editedUser.role || 'client'} onChange={e => handleUpdate('role', e.target.value)} className="w-full bg-background border border-border-color rounded-lg px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary">
               <option value="admin">Admin</option>
               <option value="client">Client</option>
             </select>
+
+            {/* Client Assignment - Only show for non-admin users */}
+            {editedUser.role !== 'admin' && (
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Assign to Client (Optional)</label>
+                <select
+                  value={editedUser.clientId || ''}
+                  onChange={e => handleUpdate('clientId', e.target.value || undefined)}
+                  className="w-full bg-background border border-border-color rounded-lg px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                >
+                  <option value="">-- No Client --</option>
+                  {(data.clients || []).map((client: Client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Groups Management */}
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Groups (comma-separated, optional)</label>
+              <input
+                type="text"
+                placeholder="e.g., Designers, Marketing, Team A"
+                value={groupsInput}
+                onChange={e => setGroupsInput(e.target.value)}
+                className="w-full bg-background border border-border-color rounded-lg px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+              />
+              <p className="text-xs text-text-secondary mt-1">Separate multiple groups with commas</p>
+            </div>
           </div>
           
           <div className="flex justify-end items-center gap-4 pt-6 mt-auto">

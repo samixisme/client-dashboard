@@ -57,6 +57,7 @@ import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAICreatorPage from './pages/admin/AdminAICreatorPage';
 import AdminPaymentsPage from './pages/admin/AdminPaymentsPage';
+import AdminClientsPage from './pages/admin/AdminClientsPage';
 
 import { SearchProvider } from './contexts/SearchContext';
 import { AdminProvider } from './contexts/AdminContext';
@@ -209,6 +210,7 @@ function App() {
                       <Route path="moodboards" element={<AdminMoodboardsPage />} />
                       <Route path="tasks" element={<AdminTasksPage />} />
                       <Route path="users" element={<AdminUsersPage />} />
+                      <Route path="clients" element={<AdminClientsPage />} />
                       <Route path="settings" element={<AdminSettingsPage />} />
                       <Route path="aicreator" element={<AdminAICreatorPage />} />
                       <Route path="payments" element={<AdminPaymentsPage />} />

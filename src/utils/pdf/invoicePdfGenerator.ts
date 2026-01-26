@@ -101,6 +101,17 @@ export class InvoicePdfGenerator {
         pdf.setFontSize(8);
         pdf.setTextColor(2, 46, 81); // #022E51
 
+        // === HEADER SECTION - Add date and invoice number ===
+        // Date - Same position as page 1
+        const datePos = this.pxToMm(667, 141);
+        const dateText = format(new Date(invoice.date), 'dd/MM/yyyy').toUpperCase();
+        pdf.text(dateText, datePos.x, datePos.y);
+
+        // Invoice Number - Same position as page 1
+        const invoiceNumPos = this.pxToMm(838, 141);
+        const invoiceNumText = invoice.invoiceNumber.toUpperCase();
+        pdf.text(invoiceNumText, invoiceNumPos.x, invoiceNumPos.y);
+
         // Starting position and spacing
         let currentY = this.pxToMm(0, 400).y; // Starting Y position (adjust based on your PNG template)
         const lineHeight = 5; // Line height in mm

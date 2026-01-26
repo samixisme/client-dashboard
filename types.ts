@@ -146,6 +146,8 @@ export interface User {
     email?: string;
     avatarUrl: string;
     role?: 'admin' | 'client';
+    clientId?: string; // Connected client for non-admin users
+    groups?: string[]; // User groups for organization
 }
 
 
@@ -182,6 +184,8 @@ interface DocumentBase {
     userId: string;
     clientId: string;
     date: string; // ISO string
+    dueDate?: string; // ISO string - optional, syncs to calendar
+    assignedUserIds?: string[]; // Users assigned to this invoice/estimate
     status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';
     itemCategories: ItemCategory[];
     note: string;
