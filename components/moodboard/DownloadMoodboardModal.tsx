@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 're
 import { MoodboardItem } from '../../types';
 import MoodboardItemComponent from './MoodboardItemComponent';
 import ConnectorLine from './ConnectorLine';
+import { toast } from 'sonner';
 
 declare const htmlToImage: any;
 
@@ -82,11 +83,12 @@ const DownloadMoodboardModal: React.FC<DownloadMoodboardModalProps> = ({ isOpen,
             link.download = `moodboard-export.${format}`;
             link.href = dataUrl;
             link.click();
+            toast.success('Moodboard downloaded');
             onClose();
 
         } catch (error) {
             console.error('oops, something went wrong!', error);
-            alert('Failed to download image. Check console for details. This may be due to cross-origin images.');
+            toast.error('Failed to download image. This may be due to cross-origin images.');
         } finally {
             setIsLoading(false);
         }

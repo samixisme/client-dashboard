@@ -7,6 +7,7 @@ import { DeleteIcon } from '../icons/DeleteIcon';
 import { FileIcon } from '../icons/FileIcon';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../utils/firebase';
+import { toast } from 'sonner';
 
 interface RoadmapItemModalProps {
     item: RoadmapItem;
@@ -36,11 +37,13 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
 
     const handleSave = () => {
         onUpdateItem(editedItem);
+        toast.success('Roadmap item updated');
     };
 
     const handleDelete = () => {
         if (window.confirm('Are you sure you want to delete this roadmap item and all its associated tasks?')) {
             onDeleteItem(item.id);
+            toast.success('Roadmap item deleted');
         }
     };
     
@@ -60,9 +63,10 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                     type: file.type.split('/')[1] || 'file'
                 };
                 setEditedItem(prev => ({...prev, attachments: [...prev.attachments, newAttachment]}));
+                toast.success('Attachment uploaded');
             } catch (error) {
                 console.error("Error uploading attachment:", error);
-                alert("Failed to upload attachment.");
+                toast.error('Failed to upload attachment');
             } finally {
                 setUploadingAttachment(false);
             }
@@ -71,6 +75,7 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
 
     const handleRemoveAttachment = (attachmentId: string) => {
         setEditedItem(prev => ({ ...prev, attachments: prev.attachments.filter(a => a.id !== attachmentId)}));
+        toast.success('Attachment removed');
     };
 
     const projectBoardIds = useMemo(() => {

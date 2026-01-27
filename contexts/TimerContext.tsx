@@ -3,6 +3,7 @@ import { TimeLog } from '../types';
 import { useData } from './DataContext';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../utils/firebase';
+import { toast } from 'sonner';
 
 interface RunningTimer {
     taskId: string;
@@ -61,8 +62,10 @@ export const TimerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 if (project && board) {
                     try {
                         await addDoc(collection(db, 'projects', project.id, 'boards', board.id, 'tasks', taskId, 'time_logs'), newLogData);
+                        toast.success('Time logged successfully!');
                     } catch (e) {
                         console.error("Error logging timer time to Firestore", e);
+                        toast.error('Failed to log time');
                     }
                 }
             }

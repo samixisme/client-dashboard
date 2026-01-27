@@ -6,6 +6,7 @@ import { Estimate, Client, ItemCategory, LineItem, User } from '../../types';
 import AddClientModal from './AddClientModal';
 import { createCalendarEvent } from '../../utils/calendarSync';
 import { useData } from '../../contexts/DataContext';
+import { toast } from 'sonner';
 
 interface EstimateFormProps {
     existingEstimate?: Estimate;
@@ -110,7 +111,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
 
     const handleSave = () => {
         if (!estimate.clientId) {
-            alert("Please select a client.");
+            toast.error('Please select a client');
             return;
         }
 
@@ -130,7 +131,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
             );
             updateData('estimates', updatedEstimates);
 
-            alert('Estimate updated successfully!');
+            toast.success('Estimate updated successfully!');
         } else {
             // Create new estimate with client-based numbering
             const selectedClient = clients.find(c => c.id === estimate.clientId);
@@ -171,7 +172,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
             // Sync to calendar
             createCalendarEvent(finalEstimate, 'estimate');
 
-            alert('Estimate created successfully!');
+            toast.success(`Estimate ${newEstimateNumber} created successfully!`);
         }
 
         navigate('/payments?tab=estimates');

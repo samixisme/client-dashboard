@@ -4,6 +4,7 @@ import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } fr
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem } from '../types';
+import { toast } from 'sonner';
 
 // Import all data sources
 import { projects as initialProjects, boards as initialBoards, stages as initialStages, tasks as initialTasks, tags as initialTags, comments as initialComments, activities as initialActivities, roadmapItems as initialRoadmapItems, custom_fields as initialCustomFields, board_notification_settings as initialBoardNotificationSettings, users as initialUsers, time_logs as initialTimeLogs } from '../data/mockData';
@@ -98,69 +99,102 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             onSnapshot(qBrands, (snapshot) => {
                 dataStore.brands = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand));
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching brands: ", err)),
+            }, (err) => {
+                console.error("Error fetching brands: ", err);
+                toast.error('Error syncing brands data', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qUsers, (snapshot) => {
                 const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
                 dataStore.users = [...initialUsers, ...fetchedUsers];
                 dataStore.board_members = dataStore.users; // Sync alias
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching users: ", err)),
+            }, (err) => {
+                console.error("Error fetching users: ", err);
+                toast.error('Error syncing users data', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qProjects, (snapshot) => {
                 const fetchedProjects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
                 dataStore.projects = [...initialProjects, ...fetchedProjects];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching projects: ", err)),
+            }, (err) => {
+                console.error("Error fetching projects: ", err);
+                toast.error('Error syncing projects data', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qBoards, (snapshot) => {
                 const fetchedBoards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Board));
                 dataStore.boards = [...initialBoards, ...fetchedBoards];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching boards: ", err)),
+            }, (err) => {
+                console.error("Error fetching boards: ", err);
+                toast.error('Error syncing boards data', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qStages, (snapshot) => {
                 const fetchedStages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Stage));
                 fetchedStages.sort((a, b) => a.order - b.order);
                 dataStore.stages = [...initialStages, ...fetchedStages];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching stages: ", err)),
+            }, (err) => {
+                console.error("Error fetching stages: ", err);
+                toast.error('Error syncing stages data', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qTasks, (snapshot) => {
                 const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
                 dataStore.tasks = [...initialTasks, ...fetchedTasks];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching tasks: ", err)),
+            }, (err) => {
+                console.error("Error fetching tasks: ", err);
+                toast.error('Error syncing tasks data', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qTags, (snapshot) => {
                 const fetchedTags = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag));
                 dataStore.tags = [...initialTags, ...fetchedTags];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching tags: ", err)),
+            }, (err) => {
+                console.error("Error fetching tags: ", err);
+                toast.error('Error syncing tags data', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qTimeLogs, (snapshot) => {
                 const fetchedLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeLog));
                 dataStore.time_logs = [...initialTimeLogs, ...fetchedLogs];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching time logs: ", err)),
+            }, (err) => {
+                console.error("Error fetching time logs: ", err);
+                toast.error('Error syncing time logs', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qRoadmapItems, (snapshot) => {
                 const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoadmapItem));
                 dataStore.roadmapItems = [...initialRoadmapItems, ...fetchedItems];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching roadmap items: ", err)),
+            }, (err) => {
+                console.error("Error fetching roadmap items: ", err);
+                toast.error('Error syncing roadmap items', { description: 'Please refresh the page' });
+            }),
             
             onSnapshot(qComments, (snapshot) => {
                 const fetchedComments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
                 dataStore.comments = [...initialComments, ...fetchedComments];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching comments: ", err)),
+            }, (err) => {
+                console.error("Error fetching comments: ", err);
+                toast.error('Error syncing comments', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qActivities, (snapshot) => {
                 const fetchedActivities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity));
                 dataStore.activities = [...initialActivities, ...fetchedActivities];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching activities: ", err)),
+            }, (err) => {
+                console.error("Error fetching activities: ", err);
+                toast.error('Error syncing activities', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qMoodboards, (snapshot) => {
                 const fetchedMoodboards = snapshot.docs.map(doc => {
@@ -171,7 +205,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 });
                 dataStore.moodboards = [...initialMoodboards, ...fetchedMoodboards];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching moodboards: ", err)),
+            }, (err) => {
+                console.error("Error fetching moodboards: ", err);
+                toast.error('Error syncing moodboards', { description: 'Please refresh the page' });
+            }),
 
             onSnapshot(qMoodboardItems, (snapshot) => {
                 const fetchedItems = snapshot.docs.map(doc => {
@@ -182,7 +219,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 });
                 dataStore.moodboardItems = [...initialMoodboardItems, ...fetchedItems];
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching moodboard items: ", err)),
+            }, (err) => {
+                console.error("Error fetching moodboard items: ", err);
+                toast.error('Error syncing moodboard items', { description: 'Please refresh the page' });
+            }),
 
             // Corrected: Listen to the single 'feedbackItems' collectionGroup
             onSnapshot(query(collectionGroup(db, 'feedbackItems')), (snapshot) => {
@@ -196,9 +236,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 dataStore.feedbackWebsites = [...initialFeedbackWebsites, ...fetchedItems.filter(i => i.type === 'website')];
                 dataStore.feedbackMockups = [...initialFeedbackMockups, ...fetchedItems.filter(i => i.type === 'mockup')];
                 dataStore.feedbackVideos = [...initialFeedbackVideos, ...fetchedItems.filter(i => i.type === 'video')];
-                
+
                 setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching feedback items: ", err)),
+            }, (err) => {
+                console.error("Error fetching feedback items: ", err);
+                toast.error('Error syncing feedback items', { description: 'Please refresh the page' });
+            }),
 
             // Listen to comments (feedback items subcollection)
             onSnapshot(query(collectionGroup(db, 'comments')), (snapshot) => {
@@ -207,7 +250,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  // For now, assume global comments are feedback comments or compatible.
                  dataStore.feedbackComments = [...initialFeedbackComments, ...fetchedItems];
                  setVersion(v => v + 1);
-            }, (err) => console.error("Error fetching feedback comments: ", err)),
+            }, (err) => {
+                console.error("Error fetching feedback comments: ", err);
+                toast.error('Error syncing feedback comments', { description: 'Please refresh the page' });
+            }),
         ];
 
         Promise.all(unsubscribers.map(unsub => new Promise(res => setTimeout(res, 200)))).finally(() => setLoading(false));

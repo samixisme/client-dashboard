@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface DataSource {
     name: string;
@@ -26,9 +27,11 @@ const RawJsonEditor: React.FC<RawJsonEditorProps> = ({ source }) => {
             source.onSave(newData);
             setError(null);
             setIsSaved(true);
+            toast.success('Changes saved');
             setTimeout(() => setIsSaved(false), 2000);
         } catch (e: any) {
             setError(`Invalid JSON: ${e.message}`);
+            toast.error(`Invalid JSON: ${e.message}`);
             setIsSaved(false);
         }
     };

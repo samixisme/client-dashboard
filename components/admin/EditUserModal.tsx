@@ -4,6 +4,7 @@ import { User, Client } from '../../types';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { useData } from '../../contexts/DataContext';
+import { toast } from 'sonner';
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -55,10 +56,11 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user }) 
       };
 
       await updateDoc(userRef, dataToUpdate);
+      toast.success('User updated successfully');
       onClose();
     } catch (err) {
-      setError('Failed to update user.');
       console.error(err);
+      toast.error('Failed to update user');
     } finally {
       setIsLoading(false);
     }

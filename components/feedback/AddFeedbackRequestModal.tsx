@@ -8,6 +8,7 @@ import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
 import { FeedbackType } from '../../types';
 import { addFeedbackItem } from '../../utils/feedbackUtils';
 import { uploadFile } from '../../utils/firebase';
+import { toast } from 'sonner';
 
 interface AddFeedbackRequestModalProps {
     projectId: string;
@@ -63,7 +64,7 @@ const AddFeedbackRequestModal: React.FC<AddFeedbackRequestModalProps> = ({ proje
             }
 
             if (!assetUrl) {
-                alert("Please provide a URL or upload a file.");
+                toast.error('Please provide a URL or upload a file');
                 setIsSubmitting(false);
                 return;
             }
@@ -77,11 +78,12 @@ const AddFeedbackRequestModal: React.FC<AddFeedbackRequestModalProps> = ({ proje
                 status: 'pending',
                 createdBy: 'currentUser', // Replace with actual user ID from Auth Context
             });
-            
+
+            toast.success('Feedback request created');
             onClose();
         } catch (error) {
             console.error("Error creating feedback item:", error);
-            alert("Failed to create feedback item. Please try again.");
+            toast.error('Failed to create feedback item');
         } finally {
             setIsSubmitting(false);
         }

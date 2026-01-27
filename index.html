@@ -29,6 +29,15 @@
               "text-secondary": "#A1A1AA",
               "border-color": "#27272A",
             },
+            keyframes: {
+              fadeSlideIn: {
+                '0%': { opacity: '0', transform: 'translateX(20px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' },
+              }
+            },
+            animation: {
+              fadeSlideIn: 'fadeSlideIn 0.3s ease-out',
+            }
           },
         },
       };
@@ -36,8 +45,14 @@
     <style>
       body {
         font-family: "Inter", sans-serif;
-        background-color: #0a0a0a;
+        background-color: transparent !important;
       }
+
+      /* Override bg-background class globally to be transparent */
+      .bg-background {
+        background-color: transparent !important;
+      }
+
       .bg-glass {
         background-color: rgba(28, 28, 28, 0.65);
         backdrop-filter: blur(12px);
@@ -128,6 +143,60 @@
         background-color: #a3e635;
         color: #0a0a0a;
         border-radius: 2px;
+      }
+
+      /* Sonner Toast Customization */
+      [data-sonner-toast] {
+        background-color: rgba(28, 28, 28, 0.95) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(163, 230, 53, 0.2) !important;
+        color: #F4F4F5 !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+      }
+
+      [data-sonner-toast][data-type="success"] {
+        background-color: rgba(163, 230, 53, 0.15) !important;
+        border-color: #A3E635 !important;
+      }
+
+      [data-sonner-toast][data-type="error"] {
+        background-color: rgba(239, 68, 68, 0.15) !important;
+        border-color: rgba(239, 68, 68, 0.5) !important;
+      }
+
+      [data-sonner-toast][data-type="warning"] {
+        background-color: rgba(251, 191, 36, 0.15) !important;
+        border-color: rgba(251, 191, 36, 0.5) !important;
+      }
+
+      [data-sonner-toast][data-type="info"] {
+        background-color: rgba(59, 130, 246, 0.15) !important;
+        border-color: rgba(59, 130, 246, 0.5) !important;
+      }
+
+      [data-sonner-toast][data-type="success"] [data-icon] {
+        color: #A3E635 !important;
+      }
+
+      [data-sonner-toast] [data-close-button] {
+        background-color: rgba(163, 230, 53, 0.1) !important;
+        border: 1px solid rgba(163, 230, 53, 0.3) !important;
+        color: #A3E635 !important;
+        transition: all 0.2s ease;
+      }
+
+      [data-sonner-toast] [data-close-button]:hover {
+        background-color: rgba(163, 230, 53, 0.2) !important;
+        border-color: #A3E635 !important;
+      }
+
+      [data-sonner-toast] [data-title] {
+        color: #F4F4F5 !important;
+        font-weight: 600;
+      }
+
+      [data-sonner-toast] [data-description] {
+        color: #A1A1AA !important;
       }
     </style>
     <script type="importmap">

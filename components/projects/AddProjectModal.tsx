@@ -6,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from '../../utils/firebase';
 import { slugify } from '../../utils/slugify';
 import { ImageIcon } from '../icons/ImageIcon';
+import { toast } from 'sonner';
 
 interface AddEditProjectModalProps {
     isOpen: boolean;
@@ -56,9 +57,10 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({ isOpen, onClo
             const snapshot = await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
             setLogoUrl(downloadURL);
+            toast.success('Logo uploaded');
         } catch (err) {
             console.error(`Error uploading project logo:`, err);
-            setError(`Failed to upload project logo.`);
+            toast.error('Failed to upload logo');
         } finally {
             setIsLoading(false);
         }

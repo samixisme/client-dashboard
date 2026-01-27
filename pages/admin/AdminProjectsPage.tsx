@@ -140,12 +140,13 @@ const AdminProjectsPage: React.FC = () => {
       try {
           // Perform deep delete to remove all subcollections and related data
           await deleteProjectDeep(projectToDelete.id);
-          
+
+          toast.success('Project deleted');
           setIsDeleteModalOpen(false);
           setProjectToDelete(null);
       } catch (error) {
           console.error("Error deleting project: ", error);
-          alert("Failed to delete project and its data.");
+          toast.error('Failed to delete project');
       }
   };
 

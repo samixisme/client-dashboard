@@ -11,6 +11,7 @@ import { DeleteIcon } from '../components/icons/DeleteIcon';
 import { DownloadIcon } from '../components/icons/DownloadIcon';
 import { SaveIcon } from '../components/icons/SaveIcon';
 import { CancelIcon } from '../components/icons/CancelIcon';
+import { toast } from 'sonner';
 
 // Color conversion utility
 const hexToRgb = (hex: string): string => {
@@ -95,10 +96,10 @@ const BrandDetailPage = () => {
                 
                 setBrand(JSON.parse(JSON.stringify(editedBrand)));
                 setIsEditMode(false);
-                alert('Brandbook updated successfully!');
+                toast.success('Brandbook updated successfully');
             } catch (err) {
                 console.error("Error updating document: ", err);
-                alert('Failed to update brandbook.');
+                toast.error('Failed to update brandbook');
             } finally {
                 setIsSaving(false);
             }

@@ -9,6 +9,7 @@ import { useData } from '../../contexts/DataContext';
 import { AddIcon } from '../icons/AddIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { FileIcon } from '../icons/FileIcon';
+import { toast } from 'sonner';
 
 interface AddEditBrandModalProps {
   isOpen: boolean;
@@ -104,10 +105,11 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                  const newAsset: BrandLogo | BrandAsset = { name: file.name, url: downloadURL, tags: [] };
                  handleUpdate(field, [...(editedBrand[field] as any[] || []), newAsset]);
             }
+            toast.success(`${file.name} uploaded`);
 
         } catch (err) {
             console.error(`Error uploading ${file.name}:`, err);
-            setError(`Failed to upload ${file.name}.`);
+            toast.error(`Failed to upload ${file.name}`);
         } finally {
             setUploadProgress(prev => {
                 const newProgress = { ...prev };
@@ -132,10 +134,11 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
 
     try {
       await onSave(editedBrand as Omit<Brand, 'id' | 'createdAt'>, brandId);
+      toast.success(initialData ? 'Brand updated' : 'Brand created');
       onClose();
     } catch (err) {
-      setError('Failed to save brand. A brand with this name may already exist.');
       console.error(err);
+      toast.error('Failed to save brand');
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +192,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                         <option>Primary</option>
                         <option>Secondary</option>
                     </select>
-                    <button type="button" onClick={() => handleUpdate('colors', (editedBrand.colors || []).filter((_, i) => i !== index))} className="p-2 text-text-secondary hover:text-red-500 rounded-md hover:bg-red-500/10"><DeleteIcon/></button>
+                    <button type="button" onClick={() => { handleUpdate('colors', (editedBrand.colors || []).filter((_, i) => i !== index)); toast.success('Color removed'); }} className="p-2 text-text-secondary hover:text-red-500 rounded-md hover:bg-red-500/10"><DeleteIcon/></button>
                 </div>
             ))}
             <button type="button" onClick={() => handleUpdate('colors', [...(editedBrand.colors || []), { name: 'New Color', hex: '#ffffff', category: 'Secondary' }])} className="text-primary text-sm font-medium flex items-center gap-1 hover:text-primary-hover"><AddIcon className="h-4 w-4"/>Add Color</button>
@@ -228,7 +231,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                 {(editedBrand.logos || []).map((logo, index) => (
                     <div key={index} className="flex items-center justify-between bg-glass-light p-2 rounded-md text-sm">
                         <span className="truncate">{logo.name}</span>
-                        <button type="button" onClick={() => handleUpdate('logos', (editedBrand.logos || []).filter((_, i) => i !== index))} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
+                        <button type="button" onClick={() => { handleUpdate('logos', (editedBrand.logos || []).filter((_, i) => i !== index)); toast.success('Logo removed'); }} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
                     </div>
                 ))}
             </div>
@@ -240,7 +243,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                 {(editedBrand.graphics || []).map((graphic, index) => (
                     <div key={index} className="flex items-center justify-between bg-glass-light p-2 rounded-md text-sm">
                         <span className="truncate">{graphic.name}</span>
-                        <button type="button" onClick={() => handleUpdate('graphics', (editedBrand.graphics || []).filter((_, i) => i !== index))} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
+                        <button type="button" onClick={() => { handleUpdate('graphics', (editedBrand.graphics || []).filter((_, i) => i !== index)); toast.success('Graphic removed'); }} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
                     </div>
                 ))}
             </div>
@@ -252,7 +255,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                 {(editedBrand.imagery || []).map((image, index) => (
                      <div key={index} className="flex items-center justify-between bg-glass-light p-2 rounded-md text-sm">
                         <span className="truncate">{image.name}</span>
-                        <button type="button" onClick={() => handleUpdate('imagery', (editedBrand.imagery || []).filter((_, i) => i !== index))} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
+                        <button type="button" onClick={() => { handleUpdate('imagery', (editedBrand.imagery || []).filter((_, i) => i !== index)); toast.success('Image removed'); }} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
                     </div>
                 ))}
             </div>

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Task, Tag, TimeLog, RecurringTaskSettings, Stage, Activity, Comment, User, Board, Project } from '../types';
 import { useData } from '../contexts/DataContext';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { AddIcon } from './icons/AddIcon';
 import { EditIcon } from './icons/EditIcon';
 import { TimerIcon } from './icons/TimerIcon';
@@ -162,12 +163,14 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         
         // Call parent update which handles Firestore update
         onUpdateTask(editedTask);
+        toast.success('Task updated');
         onClose();
     };
 
     const handleDelete = () => {
         if (window.confirm('Are you sure you want to delete this task?')) {
             onDeleteTask(task.id);
+            toast.success('Task deleted');
             onClose();
         }
     };
@@ -198,9 +201,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                     color: newTag.color,
                     boardId: task.boardId
                 });
+                toast.success(`Tag "${tagName}" created`);
             } catch(e) {
                 console.error("Failed to create tag in Firestore", e);
+                toast.error('Failed to create tag');
             }
+        } else {
+            toast.success(`Tag "${tagName}" created`);
         }
     };
 
@@ -229,9 +236,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                     type: file.type.split('/')[1] || 'file'
                 };
                 setEditedTask(prev => ({...prev, attachments: [...prev.attachments, newAttachment]}));
+                toast.success('Attachment uploaded');
             } catch (error) {
                 console.error("Error uploading attachment:", error);
-                alert("Failed to upload attachment.");
+                toast.error('Failed to upload attachment');
             } finally {
                 setUploadingAttachment(false);
             }
@@ -240,6 +248,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
     
      const handleRemoveAttachment = (attachmentId: string) => {
         setEditedTask(prev => ({ ...prev, attachments: prev.attachments.filter(a => a.id !== attachmentId)}));
+        toast.success('Attachment removed');
     };
 
     const handlePostComment = async () => {
@@ -264,9 +273,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
             if (project && board && !task.id.startsWith('task-')) {
                  try {
                     await addDoc(collection(db, 'projects', project.id, 'boards', board.id, 'tasks', task.id, 'comments'), commentData);
+                    toast.success('Comment posted');
                  } catch(e) {
                      console.error("Failed to post comment to Firestore", e);
+                     toast.error('Failed to post comment');
                  }
+            } else {
+                toast.success('Comment posted');
             }
         }
     };

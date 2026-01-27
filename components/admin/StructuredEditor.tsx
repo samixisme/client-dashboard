@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import EditableItem from './EditableItem';
+import { toast } from 'sonner';
 
 interface DataSource {
     name: string;
@@ -27,6 +28,7 @@ const StructuredEditor: React.FC<{ source: DataSource }> = ({ source }) => {
     const handleDeleteItem = (index: number) => {
         if (window.confirm('Are you sure you want to delete this item?')) {
             setItems(items.filter((_, i) => i !== index));
+            toast.success('Item deleted');
         }
     };
 
@@ -60,10 +62,12 @@ const StructuredEditor: React.FC<{ source: DataSource }> = ({ source }) => {
             newItem = { id: `new-${Date.now()}` };
         }
         setItems([...items, newItem]);
+        toast.success('Item added');
     };
 
     const handleSave = () => {
         source.onSave(items);
+        toast.success('Changes saved');
     };
 
     return (

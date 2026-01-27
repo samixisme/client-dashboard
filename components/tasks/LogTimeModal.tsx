@@ -4,6 +4,7 @@ import { useTimer } from '../../contexts/TimerContext';
 import { TimeLog } from '../../types';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
+import { toast } from 'sonner';
 
 interface LogTimeModalProps {
     isOpen: boolean;
@@ -21,10 +22,11 @@ const LogTimeModal: React.FC<LogTimeModalProps> = ({ isOpen, onClose, onTaskModa
 
     const handleStartTimer = () => {
         if (runningTimer) {
-            alert('A timer is already running. Please stop it before starting a new one.');
+            toast.error('A timer is already running. Stop it first.');
             return;
         }
         startTimer(taskId);
+        toast.success('Timer started');
         onTaskModalClose(); // Close the main task modal
     };
     
@@ -57,9 +59,11 @@ const LogTimeModal: React.FC<LogTimeModalProps> = ({ isOpen, onClose, onTaskModa
                     await addDoc(collection(db, 'projects', projectId, 'boards', boardId, 'tasks', taskId, 'time_logs'), newLogData);
                 } catch (e) {
                     console.error("Error logging time to Firestore", e);
+                    toast.error('Failed to sync time log');
                 }
             }
 
+            toast.success('Time logged successfully');
             onClose();
         }
     };

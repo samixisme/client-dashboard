@@ -5,7 +5,10 @@ import LoginPage from './pages/LoginPage';
 import { auth, db } from './utils/firebase';
 import { onAuthStateChanged, signOut, isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import LiquidEther from './src/components/background/LiquidEther.tsx';
+import './src/components/background/global-background.css';
 import './cursor.css';
+import { Toaster } from 'sonner';
 
 // --- Other Page Imports ---
 import DashboardPage from './pages/DashboardPage';
@@ -63,6 +66,8 @@ import { SearchProvider } from './contexts/SearchContext';
 import { AdminProvider } from './contexts/AdminContext';
 import { DataProvider } from './contexts/DataContext';
 import { TimerProvider } from './contexts/TimerContext';
+import { CalendarProvider } from './contexts/CalendarContext';
+import { toast } from 'sonner';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -112,7 +117,9 @@ function App() {
       if (email) {
         signInWithEmailLink(auth, email, window.location.href)
           .catch((err) => {
-            setError("Failed to sign in with email link. It may be expired or invalid.");
+            toast.error('Failed to sign in', {
+              description: 'The link may be expired or invalid'
+            });
             setIsInitializing(false);
           });
       }
@@ -132,7 +139,9 @@ function App() {
           }
           setIsAuthenticated(true);
         } catch (err: any) {
-          setError(err.message || "Database connection failed.");
+          toast.error('Database connection failed', {
+            description: 'Please try again'
+          });
           setIsAuthenticated(true);
         }
       } else {
@@ -154,6 +163,7 @@ function App() {
       setIsAuthenticated(false);
       setUserStatus(null);
       setError(null);
+      toast.success('Logged out successfully');
     });
   }
 
@@ -193,13 +203,42 @@ function App() {
   
   return (
     <>
+      {/* Global Liquid Ether Background */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100vh',
+        zIndex: -1
+      }}>
+        <LiquidEther
+          colors={['#A3E635', '#84CC16', '#65A30D']}
+          mouseForce={43}
+          cursorSize={30}
+          isViscous
+          viscous={67}
+          iterationsViscous={48}
+          iterationsPoisson={32}
+          resolution={0.5}
+          isBounce={false}
+          autoDemo={false}
+          autoSpeed={0.9}
+          autoIntensity={3.4}
+          takeoverDuration={0.25}
+          autoResumeDelay={3000}
+          autoRampDuration={0.6}
+        />
+      </div>
+
       <div ref={cursorRef} className="custom-cursor"></div>
       <div ref={cursorDotRef} className="custom-cursor-dot"></div>
       <AdminProvider>
         <DataProvider>
           <TimerProvider>
-            <SearchProvider>
-               <Routes>
+            <CalendarProvider>
+              <SearchProvider>
+                <Routes>
                   {/* Admin CMS Routes - Completely separate layout */}
                   <Route path="/admin/*" element={<AdminLayout />}>
                       <Route index element={<AdminDashboardPage />} />
@@ -395,10 +434,26 @@ function App() {
                    <Route path="*" element={<Navigate to="/" />} />
 
                 </Routes>
-            </SearchProvider>
+              </SearchProvider>
+            </CalendarProvider>
           </TimerProvider>
         </DataProvider>
       </AdminProvider>
+      <Toaster
+        position="top-right"
+        expand={true}
+        richColors
+        closeButton
+        theme="dark"
+        toastOptions={{
+          style: {
+            background: 'rgba(28, 28, 28, 0.95)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(163, 230, 53, 0.2)',
+            color: '#F4F4F5',
+          },
+        }}
+      />
     </>
   );
 }

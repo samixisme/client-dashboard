@@ -23,6 +23,7 @@ import { doc, addDoc, updateDoc, deleteDoc, collection, setDoc } from 'firebase/
 import { db } from '../utils/firebase';
 import { slugify } from '../utils/slugify';
 import { deleteStageDeep, deleteTaskDeep } from '../utils/dataCleanup';
+import { toast } from 'sonner';
 
 export type ViewMode = 'kanban' | 'list' | 'table' | 'calendar';
 
@@ -247,6 +248,7 @@ const ProjectBoardPage = () => {
                 forceUpdate();
             }
         }
+        toast.success('Stage created');
         setIsAddStageModalOpen(false);
     };
     
@@ -295,6 +297,7 @@ const ProjectBoardPage = () => {
             }
         });
         forceUpdate();
+        toast.success('Tasks moved successfully');
         setMoveTasksModalState({ isOpen: false, sourceStage: null });
     };
 
@@ -358,6 +361,7 @@ const ProjectBoardPage = () => {
             }
         });
         forceUpdate();
+        toast.success('Stage order updated');
         setIsReorderModalOpen(false);
     };
 

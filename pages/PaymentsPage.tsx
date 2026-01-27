@@ -9,26 +9,42 @@ import AdminPanel from '../components/admin/AdminPanel';
 import { InvoiceDownloadButton } from '../src/components/payments/InvoiceDownloadButton';
 import { EstimateDownloadButton } from '../src/components/payments/EstimateDownloadButton';
 import { userSettings } from '../data/paymentsData';
+import { toast } from 'sonner';
 
+// Modern StatusSelect Component with color-coded icons
+const StatusSelect = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (newStatus: string) => void;
+}) => {
+  const statusConfig = {
+    'Draft': { color: 'bg-gray-500/20 text-gray-700 border-gray-500/30', icon: '📝' },
+    'Sent': { color: 'bg-blue-500/20 text-blue-700 border-blue-500/30', icon: '📤' },
+    'Paid': { color: 'bg-green-500/20 text-green-700 border-green-500/30', icon: '✓' },
+    'Overdue': { color: 'bg-red-500/20 text-red-700 border-red-500/30', icon: '⚠' }
+  };
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full';
-  let colorClasses = '';
-  switch (status) {
-    case 'Paid':
-      colorClasses = 'bg-green-500/20 text-green-400';
-      break;
-    case 'Sent':
-      colorClasses = 'bg-blue-500/20 text-blue-400';
-      break;
-    case 'Draft':
-      colorClasses = 'bg-gray-500/20 text-gray-400';
-      break;
-    case 'Overdue':
-      colorClasses = 'bg-red-500/20 text-red-400';
-      break;
-  }
-  return <span className={`${baseClasses} ${colorClasses}`}>{status}</span>;
+  const config = statusConfig[value as keyof typeof statusConfig];
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`
+        px-3 py-1.5 border rounded-lg text-xs font-semibold
+        focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
+        cursor-pointer transition-all duration-200
+        ${config.color}
+      `}
+    >
+      <option value="Draft">📝 Draft</option>
+      <option value="Sent">📤 Sent</option>
+      <option value="Paid">✓ Paid</option>
+      <option value="Overdue">⚠ Overdue</option>
+    </select>
+  );
 };
 
 const PaymentsPage = () => {
@@ -60,6 +76,7 @@ const PaymentsPage = () => {
             inv.id === invoiceId ? { ...inv, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : inv
         );
         updateData('invoices', updatedInvoices);
+        toast.success(`Invoice status updated to ${newStatus}`);
     };
 
     // Handle status change for estimates
@@ -68,6 +85,7 @@ const PaymentsPage = () => {
             est.id === estimateId ? { ...est, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : est
         );
         updateData('estimates', updatedEstimates);
+        toast.success(`Estimate status updated to ${newStatus}`);
     };
     
     const brandClientIds = useMemo(() => {
@@ -106,65 +124,165 @@ const PaymentsPage = () => {
     return (
         <div>
             {isAdminMode && <AdminPanel dataSources={dataSources} />}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-text-primary">{brand ? `Payments for ${brand.name}` : 'Payments'}</h1>
-                    <p className="mt-2 text-text-secondary">Manage your invoices and estimates.</p>
-                </div>
-                <div>
-                    {activeTab === 'invoices' ? (
-                         <Link to="/payments/invoice/new" className="px-4 py-2 bg-primary text-text-primary text-sm font-medium rounded-lg hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary">
-                            Create New Invoice
-                        </Link>
-                    ) : (
-                         <Link to="/payments/estimate/new" className="px-4 py-2 bg-primary text-text-primary text-sm font-medium rounded-lg hover:bg-primary-hover">
-                            Create New Estimate
-                        </Link>
-                    )}
+
+            {/* Modern Header with Card Background */}
+            <div className="bg-glass-light border border-border-color rounded-xl p-6 mb-6">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h1 className="text-3xl font-bold text-text-primary mb-2">
+                            {brand ? `Payments for ${brand.name}` : 'Payments'}
+                        </h1>
+                        <p className="text-text-secondary">
+                            Manage your invoices and estimates with ease
+                        </p>
+                    </div>
+                    <div>
+                        {activeTab === 'invoices' ? (
+                            <Link
+                                to="/payments/invoice/new"
+                                className="px-6 py-3 bg-primary text-gray-900 text-sm font-semibold rounded-lg hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            >
+                                + Create Invoice
+                            </Link>
+                        ) : (
+                            <Link
+                                to="/payments/estimate/new"
+                                className="px-6 py-3 bg-primary text-gray-900 text-sm font-semibold rounded-lg hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            >
+                                + Create Estimate
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            <div className="mt-8 border-b border-border-color flex items-center gap-4">
-                <button onClick={() => setActiveTab('invoices')} className={`py-2 px-4 text-sm font-medium ${activeTab === 'invoices' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-primary'}`}>Invoices</button>
-                <button onClick={() => setActiveTab('estimates')} className={`py-2 px-4 text-sm font-medium ${activeTab === 'estimates' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-primary'}`}>Estimates</button>
+            {/* Modern Pill-Style Tab Navigation with Sliding Indicator */}
+            <div className="relative inline-flex items-center gap-2 mb-6 bg-glass-light rounded-lg p-1 border border-border-color">
+                {/* Sliding background indicator */}
+                <div
+                    className="absolute top-1 bottom-1 bg-primary rounded-lg shadow-md transition-all duration-300 ease-out"
+                    style={{
+                        left: activeTab === 'invoices' ? '4px' : 'calc(50% + 2px)',
+                        width: 'calc(50% - 6px)'
+                    }}
+                />
+
+                <button
+                    onClick={() => setActiveTab('invoices')}
+                    className={`
+                        relative px-6 py-3 text-sm font-semibold rounded-lg transition-colors duration-200 z-10
+                        ${activeTab === 'invoices'
+                            ? 'text-gray-900'
+                            : 'text-text-secondary hover:text-text-primary'
+                        }
+                    `}
+                >
+                    Invoices
+                    {filteredInvoices.length > 0 && (
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs transition-colors duration-200 ${
+                            activeTab === 'invoices' ? 'bg-black/10' : 'bg-glass'
+                        }`}>
+                            {filteredInvoices.length}
+                        </span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab('estimates')}
+                    className={`
+                        relative px-6 py-3 text-sm font-semibold rounded-lg transition-colors duration-200 z-10
+                        ${activeTab === 'estimates'
+                            ? 'text-gray-900'
+                            : 'text-text-secondary hover:text-text-primary'
+                        }
+                    `}
+                >
+                    Estimates
+                    {filteredEstimates.length > 0 && (
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs transition-colors duration-200 ${
+                            activeTab === 'estimates' ? 'bg-black/10' : 'bg-glass'
+                        }`}>
+                            {filteredEstimates.length}
+                        </span>
+                    )}
+                </button>
             </div>
             
-            <div className="mt-6 bg-glass rounded-lg border border-border-color overflow-hidden">
+            {/* Modern Card-Style Table with Enhanced Design */}
+            <div className="bg-glass-light border border-border-color rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-border-color">
-                        <thead className="bg-glass-light">
+                        <thead className="bg-glass">
                             <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Number</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Client</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Date</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Status</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Total</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Actions</th>
+                                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Number</th>
+                                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Client</th>
+                                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Date</th>
+                                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Status</th>
+                                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Amount</th>
+                                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-text-secondary uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border-color">
+                            {/* Empty State for Invoices */}
+                            {activeTab === 'invoices' && filteredInvoices.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-16">
+                                        <div className="text-center">
+                                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-glass mb-4">
+                                                <span className="text-4xl">📄</span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-text-primary mb-2">
+                                                No invoices yet
+                                            </h3>
+                                            <p className="text-text-secondary mb-6">
+                                                Create your first invoice to get started
+                                            </p>
+                                            <Link
+                                                to="/payments/invoice/new"
+                                                className="inline-flex px-6 py-3 bg-primary text-gray-900 text-sm font-semibold rounded-lg hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                            >
+                                                + Create Invoice
+                                            </Link>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+
+                            {/* Invoice Rows with Enhanced Design */}
                             {activeTab === 'invoices' && filteredInvoices.map((invoice) => {
                                 const client = clients.find(c => c.id === invoice.clientId);
                                 return (
-                                <tr key={invoice.id} className="hover:bg-glass-light">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">{invoice.invoiceNumber}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">{getClientName(invoice.clientId)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">{new Date(invoice.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <select
-                                            value={invoice.status}
-                                            onChange={(e) => handleInvoiceStatusChange(invoice.id, e.target.value)}
-                                            className="px-3 py-1 border border-border-color bg-glass-light text-text-primary rounded-lg text-xs font-medium focus:outline-none focus:ring-primary focus:border-primary"
-                                        >
-                                            <option value="Draft">Draft</option>
-                                            <option value="Sent">Sent</option>
-                                            <option value="Paid">Paid</option>
-                                            <option value="Overdue">Overdue</option>
-                                        </select>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">{(invoice.totals?.totalNet ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' })}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <tr key={invoice.id} className="hover:bg-glass transition-colors duration-150">
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center gap-2">
+                                            <span className="text-text-secondary">📄</span>
+                                            <span className="text-sm font-semibold text-primary">{invoice.invoiceNumber}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-text-primary">{getClientName(invoice.clientId)}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm text-text-secondary">
+                                            {new Date(invoice.date).toLocaleDateString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                year: 'numeric'
+                                            })}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <StatusSelect
+                                            value={invoice.status}
+                                            onChange={(newStatus) => handleInvoiceStatusChange(invoice.id, newStatus)}
+                                        />
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-bold text-text-primary">
+                                            {(invoice.totals?.totalNet ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' })}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        <div className="flex items-center justify-end gap-2">
                                             {client && (
                                                 <InvoiceDownloadButton
                                                     invoice={invoice}
@@ -175,7 +293,7 @@ const PaymentsPage = () => {
                                             )}
                                             <Link
                                                 to={`/payments/invoices/edit/${invoice.id}`}
-                                                className="px-3 py-1 text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded transition-colors"
+                                                className="px-4 py-2 text-xs font-semibold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-all duration-200 border border-blue-500/20 cursor-pointer"
                                             >
                                                 Edit
                                             </Link>
@@ -184,9 +302,10 @@ const PaymentsPage = () => {
                                                     if (window.confirm('Are you sure you want to delete this invoice?')) {
                                                         const updatedInvoices = allInvoices.filter(inv => inv.id !== invoice.id);
                                                         updateData('invoices', updatedInvoices);
+                                                        toast.success('Invoice deleted successfully');
                                                     }
                                                 }}
-                                                className="px-3 py-1 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded transition-colors"
+                                                className="px-4 py-2 text-xs font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all duration-200 border border-red-500/20 cursor-pointer"
                                             >
                                                 Delete
                                             </button>
@@ -195,28 +314,68 @@ const PaymentsPage = () => {
                                 </tr>
                                 );
                             })}
-                             {activeTab === 'estimates' && filteredEstimates.map((estimate) => {
+
+                            {/* Empty State for Estimates */}
+                            {activeTab === 'estimates' && filteredEstimates.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-16">
+                                        <div className="text-center">
+                                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-glass mb-4">
+                                                <span className="text-4xl">📋</span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-text-primary mb-2">
+                                                No estimates yet
+                                            </h3>
+                                            <p className="text-text-secondary mb-6">
+                                                Create your first estimate to get started
+                                            </p>
+                                            <Link
+                                                to="/payments/estimate/new"
+                                                className="inline-flex px-6 py-3 bg-primary text-gray-900 text-sm font-semibold rounded-lg hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                            >
+                                                + Create Estimate
+                                            </Link>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+
+                            {/* Estimate Rows with Enhanced Design */}
+                            {activeTab === 'estimates' && filteredEstimates.map((estimate) => {
                                 const client = clients.find(c => c.id === estimate.clientId);
                                 return (
-                                <tr key={estimate.id} className="hover:bg-glass-light">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">{estimate.estimateNumber}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">{getClientName(estimate.clientId)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">{new Date(estimate.date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <select
-                                            value={estimate.status}
-                                            onChange={(e) => handleEstimateStatusChange(estimate.id, e.target.value)}
-                                            className="px-3 py-1 border border-border-color bg-glass-light text-text-primary rounded-lg text-xs font-medium focus:outline-none focus:ring-primary focus:border-primary"
-                                        >
-                                            <option value="Draft">Draft</option>
-                                            <option value="Sent">Sent</option>
-                                            <option value="Paid">Paid</option>
-                                            <option value="Overdue">Overdue</option>
-                                        </select>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary font-semibold">{(estimate.totals?.totalNet ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' })}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <tr key={estimate.id} className="hover:bg-glass transition-colors duration-150">
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center gap-2">
+                                            <span className="text-text-secondary">📋</span>
+                                            <span className="text-sm font-semibold text-primary">{estimate.estimateNumber}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-text-primary">{getClientName(estimate.clientId)}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm text-text-secondary">
+                                            {new Date(estimate.date).toLocaleDateString('en-US', {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                year: 'numeric'
+                                            })}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <StatusSelect
+                                            value={estimate.status}
+                                            onChange={(newStatus) => handleEstimateStatusChange(estimate.id, newStatus)}
+                                        />
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-bold text-text-primary">
+                                            {(estimate.totals?.totalNet ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'MAD' })}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        <div className="flex items-center justify-end gap-2">
                                             {client && (
                                                 <EstimateDownloadButton
                                                     estimate={estimate}
@@ -227,7 +386,7 @@ const PaymentsPage = () => {
                                             )}
                                             <Link
                                                 to={`/payments/estimates/edit/${estimate.id}`}
-                                                className="px-3 py-1 text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded transition-colors"
+                                                className="px-4 py-2 text-xs font-semibold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-all duration-200 border border-blue-500/20 cursor-pointer"
                                             >
                                                 Edit
                                             </Link>
@@ -236,9 +395,10 @@ const PaymentsPage = () => {
                                                     if (window.confirm('Are you sure you want to delete this estimate?')) {
                                                         const updatedEstimates = allEstimates.filter(est => est.id !== estimate.id);
                                                         updateData('estimates', updatedEstimates);
+                                                        toast.success('Estimate deleted successfully');
                                                     }
                                                 }}
-                                                className="px-3 py-1 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded transition-colors"
+                                                className="px-4 py-2 text-xs font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all duration-200 border border-red-500/20 cursor-pointer"
                                             >
                                                 Delete
                                             </button>

@@ -6,6 +6,7 @@ import { Invoice, Client, ItemCategory, LineItem, User } from '../../types';
 import AddClientModal from './AddClientModal';
 import { createCalendarEvent } from '../../utils/calendarSync';
 import { useData } from '../../contexts/DataContext';
+import { toast } from 'sonner';
 
 interface InvoiceFormProps {
     existingInvoice?: Invoice;
@@ -110,7 +111,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
 
     const handleSave = () => {
         if (!invoice.clientId) {
-            alert("Please select a client.");
+            toast.error('Please select a client');
             return;
         }
 
@@ -130,7 +131,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
             );
             updateData('invoices', updatedInvoices);
 
-            alert('Invoice updated successfully!');
+            toast.success('Invoice updated successfully!');
         } else {
             // Create new invoice with client-based numbering
             const selectedClient = clients.find(c => c.id === invoice.clientId);
@@ -171,10 +172,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
             // Sync to calendar
             createCalendarEvent(finalInvoice, 'invoice');
 
-            alert('Invoice created successfully!');
+            toast.success(`Invoice ${newInvoiceNumber} created successfully!`);
         }
 
-        console.log("Invoice saved:", finalInvoice);
         navigate('/payments');
     };
 

@@ -9,6 +9,7 @@ import { ArrowRightIcon } from '../icons/ArrowRightIcon';
 import AdminModeToggle from '../admin/AdminModeToggle';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useData } from '../../contexts/DataContext';
+import { useCalendar, CalendarView } from '../../contexts/CalendarContext';
 import { BoardIcon } from '../icons/BoardIcon';
 import { RoadmapIcon } from '../icons/RoadmapIcon';
 import { FeedbackIcon } from '../icons/FeedbackIcon';
@@ -24,6 +25,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
   const navigate = useNavigate();
   const { isAdminMode } = useAdmin();
   const { data } = useData();
+  const { view, setView, headerTitle, navigateDate, today, isCalendarPage } = useCalendar();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   // Updated matching to be more robust
@@ -101,6 +103,36 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
               </div>
             )}
           </div>
+
+          {/* Calendar Controls - Only show on calendar page */}
+          {isCalendarPage && (
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigateDate(-1)} className="px-3 py-2 bg-glass border border-border-color rounded-lg hover:bg-glass-light transition-all duration-200 shadow-sm hover:shadow-md">&larr;</button>
+              <button onClick={today} className="px-4 py-2 bg-glass border border-border-color rounded-lg hover:bg-glass-light transition-all duration-200 shadow-sm hover:shadow-md text-sm font-semibold whitespace-nowrap">{headerTitle}</button>
+              <button onClick={() => navigateDate(1)} className="px-3 py-2 bg-glass border border-border-color rounded-lg hover:bg-glass-light transition-all duration-200 shadow-sm hover:shadow-md">&rarr;</button>
+              <div className="grid grid-cols-5 gap-0 bg-glass-light rounded-lg p-1 border border-border-color shadow-sm ml-2 relative overflow-hidden">
+                <div
+                  className="absolute bg-primary rounded-md transition-all duration-300 ease-out shadow-md pointer-events-none"
+                  style={{
+                    left: `calc(${(['month', 'week', 'day', '3-month', '6-month'] as CalendarView[]).indexOf(view) * 20}% + 4px)`,
+                    width: 'calc(20% - 8px)',
+                    height: 'calc(100% - 8px)',
+                    top: '4px',
+                  }}
+                />
+                {(['month', 'week', 'day', '3-month', '6-month'] as CalendarView[]).map(v => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors duration-300 relative z-10 whitespace-nowrap ${view === v ? 'text-gray-900' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    {v.charAt(0).toUpperCase() + v.replace('-month', ' Month').slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="hidden md:flex items-center gap-4">
             <Header />
              {/* Profile dropdown */}

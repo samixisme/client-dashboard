@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Estimate, Client, UserSettings } from '../../../types';
 import { EstimatePdfGenerator } from '../../utils/pdf/estimatePdfGenerator';
+import { toast } from 'sonner';
 
 interface EstimateDownloadButtonProps {
     estimate: Estimate;
@@ -22,17 +23,18 @@ export const EstimateDownloadButton: React.FC<EstimateDownloadButtonProps> = ({
         try {
             setIsGenerating(true);
             await EstimatePdfGenerator.generateEstimatePdf(estimate, client, userSettings);
+            toast.success('Estimate PDF downloaded');
         } catch (error) {
             console.error('Failed to generate estimate PDF:', error);
-            alert('Failed to generate estimate PDF. Please try again.');
+            toast.error('Failed to generate PDF');
         } finally {
             setIsGenerating(false);
         }
     };
 
     const buttonClasses = variant === 'primary'
-        ? 'px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover'
-        : 'px-3 py-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded transition-colors';
+        ? 'px-4 py-2 bg-primary text-gray-900 rounded-lg hover:bg-primary-hover'
+        : 'px-4 py-2 text-xs font-semibold text-green-400 bg-green-500/10 hover:bg-green-500/20 rounded-lg transition-all duration-200 border border-green-500/20 cursor-pointer';
 
     return (
         <button

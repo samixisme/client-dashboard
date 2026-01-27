@@ -1,0 +1,8 @@
+/* Global styles to allow Liquid Ether background to show through */
+body {
+  background: transparent !important;
+}
+
+html {
+  background-color: #000000;
+}

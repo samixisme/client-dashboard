@@ -18,6 +18,7 @@ import AddBrandModal from '../components/brands/AddBrandModal';
 import BrandFilterSortPopover, { BrandSortState } from '../components/brands/BrandFilterSortPopover';
 import AdminPanel from '../components/admin/AdminPanel';
 import { useAdmin } from '../contexts/AdminContext';
+import { toast } from 'sonner';
 
 const StatBox = ({ to, icon, count, label }: { to: string; icon: React.ReactNode; count: number; label: string }) => {
     const singularLabel = count === 1 && label.endsWith('s') ? label.slice(0, -1) : label;
@@ -160,14 +161,15 @@ const BrandsPage = () => {
 
     const handleAddBrand = ({ name, memberIds }: { name: string, memberIds: string[] }) => {
         // This is now handled by the Admin page and Firestore, but we can keep a mock version for non-admin
-        const newBrand: Brand = { 
-            id: `brand-${Date.now()}`, 
-            name, 
+        const newBrand: Brand = {
+            id: `brand-${Date.now()}`,
+            name,
             createdAt: new Date(),
             memberIds: memberIds,
         };
         data.brands.push(newBrand as any);
         forceUpdate();
+        toast.success('Brand created');
         setIsAddBrandModalOpen(false);
     };
 

@@ -71,10 +71,11 @@ const AdminBrandsPage: React.FC = () => {
     setIsProcessing(true);
     try {
       await deleteDoc(doc(db, 'brands', brandToDelete.id));
+      toast.success('Brand deleted');
       handleCloseDeleteModal();
     } catch (err) {
       console.error("Error deleting brand: ", err);
-      alert("An error occurred while deleting the brand. Please check the console for details.");
+      toast.error('Failed to delete brand');
     } finally {
       setIsProcessing(false);
     }
