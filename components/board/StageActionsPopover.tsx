@@ -105,16 +105,16 @@ const StageActionsPopover: React.FC<StageActionsPopoverProps> = ({
 
     const MainView = (
         <div className="p-2">
-            <button onClick={() => setView('sort')} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-md hover:bg-surface-light hover:text-text-primary">Sort By</button>
-            <button onClick={() => setView('background')} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-md hover:bg-surface-light hover:text-text-primary">Change Background</button>
-            <button onClick={handleActionClick(onOpenReorder)} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-md hover:bg-surface-light hover:text-text-primary">Reorder Stages</button>
-            <div className="my-1 border-t border-border-color"></div>
-            <button onClick={handleActionClick(() => onCopyStage(stage.id))} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-md hover:bg-surface-light hover:text-text-primary">Copy Stage</button>
-            <button onClick={handleActionClick(() => onSetStatus(stage.id, newStatus))} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-md hover:bg-surface-light hover:text-text-primary">Set Status {newStatus}</button>
-            <button onClick={handleActionClick(onMoveAllTasks)} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-md hover:bg-surface-light hover:text-text-primary">Move all tasks</button>
-            <div className="my-1 border-t border-border-color"></div>
-            <button onClick={handleActionClick(() => onArchiveAllTasks(stage.id))} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-md hover:bg-surface-light hover:text-text-primary">Archive all tasks</button>
-            <button onClick={handleActionClick(() => onArchiveStage(stage.id))} className="w-full text-left block px-3 py-2 text-sm text-red-400 rounded-md hover:bg-red-500/20">Archive this Stage</button>
+            <button onClick={() => setView('sort')} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-lg hover:bg-glass-light/60 hover:text-primary hover:scale-105 transition-all duration-300">Sort By</button>
+            <button onClick={() => setView('background')} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-lg hover:bg-glass-light/60 hover:text-primary hover:scale-105 transition-all duration-300">Change Background</button>
+            <button onClick={handleActionClick(onOpenReorder)} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-lg hover:bg-glass-light/60 hover:text-primary hover:scale-105 transition-all duration-300">Reorder Stages</button>
+            <div className="my-1 border-t border-border-color/50"></div>
+            <button onClick={handleActionClick(() => onCopyStage(stage.id))} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-lg hover:bg-glass-light/60 hover:text-primary hover:scale-105 transition-all duration-300">Copy Stage</button>
+            <button onClick={handleActionClick(() => onSetStatus(stage.id, newStatus))} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-lg hover:bg-glass-light/60 hover:text-primary hover:scale-105 transition-all duration-300">Set Status {newStatus}</button>
+            <button onClick={handleActionClick(onMoveAllTasks)} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-lg hover:bg-glass-light/60 hover:text-primary hover:scale-105 transition-all duration-300">Move all tasks</button>
+            <div className="my-1 border-t border-border-color/50"></div>
+            <button onClick={handleActionClick(() => onArchiveAllTasks(stage.id))} className="w-full text-left block px-3 py-2 text-sm text-text-secondary rounded-lg hover:bg-glass-light/60 hover:text-primary hover:scale-105 transition-all duration-300">Archive all tasks</button>
+            <button onClick={handleActionClick(() => onArchiveStage(stage.id))} className="w-full text-left block px-3 py-2 text-sm text-red-400 rounded-lg hover:bg-red-500/20 hover:scale-105 transition-all duration-300">Archive this Stage</button>
         </div>
     );
 
@@ -137,7 +137,10 @@ const StageActionsPopover: React.FC<StageActionsPopoverProps> = ({
                 <button onClick={() => setSortConfig(c => ({...c, direction: 'asc'}))} className={`flex-1 text-center text-sm py-1.5 rounded-md transition-colors ${sortConfig.direction === 'asc' ? 'bg-primary text-background font-semibold' : 'text-text-secondary'}`}>Ascending</button>
                 <button onClick={() => setSortConfig(c => ({...c, direction: 'desc'}))} className={`flex-1 text-center text-sm py-1.5 rounded-md transition-colors ${sortConfig.direction === 'desc' ? 'bg-primary text-background font-semibold' : 'text-text-secondary'}`}>Descending</button>
             </div>
-            <button onClick={handleApplySort} className="w-full px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Apply</button>
+            <button onClick={handleApplySort} className="w-full px-4 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group">
+                <span className="relative z-10">Apply</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+            </button>
         </div>
     );
 
@@ -164,9 +167,9 @@ const StageActionsPopover: React.FC<StageActionsPopoverProps> = ({
     );
 
     return (
-        <div 
+        <div
             ref={popoverRef}
-            className="z-30 w-72 bg-surface rounded-xl shadow-lg border border-border-color"
+            className="z-30 w-72 bg-glass/60 backdrop-blur-xl rounded-xl shadow-xl border border-border-color animate-scale-in"
             style={style}
         >
             <div className="relative overflow-hidden h-[390px]">

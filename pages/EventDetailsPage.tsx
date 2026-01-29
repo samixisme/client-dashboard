@@ -96,161 +96,227 @@ const EventDetailsPage = () => {
         alert('Event updated successfully!');
     };
 
-    if (loading) return <div className="flex h-screen items-center justify-center text-text-secondary animate-pulse">Loading detail...</div>;
-    if (!event) return <div className="flex h-screen items-center justify-center text-text-secondary">Event not found.</div>;
+    if (loading) return (
+        <div className="flex h-screen items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)]"></div>
+                <p className="text-sm font-bold text-text-primary animate-pulse">Loading event details...</p>
+            </div>
+        </div>
+    );
+
+    if (!event) return (
+        <div className="flex h-screen items-center justify-center flex-col gap-4">
+            <div className="w-16 h-16 rounded-full bg-glass-light/50 flex items-center justify-center">
+                <svg className="w-8 h-8 text-text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </div>
+            <p className="text-text-secondary font-medium">Event not found.</p>
+            <button onClick={() => navigate('/calendar')} className="px-4 py-2 bg-primary text-background font-semibold rounded-lg hover:bg-primary-hover transition-all duration-200">
+                Back to Calendar
+            </button>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-background text-text-primary p-6 md:p-12 font-sans selection:bg-primary/30">
+            <style>{`
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .animate-fade-in-up {
+                    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    opacity: 0;
+                }
+            `}</style>
+
             <div className="max-w-6xl mx-auto">
-                {/* Header / Breadcrumbs */}
-                <div className="flex items-center gap-2 text-sm text-text-secondary mb-8">
-                     <button onClick={() => navigate('/calendar')} className="hover:text-primary transition-colors">Calendar</button>
-                     <span>/</span>
+                {/* Header / Breadcrumbs - Matching Projects Page Style */}
+                <div className="flex items-center gap-2 text-sm text-text-secondary mb-8 animate-fade-in-up" style={{ animationDelay: '0ms' }}>
+                     <button onClick={() => navigate('/calendar')} className="hover:text-primary font-semibold transition-all duration-300 hover:scale-105">Calendar</button>
+                     <span className="text-border-color">/</span>
                      {projectContext ? (
                          <>
-                            <span className="hover:text-primary transition-colors cursor-default">{projectContext.name}</span>
-                            <span>/</span>
+                            <span className="hover:text-primary font-semibold transition-all duration-300 cursor-default">{projectContext.name}</span>
+                            <span className="text-border-color">/</span>
                          </>
                      ) : null}
-                     <span className="text-text-primary font-medium">Event Details</span>
+                     <span className="text-text-primary font-bold">Event Details</span>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Main Content Area */}
-                    <div className="lg:col-span-2 space-y-8">
-                        
-                        {/* Hero Section */}
-                        <div className="bg-glass/50 backdrop-blur-2xl border border-border-color rounded-3xl p-8 relative overflow-hidden group">
-                            <div className={`absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[60px] rounded-full -mr-10 -mt-10 pointer-events-none transition-all duration-500 group-hover:bg-primary/30`}></div>
-                            
+                    <div className="lg:col-span-2 space-y-6">
+
+                        {/* Hero Section - Matching Projects Card Style */}
+                        <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-2xl p-8 relative overflow-hidden group hover:border-primary/60 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:scale-[1.01] transition-all duration-500 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                            {/* Subtle gradient overlay on hover */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
                             <div className="relative z-10">
-                                <div className="flex gap-3 mb-4">
-                                     <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-background/50 border border-border-color shadow-sm">
+                                <div className="flex gap-3 mb-4 flex-wrap">
+                                     <span className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-glass-light/60 backdrop-blur-sm border border-border-color/50 shadow-sm hover:scale-105 transition-all duration-300">
                                         {event.type.replace('_', ' ')}
                                      </span>
                                      {projectContext && (
-                                         <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 shadow-sm flex items-center gap-1">
-                                             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                                         <span className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/50 shadow-[0_0_12px_rgba(var(--primary-rgb),0.3)] flex items-center gap-2 hover:scale-105 transition-all duration-300">
+                                             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary-rgb),0.8)]"></div>
                                              {projectContext.name}
                                          </span>
                                      )}
                                 </div>
-                                
-                                <input 
-                                    type="text" 
-                                    value={editedTitle} 
+
+                                <input
+                                    type="text"
+                                    value={editedTitle}
                                     onChange={(e) => setEditedTitle(e.target.value)}
-                                    className="bg-transparent text-5xl font-extrabold text-text-primary w-full focus:outline-none border-b-2 border-transparent focus:border-primary/50 placeholder-text-secondary/30 transition-all font-display tracking-tight"
+                                    className="bg-transparent text-4xl font-bold text-text-primary w-full focus:outline-none border-b-2 border-transparent focus:border-primary/50 placeholder-text-secondary/30 transition-all duration-300 hover:text-primary pb-2"
+                                    placeholder="Event Title"
                                 />
                             </div>
                         </div>
 
-                        {/* Date & Time Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-surface-light border border-border-color rounded-2xl p-6 hover:border-primary/30 transition-colors">
-                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Starts</label>
-                                <input 
-                                    type="datetime-local" 
-                                    value={editedDates.startDate} 
+                        {/* Date & Time Grid - Matching Projects Page Style */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                            <div className="bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl p-6 hover:border-primary/40 hover:bg-glass-light/80 transition-all duration-300 hover:shadow-lg">
+                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
+                                    Starts
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={editedDates.startDate}
                                     onChange={(e) => setEditedDates({...editedDates, startDate: e.target.value})}
-                                    className="w-full bg-transparent text-xl font-medium text-text-primary focus:outline-none"
+                                    className="w-full bg-transparent text-lg font-bold text-text-primary focus:outline-none focus:text-primary transition-colors duration-300"
                                 />
                             </div>
-                            <div className="bg-surface-light border border-border-color rounded-2xl p-6 hover:border-primary/30 transition-colors">
-                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Ends</label>
-                                <input 
-                                    type="datetime-local" 
-                                    value={editedDates.endDate} 
+                            <div className="bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl p-6 hover:border-primary/40 hover:bg-glass-light/80 transition-all duration-300 hover:shadow-lg">
+                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
+                                    Ends
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={editedDates.endDate}
                                     onChange={(e) => setEditedDates({...editedDates, endDate: e.target.value})}
-                                    className="w-full bg-transparent text-xl font-medium text-text-primary focus:outline-none"
+                                    className="w-full bg-transparent text-lg font-bold text-text-primary focus:outline-none focus:text-primary transition-colors duration-300"
                                 />
                             </div>
                         </div>
 
-                        {/* Description (Placeholder for now) */}
-                         <div className="bg-glass-light border border-border-color rounded-2xl p-6 min-h-[12rem]">
-                            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-4">Description / Notes</label>
-                            <textarea 
-                                className="w-full h-full bg-transparent text-text-primary focus:outline-none resize-none placeholder-text-secondary/40 text-lg leading-relaxed"
-                                placeholder="Add detailed notes for this event..."
+                        {/* Description */}
+                         <div className="bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl p-6 min-h-[12rem] hover:border-primary/40 hover:bg-glass-light/80 transition-all duration-300 hover:shadow-lg animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+                            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                Description / Notes
+                            </label>
+                            <textarea
+                                className="w-full h-full bg-transparent text-text-primary focus:outline-none resize-none placeholder-text-secondary/50 text-base leading-relaxed focus:placeholder-text-secondary/30 transition-all duration-300"
+                                placeholder="Add detailed notes, agenda items, or context for this event..."
                                 value={editedDescription}
                                 onChange={e => setEditedDescription(e.target.value)}
+                                rows={6}
                             ></textarea>
                          </div>
                     </div>
 
                     {/* Sidebar / Meta Column */}
                     <div className="space-y-6">
-                        
-                        {/* Actions Card */}
-                        <div className="bg-surface border border-border-color rounded-2xl p-6 shadow-xl shadow-black/5">
-                            <h3 className="text-sm font-bold text-text-primary mb-4">Actions</h3>
-                            <button onClick={handleSave} className="w-full py-3 mb-3 bg-primary text-background font-bold rounded-xl hover:bg-primary-hover hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20">
-                                Save Changes
+
+                        {/* Actions Card - Matching Projects Page Button Style */}
+                        <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                            <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                                Actions
+                            </h3>
+                            <button onClick={handleSave} className="w-full py-3 mb-3 bg-primary text-background font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-105 transition-all duration-300 shadow-lg relative overflow-hidden group">
+                                <span className="relative z-10">Save Changes</span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                             </button>
                              {editedMeetLink && (
-                                <a href={editedMeetLink} target="_blank" rel="noopener noreferrer" className="block w-full py-3 text-center bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-blue-600/20">
-                                    Join Google Meet
+                                <a href={editedMeetLink} target="_blank" rel="noopener noreferrer" className="block w-full py-3 mb-3 text-center bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-[0_8px_30px_rgba(37,99,235,0.4)]">
+                                    <span className="flex items-center justify-center gap-2">
+                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                                        Join Google Meet
+                                    </span>
                                 </a>
                             )}
-                             <button onClick={() => navigate(-1)} className="w-full py-3 bg-surface-light text-text-secondary font-medium rounded-xl hover:bg-border-color transition-colors">
+                             <button onClick={() => navigate(-1)} className="w-full py-3 bg-glass-light/60 backdrop-blur-sm text-text-secondary font-semibold rounded-xl hover:bg-glass-light hover:text-text-primary border border-border-color hover:border-primary/30 transition-all duration-300">
                                 Cancel
                             </button>
                         </div>
 
-                        {/* Conferencing Input */}
-                         <div className="bg-glass border border-border-color rounded-2xl p-6">
-                            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Google Meet</label>
-                            <input 
-                                type="url" 
-                                placeholder="https://meet.google.com/..." 
-                                value={editedMeetLink} 
+                        {/* Conferencing Input - Matching Form Style */}
+                         <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-2xl p-6 hover:border-primary/40 hover:shadow-lg transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                                Google Meet
+                            </label>
+                            <input
+                                type="url"
+                                placeholder="https://meet.google.com/..."
+                                value={editedMeetLink}
                                 onChange={(e) => setEditedMeetLink(e.target.value)}
-                                className="w-full bg-glass-light border border-border-color rounded-lg px-3 py-2 text-sm text-text-primary focus:ring-2 focus:ring-primary/50"
+                                className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color/50 rounded-lg px-4 py-2.5 text-sm text-text-primary placeholder-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300"
                              />
                         </div>
 
-                        {/* Assignees Card */}
-                        <div className="bg-glass border border-border-color rounded-2xl p-6">
+                        {/* Assignees Card - Matching Projects Member Display */}
+                        <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-2xl p-6 hover:border-primary/40 hover:shadow-lg transition-all duration-300 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
                              <div className="flex justify-between items-center mb-4">
-                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">Assignees</label>
-                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{editedAssingees.length}</span>
+                                <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+                                    Assignees
+                                </label>
+                                <span className="text-xs bg-primary/15 text-primary px-2.5 py-1 rounded-lg font-bold border border-primary/50 shadow-sm">{editedAssingees.length}</span>
                              </div>
-                             
+
                              <div className="flex flex-col gap-2 mb-4">
                                  {editedAssingees.map(uid => {
                                      const u = data.users.find(user => user.id === uid);
                                      return (
-                                         <div key={uid} className="flex items-center justify-between bg-surface-light p-2 rounded-lg border border-border-color group hover:border-primary/30 transition-colors">
+                                         <div key={uid} className="flex items-center justify-between bg-glass-light/60 backdrop-blur-sm p-3 rounded-lg border border-border-color/50 group hover:border-primary/40 hover:bg-glass-light/80 transition-all duration-300 hover:shadow-md">
                                              <div className="flex items-center gap-3">
-                                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-xs font-bold text-primary">
-                                                     {(u?.name || '?').charAt(0)}
-                                                 </div>
+                                                 {u?.avatarUrl ? (
+                                                     <img src={u.avatarUrl} alt={u.name} className="w-9 h-9 rounded-full border-2 border-surface shadow-md transition-all duration-300 group-hover:scale-110 group-hover:border-primary group-hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
+                                                 ) : (
+                                                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-sm font-bold text-primary border-2 border-primary/20 shadow-md">
+                                                         {(u?.name || '?').charAt(0).toUpperCase()}
+                                                     </div>
+                                                 )}
                                                  <div>
-                                                     <p className="text-sm font-medium text-text-primary">{u?.name || 'Unknown'}</p>
-                                                     <p className="text-[10px] text-text-secondary">{u?.role || 'Member'}</p>
+                                                     <p className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors duration-300">{u?.name || 'Unknown'}</p>
+                                                     <p className="text-[10px] text-text-secondary font-medium">{u?.role || 'Member'}</p>
                                                  </div>
                                              </div>
-                                             <button onClick={() => setEditedAssignees(prev => prev.filter(id => id !== uid))} className="text-text-secondary hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                                                 &times;
+                                             <button onClick={() => setEditedAssignees(prev => prev.filter(id => id !== uid))} className="text-text-secondary hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all duration-300 p-1 hover:scale-125 font-bold text-lg">
+                                                 ×
                                              </button>
                                          </div>
                                      );
                                  })}
                                  {editedAssingees.length === 0 && (
-                                     <div className="text-center py-4 text-text-secondary text-sm italic">
-                                         No one assigned yet.
+                                     <div className="text-center py-6 text-text-secondary text-sm font-medium bg-glass-light/30 rounded-lg border border-border-color/30">
+                                         No assignees yet
                                      </div>
                                  )}
                              </div>
 
                              <div className="relative">
-                                 <select 
+                                 <select
                                      onChange={(e) => {
                                          if(e.target.value && !editedAssingees.includes(e.target.value)) setEditedAssignees([...editedAssingees, e.target.value]);
                                          e.target.value = '';
                                      }}
-                                      className="w-full appearance-none bg-primary/10 hover:bg-primary/20 text-primary font-medium text-sm py-2 px-4 rounded-lg cursor-pointer transition-colors text-center focus:outline-none"
+                                      className="w-full appearance-none bg-primary/10 hover:bg-primary/20 text-primary font-bold text-sm py-2.5 px-4 rounded-lg cursor-pointer transition-all duration-300 text-center focus:outline-none border border-primary/30 hover:border-primary/50 hover:shadow-md"
                                  >
                                      <option value="">+ Add Team Member</option>
                                      {suggestedAssignees.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}

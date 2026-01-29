@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(unzip:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

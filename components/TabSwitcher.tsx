@@ -59,8 +59,8 @@ const TabSwitcher: React.FC<TabSwitcherProps> = ({ options, activeOption, onOpti
   }, [activeOption, options]);
 
   return (
-    <div ref={containerRef} className="relative flex p-1 bg-glass-light border border-border-color rounded-lg select-none">
-      <div ref={sliderRef} className="absolute top-1 bottom-1 h-auto bg-primary rounded-lg shadow-lg shadow-primary/30" />
+    <div ref={containerRef} className="relative flex p-1 bg-white/5 backdrop-blur-sm border border-[rgba(163,230,53,0.2)] rounded-lg select-none shadow-lg">
+      <div ref={sliderRef} className="absolute top-1 bottom-1 h-auto bg-[#A3E635] rounded-lg shadow-lg shadow-[#A3E635]/30" />
       {options.map((option, index) => (
         <button
           key={option.key}

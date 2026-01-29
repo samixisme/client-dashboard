@@ -6,7 +6,6 @@ import Header from './Header';
 import BottomNavBar from './BottomNavBar';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
 import { ArrowRightIcon } from '../icons/ArrowRightIcon';
-import AdminModeToggle from '../admin/AdminModeToggle';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useData } from '../../contexts/DataContext';
 import { useCalendar, CalendarView } from '../../contexts/CalendarContext';
@@ -55,11 +54,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
   const project = data.projects.find(p => p.id === projectId);
   const mainBoardId = project ? data.boards.find(b => b.projectId === project.id)?.id : null;
 
-  const navLinkClasses = ({ isActive }: { isActive: boolean }) => 
-        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive 
-                ? 'bg-primary text-background' 
-                : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
+  const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
+        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 relative z-10 ${
+            isActive
+                ? 'text-background bg-primary'
+                : 'text-text-secondary hover:text-text-primary'
         }`;
 
   const handleLogoutClick = () => {
@@ -83,7 +82,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
                 </button>
             </div>
             {isProjectPage && project && mainBoardId && (
-              <div className="flex items-center gap-1 p-1 bg-glass rounded-xl border border-border-color ml-4">
+              <>
+                {/* Project Pill */}
+                <Link
+                  to={`/projects/${project.id}/overview`}
+                  className="group px-4 py-2.5 bg-primary/15 hover:bg-primary/25 backdrop-blur-sm rounded-xl border border-primary/30 hover:border-primary/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] relative overflow-hidden ml-4"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  <div className="relative z-10 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)] animate-pulse" />
+                    <span className="text-sm font-bold text-primary">{project.name}</span>
+                  </div>
+                </Link>
+
+                {/* Enhanced Tab Switcher */}
+                <div className="relative flex items-center gap-1 p-1.5 bg-glass/60 backdrop-blur-xl rounded-xl border border-border-color shadow-md ml-2">
                   <NavLink to={`/board/${mainBoardId}`} end className={navLinkClasses}>
                       <BoardIcon className="h-5 w-5" />
                       Boards
@@ -100,7 +113,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
                       <MoodboardIcon className="h-5 w-5" />
                       Moodboards
                   </NavLink>
-              </div>
+                </div>
+              </>
             )}
           </div>
 
@@ -158,12 +172,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
           </div>
         </div>
         
-        <main className={`flex-1 overflow-x-hidden overflow-y-auto bg-background px-4 md:px-10 pb-24 md:pb-10 transition-all duration-300`}>
+        <main className={`flex-1 overflow-x-hidden overflow-y-auto bg-background px-4 md:px-10 pt-4 pb-24 md:pb-10 transition-all duration-300`}>
           {children}
         </main>
       </div>
       <BottomNavBar />
-      <AdminModeToggle />
     </div>
   );
 };

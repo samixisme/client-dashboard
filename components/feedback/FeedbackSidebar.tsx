@@ -209,8 +209,8 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
         : 'flex-1 overflow-x-auto p-4 flex flex-row gap-4';
 
     const itemClasses = position === 'right'
-        ? 'bg-glass-light border border-border-color rounded-lg cursor-pointer hover:border-primary transition-all overflow-hidden'
-        : 'bg-glass-light border border-border-color rounded-lg cursor-pointer hover:border-primary transition-all overflow-hidden w-72 flex-shrink-0 flex flex-col';
+        ? 'bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl cursor-pointer hover:border-primary/40 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 overflow-hidden'
+        : 'bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl cursor-pointer hover:border-primary/40 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 overflow-hidden w-72 flex-shrink-0 flex flex-col';
 
     const formatTime = (timeInSeconds: number) => {
         const minutes = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
@@ -228,33 +228,32 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
     return (
         <div className={containerClasses}>
-            {/* ... Header ... */} 
-
-            <div className="flex justify-between items-center p-4 border-b border-border-color flex-shrink-0 bg-glass">
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 border-b border-border-color/50 flex-shrink-0 bg-glass/60 backdrop-blur-xl">
                 {selectedCommentId ? (
                      <div className="flex items-center gap-2">
-                        <button onClick={handleBackToList} className="p-1 hover:bg-glass-light rounded-full text-text-secondary hover:text-text-primary transition-colors">
+                        <button onClick={handleBackToList} className="p-1.5 hover:bg-glass-light rounded-lg text-text-secondary hover:text-text-primary transition-all duration-300 hover:scale-110">
                             <ArrowLeftIcon className="w-5 h-5"/>
                         </button>
                         <span className="font-bold text-text-primary">Comment #{selectedComment?.pin_number}</span>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-4">
-                        <button 
+                    <div className="flex gap-4">
+                        <button
                             onClick={() => onViewChange('comments')}
-                            className={`font-bold text-text-primary ${view === 'comments' ? 'border-b-2 border-primary' : ''}`}
+                            className={`pb-1 text-sm font-bold border-b-2 transition-all duration-300 relative ${view === 'comments' ? 'border-primary text-primary shadow-[0_2px_10px_rgba(var(--primary-rgb),0.3)]' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
                         >
                             Comments
                         </button>
-                        <button 
+                        <button
                             onClick={() => onViewChange('activity')}
-                            className={`font-bold text-text-primary ${view === 'activity' ? 'border-b-2 border-primary' : ''}`}
+                            className={`pb-1 text-sm font-bold border-b-2 transition-all duration-300 relative ${view === 'activity' ? 'border-primary text-primary shadow-[0_2px_10px_rgba(var(--primary-rgb),0.3)]' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
                         >
                             Activity
                         </button>
                     </div>
                 )}
-                <button onClick={onClose} className="p-1 rounded-full text-text-secondary hover:bg-glass-light hover:text-text-primary">
+                <button onClick={onClose} className="p-1.5 rounded-lg text-text-secondary hover:bg-glass-light hover:text-text-primary transition-all duration-300 hover:scale-110">
                     <CancelIcon className="w-5 h-5"/>
                 </button>
             </div>
@@ -275,7 +274,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                         return (
                             <div key={comment.id} onClick={() => handleCommentClickInternal(comment)} className={itemClasses}>
                                 {videoTime !== undefined && (
-                                     <div className="px-3 py-1.5 bg-primary/10 border-b border-border-color flex-shrink-0 flex justify-between items-center">
+                                     <div className="px-3 py-1.5 bg-primary/15 backdrop-blur-sm border-b border-primary/30 flex-shrink-0 flex justify-between items-center">
                                         <span className="text-xs font-bold text-primary flex items-center gap-1">
                                             ⏱ {formatTime(videoTime)}{videoEndTime !== undefined && ` - ${formatTime(videoEndTime)}`}
                                         </span>
@@ -284,28 +283,28 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                                 <div className={`p-3 ${position === 'bottom' ? 'flex-1 flex flex-col' : ''}`}>
                                     {/* Top Row: Number + Name + Device + Status */}
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 ${comment.status === 'Resolved' || (comment as any).resolved ? 'bg-green-500' : 'bg-primary'}`}>
+                                        <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 transition-all duration-300 ${comment.status === 'Resolved' || (comment as any).resolved ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]' : 'bg-primary shadow-[0_0_12px_rgba(var(--primary-rgb),0.4)]'}`}>
                                             {comment.pin_number || '•'}
                                         </span>
                                         <span className="text-sm font-semibold text-text-primary">{getMember(getAuthorId(comment))?.name || 'User'}</span>
-                                        <span className="text-[10px] px-2 py-0.5 rounded bg-surface-light text-text-secondary ml-auto">{deviceView}</span>
-                                        <span className={`text-xs font-semibold ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'text-green-400' : 'text-primary'}`}>
+                                        <span className="text-[10px] px-2 py-0.5 rounded-lg bg-glass-light/60 backdrop-blur-sm text-text-secondary border border-border-color/30 ml-auto">{deviceView}</span>
+                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg backdrop-blur-sm border ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'text-green-400 bg-green-500/15 border-green-500/30' : 'text-primary bg-primary/15 border-primary/30'}`}>
                                             {(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'Resolved' : 'Active'}
                                         </span>
                                     </div>
-                                    
+
                                     {/* Comment Text */}
-                                    <p className={`text-sm text-text-secondary mb-3 ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'line-through opacity-70' : ''}`}>
+                                    <p className={`text-sm text-text-secondary mb-3 leading-relaxed ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'line-through opacity-70' : ''}`}>
                                         {getCommentText(comment)}
                                     </p>
-                                    
+
                                     {/* Page Row */}
                                     {pageUrl && (
                                         <div className="flex justify-between items-center text-xs">
-                                            <span className="text-text-secondary">Page: <span className="text-text-primary" title={pageUrl}>{formatUrl(pageUrl)}</span></span>
-                                            <button 
+                                            <span className="text-text-secondary">Page: <span className="text-text-primary font-medium" title={pageUrl}>{formatUrl(pageUrl)}</span></span>
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); onGoToPage?.(pageUrl, deviceView); }}
-                                                className="text-primary hover:underline font-medium"
+                                                className="text-primary hover:underline font-semibold transition-colors duration-300 hover:text-primary-hover"
                                             >
                                                 Go to page
                                             </button>
@@ -403,15 +402,20 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
                 {view === 'activity' && (
                      activities.length === 0 ? (
-                        <div className="text-center text-text-secondary py-10">No recent activity.</div>
+                        <div className="text-center text-text-secondary py-16">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-glass-light/50 mb-4">
+                                <span className="text-2xl">📊</span>
+                            </div>
+                            <p className="text-sm font-medium">No recent activity.</p>
+                        </div>
                     ) : activities.map((activity, i) => (
-                        <div key={activity.id} className={position === 'right' ? 'flex items-start gap-3 p-3 bg-glass-light rounded-lg border border-border-color' : 'flex items-start gap-3 w-72 flex-shrink-0 p-3 bg-glass-light rounded-lg border border-border-color'}>
-                             <img src={activity.author?.avatarUrl} className="w-8 h-8 rounded-full bg-primary/20" />
-                             <div>
-                                 <p className="text-sm text-text-secondary">
+                        <div key={activity.id} className={position === 'right' ? 'flex items-start gap-3 p-3 bg-glass-light/60 backdrop-blur-sm rounded-xl border border-border-color hover:border-primary/30 hover:shadow-md transition-all duration-300' : 'flex items-start gap-3 w-72 flex-shrink-0 p-3 bg-glass-light/60 backdrop-blur-sm rounded-xl border border-border-color hover:border-primary/30 hover:shadow-md transition-all duration-300'}>
+                             <img src={activity.author?.avatarUrl} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-surface shadow-md transition-all duration-300 hover:scale-110 hover:border-primary" />
+                             <div className="flex-1">
+                                 <p className="text-sm text-text-secondary leading-relaxed">
                                     <span className="font-bold text-text-primary">{activity.author?.name || 'User'}</span> {activity.text}
                                 </p>
-                                <p className="text-[10px] text-text-secondary mt-1">{activity.timestamp.toLocaleString()}</p>
+                                <p className="text-[10px] text-text-secondary/80 mt-1.5 font-medium">{activity.timestamp.toLocaleString()}</p>
                              </div>
                         </div>
                     ))

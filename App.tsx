@@ -20,6 +20,7 @@ import EditEstimatePage from './pages/EditEstimatePage';
 import FeedbackPage from './pages/FeedbackPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectBoardPage from './pages/ProjectBoardPage';
 import RoadmapPage from './pages/RoadmapPage';
@@ -67,6 +68,8 @@ import { AdminProvider } from './contexts/AdminContext';
 import { DataProvider } from './contexts/DataContext';
 import { TimerProvider } from './contexts/TimerContext';
 import { CalendarProvider } from './contexts/CalendarContext';
+import { UserProvider } from './contexts/UserContext';
+import { NotificationHistoryProvider } from './contexts/NotificationHistoryContext';
 import { toast } from 'sonner';
 
 function App() {
@@ -233,11 +236,13 @@ function App() {
 
       <div ref={cursorRef} className="custom-cursor"></div>
       <div ref={cursorDotRef} className="custom-cursor-dot"></div>
-      <AdminProvider>
-        <DataProvider>
-          <TimerProvider>
-            <CalendarProvider>
-              <SearchProvider>
+      <NotificationHistoryProvider>
+        <UserProvider>
+          <AdminProvider>
+            <DataProvider>
+              <TimerProvider>
+                <CalendarProvider>
+                  <SearchProvider>
                 <Routes>
                   {/* Admin CMS Routes - Completely separate layout */}
                   <Route path="/admin/*" element={<AdminLayout />}>
@@ -420,6 +425,11 @@ function App() {
                          <SettingsPage />
                       </MainLayout>
                    } />
+                   <Route path="/notifications" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <NotificationsPage />
+                      </MainLayout>
+                   } />
 
                    <Route element={
                       <MainLayout onLogout={handleLogout}>
@@ -434,11 +444,13 @@ function App() {
                    <Route path="*" element={<Navigate to="/" />} />
 
                 </Routes>
-              </SearchProvider>
-            </CalendarProvider>
-          </TimerProvider>
-        </DataProvider>
-      </AdminProvider>
+                </SearchProvider>
+              </CalendarProvider>
+            </TimerProvider>
+          </DataProvider>
+        </AdminProvider>
+      </UserProvider>
+      </NotificationHistoryProvider>
       <Toaster
         position="top-right"
         expand={true}

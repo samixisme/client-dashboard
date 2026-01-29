@@ -32,6 +32,94 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
         }
     );
 
+    // Animation styles
+    const animationStyles = `
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% {
+            box-shadow: 0 0 8px var(--primary);
+          }
+          50% {
+            box-shadow: 0 0 20px var(--primary);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(200%);
+          }
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          opacity: 0;
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .animate-slide-in-right {
+          animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-pulse-glow {
+          animation: pulse-glow 2.5s ease-in-out infinite;
+        }
+
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+
+        .animate-scale-in {
+          animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    `;
+
     useEffect(() => {
         const subtotal = estimate.itemCategories.reduce((catTotal, category) => {
             const itemsTotal = category.items.reduce((itemTotal, item) => {
@@ -181,12 +269,16 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
     const selectedClient = clients.find(c => c.id === estimate.clientId);
 
     return (
-        <div className="bg-glass p-8 rounded-lg shadow-md border border-border-color">
+        <>
+            <style>{animationStyles}</style>
+            <div className="bg-glass/40 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-border-color hover:shadow-2xl transition-all duration-500 relative overflow-hidden group">
+                {/* Subtle gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             {/* Client Section */}
-            <div className="grid grid-cols-2 gap-8 mb-8">
+            <div className="grid grid-cols-2 gap-8 mb-8 animate-fade-in-up relative z-10" style={{ animationDelay: '0ms' }}>
                 <div>
                     <h3 className="text-lg font-semibold text-text-primary mb-2">Receiver</h3>
-                    <div className="bg-glass-light p-4 rounded-lg border border-border-color min-h-[100px]">
+                    <div className="bg-glass-light/60 backdrop-blur-sm p-4 rounded-xl border border-border-color/50 shadow-md hover:shadow-lg transition-all duration-300 min-h-[100px]">
                         {selectedClient ? (
                             <div>
                                 <p className="font-bold text-text-primary">{selectedClient.name}</p>
@@ -200,16 +292,16 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                 </div>
                 <div>
                     <label htmlFor="client-select" className="block text-sm font-medium text-text-secondary mb-1">Select Client</label>
-                    <select id="client-select" value={estimate.clientId} onChange={e => handleClientChange(e.target.value)} className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    <select id="client-select" value={estimate.clientId} onChange={e => handleClientChange(e.target.value)} className="w-full px-3 py-2 border border-border-color bg-glass-light/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm">
                         <option value="">-- Choose a client --</option>
                         {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
-                    <button onClick={() => setIsClientModalOpen(true)} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover">+ Add New Client</button>
+                    <button onClick={() => setIsClientModalOpen(true)} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover hover:scale-105 transition-all duration-300">+ Add New Client</button>
                 </div>
             </div>
 
             {/* Date Section */}
-            <div className="grid grid-cols-2 gap-8 mb-8">
+            <div className="grid grid-cols-2 gap-8 mb-8 animate-fade-in-up relative z-10" style={{ animationDelay: '100ms' }}>
                 <div>
                     <label htmlFor="estimate-date" className="block text-sm font-medium text-text-secondary mb-1">Estimate Date</label>
                     <input
@@ -217,7 +309,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                         type="date"
                         value={estimate.date}
                         onChange={e => setEstimate({ ...estimate, date: e.target.value })}
-                        className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                        className="w-full px-3 py-2 border border-border-color bg-glass-light/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
                     />
                 </div>
                 <div>
@@ -227,13 +319,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                         type="date"
                         value={estimate.dueDate || ''}
                         onChange={e => setEstimate({ ...estimate, dueDate: e.target.value || undefined })}
-                        className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                        className="w-full px-3 py-2 border border-border-color bg-glass-light/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
                     />
                 </div>
             </div>
 
             {/* Assigned Users Section */}
-            <div className="mb-8">
+            <div className="mb-8 animate-fade-in-up relative z-10" style={{ animationDelay: '200ms' }}>
                 <label htmlFor="assigned-users" className="block text-sm font-medium text-text-secondary mb-1">Assign Users (Optional)</label>
                 <select
                     id="assigned-users"
@@ -243,7 +335,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                         const selected = Array.from(e.target.selectedOptions, option => option.value);
                         setEstimate({ ...estimate, assignedUserIds: selected });
                     }}
-                    className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    className="w-full px-3 py-2 border border-border-color bg-glass-light/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
                     size={4}
                 >
                     {(data.users || []).map((user: User) => (
@@ -256,50 +348,50 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
             </div>
 
             {/* Items Section */}
-            <div className="space-y-4">
-                {estimate.itemCategories.map(cat => (
-                    <div key={cat.id} className="p-4 rounded-lg bg-glass-light border border-border-color">
+            <div className="space-y-4 relative z-10">
+                {estimate.itemCategories.map((cat, index) => (
+                    <div key={cat.id} className="p-4 rounded-xl bg-glass-light/60 backdrop-blur-sm border border-border-color/50 shadow-md hover:shadow-lg transition-all duration-300 animate-fade-in-up" style={{ animationDelay: `${300 + index * 50}ms` }}>
                         <div className="flex justify-between items-center mb-2">
-                            <input type="text" value={cat.name} onChange={e => handleCategoryChange(cat.id, e.target.value)} className="font-bold text-text-primary bg-transparent text-lg focus:outline-none w-full" />
-                            <button onClick={() => removeCategory(cat.id)} className="text-red-400 hover:text-red-600">&times;</button>
+                            <input type="text" value={cat.name} onChange={e => handleCategoryChange(cat.id, e.target.value)} className="font-bold text-text-primary bg-transparent text-lg focus:outline-none w-full transition-all duration-300" />
+                            <button onClick={() => removeCategory(cat.id)} className="text-red-400 hover:text-red-600 hover:scale-125 transition-all duration-300">&times;</button>
                         </div>
                         {cat.items.map(item => (
-                            <div key={item.id} className="grid grid-cols-12 gap-2 items-center mt-2">
+                            <div key={item.id} className="grid grid-cols-12 gap-2 items-center mt-2 hover:bg-glass-light/30 p-2 rounded-lg transition-all duration-300">
                                 <input
                                     type="checkbox"
                                     checked={item.hasAsterisk || false}
                                     onChange={e => handleItemChange(cat.id, item.id, 'hasAsterisk', e.target.checked)}
-                                    className="col-span-1 h-4 w-4 text-primary border-border-color rounded focus:ring-primary"
+                                    className="col-span-1 h-4 w-4 text-primary border-border-color rounded focus:ring-primary transition-all duration-300"
                                     title="Mark with asterisk for terms & conditions"
                                 />
-                                <input type="text" placeholder="Item name" value={item.name} onChange={e => handleItemChange(cat.id, item.id, 'name', e.target.value)} className="col-span-5 bg-glass border border-border-color rounded px-2 py-1 text-sm" />
-                                <input type="number" placeholder="Qty" value={item.quantity} onChange={e => handleItemChange(cat.id, item.id, 'quantity', parseFloat(e.target.value) || 0)} className="col-span-2 bg-glass border border-border-color rounded px-2 py-1 text-sm" />
-                                <input type="number" placeholder="Price" value={item.unitPrice} onChange={e => handleItemChange(cat.id, item.id, 'unitPrice', parseFloat(e.target.value) || 0)} className="col-span-2 bg-glass border border-border-color rounded px-2 py-1 text-sm" />
-                                <p className="col-span-1 text-right text-sm">{(item.quantity * item.unitPrice).toFixed(2)}</p>
-                                <button onClick={() => removeItem(cat.id, item.id)} className="col-span-1 text-center text-text-secondary hover:text-red-500">
+                                <input type="text" placeholder="Item name" value={item.name} onChange={e => handleItemChange(cat.id, item.id, 'name', e.target.value)} className="col-span-5 bg-glass/80 backdrop-blur-sm border border-border-color rounded px-2 py-1 text-sm focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300" />
+                                <input type="number" placeholder="Qty" value={item.quantity} onChange={e => handleItemChange(cat.id, item.id, 'quantity', parseFloat(e.target.value) || 0)} className="col-span-2 bg-glass/80 backdrop-blur-sm border border-border-color rounded px-2 py-1 text-sm focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300" />
+                                <input type="number" placeholder="Price" value={item.unitPrice} onChange={e => handleItemChange(cat.id, item.id, 'unitPrice', parseFloat(e.target.value) || 0)} className="col-span-2 bg-glass/80 backdrop-blur-sm border border-border-color rounded px-2 py-1 text-sm focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300" />
+                                <p className="col-span-1 text-right text-sm font-semibold text-text-primary">{(item.quantity * item.unitPrice).toFixed(2)}</p>
+                                <button onClick={() => removeItem(cat.id, item.id)} className="col-span-1 text-center text-text-secondary hover:text-red-500 hover:scale-125 transition-all duration-300">
                                     &#x1F5D1;
                                 </button>
                             </div>
                         ))}
-                        <button onClick={() => addItem(cat.id)} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover">+ Add Item</button>
+                        <button onClick={() => addItem(cat.id)} className="mt-2 text-sm font-medium text-primary hover:text-primary-hover hover:scale-105 transition-all duration-300">+ Add Item</button>
                     </div>
                 ))}
             </div>
-            <button onClick={addCategory} className="mt-4 px-4 py-2 border border-dashed border-border-color text-text-secondary text-sm font-medium rounded-lg hover:bg-glass-light hover:text-text-primary w-full">
+            <button onClick={addCategory} className="mt-4 px-4 py-2 border border-dashed border-border-color/50 text-text-secondary text-sm font-medium rounded-xl hover:bg-glass-light/60 hover:text-primary hover:border-primary/50 hover:shadow-lg hover:scale-105 transition-all duration-300 w-full backdrop-blur-sm relative z-10">
                 + Add New Section
             </button>
 
             {/* Asterisk Terms & Conditions Section */}
             {estimate.itemCategories.some(cat => cat.items.some(item => item.hasAsterisk)) && (
-                <div className="mt-8 p-4 bg-glass-light rounded-lg border border-border-color">
+                <div className="mt-8 p-6 bg-glass-light/60 backdrop-blur-sm rounded-xl border border-border-color/50 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in-up relative z-10" style={{ animationDelay: '400ms' }}>
                     <h3 className="text-lg font-semibold text-text-primary mb-4">Asterisk Terms & Conditions</h3>
                     <p className="text-sm text-text-secondary mb-4">Enter detailed terms and conditions for items marked with an asterisk. These will appear on a separate page in the estimate PDF.</p>
                     <div className="space-y-4">
                         {estimate.itemCategories.flatMap(cat =>
                             cat.items.filter(item => item.hasAsterisk).map((item, index) => (
-                                <div key={item.id} className="p-3 bg-glass rounded-lg border border-border-color">
+                                <div key={item.id} className="p-4 bg-glass/60 backdrop-blur-sm rounded-xl border border-border-color/50 hover:shadow-md transition-all duration-300">
                                     <label className="block text-sm font-medium text-text-primary mb-2">
-                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs mr-2">
+                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs mr-2 shadow-lg">
                                             {index + 1}
                                         </span>
                                         {item.name}
@@ -311,7 +403,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                                             handleItemChange(catId, item.id, 'asteriskNote', e.target.value);
                                         }}
                                         rows={3}
-                                        className="w-full px-3 py-2 border border-border-color bg-glass text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                        className="w-full px-3 py-2 border border-border-color bg-glass/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
                                         placeholder="Enter specific terms and conditions for this item..."
                                     />
                                 </div>
@@ -322,25 +414,29 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
             )}
 
             {/* Totals */}
-             <div className="flex justify-end mt-8">
-                <div className="text-right">
+             <div className="flex justify-end mt-8 animate-fade-in-up relative z-10" style={{ animationDelay: '500ms' }}>
+                <div className="text-right bg-glass-light/60 backdrop-blur-sm rounded-xl p-6 border border-border-color/50 shadow-lg hover:shadow-xl transition-all duration-300">
                     <div className="flex justify-end items-center">
                         <span className="text-text-secondary font-medium">Subtotal:</span>
                         <span className="ml-4 w-32 text-text-primary font-semibold">{estimate.totals.subtotal.toFixed(2)} MAD</span>
                     </div>
                      <div className="flex justify-end items-center mt-2 text-xl">
                         <span className="text-text-primary font-bold">Total Net:</span>
-                        <span className="ml-4 w-32 text-primary font-bold">{estimate.totals.totalNet.toFixed(2)} MAD</span>
+                        <span className="ml-4 w-32 text-primary font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]">{estimate.totals.totalNet.toFixed(2)} MAD</span>
                     </div>
                 </div>
             </div>
-             <div className="flex justify-end gap-4 mt-8">
-                <button onClick={() => navigate('/payments?tab=estimates')} className="px-6 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Cancel</button>
-                <button onClick={handleSave} className="px-6 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover">Save Estimate</button>
+             <div className="flex justify-end gap-4 mt-8 animate-fade-in-up relative z-10" style={{ animationDelay: '600ms' }}>
+                <button onClick={() => navigate('/payments?tab=estimates')} className="px-6 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-glass hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg">Cancel</button>
+                <button onClick={handleSave} className="px-6 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary-hover hover:scale-110 hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] transition-all duration-300 shadow-lg relative overflow-hidden group/btn">
+                    <span className="relative z-10">Save Estimate</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 animate-shimmer" />
+                </button>
              </div>
 
             {isClientModalOpen && <AddClientModal onClose={() => setIsClientModalOpen(false)} onAddClient={handleAddClient} />}
         </div>
+        </>
     );
 };
 

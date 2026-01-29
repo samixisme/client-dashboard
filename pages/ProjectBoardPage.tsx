@@ -35,11 +35,107 @@ const boardViewOptions: ViewOption[] = [
 ];
 
 const ProjectBoardPage = () => {
+    // Animation styles
+    const animationStyles = `
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 8px var(--primary);
+            }
+            50% {
+                box-shadow: 0 0 20px var(--primary);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(200%);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .animate-slide-in-right {
+            animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 2.5s ease-in-out infinite;
+        }
+
+        .animate-shimmer {
+            animation: shimmer 2s infinite;
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    `;
+
     const { boardId } = useParams<{ boardId: string }>();
     const { data, forceUpdate } = useData();
     const { projects, boards, activities } = data;
 
     const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+
+    // View switching handler (must be declared AFTER viewMode state)
+    const handleViewSwitch = useCallback((view: string) => {
+        if (view === 'kanban' || view === 'list' || view === 'table' || view === 'calendar') {
+            setViewMode(view as ViewMode);
+        }
+    }, []);
+
     const [board, setBoard] = useState(boards.find(b => b.id === boardId));
     const [project, setProject] = useState(board ? projects.find(p => p.id === board.projectId) : undefined);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -401,21 +497,24 @@ const ProjectBoardPage = () => {
 
     return (
         <div className="h-full flex flex-col">
+            <style>{animationStyles}</style>
+
             {/* Header Toolbar */}
-            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-text-primary">{board.name}</h1>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex justify-end items-center mb-8 flex-wrap gap-4 animate-fade-in relative z-50">
+                <div className="flex items-center gap-3 flex-wrap animate-slide-in-right">
                     {isMobile && viewMode === 'kanban' && (
-                         <button 
+                         <button
                             onClick={() => setIsAddStageModalOpen(true)}
-                            className="px-3 py-2 flex items-center gap-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover"
+                            className="px-4 py-2.5 flex items-center gap-2 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group/btn"
                         >
-                            <AddIcon className="h-4 w-4" /> Add Stage
+                            <span className="relative z-10 flex items-center gap-2">
+                                <AddIcon className="h-4 w-4 group-hover/btn:rotate-90 transition-transform duration-300" />
+                                Add Stage
+                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
                         </button>
                     )}
-                    <ViewSwitcher currentView={viewMode} onSwitchView={(view) => setViewMode(view as ViewMode)} options={boardViewOptions} />
+                    <ViewSwitcher currentView={viewMode} onSwitchView={handleViewSwitch} options={boardViewOptions} />
                 </div>
             </div>
 
@@ -426,14 +525,15 @@ const ProjectBoardPage = () => {
                 </div>
                 {!isMobile && viewMode === 'kanban' && (
                     <div className="flex-shrink-0 pl-4 h-full flex items-center">
-                        <button 
+                        <button
                             onClick={() => setIsAddStageModalOpen(true)}
-                            className="flex flex-col items-center justify-center gap-2 w-16 h-40 bg-primary hover:bg-primary-hover rounded-lg transition-colors text-background"
+                            className="flex flex-col items-center justify-center gap-2 w-16 h-40 bg-primary hover:bg-primary-hover rounded-xl hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-105 transition-all duration-300 shadow-lg text-background relative overflow-hidden group/stage-btn"
                         >
-                            <div className="bg-background/20 rounded p-1.5">
-                                <AddIcon className="h-5 w-5" />
+                            <div className="bg-background/20 rounded p-1.5 relative z-10">
+                                <AddIcon className="h-5 w-5 group-hover/stage-btn:rotate-90 transition-transform duration-300" />
                             </div>
-                            <span className="font-semibold text-sm [writing-mode:vertical-rl] rotate-180 tracking-wider">Add Stage</span>
+                            <span className="font-semibold text-sm [writing-mode:vertical-rl] rotate-180 tracking-wider relative z-10">Add Stage</span>
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent -translate-y-full group-hover/stage-btn:translate-y-full transition-transform duration-1000" />
                         </button>
                     </div>
                 )}

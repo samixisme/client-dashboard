@@ -316,7 +316,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
             <div
                 ref={provided?.innerRef}
                 {...provided?.draggableProps}
-                className="h-12 flex items-center border-b border-t border-border-color -mt-px bg-glass-light"
+                className="h-12 flex items-center border-b border-t border-border-color -mt-px bg-glass-light hover:bg-glass transition-all duration-200"
                 style={provided?.draggableProps.style}
             >
                 <div className="flex items-center gap-2 px-2 w-full">
@@ -353,14 +353,14 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
     const visibleItemCount = sortedRoadmapItems.length + Array.from(expandedItems).reduce((acc, id) => acc + (tasksByRoadmapItem.get(id)?.length || 0), 0);
 
     return (
-        <div className="bg-glass rounded-2xl border border-border-color overflow-hidden h-full flex flex-col">
-            <div ref={timelineContainerRef} className="flex-1 overflow-auto">
+        <div className="bg-glass backdrop-blur-lg rounded-2xl border border-border-color overflow-hidden h-full flex flex-col shadow-xl">
+            <div ref={timelineContainerRef} className="flex-1 overflow-auto custom-scrollbar">
                 <div className="flex w-fit min-h-full">
                     {/* Sidebar */}
-                    <div className={`sticky left-0 flex-shrink-0 border-r border-border-color bg-glass z-20 transition-all duration-300 ${isSidebarCollapsed ? 'w-24' : 'w-80'}`}>
-                        <div className="h-16 flex items-center justify-between px-4 border-b border-border-color sticky top-0 bg-glass z-30">
-                            <h3 className={`font-semibold text-text-primary transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0 select-none' : 'opacity-100'}`}>Tasks</h3>
-                            <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1 rounded hover:bg-white/10" title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+                    <div className={`sticky left-0 flex-shrink-0 border-r border-border-color bg-glass/95 backdrop-blur-md z-20 transition-all duration-300 ${isSidebarCollapsed ? 'w-24' : 'w-80'}`}>
+                        <div className="h-16 flex items-center justify-between px-4 border-b border-border-color sticky top-0 bg-glass/95 backdrop-blur-md z-30 shadow-sm">
+                            <h3 className={`font-bold text-text-primary transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0 select-none' : 'opacity-100'}`}>Tasks</h3>
+                            <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110" title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
                                 <ChevronDownIcon className={`h-5 w-5 text-text-secondary transition-transform duration-300 ${isSidebarCollapsed ? '-rotate-90' : 'rotate-90'}`} />
                             </button>
                         </div>
@@ -409,25 +409,26 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                     {/* Timeline Content Area */}
                     <div className="relative" style={{ width: gridWidth }}>
                         {/* Header (sticky) */}
-                        <div className="sticky top-0 bg-glass z-10">
+                        <div className="sticky top-0 bg-glass/95 backdrop-blur-md z-10 shadow-sm">
                             <div className="flex relative">
                                 {months.map(({ date, days }, index) => {
                                     const isLastMonth = index === months.length - 1;
                                     return (
-                                        <div key={date.toISOString()} className={`h-8 flex-shrink-0 border-b border-border-color flex items-center justify-center ${!isLastMonth ? 'border-r border-border-color' : ''}`} style={{ width: days * DAY_WIDTH }}>
-                                            <span className="text-sm font-semibold text-text-primary">{date.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                                        <div key={date.toISOString()} className={`h-8 flex-shrink-0 border-b border-border-color flex items-center justify-center hover:bg-glass-light/30 transition-colors duration-200 ${!isLastMonth ? 'border-r border-border-color' : ''}`} style={{ width: days * DAY_WIDTH }}>
+                                            <span className="text-sm font-bold text-text-primary">{date.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
                                         </div>
                                     )
                                 })}
                             </div>
-                            <div className="flex relative">
+                            <div className="flex relative overflow-x-hidden">
                                 {Array.from({ length: totalDays }).map((_, i) => {
                                     const day = addDays(startDate, i);
                                     const isLast = i === totalDays - 1;
+                                    const isToday = day.toDateString() === new Date().toDateString();
                                     return (
-                                        <div key={i} className={`h-8 flex-shrink-0 ${!isLast ? 'border-r border-border-color' : ''} text-center pt-1`} style={{ width: DAY_WIDTH }}>
-                                            <p className="text-xs text-text-secondary">{day.toLocaleDateString('default', { weekday: 'short' }).charAt(0)}</p>
-                                            <p className="text-sm font-medium">{day.getDate()}</p>
+                                        <div key={i} className={`h-8 flex-shrink-0 ${!isLast ? 'border-r border-border-color' : ''} flex flex-col items-center justify-center hover:bg-glass-light/30 transition-colors duration-200 ${isToday ? 'bg-primary/10' : ''} overflow-hidden`} style={{ width: DAY_WIDTH }}>
+                                            <p className="text-xs text-text-secondary font-medium leading-none">{day.toLocaleDateString('default', { weekday: 'short' }).charAt(0)}</p>
+                                            <p className={`text-xs font-bold leading-none mt-0.5 ${isToday ? 'text-primary' : 'text-text-primary'}`}>{day.getDate()}</p>
                                         </div>
                                     )
                                 })}
@@ -442,10 +443,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                     const day = addDays(startDate, i);
                                     const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                                     const isLast = i === totalDays - 1;
+                                    const isToday = day.toDateString() === new Date().toDateString();
                                     return (
-                                        <div 
-                                            key={i} 
-                                            className={`h-full ${!isLast ? 'border-r border-border-color' : ''} flex-shrink-0 ${isWeekend ? 'bg-surface-light/30' : ''}`}
+                                        <div
+                                            key={i}
+                                            className={`h-full ${!isLast ? 'border-r border-border-color' : ''} flex-shrink-0 ${isWeekend ? 'bg-surface-light/40' : ''} ${isToday ? 'bg-primary/5' : ''}`}
                                             style={{ width: DAY_WIDTH }}
                                         />
                                     );
@@ -500,11 +502,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                             <div key={item.id}>
                                                {width > 0 && (
                                                     <div
-                                                        className={`absolute h-8 rounded-md flex items-center px-2 group z-10 ${isEditMode ? 'cursor-move' : 'cursor-pointer'}`}
-                                                        style={{ 
-                                                            top: `${index * 3 + 1}rem`,
-                                                            left: left + 2, 
-                                                            width, 
+                                                        className={`absolute h-8 rounded-lg flex items-center group z-10 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:brightness-110 shadow-md ${isEditMode ? 'cursor-move' : 'cursor-pointer'}`}
+                                                        style={{
+                                                            top: `${index * 3 + 0.5}rem`,
+                                                            left: left + 2,
+                                                            width,
                                                             ...barStyle
                                                         }}
                                                         onMouseDown={isEditMode ? (e) => handleBarDragStart(item, 'move', e) : undefined}
@@ -517,18 +519,19 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                             }
                                                         }}
                                                     >
-                                                        {isEditMode && <div className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100" onMouseDown={(e) => handleBarDragStart(item, 'resize-left', e)}></div>}
-                                                        <span className="text-sm font-semibold text-background truncate flex-1">{item.title}</span>
-                                                        {width > 120 && <span className="text-xs font-mono text-background/80 ml-2 whitespace-nowrap">{formatDate(itemStartDate)} - {formatDate(itemEndDate)}</span>}
-                                                        {isTask && (
-                                                            <div className="flex -space-x-1 ml-auto flex-shrink-0">
-                                                                {itemAssignees.map(member => (
-                                                                    <img key={member.id} src={member.avatarUrl} title={member.name} className="w-5 h-5 rounded-full border border-white/50" />
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {isEditMode && <div className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100" onMouseDown={(e) => handleBarDragStart(item, 'resize-right', e)}></div>}
+                                                        {isEditMode && <div className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 z-20" onMouseDown={(e) => handleBarDragStart(item, 'resize-left', e)}></div>}
+                                                        <div className="flex items-center gap-2 px-2 overflow-hidden min-w-0 flex-1">
+                                                            <span className="text-sm font-semibold text-background truncate min-w-0 flex-shrink">{item.title}</span>
+                                                            {width > 150 && <span className="text-xs font-mono text-background/80 truncate flex-shrink-0">{formatDate(itemStartDate)} - {formatDate(itemEndDate)}</span>}
+                                                            {isTask && itemAssignees.length > 0 && width > 80 && (
+                                                                <div className="flex -space-x-1 flex-shrink-0">
+                                                                    {itemAssignees.slice(0, 3).map(member => (
+                                                                        <img key={member.id} src={member.avatarUrl} title={member.name} className="w-5 h-5 rounded-full border border-white/50" />
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {isEditMode && <div className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 z-20" onMouseDown={(e) => handleBarDragStart(item, 'resize-right', e)}></div>}
                                                     </div>
                                                )}
                                             </div>

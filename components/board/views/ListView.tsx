@@ -39,20 +39,25 @@ const ListView: React.FC<ListViewProps> = ({
     };
 
     return (
-        <div className="w-full bg-glass p-4 rounded-xl border border-border-color">
+        <div className="w-full bg-glass/60 backdrop-blur-xl p-6 rounded-xl border border-border-color shadow-xl">
             {stages.map(stage => {
                 const stageTasks = tasksByStage.get(stage.id) || [];
                 // FIX: Use backgroundPattern instead of non-existent backgroundColor property.
                 const pattern = stage.backgroundPattern ? backgroundPatterns.find(p => p.id === stage.backgroundPattern)?.style : {};
                 return (
                     <div key={stage.id} className="mb-6 last:mb-0">
-                        <h3 className="font-semibold text-text-primary mb-2 px-2" style={pattern}>{stage.name} ({stageTasks.length})</h3>
-                        <div className="divide-y divide-border-color">
+                        <div className="bg-glass/40 backdrop-blur-sm rounded-xl p-3 mb-3 shadow-md" style={pattern}>
+                            <h3 className="font-semibold text-text-primary flex items-center gap-2">
+                                {stage.name}
+                                <span className="text-sm font-medium text-text-secondary bg-surface-light/50 px-2 py-0.5 rounded-md">{stageTasks.length}</span>
+                            </h3>
+                        </div>
+                        <div className="space-y-3">
                             {stageTasks.map(task => {
                                 const assignees = data.board_members.filter(m => task.assignees.includes(m.id));
                                 const taskTags = data.tags.filter(t => task.labelIds.includes(t.id));
                                 return (
-                                    <div key={task.id} onClick={() => onTaskClick(task)} className="p-3 hover:bg-surface-light cursor-pointer rounded-lg grid grid-cols-12 gap-4 items-center">
+                                    <div key={task.id} onClick={() => onTaskClick(task)} className="bg-glass/40 backdrop-blur-sm p-4 hover:bg-glass-light/60 cursor-pointer rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 border border-border-color grid grid-cols-12 gap-4 items-center">
                                         <div className="col-span-12 sm:col-span-5 flex items-center gap-2">
                                             <p className="font-medium text-text-primary">{task.title}</p>
                                             <div className="flex items-center gap-1">
@@ -79,22 +84,25 @@ const ListView: React.FC<ListViewProps> = ({
                             })}
                         </div>
                         {addingToStage === stage.id ? (
-                            <div className="mt-2 p-2">
+                            <div className="mt-3 p-2">
                                 <textarea
                                     value={newTaskTitle}
                                     onChange={(e) => setNewTaskTitle(e.target.value)}
                                     placeholder="Enter task title..."
-                                    className="w-full p-2 text-sm rounded-lg bg-surface-light border border-border-color focus:ring-primary focus:border-primary"
+                                    className="w-full p-2 text-sm rounded-xl bg-surface-light backdrop-blur-sm border border-border-color focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm focus:shadow-lg"
                                     rows={2} autoFocus
                                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddTaskClick(stage.id))}
                                 />
                                 <div className="flex items-center gap-2 mt-2">
-                                    <button onClick={() => handleAddTaskClick(stage.id)} className="px-3 py-1 bg-primary text-background font-bold text-sm rounded-lg hover:bg-primary-hover">Add Task</button>
-                                    <button onClick={() => setAddingToStage(null)} className="text-xl text-text-secondary hover:text-text-primary leading-none">&times;</button>
+                                    <button onClick={() => handleAddTaskClick(stage.id)} className="px-3 py-1.5 bg-primary text-background font-bold text-sm rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group">
+                                        <span className="relative z-10">Add Task</span>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                    </button>
+                                    <button onClick={() => setAddingToStage(null)} className="text-xl text-text-secondary hover:text-text-primary leading-none hover:scale-110 transition-all duration-300">&times;</button>
                                 </div>
                             </div>
                         ) : (
-                             <button onClick={() => setAddingToStage(stage.id)} className="mt-2 w-full text-left text-sm p-2 rounded-lg text-text-secondary hover:bg-surface-light hover:text-text-primary flex items-center gap-2">
+                             <button onClick={() => setAddingToStage(stage.id)} className="mt-3 w-full text-left text-sm p-2 rounded-lg text-text-secondary hover:bg-glass-light/60 hover:text-primary hover:scale-105 transition-all duration-300 flex items-center gap-2">
                                 <AddIcon className="h-4 w-4"/> Add Task
                             </button>
                         )}

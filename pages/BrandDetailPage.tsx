@@ -5,6 +5,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db, uploadFile } from '../utils/firebase';
 import { Brand, BrandColor, BrandFont, BrandAsset, BrandLogo, User, BrandLogoType, BrandLogoVariation, BrandTypographyStyle } from '../types';
 import { ProjectsIcon } from '../components/icons/ProjectsIcon';
+import { BrandIcon } from '../components/icons/BrandIcon';
 import { AddIcon } from '../components/icons/AddIcon';
 import { EditIcon } from '../components/icons/EditIcon';
 import { DeleteIcon } from '../components/icons/DeleteIcon';
@@ -13,22 +14,79 @@ import { SaveIcon } from '../components/icons/SaveIcon';
 import { CancelIcon } from '../components/icons/CancelIcon';
 import { toast } from 'sonner';
 
-// Color conversion utility
+// Color conversion utilities
 const hexToRgb = (hex: string): string => {
     let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 0, 0';
 };
 
+const hexToHsl = (hex: string): string => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return '0, 0%, 0%';
+
+    let r = parseInt(result[1], 16) / 255;
+    let g = parseInt(result[2], 16) / 255;
+    let b = parseInt(result[3], 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+        switch (max) {
+            case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+            case g: h = ((b - r) / d + 2) / 6; break;
+            case b: h = ((r - g) / d + 4) / 6; break;
+        }
+    }
+
+    h = Math.round(h * 360);
+    s = Math.round(s * 100);
+    l = Math.round(l * 100);
+
+    return `${h}, ${s}%, ${l}%`;
+};
+
+const hexToCmyk = (hex: string): string => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return '0, 0, 0, 100';
+
+    let r = parseInt(result[1], 16) / 255;
+    let g = parseInt(result[2], 16) / 255;
+    let b = parseInt(result[3], 16) / 255;
+
+    const k = 1 - Math.max(r, g, b);
+
+    if (k === 1) return '0, 0, 0, 100';
+
+    const c = (1 - r - k) / (1 - k);
+    const m = (1 - g - k) / (1 - k);
+    const y = (1 - b - k) / (1 - k);
+
+    return `${Math.round(c * 100)}, ${Math.round(m * 100)}, ${Math.round(y * 100)}, ${Math.round(k * 100)}`;
+};
+
+const getBestPreviewFormat = (logo: BrandLogo) => {
+    return logo.formats.find(f => f.format === 'png')
+        || logo.formats.find(f => f.format === 'jpg')
+        || logo.formats.find(f => f.format === 'jpeg')
+        || logo.formats.find(f => f.format === 'svg')
+        || logo.formats[0];
+};
+
 const PlaceholderCard: React.FC<{ text: string }> = ({ text }) => (
-    <div className="flex items-center justify-center p-4 rounded-lg border-2 border-dashed border-border-color bg-glass-light min-h-[142px]">
-        <p className="text-sm text-text-secondary text-center">{text}</p>
+    <div className="flex items-center justify-center p-4 rounded-lg border-2 border-dashed border-border-color bg-glass-light/40 backdrop-blur-sm min-h-[142px]">
+        <p className="text-sm text-text-secondary text-center font-medium">{text}</p>
     </div>
 );
 
 const AddLogoCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
     <button
         onClick={onClick}
-        className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-dashed border-border-color bg-glass-light min-h-[142px] hover:bg-border-color hover:border-primary transition-colors w-full"
+        className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-dashed border-border-color bg-glass-light/40 backdrop-blur-sm min-h-[142px] hover:bg-glass-light/60 hover:border-primary transition-colors w-full"
     >
         <AddIcon className="h-8 w-8 text-text-secondary mb-2" />
         <p className="text-sm font-medium text-text-secondary text-center">Add Logo</p>
@@ -158,7 +216,13 @@ const BrandDetailPage = () => {
     const handleColorHexChange = (index: number, hex: string) => {
          if (!editedBrand) return;
          const newColors = [...editedBrand.colors];
-         newColors[index] = { ...newColors[index], hex, rgb: hexToRgb(hex), hsl: 'Updated HSL', cmyk: 'Updated CMYK' };
+         newColors[index] = {
+             ...newColors[index],
+             hex,
+             rgb: hexToRgb(hex),
+             hsl: hexToHsl(hex),
+             cmyk: hexToCmyk(hex)
+         };
          setEditedBrand({ ...editedBrand, colors: newColors });
     };
 
@@ -295,17 +359,19 @@ const BrandDetailPage = () => {
     const selectedLogoForDownload = brand.logos.find(l => l.type === downloadSelection.type && l.variation === downloadSelection.variation);
     
     const AssetSection: React.FC<{ id: string; title: string; children: React.ReactNode; onAdd?: () => void; onDownload?: () => void; editControls?: React.ReactNode; filterControls?: React.ReactNode; }> = ({ id, title, children, onAdd, onDownload, editControls, filterControls }) => (
-        <div id={id} className="bg-glass p-6 rounded-lg border border-border-color break-inside-avoid">
-            <div className="flex justify-between items-center border-b border-border-color pb-3 mb-4">
-                <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
+        <div id={id} className="bg-glass/40 backdrop-blur-xl p-6 rounded-2xl border border-border-color shadow-lg hover:shadow-xl hover:border-border-color/80 transition-all duration-300 break-inside-avoid animate-fade-in-up">
+            <div className="flex justify-between items-center border-b border-border-color/50 pb-4 mb-6">
+                <h2 className="text-2xl font-bold text-text-primary">{title}</h2>
                 <div className="flex items-center gap-2 no-print">
                     {filterControls}
                     {isAdmin && isEditMode && editControls}
                     {isAdmin && isEditMode && onAdd && (
-                        <button onClick={onAdd} className="p-2 rounded-md hover:bg-glass-light"><AddIcon className="h-5 w-5 text-primary" /></button>
+                        <button onClick={onAdd} className="p-2 rounded-lg hover:bg-glass-light hover:scale-110 transition-all duration-300 group">
+                            <AddIcon className="h-5 w-5 text-primary group-hover:rotate-90 transition-transform duration-300" />
+                        </button>
                     )}
                     {onDownload && (
-                         <button onClick={onDownload} className="flex items-center gap-2 px-3 py-1.5 bg-glass-light text-text-primary text-xs font-medium rounded-lg border border-border-color hover:bg-border-color"><DownloadIcon className="h-4 w-4" /> Download Section</button>
+                         <button onClick={onDownload} className="flex items-center gap-2 px-4 py-2 bg-glass-light/60 backdrop-blur-sm text-text-primary text-xs font-semibold rounded-lg border border-border-color hover:bg-glass hover:shadow-lg hover:scale-105 transition-all duration-300"><DownloadIcon className="h-4 w-4" /> Download</button>
                     )}
                 </div>
             </div>
@@ -315,16 +381,20 @@ const BrandDetailPage = () => {
     
     const getLogoCardClasses = (variation: BrandLogoVariation) => {
         switch (variation) {
-            case 'Dark Background': return 'bg-background';
-            case 'White Background': return 'bg-gray-200';
-            case 'Grayscale': return 'bg-gray-500';
-            default: return 'bg-glass-light';
+            case 'Dark Background': return 'bg-surface/80 backdrop-blur-sm';
+            case 'White Background': return 'bg-glass-light/80 backdrop-blur-sm';
+            case 'Grayscale': return 'bg-glass/60 backdrop-blur-sm';
+            default: return 'bg-glass-light/60 backdrop-blur-sm';
         }
     };
 
     const LogoCard: React.FC<{logo: BrandLogo}> = ({ logo }) => {
         const originalIndex = editedBrand!.logos.findIndex(l => l === logo);
-        const previewFormat = logo.formats.find(f => f.format === 'png') || logo.formats.find(f => f.format === 'svg') || logo.formats[0];
+        const previewFormat = logo.formats.find(f => f.format === 'png')
+            || logo.formats.find(f => f.format === 'jpg')
+            || logo.formats.find(f => f.format === 'jpeg')
+            || logo.formats.find(f => f.format === 'svg')
+            || logo.formats[0];
 
         if (isEditMode) {
             return (
@@ -427,7 +497,16 @@ const BrandDetailPage = () => {
                                 <img src={asset.url} alt={asset.name} className="w-full h-full object-cover"/>
                                 <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-4 transition-opacity text-center">
                                     <p className="font-bold text-white mb-2">{asset.name}</p>
-                                    <button onClick={() => handleDownloadAsset(asset.url, filename)} className="px-4 py-2 bg-white text-black rounded">Download</button>
+                                    <button
+                                        onClick={() => handleDownloadAsset(asset.url, filename)}
+                                        className="px-5 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-105 transition-all duration-300 shadow-lg relative overflow-hidden group/btn"
+                                    >
+                                        <span className="relative z-10 flex items-center gap-2">
+                                            <DownloadIcon className="h-4 w-4" />
+                                            Download
+                                        </span>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
+                                    </button>
                                 </div>
                             </div>
                         )
@@ -445,23 +524,59 @@ const BrandDetailPage = () => {
 
     return (
         <div className="printable-area">
-             <div className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4 no-print">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-3xl font-bold text-text-primary mt-2">{brand.name}</h1>
+            <style>{`
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(30px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .animate-fade-in-up {
+                    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    opacity: 0;
+                }
+                .animate-fade-in {
+                    animation: fadeIn 0.4s ease-out forwards;
+                }
+            `}</style>
+
+             <div className="mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4 no-print animate-fade-in">
+                <div className="flex items-center gap-4 animate-fade-in-up" style={{ animationDelay: '0ms' }}>
+                    <div className="p-3 bg-primary/20 rounded-xl shadow-md">
+                        <BrandIcon className="h-8 w-8 text-primary" />
+                    </div>
+                    <h1 className="text-4xl font-bold text-text-primary bg-gradient-to-r from-text-primary to-text-secondary bg-clip-text">{brand.name}</h1>
                 </div>
                 {isAdmin ? (
-                     <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-3 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                         {isEditMode ? (<>
-                             <button onClick={handleSave} disabled={isUploading || isSaving} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                                <SaveIcon className="h-4 w-4"/> {isUploading ? 'Uploading...' : (isSaving ? 'Saving...' : 'Save')}
+                             <button
+                                onClick={handleSave}
+                                disabled={isUploading || isSaving}
+                                className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-105 transition-all duration-300 shadow-lg flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:scale-100 relative overflow-hidden group"
+                            >
+                                <SaveIcon className="h-4 w-4 relative z-10"/> <span className="relative z-10">{isUploading ? 'Uploading...' : (isSaving ? 'Saving...' : 'Save Changes')}</span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                             </button>
-                             <button onClick={handleEditToggle} className="px-4 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color flex items-center gap-2"><CancelIcon className="h-4 w-4"/> Cancel</button>
+                             <button onClick={handleEditToggle} className="px-5 py-2.5 bg-glass-light/60 backdrop-blur-sm text-text-primary text-sm font-semibold rounded-xl hover:bg-border-color hover:scale-105 transition-all duration-300 shadow-sm flex items-center gap-2"><CancelIcon className="h-4 w-4"/> Cancel</button>
                         </>) : (
-                            <button onClick={handleEditToggle} className="px-4 py-2 bg-glass-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color flex items-center gap-2"><EditIcon className="h-4 w-4"/> Edit Brandbook</button>
+                            <button onClick={handleEditToggle} className="px-6 py-2.5 bg-glass-light/60 backdrop-blur-sm text-text-primary text-sm font-semibold rounded-xl border border-border-color hover:bg-glass hover:shadow-lg hover:scale-105 hover:border-primary/40 transition-all duration-300 shadow-sm flex items-center gap-2"><EditIcon className="h-4 w-4"/> Edit Brandbook</button>
                         )}
                     </div>
                 ) : (
-                    <button onClick={() => handlePrint()} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover flex items-center gap-2"><DownloadIcon className="h-4 w-4"/> Download Full Guide</button>
+                    <button onClick={() => handlePrint()} className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-105 transition-all duration-300 shadow-lg flex items-center gap-2 relative overflow-hidden group">
+                        <DownloadIcon className="h-4 w-4 relative z-10"/>
+                        <span className="relative z-10">Download Full Guide</span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                    </button>
                 )}
             </div>
             
@@ -600,10 +715,10 @@ const BrandDetailPage = () => {
                                                 <tr key={styleIndex} className="border-b border-border-color last:border-none">
                                                     <td className="p-2"><input value={style.name} onChange={e => handleStyleChange(originalFontIndex, styleIndex, 'name', e.target.value)} className="bg-glass border border-border-color rounded px-2 py-1 text-xs w-full"/></td>
                                                     <td className="p-2" style={{fontFamily: `'${font.name}', sans-serif`, fontSize: style.size, fontWeight: parseInt(style.weight), letterSpacing: style.letterSpacing, lineHeight: style.lineHeight}}>Aa</td>
-                                                    <td className="p-2"><input value={style.size} onChange={e => handleStyleChange(originalFontIndex, styleIndex, 'size', e.target.value)} className="bg-glass border border-border-color rounded px-2 py-1 text-xs w-20 text-right"/></td>
+                                                    <td className="p-2"><input value={style.size} onChange={e => handleStyleChange(originalFontIndex, styleIndex, 'size', e.target.value)} className="bg-glass border border-border-color rounded px-2 py-1 text-xs min-w-[80px] w-20 text-right"/></td>
                                                     <td className="p-2"><select value={style.weight} onChange={e => handleStyleChange(originalFontIndex, styleIndex, 'weight', e.target.value)} className="bg-glass border border-border-color rounded px-2 py-1 text-xs w-24">{fontWeights.map(w => <option key={w} value={w}>{w}</option>)}</select></td>
-                                                    <td className="p-2"><input value={style.letterSpacing} onChange={e => handleStyleChange(originalFontIndex, styleIndex, 'letterSpacing', e.target.value)} className="bg-glass border border-border-color rounded px-2 py-1 text-xs w-20 text-right"/></td>
-                                                    <td className="p-2"><input value={style.lineHeight} onChange={e => handleStyleChange(originalFontIndex, styleIndex, 'lineHeight', e.target.value)} className="bg-glass border border-border-color rounded px-2 py-1 text-xs w-20 text-right"/></td>
+                                                    <td className="p-2"><input value={style.letterSpacing} onChange={e => handleStyleChange(originalFontIndex, styleIndex, 'letterSpacing', e.target.value)} className="bg-glass border border-border-color rounded px-2 py-1 text-xs min-w-[80px] w-20 text-right"/></td>
+                                                    <td className="p-2"><input value={style.lineHeight} onChange={e => handleStyleChange(originalFontIndex, styleIndex, 'lineHeight', e.target.value)} className="bg-glass border border-border-color rounded px-2 py-1 text-xs min-w-[80px] w-20 text-right"/></td>
                                                     <td className="p-2 text-right"><button onClick={() => deleteStyle(originalFontIndex, styleIndex)}><DeleteIcon className="w-4 h-4 text-text-secondary hover:text-red-500"/></button></td>
                                                 </tr>
                                                 ) : (
@@ -659,7 +774,18 @@ const BrandDetailPage = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-text-secondary mb-1">Color Variation</label>
-                                                                             <select value={downloadSelection.variation} onChange={e => setDownloadSelection({ ...downloadSelection, variation: e.target.value as BrandLogoVariation })} className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" disabled={availableDownloadVariations.length === 0}>{availableDownloadVariations.map(v => <option key={v}>{v}</option>)}</select>                                </div>
+                                    <select
+                                        value={downloadSelection.variation}
+                                        onChange={e => setDownloadSelection({ ...downloadSelection, variation: e.target.value as BrandLogoVariation })}
+                                        className="w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                        disabled={availableDownloadVariations.length === 0}
+                                    >
+                                        {availableDownloadVariations.map(v => <option key={v}>{v}</option>)}
+                                    </select>
+                                    {availableDownloadVariations.length === 0 && (
+                                        <p className="text-xs text-text-secondary mt-1 italic">No variations available for this logo type</p>
+                                    )}
+                                </div>
                                 <div>
                                      <label className="block text-sm font-medium text-text-secondary mb-1">Available Formats</label>
                                      <div className="flex flex-wrap gap-2">
@@ -671,7 +797,17 @@ const BrandDetailPage = () => {
                                 </div>
                             </div>
                             <div className="flex flex-col items-center justify-center bg-glass-light rounded-lg p-4 border border-border-color">
-                                {selectedLogoForDownload ? (<div className={`p-4 rounded-md ${getLogoCardClasses(selectedLogoForDownload.variation)}`}><img src={selectedLogoForDownload.formats[0]?.url} alt="Preview" className="max-h-48 max-w-full object-contain"/></div>) : (<p className="text-text-secondary">No logo preview available.</p>)}
+                                {selectedLogoForDownload ? (
+                                    <div className={`p-4 rounded-md ${getLogoCardClasses(selectedLogoForDownload.variation)}`}>
+                                        <img
+                                            src={getBestPreviewFormat(selectedLogoForDownload)?.url}
+                                            alt="Preview"
+                                            className="max-h-48 max-w-full object-contain"
+                                        />
+                                    </div>
+                                ) : (
+                                    <p className="text-text-secondary">No logo preview available.</p>
+                                )}
                             </div>
                         </div>
                     </div>

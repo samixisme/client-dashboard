@@ -1,7 +1,11 @@
 import { toast } from 'sonner';
+import { useNotificationHistory } from '../../contexts/NotificationHistoryContext';
 
 export const useToast = () => {
+  const { addNotification } = useNotificationHistory();
+
   const showSuccess = (message: string, description?: string) => {
+    addNotification({ type: 'success', message, description });
     return toast.success(message, {
       description,
       duration: 3000,
@@ -9,6 +13,7 @@ export const useToast = () => {
   };
 
   const showError = (message: string, description?: string) => {
+    addNotification({ type: 'error', message, description });
     return toast.error(message, {
       description,
       duration: 4000,
@@ -16,6 +21,7 @@ export const useToast = () => {
   };
 
   const showInfo = (message: string, description?: string) => {
+    addNotification({ type: 'info', message, description });
     return toast.info(message, {
       description,
       duration: 3000,
@@ -23,6 +29,7 @@ export const useToast = () => {
   };
 
   const showWarning = (message: string, description?: string) => {
+    addNotification({ type: 'warning', message, description });
     return toast.warning(message, {
       description,
       duration: 3500,
@@ -30,6 +37,7 @@ export const useToast = () => {
   };
 
   const showLoading = (message: string) => {
+    addNotification({ type: 'loading', message });
     return toast.loading(message);
   };
 
@@ -45,10 +53,19 @@ export const useToast = () => {
       error: string | ((error: any) => string);
     }
   ) => {
+    addNotification({ type: 'promise', message: loading });
     return toast.promise(promise, {
       loading,
-      success,
-      error,
+      success: (data) => {
+        const msg = typeof success === 'function' ? success(data) : success;
+        addNotification({ type: 'success', message: msg });
+        return msg;
+      },
+      error: (err) => {
+        const msg = typeof error === 'function' ? error(err) : error;
+        addNotification({ type: 'error', message: msg });
+        return msg;
+      },
     });
   };
 

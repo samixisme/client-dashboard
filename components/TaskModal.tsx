@@ -336,9 +336,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
     );
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4" onClick={onClose}>
-            <div className="bg-surface w-full max-w-5xl h-full max-h-[90vh] rounded-2xl shadow-xl border border-border-color flex flex-col" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-border-color flex-shrink-0">
+        <div className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in" onClick={onClose}>
+            <div className="bg-white/5 backdrop-blur-2xl w-full max-w-5xl h-full max-h-[90vh] rounded-2xl shadow-2xl border border-[rgba(163,230,53,0.2)] flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
+                <div className="p-6 border-b border-border-color/50 flex-shrink-0">
                     <div className="flex justify-between items-center gap-4">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <input
@@ -346,7 +346,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                 name="title"
                                 value={editedTask.title}
                                 onChange={handleChange}
-                                className="text-xl font-bold text-text-primary bg-transparent w-full focus:outline-none focus:bg-surface-light rounded-lg px-2 py-1 -mx-2 -my-1"
+                                className="text-xl font-bold text-text-primary bg-transparent w-full focus:outline-none focus:bg-glass-light/60 rounded-xl px-2 py-1 -mx-2 -my-1 transition-all duration-300"
                             />
                              <select name="priority" value={editedTask.priority} onChange={handleChange} className={`appearance-none py-1 pl-3 pr-8 text-sm rounded-lg bg-surface-light border border-border-color font-medium ${priorityClasses[editedTask.priority]}`}>
                                 <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
@@ -363,18 +363,18 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                     </div>
                 </div>
 
-                <div className="flex-1 flex overflow-hidden">
+                <div className="flex-1 flex overflow-hidden bg-white/5 backdrop-blur-xl">
                     {/* Main Content */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* Dates & Priority */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="text-sm">
                                 <label className="block text-xs font-medium text-text-secondary mb-1">Start Date</label>
-                                <input type="datetime-local" name="start_date" value={getSafeDateForInput(editedTask.start_date)} onChange={handleStartDateChange} className="w-full p-1.5 text-sm rounded-lg bg-surface-light border border-border-color text-text-primary"/>
+                                <input type="datetime-local" name="start_date" value={getSafeDateForInput(editedTask.start_date)} onChange={handleStartDateChange} className="w-full p-1.5 text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-[rgba(163,230,53,0.1)] text-text-primary focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all"/>
                             </div>
                             <div className="text-sm">
                                 <label className="block text-xs font-medium text-text-secondary mb-1">Due Date</label>
-                                <input type="datetime-local" name="dueDate" value={getSafeDateForInput(editedTask.dueDate)} onChange={handleDueDateChange} className="w-full p-1.5 text-sm rounded-lg bg-surface-light border border-border-color text-text-primary"/>
+                                <input type="datetime-local" name="dueDate" value={getSafeDateForInput(editedTask.dueDate)} onChange={handleDueDateChange} className="w-full p-1.5 text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-[rgba(163,230,53,0.1)] text-text-primary focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all"/>
                             </div>
 
                             {(editedTask.start_date || editedTask.dueDate) && (
@@ -395,7 +395,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                             <textarea
                                 name="description" value={editedTask.description} onChange={handleChange}
                                 rows={5} placeholder="Add a more detailed description of the task here..."
-                                className="w-full p-3 text-sm rounded-lg bg-surface-light border border-border-color focus:ring-primary focus:border-primary text-text-primary"
+                                className="w-full p-3 text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-[rgba(163,230,53,0.1)] focus:ring-1 focus:ring-primary/30 focus:border-primary/50 text-text-primary transition-all"
                             />
                         </div>
                         
@@ -407,7 +407,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                             </div>
                              <div className="space-y-2">
                                 {editedTask.attachments.map(att => (
-                                    <div key={att.id} className="flex items-center gap-3 bg-surface-light p-2 rounded-lg border border-border-color">
+                                    <div key={att.id} className="flex items-center gap-3 bg-white/5 backdrop-blur-sm p-2 rounded-lg border border-[rgba(163,230,53,0.1)]">
                                         <FileIcon className="w-6 h-6 text-text-secondary"/>
                                         <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-text-primary hover:underline flex-1 truncate">{att.name}</a>
                                         <button onClick={() => handleRemoveAttachment(att.id)} className="p-1 rounded-full hover:bg-red-500/20 text-text-secondary hover:text-red-400"><DeleteIcon className="w-4 h-4"/></button>
@@ -433,7 +433,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                              <div className="flex items-start gap-3 mb-6">
                                 <img src="https://picsum.photos/100" alt="admin" className="w-8 h-8 rounded-full"/>
                                 <div className="flex-1">
-                                    <textarea value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Write a comment..." rows={2} className="w-full p-2 text-sm rounded-lg bg-surface-light border border-border-color focus:ring-primary focus:border-primary text-text-primary"/>
+                                    <textarea value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Write a comment..." rows={2} className="w-full p-2 text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-[rgba(163,230,53,0.1)] focus:ring-1 focus:ring-primary/30 focus:border-primary/50 text-text-primary transition-all"/>
                                     <button onClick={handlePostComment} className="mt-2 px-3 py-1.5 bg-primary text-background text-xs font-bold rounded-lg hover:bg-primary-hover">Comment</button>
                                 </div>
                              </div>
@@ -448,7 +448,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                                 <span className="font-bold text-text-primary">admin</span>
                                                 <span className="text-text-secondary ml-2 text-xs">{new Date(item.timestamp).toLocaleString()}</span>
                                             </p>
-                                            <div className="mt-1 text-sm bg-surface-light p-3 rounded-lg text-text-primary">
+                                            <div className="mt-1 text-sm bg-white/5 backdrop-blur-sm p-3 rounded-lg text-text-primary border border-[rgba(163,230,53,0.05)]">
                                                 {'text' in item ? item.text : item.description}
                                             </div>
                                         </div>
@@ -459,12 +459,12 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                     </div>
 
                     {/* Sidebar */}
-                    <div className="w-1/3 min-w-[300px] border-l border-border-color overflow-y-auto p-4 space-y-1">
+                    <div className="w-1/3 min-w-[300px] border-l border-[rgba(163,230,53,0.2)] overflow-y-auto p-4 space-y-1 bg-white/5 backdrop-blur-sm">
                         {/* Time Tracking */}
                         <SidebarSection title="Time Tracking">
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-2 bg-surface-light border border-border-color rounded-lg px-2 py-1">
+                                    <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-[rgba(163,230,53,0.1)] rounded-lg px-2 py-1">
                                         <TimerIcon className="w-5 h-5 text-text-secondary"/>
                                         {isEditingEstimation ? (
                                             <input type="text" value={estimationInput} onChange={e => setEstimationInput(e.target.value)} onBlur={handleSetEstimation} onKeyDown={e => e.key === 'Enter' && handleSetEstimation()} placeholder="e.g. 2h 30m" autoFocus className="bg-transparent text-sm w-24 focus:outline-none"/>
@@ -472,7 +472,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                             <span className="text-sm font-semibold text-text-primary w-24">{formatMinutes(editedTask.timeEstimation)}</span>
                                         )}
                                     </div>
-                                     <button onClick={() => setIsEditingEstimation(true)} className="px-3 py-1.5 bg-surface-light text-text-primary text-xs font-bold rounded-lg hover:bg-border-color">Set Estimation</button>
+                                     <button onClick={() => setIsEditingEstimation(true)} className="px-3 py-1.5 bg-white/5 backdrop-blur-sm text-text-primary text-xs font-bold rounded-lg hover:bg-white/10 border border-[rgba(163,230,53,0.1)] transition-all">Set Estimation</button>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <p className="text-sm font-semibold text-text-primary">{formatSeconds(totalLoggedTime)}</p>
@@ -496,10 +496,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                 <div className="relative">
                                     <button onClick={() => setIsAssigneeDropdownOpen(o => !o)} className="h-8 w-8 rounded-full bg-surface-light border border-dashed border-border-color flex items-center justify-center text-text-secondary hover:border-primary hover:text-primary"><AddIcon className="w-4 h-4" /></button>
                                     {isAssigneeDropdownOpen && (
-                                        <div className="absolute top-full left-0 mt-2 w-60 bg-surface p-2 rounded-lg border border-border-color shadow-lg z-10">
+                                        <div className="absolute top-full left-0 mt-2 w-60 bg-white/5 backdrop-blur-xl p-2 rounded-lg border border-[rgba(163,230,53,0.2)] shadow-lg z-10">
                                             {availableMembers.length > 0 ? (
                                                 availableMembers.map(member => (
-                                                    <button key={member.id} onClick={() => handleAddAssignee(member.id)} className="w-full text-left flex items-center gap-2 p-1.5 rounded hover:bg-surface-light text-sm">
+                                                    <button key={member.id} onClick={() => handleAddAssignee(member.id)} className="w-full text-left flex items-center gap-2 p-1.5 rounded hover:bg-white/10 text-sm transition-all">
                                                         <img src={member.avatarUrl} className="w-6 h-6 rounded-full" alt={member.name} />
                                                         <span className="text-text-primary">{member.name}</span>
                                                     </button>
@@ -523,14 +523,14 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                  <div className="relative">
                                     <button onClick={() => setIsTagDropdownOpen(o => !o)} className="p-1 rounded-full bg-surface-light hover:bg-border-color"><AddIcon className="w-3 h-3 text-text-secondary"/></button>
                                     {isTagDropdownOpen && (
-                                        <div className="absolute top-full left-0 mt-2 w-56 bg-surface p-2 rounded-lg border border-border-color shadow-lg z-10">
-                                            <input type="text" placeholder="Search/create..." value={tagSearch} onChange={e => setTagSearch(e.target.value)} className="w-full text-xs bg-surface-light border-border-color rounded px-2 py-1 mb-2"/>
+                                        <div className="absolute top-full left-0 mt-2 w-56 bg-white/5 backdrop-blur-xl p-2 rounded-lg border border-[rgba(163,230,53,0.2)] shadow-lg z-10">
+                                            <input type="text" placeholder="Search/create..." value={tagSearch} onChange={e => setTagSearch(e.target.value)} className="w-full text-xs bg-white/5 backdrop-blur-sm border-[rgba(163,230,53,0.1)] rounded px-2 py-1 mb-2 focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all"/>
                                             <div className="max-h-32 overflow-y-auto">
                                                 {boardTags.filter(t => !editedTask.labelIds.includes(t.id) && t.name.toLowerCase().includes(tagSearch.toLowerCase())).map(tag => (
-                                                    <button key={tag.id} onClick={() => handleToggleTag(tag.id)} className="w-full text-left flex items-center gap-2 p-1 rounded hover:bg-surface-light text-xs"><span className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: tag.color}}></span> <span className="text-text-primary">{tag.name}</span></button>
+                                                    <button key={tag.id} onClick={() => handleToggleTag(tag.id)} className="w-full text-left flex items-center gap-2 p-1 rounded hover:bg-white/10 text-xs transition-all"><span className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: tag.color}}></span> <span className="text-text-primary">{tag.name}</span></button>
                                                 ))}
                                                 {tagSearch && !boardTags.some(t => t.name.toLowerCase() === tagSearch.toLowerCase()) && (
-                                                    <button onClick={() => handleCreateTag(tagSearch)} className="w-full text-left p-1 rounded hover:bg-surface-light text-xs text-primary">+ Create "{tagSearch}"</button>
+                                                    <button onClick={() => handleCreateTag(tagSearch)} className="w-full text-left p-1 rounded hover:bg-white/10 text-xs text-primary transition-all">+ Create "{tagSearch}"</button>
                                                 )}
                                             </div>
                                         </div>
@@ -539,7 +539,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                             </div>
                         </SidebarSection>
                          <SidebarSection title="Roadmap">
-                             <select name="roadmapItemId" value={editedTask.roadmapItemId || ''} onChange={handleChange} className="w-full p-2 text-sm rounded-lg bg-surface-light border border-border-color text-text-primary">
+                             <select name="roadmapItemId" value={editedTask.roadmapItemId || ''} onChange={handleChange} className="w-full p-2 text-sm rounded-lg bg-white/5 backdrop-blur-sm border border-[rgba(163,230,53,0.1)] text-text-primary focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all">
                                 <option value="">None</option>
                                 {projectRoadmapItems.map(item => ( <option key={item.id} value={item.id}>{item.title}</option> ))}
                             </select>
@@ -547,7 +547,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                         
                         {/* Recurring Task */}
                         <SidebarSection title="Automations">
-                             <button ref={recurringButtonRef} onClick={() => setIsRecurringPopoverOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 bg-surface-light text-text-primary text-sm font-medium rounded-lg border border-border-color hover:bg-border-color">
+                             <button ref={recurringButtonRef} onClick={() => setIsRecurringPopoverOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 bg-white/5 backdrop-blur-sm text-text-primary text-sm font-medium rounded-lg border border-[rgba(163,230,53,0.1)] hover:bg-white/10 hover:border-primary/30 transition-all">
                                 <RecurringIcon className="w-5 h-5"/> Recurring Task
                             </button>
                         </SidebarSection>
@@ -557,7 +557,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                 <div className="flex justify-between items-center p-4 border-t border-border-color flex-shrink-0">
                     <button onClick={handleDelete} className="px-4 py-2 bg-red-800 text-red-100 text-sm font-medium rounded-lg hover:bg-red-700">Delete Task</button>
                     <div className="flex gap-4">
-                        <button onClick={onClose} className="px-4 py-2 bg-surface-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Cancel</button>
+                        <button onClick={onClose} className="px-4 py-2 bg-white/5 backdrop-blur-sm text-text-primary text-sm font-medium rounded-lg hover:bg-white/10 border border-[rgba(163,230,53,0.1)] transition-all">Cancel</button>
                         <button onClick={handleSave} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Save Changes</button>
                     </div>
                 </div>

@@ -87,19 +87,19 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
             <div className="flex flex-wrap items-center gap-4 mb-4">
                 <div className="relative flex-grow">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3"><SearchIcon className="h-5 w-5 text-text-secondary"/></span>
-                    <input 
-                        type="search" 
-                        placeholder="Search tasks..." 
-                        value={searchTerm} 
-                        onChange={e => setSearchTerm(e.target.value)} 
-                        className="w-full md:w-72 pl-10 pr-4 py-2 rounded-lg bg-glass focus:outline-none text-text-primary border border-border-color" 
+                    <input
+                        type="search"
+                        placeholder="Search tasks..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        className="w-full md:w-72 pl-10 pr-4 py-2 rounded-lg bg-white/5 backdrop-blur-sm focus:outline-none text-text-primary border border-[rgba(163,230,53,0.1)] focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all"
                     />
                 </div>
                 {/* Filters */}
-                <select 
-                    value={statusFilter} 
-                    onChange={e => setStatusFilter(e.target.value)} 
-                    className="bg-glass border border-border-color rounded-lg px-3 py-2 text-sm text-text-primary"
+                <select
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value)}
+                    className="bg-white/5 backdrop-blur-sm border border-[rgba(163,230,53,0.1)] rounded-lg px-3 py-2 text-sm text-text-primary focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all"
                 >
                     <option value="All">All Tasks</option>
                     <option value="pending">Pending</option>
@@ -107,14 +107,14 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                     <option value="completed">Completed</option>
                 </select>
             </div>
-            
+
             {loading ? (
                 <div className="p-8 text-center text-text-secondary">Loading tasks...</div>
             ) : (
-                <div className="bg-glass rounded-lg border border-border-color overflow-hidden">
+                <div className="bg-glass/40 backdrop-blur-xl rounded-lg border border-border-color overflow-hidden shadow-lg">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-border-color">
-                            <thead className="bg-glass-light">
+                            <thead className="bg-white/5 backdrop-blur-sm">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Task</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Source</th>
@@ -127,11 +127,11 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                             <tbody className="divide-y divide-border-color">
                                 {filteredTasks.map(task => {
                                     const creator = getUser((task as any).creatorId || task.assigneeId);
-                                    
+
                                     // Dynamically determine source type if not present or default
                                     let sourceType = task.sourceType;
                                     const itemId = task.sourceFeedbackItemId;
-                                    
+
                                     if (!sourceType || sourceType === 'mockup') {
                                         // Attempt to auto-detect
                                         if (itemId) {
@@ -143,9 +143,9 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                                     sourceType = sourceType || 'mockup'; // Fallback
 
                                     const sourceLabel = sourceType === 'website' ? 'Website' : sourceType === 'video' ? 'Video' : 'Mockup';
-                                    
+
                                     return (
-                                        <tr key={task.id} className="hover:bg-glass-light transition-colors">
+                                        <tr key={task.id} className="hover:bg-white/10 transition-colors">
                                             <td className="px-6 py-4">
                                                 <span className="font-medium text-text-primary">{task.title}</span>
                                                 {task.description && (
@@ -177,17 +177,17 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                                                 {formatDate(task.dueDate)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full 
-                                                    ${task.status === 'completed' ? 'bg-green-500/20 text-green-300' : 
-                                                      task.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300' : 
+                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full
+                                                    ${task.status === 'completed' ? 'bg-green-500/20 text-green-300' :
+                                                      task.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300' :
                                                       'bg-yellow-500/20 text-yellow-300'}`}>
                                                     {task.status.replace('_', ' ')}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 {task.sourceFeedbackItemId ? (
-                                                    <Link 
-                                                        to={`/feedback/${projectId}/${sourceType}/${task.sourceFeedbackItemId}`} 
+                                                    <Link
+                                                        to={`/feedback/${projectId}/${sourceType}/${task.sourceFeedbackItemId}`}
                                                         className="text-primary hover:text-primary-hover"
                                                     >
                                                         View Source
@@ -202,7 +202,7 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                                 {filteredTasks.length === 0 && (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">
-                                            {tasks.length === 0 
+                                            {tasks.length === 0
                                                 ? 'No tasks yet. Tasks are created when comments have due dates.'
                                                 : 'No tasks match your search.'}
                                         </td>
