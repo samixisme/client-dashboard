@@ -76,7 +76,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
     }
   }, [isOpen, initialData]);
 
-  const handleUpdate = (field: keyof Brand, value: any) => {
+  const handleUpdate = <K extends keyof Brand>(field: K, value: Brand[K]) => {
     setEditedBrand(prev => ({ ...prev, [field]: value }));
   };
 
@@ -103,7 +103,8 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                 }
             } else {
                  const newAsset: BrandLogo | BrandAsset = { name: file.name, url: downloadURL, tags: [] };
-                 handleUpdate(field, [...(editedBrand[field] as any[] || []), newAsset]);
+                 const currentAssets = (editedBrand[field] as (BrandLogo | BrandAsset)[] | undefined) || [];
+                 handleUpdate(field, [...currentAssets, newAsset]);
             }
             toast.success(`${file.name} uploaded`);
 
