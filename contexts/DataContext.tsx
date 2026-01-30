@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem } from '../types';
+import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup, FeedbackVideo, FeedbackComment } from '../types';
 import { toast } from 'sonner';
 
 // Import all data sources
@@ -58,7 +58,7 @@ interface DataContextType {
     loading: boolean;
     error: Error | null;
     user: FirebaseUser | null;
-    updateData: (key: DataStoreKey, newData: any[]) => void;
+    updateData: (key: DataStoreKey, newData: unknown[]) => void;
     forceUpdate: () => void;
 }
 
@@ -229,13 +229,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const fetchedItems = snapshot.docs.map(doc => {
                      const pathSegments = doc.ref.path.split('/');
                      const projectId = pathSegments[1];
-                     return { id: doc.id, projectId, ...doc.data() } as any; 
+                     const data = doc.data();
+                     return { id: doc.id, projectId, ...data };
                 });
-                
+
                 // Distribute to specific arrays based on type
-                dataStore.feedbackWebsites = [...initialFeedbackWebsites, ...fetchedItems.filter(i => i.type === 'website')];
-                dataStore.feedbackMockups = [...initialFeedbackMockups, ...fetchedItems.filter(i => i.type === 'mockup')];
-                dataStore.feedbackVideos = [...initialFeedbackVideos, ...fetchedItems.filter(i => i.type === 'video')];
+                dataStore.feedbackWebsites = [...initialFeedbackWebsites, ...fetchedItems.filter((i): i is FeedbackWebsite => (i as {type?: string}).type === 'website')] as FeedbackWebsite[];
+                dataStore.feedbackMockups = [...initialFeedbackMockups, ...fetchedItems.filter((i): i is FeedbackMockup => (i as {type?: string}).type === 'mockup')] as FeedbackMockup[];
+                dataStore.feedbackVideos = [...initialFeedbackVideos, ...fetchedItems.filter((i): i is FeedbackVideo => (i as {type?: string}).type === 'video')] as FeedbackVideo[];
 
                 setVersion(v => v + 1);
             }, (err) => {
@@ -245,7 +246,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Listen to comments (feedback items subcollection)
             onSnapshot(query(collectionGroup(db, 'comments')), (snapshot) => {
-                 const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+                 const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeedbackComment));
                  // Filter to ensure we only get feedback comments if 'comments' is reused elsewhere?
                  // For now, assume global comments are feedback comments or compatible.
                  dataStore.feedbackComments = [...initialFeedbackComments, ...fetchedItems];
@@ -267,13 +268,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setVersion(v => v + 1);
     }, []);
 
-    const updateData = useCallback((key: DataStoreKey, newData: any[]) => {
+    const updateData = useCallback((key: DataStoreKey, newData: unknown[]) => {
         const dataArray = dataStore[key];
         if (Array.isArray(dataArray)) {
             dataArray.length = 0;
             Array.prototype.push.apply(dataArray, newData);
         } else {
-            (dataStore as any)[key] = newData[0]; 
+            (dataStore as Record<string, unknown>)[key] = newData[0];
         }
         forceUpdate();
     }, [forceUpdate]);
