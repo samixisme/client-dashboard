@@ -145,15 +145,27 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
 
         // Save Activity to Firestore/Context
         if (changes.length > 0) {
-            const newActivity: Activity = {
-                id: `activity-${Date.now()}`,
+            const activityData: Omit<Activity, 'id'> = {
                 objectId: task.id,
                 objectType: 'task',
                 description: `admin ${changes.join(', ')}.`,
                 timestamp: new Date().toISOString()
             };
-            data.activities.unshift(newActivity);
-            // TODO: Ideally save activity to Firestore too
+
+            try {
+                // Persist to Firestore
+                const docRef = await addDoc(collection(db, 'activities'), activityData);
+                const newActivity: Activity = {
+                    id: docRef.id,
+                    ...activityData
+                };
+
+                // Update local state
+                data.activities.unshift(newActivity);
+            } catch (error) {
+                console.error('Error saving activity to Firestore:', error);
+                toast.error('Failed to save activity log');
+            }
         }
 
         // Save tags (if any created) - Assuming local state update for now as Tags are not fully migrated to nested subcollections yet in prompt
