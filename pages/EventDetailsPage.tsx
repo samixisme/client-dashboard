@@ -87,7 +87,7 @@ const EventDetailsPage = () => {
              await updateSourceItemDate(event.sourceId, event.type, {
                 startDate: updatedEventData.startDate,
                 endDate: updatedEventData.endDate,
-             });
+             }, event.projectId);
               await updateSourceItemAssignees(event.sourceId, event.type, editedAssingees);
         }
         

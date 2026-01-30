@@ -52,22 +52,21 @@ export const createCalendarEvent = async (item: SourceItem, type: EventType): Pr
     }
 };
 
-export const updateSourceItemDate = async (sourceId: string, type: EventType, newDates: { startDate: string; endDate: string }) => {
+export const updateSourceItemDate = async (sourceId: string, type: EventType, newDates: { startDate: string; endDate: string }, projectId?: string) => {
     try {
         switch (type) {
             case 'task':
                 await updateDoc(doc(db, 'tasks', sourceId), { dueDate: newDates.endDate }); // Tasks use deadline
                 break;
             case 'roadmap_item':
-                await updateDoc(doc(db, 'projects', 'PROJECT_ID_NEEDED', 'roadmap_items', sourceId), { // TODO: Need projectId. Roadmap items are subcollection.
+                if (!projectId) {
+                    console.error('projectId is required for updating roadmap items');
+                    throw new Error('projectId is required for updating roadmap items');
+                }
+                await updateDoc(doc(db, 'projects', projectId, 'roadmap_items', sourceId), {
                     startDate: newDates.startDate,
                     endDate: newDates.endDate
-                }); 
-                // Issue: We don't have projectId here easily unless we fetch or pass it. 
-                // WORKAROUND: For now assuming roadmap items might be root or we need to pass project ID.
-                // Actually, in the hook we fetch via collectionGroup.
-                // We'd need to find the doc path. 
-                // Since this is a "No Breaking" refactor request, maybe we should assume we can find it or defer roadmap updates.
+                });
                 break;
             case 'invoice':
                 await updateDoc(doc(db, 'invoices', sourceId), { date: newDates.startDate });

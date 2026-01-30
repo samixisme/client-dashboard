@@ -199,7 +199,7 @@ export const CalendarPage = () => {
             await updateSourceItemDate(selectedEvent.sourceId, selectedEvent.type, {
                 startDate: updatedEventData.startDate,
                 endDate: updatedEventData.endDate,
-            });
+            }, selectedEvent.projectId);
              await updateSourceItemAssignees(selectedEvent.sourceId, selectedEvent.type, editedAssingees);
         }
 
