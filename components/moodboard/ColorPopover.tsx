@@ -102,9 +102,9 @@ const ColorPopover: React.FC<ColorPopoverProps> = ({ isOpen, onClose, anchorEl, 
             onAddMultipleColors(colors);
             onClose();
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(`AI parsing failed: ${err.message}`);
+            setError(`AI parsing failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
             setIsParsing(false);
         }

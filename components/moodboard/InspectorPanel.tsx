@@ -20,14 +20,14 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ item, onUpdate, onClose
 
     const children = item.type === 'column' ? items.filter(i => i.parentId === item.id) : [];
 
-    const handleContentChange = (key: string, value: any) => {
+    const handleContentChange = (key: string, value: string | boolean | { id: string; text: string; completed: boolean }[]) => {
         onUpdate({
             ...item,
             content: { ...item.content, [key]: value }
         });
     };
 
-    const handleStyleChange = (key: keyof MoodboardItemStyle, value: any) => {
+    const handleStyleChange = (key: keyof MoodboardItemStyle, value: string | number | undefined) => {
         onUpdate({
             ...item,
             style: { ...(item.style || {}), [key]: value }
