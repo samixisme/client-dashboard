@@ -107,7 +107,15 @@ export const UserInfo = ({ userId, getMember }: { userId: string, getMember: (id
     );
 };
 
-export const CommentThread = ({ replies, getMember, currentUserId, onDelete }: { replies: any[], getMember: (id: string) => any, currentUserId?: string, onDelete: (id: string) => void }) => {
+interface Reply {
+    id: string;
+    authorId: string;
+    text: string;
+    timestamp: string;
+    replies?: Reply[];
+}
+
+export const CommentThread = ({ replies, getMember, currentUserId, onDelete }: { replies: Reply[], getMember: (id: string) => User | undefined, currentUserId?: string, onDelete: (id: string) => void }) => {
     if (!replies || replies.length === 0) return null;
     return (
         <div style={sharedStyles.threadContainer}>
