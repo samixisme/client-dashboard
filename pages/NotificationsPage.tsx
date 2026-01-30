@@ -110,10 +110,10 @@ const NotificationsPage: React.FC = () => {
         {/* Filters */}
         <div className="mb-6 flex items-center gap-2 flex-wrap">
           <span className="text-sm text-text-secondary font-semibold">Filter:</span>
-          {['all', 'unread', 'success', 'error', 'warning', 'info'].map(f => (
+          {(['all', 'unread', 'success', 'error', 'warning', 'info'] as const).map(f => (
             <button
               key={f}
-              onClick={() => setFilter(f as any)}
+              onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
                 filter === f
                   ? 'bg-primary/20 text-primary border border-primary/50'
