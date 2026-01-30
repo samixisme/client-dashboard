@@ -331,7 +331,7 @@ const RoadmapPage = () => {
                                 <div className="flex justify-between items-center p-4 rounded-t-2xl backdrop-blur-xl bg-white/5 border-b border-border-color/50" style={{...pattern}}>
                                     <div className="flex items-center gap-2">
                                         <h2 className="font-bold text-lg text-text-primary">{item.title}</h2>
-                                        <span className="text-xs font-bold text-text-secondary bg-surface-light/70 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">{columnTasks.length}</span>
+                                        <span className="text-xs font-bold text-text-secondary bg-white/5 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm border border-[rgba(163,230,53,0.1)]">{columnTasks.length}</span>
                                     </div>
                                     {!isUnassignedColumn && (
                                         <div className="flex items-center gap-2 text-text-secondary">

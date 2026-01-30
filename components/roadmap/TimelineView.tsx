@@ -447,7 +447,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                     return (
                                         <div
                                             key={i}
-                                            className={`h-full ${!isLast ? 'border-r border-border-color' : ''} flex-shrink-0 ${isWeekend ? 'bg-surface-light/40' : ''} ${isToday ? 'bg-primary/5' : ''}`}
+                                            className={`h-full ${!isLast ? 'border-r border-border-color' : ''} flex-shrink-0 ${isWeekend ? 'bg-white/5' : ''} ${isToday ? 'bg-primary/5' : ''}`}
                                             style={{ width: DAY_WIDTH }}
                                         />
                                     );
