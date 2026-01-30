@@ -24,7 +24,7 @@ const bottomNavItems = [
 
 // FIX: Moved NavItem outside of Sidebar component for performance, best practices, and to resolve a typing issue.
 // Added React.FC type to ensure TypeScript recognizes it as a component that can accept a 'key' prop.
-const NavItem: React.FC<{ to: string; Icon: React.FC<any>; label: string }> = ({ to, Icon, label }) => {
+const NavItem: React.FC<{ to: string; Icon: React.FC<{ className?: string }>; label: string }> = ({ to, Icon, label }) => {
   const location = useLocation();
     
   const isProjectsPath = to === '/projects';

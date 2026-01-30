@@ -135,10 +135,10 @@ export default async (req: Request, res: Response) => {
     $('body').append(scriptTag);
 
     res.status(200).send($.html());
-  } catch (error: any) {
+  } catch (error) {
     // Log detailed error server-side only
     console.error('Proxy Error:', {
-      message: error.message,
+      message: error instanceof Error ? error.message : 'Unknown error',
       url: url,
       timestamp: new Date().toISOString()
     });

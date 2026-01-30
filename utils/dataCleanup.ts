@@ -24,7 +24,7 @@ const deleteCollection = async (collectionPath: string) => {
     for (let i = 0; i < snapshot.docs.length; i += batchSize) {
         const batch = writeBatch(db);
         const chunk = snapshot.docs.slice(i, i + batchSize);
-        chunk.forEach(doc => batch.delete(doc.ref));
+        chunk.forEach(docSnap => batch.delete(docSnap.ref));
         await batch.commit();
     }
 };

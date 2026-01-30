@@ -260,10 +260,13 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
 
     const handleMouseUp = useCallback(() => {
         if (dragState && ephemeralItem && wasDraggedRef.current) {
-            const updater = ephemeralItem._type === 'task' ? onUpdateTask : onUpdateItem;
             // Create a clean object to pass up, without internal properties like _type
             const { _type, ...cleanItem } = ephemeralItem;
-            (updater as any)(cleanItem);
+            if (ephemeralItem._type === 'task') {
+                onUpdateTask(cleanItem as Task);
+            } else {
+                onUpdateItem(cleanItem as RoadmapItem);
+            }
         }
         setDragState(null);
         setEphemeralItem(null);
@@ -308,7 +311,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
 
 
     // --- Render Components ---
-    const SidebarItem = ({item, displayOrder, provided}: {item: any, displayOrder: string, provided?: any}) => {
+    const SidebarItem = ({item, displayOrder, provided}: {item: DraggableItem, displayOrder: string, provided?: { innerRef: (element: HTMLElement | null) => void; draggableProps: Record<string, unknown>; dragHandleProps?: Record<string, unknown> | null }}) => {
         const hasChildren = item._type === 'roadmap' && tasksByRoadmapItem.has(item.id);
         const itemLevel = item._type === 'task' ? 1 : 0;
 

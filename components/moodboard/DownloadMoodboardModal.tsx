@@ -4,7 +4,10 @@ import MoodboardItemComponent from './MoodboardItemComponent';
 import ConnectorLine from './ConnectorLine';
 import { toast } from 'sonner';
 
-declare const htmlToImage: any;
+declare const htmlToImage: {
+    toPng: (node: HTMLElement, options?: Record<string, unknown>) => Promise<string>;
+    toJpeg: (node: HTMLElement, options?: Record<string, unknown>) => Promise<string>;
+};
 
 interface DownloadMoodboardModalProps {
     isOpen: boolean;

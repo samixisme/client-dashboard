@@ -203,7 +203,7 @@ const ProjectBoardPage = () => {
 
     })();
     
-    const handleDragEnd = async (result: any) => {
+    const handleDragEnd = async (result: { destination?: { droppableId: string; index: number }; source: { droppableId: string; index: number }; draggableId: string }) => {
         const { destination, source, draggableId } = result;
 
         if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {

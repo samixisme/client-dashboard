@@ -6,6 +6,15 @@ import { toast } from 'sonner';
 import ImageCropper from '../components/ImageCropper';
 import { useUser } from '../contexts/UserContext';
 
+interface SettingsData {
+  firstName: string;
+  lastName: string;
+  avatarUrl: string;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  theme: string;
+}
+
 const SettingsPage = () => {
   // Form fields
   const [firstName, setFirstName] = useState('');
@@ -32,7 +41,7 @@ const SettingsPage = () => {
   const [changingPassword, setChangingPassword] = useState(false);
 
   // Refs
-  const originalDataRef = useRef<any>(null);
+  const originalDataRef = useRef<SettingsData | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const userIdRef = useRef<string | null>(null);
 
@@ -232,10 +241,10 @@ const SettingsPage = () => {
       toast.success('Avatar uploaded', {
         description: 'Remember to save your changes'
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
       toast.error('Upload failed', {
-        description: error.message || 'Please try again'
+        description: error instanceof Error ? error.message : 'Please try again'
       });
     } finally {
       setUploadingAvatar(false);
@@ -293,9 +302,10 @@ const SettingsPage = () => {
       toast.success('Password updated', {
         description: 'Your password has been changed successfully'
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password change error:', error);
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      const firebaseError = error as { code?: string };
+      if (firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         toast.error('Incorrect password', {
           description: 'Current password is incorrect'
         });

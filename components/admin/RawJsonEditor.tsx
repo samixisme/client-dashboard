@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 
 interface DataSource {
     name: string;
-    data: any;
-    onSave: (newData: any) => void;
+    data: unknown;
+    onSave: (newData: unknown) => void;
 }
 
 interface RawJsonEditorProps {
@@ -29,9 +29,10 @@ const RawJsonEditor: React.FC<RawJsonEditorProps> = ({ source }) => {
             setIsSaved(true);
             toast.success('Changes saved');
             setTimeout(() => setIsSaved(false), 2000);
-        } catch (e: any) {
-            setError(`Invalid JSON: ${e.message}`);
-            toast.error(`Invalid JSON: ${e.message}`);
+        } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+            setError(`Invalid JSON: ${errorMessage}`);
+            toast.error(`Invalid JSON: ${errorMessage}`);
             setIsSaved(false);
         }
     };

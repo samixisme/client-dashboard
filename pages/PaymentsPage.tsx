@@ -9,6 +9,7 @@ import { InvoiceDownloadButton } from '../src/components/payments/InvoiceDownloa
 import { EstimateDownloadButton } from '../src/components/payments/EstimateDownloadButton';
 import { userSettings } from '../data/paymentsData';
 import { toast } from 'sonner';
+import { Invoice, Estimate, Client } from '../types';
 
 // Modern StatusSelect Component with enhanced glass morphism
 const StatusSelect = ({
@@ -120,9 +121,9 @@ const PaymentsPage = () => {
     }, [brandClientIds, allEstimates, searchQuery, getClientName]);
 
     const dataSources = [
-        { name: 'Invoices', data: allInvoices, onSave: (newData: any) => updateData('invoices', newData) },
-        { name: 'Estimates', data: allEstimates, onSave: (newData: any) => updateData('estimates', newData) },
-        { name: 'Clients', data: clients, onSave: (newData: any) => updateData('clients', newData) },
+        { name: 'Invoices', data: allInvoices, onSave: (newData: Invoice[]) => updateData('invoices', newData) },
+        { name: 'Estimates', data: allEstimates, onSave: (newData: Estimate[]) => updateData('estimates', newData) },
+        { name: 'Clients', data: clients, onSave: (newData: Client[]) => updateData('clients', newData) },
     ];
 
     return (

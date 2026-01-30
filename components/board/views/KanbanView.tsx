@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Stage, Task } from '../../../types';
 import { AddIcon } from '../../icons/AddIcon';
 import { SettingsIcon } from '../../icons/SettingsIcon';
@@ -8,7 +8,7 @@ import { backgroundPatterns } from '../../../data/patterns';
 
 interface KanbanViewProps {
     boardId: string;
-    onDragEnd: (result: any) => void;
+    onDragEnd: (result: DropResult) => void;
     onTaskClick: (task: Task) => void;
     onOpenStageActions: (anchorEl: HTMLElement, stage: Stage) => void;
     stages: Stage[];

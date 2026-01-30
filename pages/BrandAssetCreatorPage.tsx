@@ -224,17 +224,17 @@ const BrandAssetCreatorPage = () => {
                 throw new Error("The model did not return an image. Please try again.");
             }
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            setError(`Failed to generate image: ${e.message}.`);
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+            setError(`Failed to generate image: ${errorMessage}.`);
             setCredits(c => c + GENERATION_COST); // Refund credits on failure
         } finally {
             setIsGenerating(false);
         }
     };
 
-    // FIX: Changed imageUrl prop to 'any' to resolve a subtle TypeScript error.
-    const SelectionCard = ({ title, imageUrl, isSelected, onClick }: { title: string, imageUrl: any, isSelected: boolean, onClick: () => void }) => (
+    const SelectionCard = ({ title, imageUrl, isSelected, onClick }: { title: string, imageUrl: string, isSelected: boolean, onClick: () => void }) => (
         <button onClick={onClick} className={`bg-glass rounded-lg border-2 text-left overflow-hidden transition-all duration-200 ${isSelected ? 'border-primary shadow-lg' : 'border-border-color hover:border-primary/50'}`}>
             <img src={imageUrl} alt={title} className="w-full h-32 object-cover" />
             <div className="p-3">

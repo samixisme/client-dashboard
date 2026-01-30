@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom';
 
 interface NavItem {
   to: string;
-  Icon: React.FC<any>;
+  Icon: React.FC<{ className?: string }>;
   label: string;
 }
 

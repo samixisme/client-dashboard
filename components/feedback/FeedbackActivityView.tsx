@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { Link } from 'react-router-dom';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -16,8 +16,8 @@ interface Activity {
     objectType?: string;
     feedbackItemId?: string;
     sourceType?: 'mockup' | 'website' | 'video';
-    timestamp?: any;
-    createdAt?: any;
+    timestamp?: Timestamp;
+    createdAt?: Timestamp;
 }
 
 const FeedbackActivityView = ({ projectId }: { projectId: string }) => {

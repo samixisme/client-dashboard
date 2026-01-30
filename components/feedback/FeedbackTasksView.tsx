@@ -4,7 +4,7 @@ import { useData } from '../../contexts/DataContext';
 import { User } from '../../types';
 import { SearchIcon } from '../icons/SearchIcon';
 import { Link } from 'react-router-dom';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 
 interface Task {
@@ -20,7 +20,8 @@ interface Task {
     sourceFeedbackItemId?: string;
     sourceFeedbackItemName?: string;
     sourceType?: string;
-    createdAt?: any;
+    createdAt?: Timestamp;
+    creatorId?: string;
 }
 
 const FeedbackTasksView = ({ projectId }: { projectId: string }) => {

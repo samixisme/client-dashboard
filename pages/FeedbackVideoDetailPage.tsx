@@ -257,7 +257,7 @@ const FeedbackVideoDetailPage = () => {
         try {
             const maxPin = comments.reduce((max, c) => Math.max(max, c.pin_number || 0), 0);
 
-            const commentData: any = {
+            const commentData: Partial<FeedbackItemComment> = {
                 authorId: currentUserId,
                 commentText: text,
                 startTime: details?.startTime ?? currentTime,
@@ -283,8 +283,8 @@ const FeedbackVideoDetailPage = () => {
 
     const handleCommentUpdate = async (commentId: string, updates: Partial<FeedbackComment>) => {
         if (!projectId || !feedbackItemId) return;
-        
-        const itemUpdates: any = { ...updates };
+
+        const itemUpdates: Partial<FeedbackItemComment> & { comment?: string } = { ...updates };
         if (updates.comment) {
             itemUpdates.commentText = updates.comment;
             delete itemUpdates.comment;

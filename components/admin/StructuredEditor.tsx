@@ -3,14 +3,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import EditableItem from './EditableItem';
 import { toast } from 'sonner';
 
-interface DataSource {
+interface DataSource<T = Record<string, unknown>> {
     name: string;
-    data: any[];
-    onSave: (newData: any[]) => void;
+    data: T[];
+    onSave: (newData: T[]) => void;
 }
 
 const StructuredEditor: React.FC<{ source: DataSource }> = ({ source }) => {
-    const [items, setItems] = useState<any[]>([]);
+    const [items, setItems] = useState<typeof source.data>([]);
 
     useEffect(() => {
         // Deep copy to prevent mutation of original data store
@@ -19,7 +19,7 @@ const StructuredEditor: React.FC<{ source: DataSource }> = ({ source }) => {
 
     const isDirty = useMemo(() => JSON.stringify(items) !== JSON.stringify(source.data), [items, source.data]);
 
-    const handleUpdateItem = (index: number, updatedItem: any) => {
+    const handleUpdateItem = (index: number, updatedItem: typeof items[0]) => {
         const newItems = [...items];
         newItems[index] = updatedItem;
         setItems(newItems);
@@ -37,31 +37,31 @@ const StructuredEditor: React.FC<{ source: DataSource }> = ({ source }) => {
     // and also fix a logic bug where a new item might not have an `id`.
     const handleAddItem = () => {
         const firstItem = items[0];
-        let newItem;
+        let newItem: Record<string, unknown>;
         if (firstItem && typeof firstItem === 'object') {
             newItem = Object.keys(firstItem).reduce((acc, key) => {
                 if (key === 'id') {
                     // The id is already set in the accumulator's initial value.
                     return acc;
                 }
-                const value = firstItem[key];
+                const value = (firstItem as Record<string, unknown>)[key];
                 if (typeof value === 'string') {
-                    (acc as any)[key] = '';
+                    acc[key] = '';
                 } else if (typeof value === 'number') {
-                    (acc as any)[key] = 0;
+                    acc[key] = 0;
                 } else if (typeof value === 'boolean') {
-                    (acc as any)[key] = false;
+                    acc[key] = false;
                 } else if (Array.isArray(value)) {
-                    (acc as any)[key] = [];
+                    acc[key] = [];
                 } else {
-                    (acc as any)[key] = null;
+                    acc[key] = null;
                 }
                 return acc;
-            }, { id: `new-${Date.now()}` });
+            }, { id: `new-${Date.now()}` } as Record<string, unknown>);
         } else {
             newItem = { id: `new-${Date.now()}` };
         }
-        setItems([...items, newItem]);
+        setItems([...items, newItem as typeof items[0]]);
         toast.success('Item added');
     };
 

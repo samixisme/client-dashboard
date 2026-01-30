@@ -39,7 +39,7 @@ app.use(express.urlencoded({ limit: '1mb', extended: true }));
 // VercelRequest and VercelResponse are compatible enough with Express req/res
 // for the purposes of our proxyHandler. A small adapter might be needed if we add complexity.
 app.get('/api/proxy', optionalApiKeyAuth, (req, res) => {
-  proxyHandler(req as any, res as any);
+  proxyHandler(req, res);
 });
 
 app.listen(port, () => {

@@ -141,7 +141,7 @@ function App() {
              setUserStatus('pending');
           }
           setIsAuthenticated(true);
-        } catch (err: any) {
+        } catch (err) {
           toast.error('Database connection failed', {
             description: 'Please try again'
           });

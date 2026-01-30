@@ -475,28 +475,44 @@ const FeedbackMockupDetailPage = () => {
       {/* Comment Popover */}
       {popover.isOpen && popover.comment && containerRef.current && (() => {
         // Convert FeedbackItemComment to FeedbackComment format for CommentPopover
-        const adaptedComment = {
-          ...popover.comment,
-          // Map FeedbackItemComment fields to FeedbackComment fields
-          reporterId: popover.comment.authorId,
+        const adaptedComment: FeedbackComment = {
+          id: popover.comment.id,
+          projectId: projectId || '',
+          targetId: feedbackItemId || '',
+          targetType: 'mockup',
           comment: popover.comment.commentText,
-          // Ensure pin_number is set
+          reporterId: popover.comment.authorId,
+          x_coordinate: popover.comment.position?.x,
+          y_coordinate: popover.comment.position?.y,
+          status: popover.comment.resolved ? 'Resolved' : 'Active',
+          timestamp: popover.comment.createdAt?.seconds
+            ? new Date(popover.comment.createdAt.seconds * 1000).toISOString()
+            : new Date().toISOString(),
           pin_number: popover.comment.pin_number || comments.findIndex(c => c.id === popover.comment?.id) + 1,
-          // Map other fields
-          targetType: 'mockup' as const,
-          projectId: projectId,
-          targetId: feedbackItemId
+          dueDate: popover.comment.dueDate,
+          replies: popover.comment.replies
         };
-        
+
+        const handleUpdateCommentAdapter = async (commentId: string, updates: Partial<FeedbackComment>) => {
+          // Convert FeedbackComment updates to FeedbackItemComment updates
+          const itemCommentUpdates: Partial<FeedbackItemComment> = {
+            commentText: updates.comment,
+            resolved: updates.status === 'Resolved',
+            dueDate: updates.dueDate,
+            replies: updates.replies
+          };
+          await handleUpdateComment(commentId, itemCommentUpdates);
+        };
+
         return (
           <CommentPopover
-            comment={adaptedComment as any}
+            comment={adaptedComment}
             coords={popover.position}
             contentRef={containerRef}
             zoom={zoom}
             onClose={handleClosePopover}
             onSubmit={() => {}} // Not used for existing comments
-            onUpdate={handleUpdateComment as any}
+            onUpdate={handleUpdateCommentAdapter}
             onResolve={() => handleResolveComment(popover.comment!.id)}
             onDelete={() => {
               handleDeleteComment(popover.comment!.id);

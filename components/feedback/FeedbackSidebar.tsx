@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { FeedbackComment, FeedbackItemComment, User, SidebarView } from '../../types';
+import { FeedbackComment, FeedbackItemComment, User, SidebarView, Activity } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { CancelIcon } from '../icons/CancelIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
@@ -14,10 +14,10 @@ import CommentPopover, { CommentThread } from './CommentPopover';
 // To save tokens and time, I will inline the detail logic here, inspired by CommentPopover.
 
 interface FeedbackSidebarProps {
-    view: SidebarView; 
-    onViewChange: (view: SidebarView) => void; 
+    view: SidebarView;
+    onViewChange: (view: SidebarView) => void;
     comments: (FeedbackComment | FeedbackItemComment)[];
-    externalActivities?: any[]; 
+    externalActivities?: Activity[];
     onCommentClick: (comment: FeedbackComment | FeedbackItemComment) => void;
     onClose: () => void;
     onNavigate?: (path: string) => void;
@@ -74,7 +74,8 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
         const comment = comments.find(c => c.id === selectedCommentId);
         if (!comment) return;
 
-        const deleteRecursively = (replies: any[]): any[] => {
+        type Reply = { id: string; authorId: string; text: string; timestamp: string; replies?: Reply[] };
+        const deleteRecursively = (replies: Reply[]): Reply[] => {
              return replies.filter(r => r.id !== replyId).map(r => ({
                  ...r,
                  replies: r.replies ? deleteRecursively(r.replies) : []
@@ -270,7 +271,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                          const videoTime = getVideoTime(comment);
                          const videoEndTime = getVideoEndTime(comment);
                          const pageUrl = getPageUrl(comment);
-                         const deviceView = (comment as any).deviceView || 'Desktop';
+                         const deviceView = (comment as FeedbackComment).deviceView || (comment as FeedbackItemComment).device || 'Desktop';
                         return (
                             <div key={comment.id} onClick={() => handleCommentClickInternal(comment)} className={itemClasses}>
                                 {videoTime !== undefined && (
@@ -288,13 +289,13 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                                         </span>
                                         <span className="text-sm font-semibold text-text-primary">{getMember(getAuthorId(comment))?.name || 'User'}</span>
                                         <span className="text-[10px] px-2 py-0.5 rounded-lg bg-glass-light/60 backdrop-blur-sm text-text-secondary border border-border-color/30 ml-auto">{deviceView}</span>
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg backdrop-blur-sm border ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'text-green-400 bg-green-500/15 border-green-500/30' : 'text-primary bg-primary/15 border-primary/30'}`}>
-                                            {(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'Resolved' : 'Active'}
+                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg backdrop-blur-sm border ${(comment as FeedbackItemComment).resolved || (comment as FeedbackComment).status === 'Resolved' ? 'text-green-400 bg-green-500/15 border-green-500/30' : 'text-primary bg-primary/15 border-primary/30'}`}>
+                                            {(comment as FeedbackItemComment).resolved || (comment as FeedbackComment).status === 'Resolved' ? 'Resolved' : 'Active'}
                                         </span>
                                     </div>
 
                                     {/* Comment Text */}
-                                    <p className={`text-sm text-text-secondary mb-3 leading-relaxed ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'line-through opacity-70' : ''}`}>
+                                    <p className={`text-sm text-text-secondary mb-3 leading-relaxed ${(comment as FeedbackItemComment).resolved || (comment as FeedbackComment).status === 'Resolved' ? 'line-through opacity-70' : ''}`}>
                                         {getCommentText(comment)}
                                     </p>
 

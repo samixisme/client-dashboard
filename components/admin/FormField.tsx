@@ -19,7 +19,7 @@ const FormField: React.FC<FormFieldProps> = ({ fieldKey, fieldValue, onUpdate, p
     };
 
     // Recursive update handler for nested arrays of objects
-    const handleArrayUpdate = (newArray: any[]) => {
+    const handleArrayUpdate = (newArray: unknown[]) => {
         onUpdate(fieldKey, newArray);
     };
 

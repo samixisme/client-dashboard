@@ -22,7 +22,7 @@ const app = initializeApp(firebaseConfig);
 // IMPORTANT: Make sure '6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9' is your actual reCAPTCHA v3 site key from the Google Cloud console.
 // Self-host your reCAPTCHA v3 site key in an environment variable for security.
 if (window.location.hostname === "localhost") {
-  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = "d87f033a-8f4d-4340-8e8b-f96ebcd3ff7c";
+  (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: string }).FIREBASE_APPCHECK_DEBUG_TOKEN = "d87f033a-8f4d-4340-8e8b-f96ebcd3ff7c";
 }
 initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9'),

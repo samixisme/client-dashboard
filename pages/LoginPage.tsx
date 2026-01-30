@@ -169,7 +169,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   
   const handlePhoneRequest = (isResend = false) => {
     if (!phoneNumber || !isPossiblePhoneNumber(phoneNumber)) { setError("Please enter a valid phone number."); return; }
-    const appVerifier = (window as any).recaptchaVerifier;
+    const appVerifier = (window as WindowWithRecaptcha).recaptchaVerifier;
     
     // Phone auth persistence handled by firebase automatically but we can set it before
     setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence)
@@ -302,7 +302,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     else handleSendSignInLink();
   };
 
-  const handleTabChange = (newMethod: any) => {
+  const handleTabChange = (newMethod: 'email' | 'phone' | 'link') => {
     if (newMethod === authMethod) return;
     if (formContentRef.current) {
         gsap.to(formContentRef.current, {

@@ -4,7 +4,7 @@ import { useSearch } from '../contexts/SearchContext';
 import { useAdmin } from '../contexts/AdminContext';
 import { useData } from '../contexts/DataContext';
 import AdminPanel from '../components/admin/AdminPanel';
-import { Project, Task, User, Brand } from '../types';
+import { Project, Task, User, Brand, Board, Activity, FeedbackMockup, FeedbackVideo, FeedbackWebsite, CalendarEvent, TimeLog, Invoice, Estimate } from '../types';
 
 // StatusBadge component (from ProjectsPage)
 const StatusBadge: React.FC<{ status: 'Active' | 'Completed' | 'Archived' }> = ({ status }) => {
@@ -21,15 +21,15 @@ const StatusBadge: React.FC<{ status: 'Active' | 'Completed' | 'Archived' }> = (
 };
 
 // Custom hook for dashboard metrics
-const useDashboardMetrics = (data: any) => {
+const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
   return useMemo(() => {
     const { projects, tasks, boards, users, brands, activities, feedbackMockups, feedbackVideos, feedbackWebsites, time_logs, invoices, estimates, calendar_events } = data;
 
     // 1. Project Health
     const activeProjects = projects.filter((p: Project) => p.status === 'Active').slice(0, 6);
     const projectHealth = activeProjects.map((project: Project) => {
-      const projectBoards = boards.filter((b: any) => b.projectId === project.id);
-      const projectBoardIds = projectBoards.map((b: any) => b.id);
+      const projectBoards = boards.filter((b: Board) => b.projectId === project.id);
+      const projectBoardIds = projectBoards.map((b: Board) => b.id);
       const projectTasks = tasks.filter((t: Task) => projectBoardIds.includes(t.boardId));
       const completed = projectTasks.filter((t: Task) => t.stageId === 'stage-3').length;
       const progress = projectTasks.length > 0 ? (completed / projectTasks.length) * 100 : 0;
@@ -59,21 +59,22 @@ const useDashboardMetrics = (data: any) => {
 
     // 5. Recent Activities
     const recentActivities = activities
-      .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort((a: Activity, b: Activity) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 15)
-      .map((a: any) => ({ ...a, user: users.find((u: User) => u.id === a.author) }));
+      .map((a: Activity) => ({ ...a, user: users.find((u: User) => u.id === (a as Activity & { author?: string }).author) }));
 
     // 6. Feedback Status
-    const allFeedback = [
-      ...feedbackMockups.map((m: any) => ({ ...m, type: 'mockup' })),
-      ...feedbackVideos.map((v: any) => ({ ...v, type: 'video' })),
-      ...feedbackWebsites.map((w: any) => ({ ...w, type: 'website' }))
+    type FeedbackWithType = (FeedbackMockup | FeedbackVideo | FeedbackWebsite) & { type: 'mockup' | 'video' | 'website'; status?: string };
+    const allFeedback: FeedbackWithType[] = [
+      ...feedbackMockups.map((m: FeedbackMockup) => ({ ...m, type: 'mockup' as const })),
+      ...feedbackVideos.map((v: FeedbackVideo) => ({ ...v, type: 'video' as const })),
+      ...feedbackWebsites.map((w: FeedbackWebsite) => ({ ...w, type: 'website' as const }))
     ];
     const feedbackByStatus = {
-      pending: allFeedback.filter((f: any) => f.status === 'pending').length,
-      in_review: allFeedback.filter((f: any) => f.status === 'in_review').length,
-      approved: allFeedback.filter((f: any) => f.status === 'approved').length,
-      changes_requested: allFeedback.filter((f: any) => f.status === 'changes_requested').length,
+      pending: allFeedback.filter((f: FeedbackWithType) => f.status === 'pending').length,
+      in_review: allFeedback.filter((f: FeedbackWithType) => f.status === 'in_review').length,
+      approved: allFeedback.filter((f: FeedbackWithType) => f.status === 'approved').length,
+      changes_requested: allFeedback.filter((f: FeedbackWithType) => f.status === 'changes_requested').length,
     };
 
     // 7. Upcoming Timeline
@@ -85,18 +86,18 @@ const useDashboardMetrics = (data: any) => {
     const timeline = next7Days.map(date => ({
       date,
       tasks: tasks.filter((t: Task) => t.dueDate?.startsWith(date)),
-      events: calendar_events?.filter((e: any) => e.startDate?.startsWith(date)) || [],
-      invoices: invoices?.filter((i: any) => i.dueDate?.startsWith(date)) || []
+      events: calendar_events?.filter((e: CalendarEvent) => e.startDate?.startsWith(date)) || [],
+      invoices: invoices?.filter((i: Invoice) => i.dueDate?.startsWith(date)) || []
     }));
 
     // 8. Time Tracking
-    const thisWeekLogs = time_logs?.filter((log: any) => new Date(log.date) >= weekAgo) || [];
-    const totalHours = thisWeekLogs.reduce((sum: number, log: any) => sum + (log.duration || 0), 0) / 3600;
-    const activeMembers = new Set(thisWeekLogs.map((log: any) => log.userId)).size;
+    const thisWeekLogs = time_logs?.filter((log: TimeLog) => new Date(log.date) >= weekAgo) || [];
+    const totalHours = thisWeekLogs.reduce((sum: number, log: TimeLog) => sum + (log.duration || 0), 0) / 3600;
+    const activeMembers = new Set(thisWeekLogs.map((log: TimeLog) => log.userId)).size;
 
     // Top tasks by time
-    const taskTimeMap = new Map();
-    thisWeekLogs.forEach((log: any) => {
+    const taskTimeMap = new Map<string, number>();
+    thisWeekLogs.forEach((log: TimeLog) => {
       const current = taskTimeMap.get(log.taskId) || 0;
       taskTimeMap.set(log.taskId, current + log.duration);
     });
@@ -116,11 +117,11 @@ const useDashboardMetrics = (data: any) => {
     })).sort((a, b) => b.total - a.total).slice(0, 8);
 
     // 10. Payment Status
-    const outstanding = invoices?.filter((i: any) => i.status === 'Sent' || i.status === 'Overdue')
-      .reduce((sum: number, inv: any) => sum + (inv.totals?.totalNet || 0), 0) || 0;
-    const paidThisMonth = invoices?.filter((i: any) => i.status === 'Paid' && new Date(i.date).getMonth() === new Date().getMonth())
-      .reduce((sum: number, inv: any) => sum + (inv.totals?.totalNet || 0), 0) || 0;
-    const pendingEstimates = estimates?.filter((e: any) => e.status === 'Draft' || e.status === 'Sent').length || 0;
+    const outstanding = invoices?.filter((i: Invoice) => i.status === 'Sent' || i.status === 'Overdue')
+      .reduce((sum: number, inv: Invoice) => sum + (inv.totals?.totalNet || 0), 0) || 0;
+    const paidThisMonth = invoices?.filter((i: Invoice) => i.status === 'Paid' && new Date(i.date).getMonth() === new Date().getMonth())
+      .reduce((sum: number, inv: Invoice) => sum + (inv.totals?.totalNet || 0), 0) || 0;
+    const pendingEstimates = estimates?.filter((e: Estimate) => e.status === 'Draft' || e.status === 'Sent').length || 0;
 
     // 11. Priority Task Queue
     const highPriority = tasks.filter((t: Task) => t.priority === 'High' && t.stageId !== 'stage-3');
@@ -181,12 +182,12 @@ const DashboardPage = () => {
   const metrics = useDashboardMetrics(data);
 
   const dataSources = [
-    { name: 'Dashboard Widgets', data: widgets, onSave: (newData: any) => updateData('dashboardWidgets', newData) },
+    { name: 'Dashboard Widgets', data: widgets, onSave: (newData: typeof widgets) => updateData('dashboardWidgets', newData) },
   ];
 
   // TaskRow component (from ProjectsPage)
   const TaskRow: React.FC<{task: Task; index: number}> = ({task, index}) => {
-    const stage = data.stages.find((s: any) => s.id === task.stageId);
+    const stage = data.stages.find((s) => s.id === task.stageId);
     const assignees = data.users.filter((m: User) => task.assignees?.includes(m.id));
 
     const priorityClasses = {
@@ -348,7 +349,7 @@ const DashboardPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           <h3 className="text-sm font-medium text-text-secondary tracking-wider uppercase mb-4 relative z-10">Active Projects</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-            {metrics.projectHealth.map((item: any, idx: number) => (
+            {metrics.projectHealth.map((item, idx: number) => (
               <div
                 key={item.project.id}
                 onClick={() => item.mainBoard && navigate(`/board/${item.mainBoard.id}`)}
@@ -441,7 +442,7 @@ const DashboardPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           <h3 className="text-sm font-medium text-text-secondary tracking-wider uppercase mb-4 relative z-10">Team Workload</h3>
           <div className="space-y-3 relative z-10">
-            {metrics.teamWorkload.slice(0, 6).map((item: any) => {
+            {metrics.teamWorkload.slice(0, 6).map((item) => {
               const colorClass = item.taskCount <= 3 ? 'bg-green-500/20 border-green-500/40' :
                                  item.taskCount <= 7 ? 'bg-yellow-500/20 border-yellow-500/40' :
                                  'bg-red-500/20 border-red-500/40';
@@ -475,7 +476,7 @@ const DashboardPage = () => {
         >
           <h3 className="text-sm font-medium text-text-secondary tracking-wider uppercase mb-4">Recent Activity</h3>
           <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-            {metrics.recentActivities.map((activity: any, idx: number) => (
+            {metrics.recentActivities.map((activity, idx: number) => (
               <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-glass-light/80 transition-all duration-300 cursor-pointer">
                 {activity.user && (
                   <img src={activity.user.avatarUrl} alt={activity.user.name} className="w-9 h-9 rounded-full border-2 border-surface shadow-md flex-shrink-0" />
@@ -532,7 +533,7 @@ const DashboardPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           <h3 className="text-sm font-medium text-text-secondary tracking-wider uppercase mb-4 relative z-10">Next 7 Days</h3>
           <div className="flex gap-3 overflow-x-auto pb-2 relative z-10">
-            {metrics.timeline.map((day: any, idx: number) => {
+            {metrics.timeline.map((day, idx: number) => {
               const date = new Date(day.date);
               const isToday = date.toDateString() === new Date().toDateString();
               const totalItems = day.tasks.length + day.events.length + day.invoices.length;
@@ -592,7 +593,7 @@ const DashboardPage = () => {
           <p className="mt-1 text-xs text-text-secondary relative z-10">This week</p>
           <div className="mt-3 pt-3 border-t border-border-color/30 relative z-10">
             <p className="text-xs text-text-secondary mb-2">{metrics.activeMembers} team members active</p>
-            {metrics.topTasks.slice(0, 2).map((item: any) => item.task && (
+            {metrics.topTasks.slice(0, 2).map((item) => item.task && (
               <p key={item.task.id} className="text-xs text-text-secondary truncate">
                 • {item.task.title} ({Math.round(item.hours)}h)
               </p>
@@ -608,7 +609,7 @@ const DashboardPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           <h3 className="text-sm font-medium text-text-secondary tracking-wider uppercase mb-4 relative z-10">Brand Portfolio</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-10">
-            {metrics.brandStats.map((item: any) => (
+            {metrics.brandStats.map((item) => (
               <div
                 key={item.brand.id}
                 onClick={() => navigate('/projects')}
@@ -696,7 +697,7 @@ const DashboardPage = () => {
           ].map(tab => (
             <button
               key={tab.key}
-              onClick={() => setActiveTaskTab(tab.key as any)}
+              onClick={() => setActiveTaskTab(tab.key as 'high' | 'week' | 'overdue')}
               className={`py-3 px-6 text-sm font-bold capitalize transition-all duration-300 relative group/tab ${activeTaskTab === tab.key ? 'text-primary' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <span className="relative z-10">{tab.label}</span>

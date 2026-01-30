@@ -134,7 +134,7 @@ export class EstimatePdfGenerator {
             pdf.setFontSize(8);
 
             // Split text into multiple lines if needed
-            const noteLines = pdf.splitTextToSize(item.asteriskNote || '', maxWidth);
+            const noteLines = pdf.splitTextToSize(item.asteriskNote || '', maxWidth) as string[];
             noteLines.forEach((line: string) => {
                 pdf.text(line, textStartX, currentY);
                 currentY += lineHeight;

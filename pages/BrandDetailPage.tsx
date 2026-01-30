@@ -248,7 +248,7 @@ const BrandDetailPage = () => {
     const handleDeleteItem = (section: keyof Brand, index: number) => {
         if (!editedBrand) return;
         if (window.confirm('Are you sure you want to delete this item?')) {
-            const newSection = (editedBrand[section] as any[]).filter((_, i) => i !== index);
+            const newSection = (editedBrand[section] as unknown[]).filter((_, i) => i !== index);
             setEditedBrand({ ...editedBrand, [section]: newSection });
         }
     };

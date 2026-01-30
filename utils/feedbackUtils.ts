@@ -16,7 +16,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { FeedbackItem, FeedbackItemComment, FeedbackStatus } from "../types";
+import { Activity, FeedbackItem, FeedbackItemComment, FeedbackStatus } from "../types";
 
 // --- Feedback Items ---
 
@@ -117,7 +117,7 @@ export const logActivity = async (
 export const subscribeToActivities = (
   projectId: string,
   objectId: string,
-  callback: (activities: any[]) => void,
+  callback: (activities: Activity[]) => void,
 ) => {
   const q = query(
     collection(db, "projects", projectId, "activities"),
@@ -131,7 +131,7 @@ export const subscribeToActivities = (
       const activities = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as Activity[];
       callback(activities);
     },
     (error) => {
@@ -326,11 +326,12 @@ export const addComment = async (
     );
 
     // 4. Sync to task if dueDate is present
-    if ((commentData as any).dueDate) {
+    const commentDataWithDueDate = commentData as Omit<FeedbackItemComment, "id" | "createdAt" | "feedbackItemId" | "resolved">;
+    if (commentDataWithDueDate.dueDate) {
       await syncCommentToTask(
         commentRef.id,
         commentData.commentText || '',
-        (commentData as any).dueDate,
+        commentDataWithDueDate.dueDate,
         commentData.authorId,
         projectId,
         itemId

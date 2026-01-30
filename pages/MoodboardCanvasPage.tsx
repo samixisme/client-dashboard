@@ -20,7 +20,10 @@ import {
 import ColorPopover from '../components/moodboard/ColorPopover';
 import ViewSwitcher, { ViewOption } from '../components/board/ViewSwitcher';
 
-declare const htmlToImage: any;
+declare const htmlToImage: {
+    toPng: (node: HTMLElement, options?: { filter?: (node: HTMLElement) => boolean }) => Promise<string>;
+    toJpeg: (node: HTMLElement, options?: { quality?: number; filter?: (node: HTMLElement) => boolean }) => Promise<string>;
+};
 
 const viewOptions: ViewOption[] = [
     { id: 'canvas', name: 'Canvas', Icon: KanbanViewIcon },
@@ -34,7 +37,7 @@ const SNAP_SIZE = 20;
 const CANVAS_SIZE = 5000;
 const CANVAS_OFFSET = CANVAS_SIZE / 2;
 
-const ToolbarButton = forwardRef<HTMLButtonElement, { onClick?: React.MouseEventHandler<HTMLButtonElement>; Icon: React.FC<any>; label: string; isActive?: boolean; disabled?: boolean }>(({ onClick, Icon, label, isActive = false, disabled = false }, ref) => (
+const ToolbarButton = forwardRef<HTMLButtonElement, { onClick?: React.MouseEventHandler<HTMLButtonElement>; Icon: React.FC<{ className?: string }>; label: string; isActive?: boolean; disabled?: boolean }>(({ onClick, Icon, label, isActive = false, disabled = false }, ref) => (
     <button 
         ref={ref} 
         onClick={(e) => {
@@ -428,9 +431,9 @@ const MoodboardCanvasPage = () => {
             if (payload.type === 'resource') {
                 const { x, y } = getCanvasCoords(e.nativeEvent);
                 const now = new Date().toISOString();
-                
+
                 // Determine content based on resource type
-                let content: any = {
+                let content: MoodboardItem['content'] = {
                     resourceType: payload.resourceType,
                     referenceId: payload.resourceId,
                     title: payload.resourceData.name || payload.resourceData.title || 'Resource',
@@ -830,7 +833,7 @@ const MoodboardCanvasPage = () => {
             </div>
 
             <div className="flex items-center gap-2">
-                <ViewSwitcher currentView={viewMode} onSwitchView={(v) => setViewMode(v as any)} options={viewOptions} widthClass="w-36"/>
+                <ViewSwitcher currentView={viewMode} onSwitchView={(v) => setViewMode(v as 'canvas' | 'list')} options={viewOptions} widthClass="w-36"/>
                 <ToolbarButton onClick={() => setIsDownloadModalOpen(true)} Icon={DownloadIcon} label="Download Moodboard" />
                 <ToolbarButton onClick={toggleFullscreen} Icon={isFullscreen ? ExitFullscreenIcon : FullscreenIcon} label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'} />
             </div>

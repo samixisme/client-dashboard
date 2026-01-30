@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { db, auth } from '../utils/firebase';
 import { collection, query, where, onSnapshot, collectionGroup, Timestamp, orderBy } from 'firebase/firestore';
-import { CalendarEvent, Task, Invoice, RoadmapItem, Project, Board } from '../types';
+import { CalendarEvent, Task, Invoice, RoadmapItem, Project, Board, Client, FeedbackComment, Brand } from '../types';
 
 export const useCalendarEvents = (userId: string) => {
     const [manualEvents, setManualEvents] = useState<CalendarEvent[]>([]);
@@ -10,11 +10,11 @@ export const useCalendarEvents = (userId: string) => {
     const [roadmapItems, setRoadmapItems] = useState<RoadmapItem[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [boards, setBoards] = useState<Board[]>([]);
-    const [clients, setClients] = useState<any[]>([]);
-    const [feedbackComments, setFeedbackComments] = useState<any[]>([]); // Use 'any' or import FeedbackComment type
+    const [clients, setClients] = useState<Client[]>([]);
+    const [feedbackComments, setFeedbackComments] = useState<FeedbackComment[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const ensureDateString = (date: any): string => {
+    const ensureDateString = (date: string | Date | Timestamp | { toDate: () => Date } | undefined): string => {
         if (!date) return '';
         if (typeof date === 'string') return date;
         if (date instanceof Timestamp) return date.toDate().toISOString();
@@ -22,7 +22,7 @@ export const useCalendarEvents = (userId: string) => {
         if (date instanceof Date) return date.toISOString();
         return String(date);
     };
-    const [brandsList, setBrandsList] = useState<any[]>([]);
+    const [brandsList, setBrandsList] = useState<Brand[]>([]);
 
     useEffect(() => {
         const unsubscribeFunctions: (() => void)[] = [];
