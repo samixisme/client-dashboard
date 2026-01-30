@@ -380,6 +380,8 @@ const ProjectBoardPage = () => {
             try {
                  await updateDoc(doc(db, 'projects', project.id, 'boards', boardId!, 'stages', stageId), { status });
             } catch (e) {
+                console.error('Error updating stage status:', e);
+                toast.error('Failed to update stage status');
             }
             forceUpdate();
         }
@@ -407,7 +409,10 @@ const ProjectBoardPage = () => {
         if (project && boardId) {
              try {
                 await deleteDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId));
-            } catch (e) {}
+            } catch (e) {
+                console.error('Error archiving stage:', e);
+                toast.error('Failed to archive stage');
+            }
         }
 
         forceUpdate();
@@ -426,7 +431,10 @@ const ProjectBoardPage = () => {
             stage.sortConfig = config;
              try {
                 updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId), { sortConfig: config });
-            } catch (e) {}
+            } catch (e) {
+                console.error('Error updating stage sort config:', e);
+                toast.error('Failed to update sort settings');
+            }
             forceUpdate();
         }
         setStageActionState({ anchorEl: null, stage: null });
@@ -438,7 +446,10 @@ const ProjectBoardPage = () => {
             stage.backgroundPattern = patternId;
              try {
                 updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId), { backgroundPattern: patternId });
-            } catch (e) {}
+            } catch (e) {
+                console.error('Error updating stage background pattern:', e);
+                toast.error('Failed to update stage background');
+            }
             forceUpdate();
         }
         setStageActionState({ anchorEl: null, stage: null });
@@ -452,7 +463,10 @@ const ProjectBoardPage = () => {
                 if (project && boardId) {
                     try {
                          await updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stage.id), { order: index });
-                    } catch(e) {}
+                    } catch(e) {
+                        console.error('Error updating stage order:', e);
+                        toast.error('Failed to update stage order');
+                    }
                 }
             }
         });
