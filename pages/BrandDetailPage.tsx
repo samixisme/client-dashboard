@@ -201,7 +201,7 @@ const BrandDetailPage = () => {
         }
     };
     
-    const handleGenericUpdate = <T,>(section: keyof Brand, index: number, field: keyof T, value: any) => {
+    const handleGenericUpdate = <T,>(section: keyof Brand, index: number, field: keyof T, value: T[keyof T]) => {
         if (!editedBrand) return;
         const newSection = [...(editedBrand[section] as T[])] as T[];
         newSection[index] = { ...newSection[index], [field]: value };
@@ -228,7 +228,7 @@ const BrandDetailPage = () => {
 
     const handleAddItem = (section: keyof Brand) => {
         if (!editedBrand) return;
-        let newItem: any;
+        let newItem: BrandColor | BrandFont | BrandAsset;
         switch (section) {
             case 'colors': newItem = { name: 'New Color', type: 'Secondary', hex: '#ffffff', rgb: '255, 255, 255', hsl: '0, 0%, 100%', cmyk: '0, 0, 0, 0' }; break;
             case 'fonts': newItem = { name: 'New Font', type: 'Secondary', url: '#', styles: [{ name: 'Body', size: '16px', weight: '400', letterSpacing: '0.5px', lineHeight: '24px' }] }; break;
@@ -236,7 +236,7 @@ const BrandDetailPage = () => {
             case 'graphics': newItem = { name: 'New Graphic', url: `https://picsum.photos/seed/${Date.now()}/400/300` }; break;
             default: return;
         }
-        setEditedBrand(currentBrand => currentBrand ? ({ ...currentBrand, [section]: [...(currentBrand[section] as any[]), newItem] }) : null);
+        setEditedBrand(currentBrand => currentBrand ? ({ ...currentBrand, [section]: [...(currentBrand[section] as (BrandColor | BrandFont | BrandAsset)[]), newItem] }) : null);
     };
     
     const handleAddLogo = (type: BrandLogoType, variation: BrandLogoVariation) => {

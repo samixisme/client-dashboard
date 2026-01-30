@@ -5,8 +5,8 @@ const StructuredEditor = React.lazy(() => import('./StructuredEditor'));
 
 interface FormFieldProps {
     fieldKey: string;
-    fieldValue: any;
-    onUpdate: (key: string, value: any) => void;
+    fieldValue: unknown;
+    onUpdate: (key: string, value: unknown) => void;
     path: string; // e.g., "colors[0].name"
 }
 
@@ -14,8 +14,8 @@ const FormField: React.FC<FormFieldProps> = ({ fieldKey, fieldValue, onUpdate, p
     const label = fieldKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
     
     // Recursive update handler for nested objects
-    const handleNestedUpdate = (nestedKey: string, nestedValue: any) => {
-        onUpdate(fieldKey, { ...fieldValue, [nestedKey]: nestedValue });
+    const handleNestedUpdate = (nestedKey: string, nestedValue: unknown) => {
+        onUpdate(fieldKey, { ...fieldValue as Record<string, unknown>, [nestedKey]: nestedValue });
     };
 
     // Recursive update handler for nested arrays of objects

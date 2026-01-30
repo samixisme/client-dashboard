@@ -2,18 +2,18 @@
 import React, { useState } from 'react';
 import FormField from './FormField';
 
-interface EditableItemProps {
-    itemData: any;
-    onUpdate: (updatedItem: any) => void;
+interface EditableItemProps<T extends Record<string, unknown>> {
+    itemData: T;
+    onUpdate: (updatedItem: T) => void;
     onDelete: () => void;
 }
 
-const EditableItem: React.FC<EditableItemProps> = ({ itemData, onUpdate, onDelete }) => {
+const EditableItem = <T extends Record<string, unknown>>({ itemData, onUpdate, onDelete }: EditableItemProps<T>) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [editedItem, setEditedItem] = useState(itemData);
+    const [editedItem, setEditedItem] = useState<T>(itemData);
 
-    const handleFieldUpdate = (key: string, value: any) => {
-        setEditedItem((prev: any) => ({ ...prev, [key]: value }));
+    const handleFieldUpdate = (key: string, value: unknown) => {
+        setEditedItem((prev: T) => ({ ...prev, [key]: value }));
     };
 
     const handleSave = () => {
