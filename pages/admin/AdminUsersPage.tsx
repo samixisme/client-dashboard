@@ -22,7 +22,6 @@ const AdminUsersPage: React.FC = () => {
 
     const handleSaveUser = (updatedUser: User) => {
         // This will be handled by the modal's internal logic
-        console.log('Saving user:', updatedUser);
     };
 
     if (loading) return <div>Loading users...</div>;

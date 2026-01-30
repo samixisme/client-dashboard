@@ -33,16 +33,14 @@ const deleteCollection = async (collectionPath: string) => {
  * Recursively deletes a project and all its related subcollections and global references.
  */
 export const deleteProjectDeep = async (projectId: string) => {
-    console.log(`Starting deep delete for project: ${projectId}`);
-
     try {
         // 1. Delete Subcollections
-        // Note: We must know the subcollection names. 
+        // Note: We must know the subcollection names.
         // Based on codebase: 'boards', 'feedbackItems', 'moodboards', 'activities', 'roadmap'
-        
+
         // Boards -> Stages, Tasks, Tags, TimeLogs is DEEP.
         // Doing strict subcollection delete by name:
-        
+
         // A. Feedback Items
         const feedbackItemsSnap = await getDocs(collection(db, 'projects', projectId, 'feedbackItems'));
         for (const itemDoc of feedbackItemsSnap.docs) {
@@ -97,8 +95,7 @@ export const deleteProjectDeep = async (projectId: string) => {
 
         // 3. Finally, delete the Project document itself
         await deleteDoc(doc(db, 'projects', projectId));
-        console.log(`Deep delete complete for project: ${projectId}`);
-        
+
     } catch (error) {
         console.error(`Error deleting project ${projectId}:`, error);
         throw error;
@@ -187,14 +184,12 @@ export const deleteBoardDeep = async (projectId: string, boardId: string) => {
  * Useful for cleaning up "old/stale" data.
  */
 export const purgeStaleData = async () => {
-    console.log('Starting stale data purge...');
     let deletedCount = 0;
 
     try {
         // 1. Get all valid Project IDs
         const projectsSnap = await getDocs(collection(db, 'projects'));
         const validProjectIds = new Set(projectsSnap.docs.map(d => d.id));
-        console.log(`Found ${validProjectIds.size} valid projects.`);
 
         // 2. Check Global Collections
         const collectionsToCheck = ['tasks', 'activities', 'events'];
@@ -277,7 +272,6 @@ export const purgeStaleData = async () => {
              // Checking existence of individual moodboards is too read-heavy for now.
         }
 
-        console.log(`Purge complete. Deleted ${deletedCount} stale documents.`);
         return deletedCount;
 
     } catch (error) {

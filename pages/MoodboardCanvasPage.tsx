@@ -129,11 +129,8 @@ const MoodboardCanvasPage = () => {
         });
 
         if (minX === Infinity) {
-            console.log("recenterCanvas: No items found with position.");
             return;
         }
-
-        console.log(`recenterCanvas: Bounds [${minX}, ${minY}, ${maxX}, ${maxY}]`);
 
         const contentWidth = maxX - minX;
         const contentHeight = maxY - minY;
@@ -150,12 +147,8 @@ const MoodboardCanvasPage = () => {
         const contentCenterX = minX + contentWidth / 2 + CANVAS_OFFSET;
         const contentCenterY = minY + contentHeight / 2 + CANVAS_OFFSET;
 
-        console.log(`recenterCanvas: Center [${contentCenterX}, ${contentCenterY}] (Offset Applied), New Zoom: ${newZoom}`);
-
         const newScrollLeft = (contentCenterX * newZoom) - (viewportWidth / 2);
         const newScrollTop = (contentCenterY * newZoom) - (viewportHeight / 2);
-        
-        console.log(`recenterCanvas: Target Scroll [${newScrollLeft}, ${newScrollTop}]`);
 
         setPostZoomScroll({ x: newScrollLeft, y: newScrollTop });
         setZoom(newZoom);
@@ -924,14 +917,12 @@ const MoodboardCanvasPage = () => {
                                                 }}
                                                 onDoubleClick={(e) => {
                                                     e.stopPropagation();
-                                                    console.log("Double Clicked Item:", item.id);
                                                     setSelectedItemId(item.id);
                                                     setIsInspectorOpen(true);
                                                 }}
                                                 onDelete={handleDeleteItem} 
                                                 onDownloadRequest={handleDownloadItem} 
                                                 onEdit={(item) => {
-                                                    console.log("onEdit triggered for item:", item.id);
                                                     setSelectedItemId(item.id);
                                                     setIsInspectorOpen(true);
                                                 }}

@@ -135,7 +135,7 @@ const FeedbackItemPage = () => {
             view={sidebarView} // Task 3.3: Pass sidebarView state
             onViewChange={setSidebarView} // Task 3.3: Pass handler to change view
             comments={sidebarComments}
-            onCommentClick={(c) => console.log('Clicked comment', c)}
+            onCommentClick={(c) => {}}
             onClose={() => {}}
             onDelete={(id) => {
                 const idx = data.feedbackComments.findIndex((c: any) => c.id === id);

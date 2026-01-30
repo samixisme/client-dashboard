@@ -418,14 +418,6 @@ export const deleteComment = async (
   userId?: string,
 ): Promise<void> => {
   try {
-    console.log(
-      "Deleting comment:",
-      commentId,
-      "from item:",
-      itemId,
-      "in project:",
-      projectId,
-    );
     const commentRef = doc(
       db,
       "projects",
@@ -613,7 +605,6 @@ export const cleanupOrphanedData = async (projectId: string): Promise<{ tasksDel
       activitiesDeleted++;
     }
 
-    console.log(`Cleanup complete: ${tasksDeleted} tasks and ${activitiesDeleted} activities deleted for project ${projectId}`);
     return { tasksDeleted, activitiesDeleted };
   } catch (error) {
     console.error("Error cleaning up orphaned data:", error);

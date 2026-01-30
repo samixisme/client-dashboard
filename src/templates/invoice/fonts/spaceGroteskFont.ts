@@ -10,8 +10,6 @@ import { SpaceGroteskbold } from './SpaceGrotesk-bold.js';
  */
 export async function addSpaceGroteskFont(pdf: jsPDF) {
     try {
-        console.log('🔄 Loading Space Grotesk fonts (properly converted)...');
-
         // Add Regular font
         pdf.addFileToVFS('SpaceGrotesk-normal.ttf', SpaceGrotesknormal.base64);
         pdf.addFont('SpaceGrotesk-normal.ttf', 'SpaceGrotesk', 'normal');
@@ -19,9 +17,6 @@ export async function addSpaceGroteskFont(pdf: jsPDF) {
         // Add Bold font
         pdf.addFileToVFS('SpaceGrotesk-bold.ttf', SpaceGroteskbold.base64);
         pdf.addFont('SpaceGrotesk-bold.ttf', 'SpaceGrotesk', 'bold');
-
-        console.log('✅ Space Grotesk fonts loaded successfully!');
-        console.log('📋 Available fonts:', pdf.getFontList());
 
         return true;
     } catch (error) {

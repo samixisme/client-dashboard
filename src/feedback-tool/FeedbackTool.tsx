@@ -13,8 +13,6 @@ interface Pin {
 }
 
 const FeedbackTool = () => {
-  console.log("FeedbackTool: Mounting..."); 
-
   const [projectId, setProjectId] = useState<string | null>(null);
   const [feedbackItemId, setFeedbackItemId] = useState<string | null>(null);
   const [comments, setComments] = useState<FeedbackItemComment[]>([]);
@@ -45,11 +43,9 @@ const FeedbackTool = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
         if (user) {
-            console.log("FeedbackTool: User authenticated", user.uid);
             setUserId(user.uid);
         } else {
-            console.log("FeedbackTool: User not authenticated");
-            setUserId('guest-user'); 
+            setUserId('guest-user');
         }
     });
     return () => unsubscribe();
@@ -61,7 +57,6 @@ const FeedbackTool = () => {
     if (script) {
       const pid = script.getAttribute('data-project-id');
       const fid = script.getAttribute('data-feedback-id');
-      console.log("FeedbackTool: Config found", { pid, fid });
       setProjectId(pid);
       setFeedbackItemId(fid);
     } else {
@@ -69,7 +64,6 @@ const FeedbackTool = () => {
          if (scriptModule) {
             const pid = scriptModule.getAttribute('data-project-id');
             const fid = scriptModule.getAttribute('data-feedback-id');
-            console.log("FeedbackTool: Config found (module)", { pid, fid });
             setProjectId(pid);
             setFeedbackItemId(fid);
         } else {
@@ -82,26 +76,22 @@ const FeedbackTool = () => {
   useEffect(() => {
     const fetchUsers = async () => {
         try {
-            console.log("FeedbackTool: Fetching users...");
             const usersSnapshot = await getDocs(collection(db, 'users'));
             const fetchedUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            console.log("FeedbackTool: Users fetched", fetchedUsers.length);
             setUsers(fetchedUsers);
         } catch (error) {
             console.error("FeedbackTool: Error fetching users:", error);
         }
     };
-    
+
     fetchUsers();
   }, []);
 
   // Subscribe to comments
   useEffect(() => {
     if (!projectId || !feedbackItemId) return;
-    
-    console.log("FeedbackTool: Subscribing to comments...");
+
     const unsubscribeComments = subscribeToComments(projectId, feedbackItemId, (newComments) => {
-      console.log("FeedbackTool: Comments updated", newComments.length);
       setComments(newComments);
     });
 
@@ -114,7 +104,6 @@ const FeedbackTool = () => {
   useEffect(() => {
       const handleMessage = (event: MessageEvent) => {
            if (event.data?.type === 'FEEDBACK_TOOL_UPDATE') {
-               console.log("FeedbackTool: Received update", event.data.payload);
                if (event.data.payload.device) setDevice(event.data.payload.device);
                if (event.data.payload.interactionMode) {
                    setInteractionMode(event.data.payload.interactionMode);
@@ -321,7 +310,6 @@ const FeedbackTool = () => {
   }, [popover.isOpen, popover.comment, popover.isNew, comments]);
 
   if (!projectId || !feedbackItemId) {
-      console.log("FeedbackTool: Missing project or feedback ID", { projectId, feedbackItemId });
       return null;
   }
 

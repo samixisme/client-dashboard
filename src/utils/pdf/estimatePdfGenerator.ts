@@ -72,8 +72,6 @@ export class EstimatePdfGenerator {
 
         // Set SpaceGrotesk as the default font (note: no space in font name for jsPDF)
         pdf.setFont('SpaceGrotesk', 'normal');
-
-        console.log('Current font set to:', 'SpaceGrotesk');
     }
 
     /**
