@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GoogleIcon } from '../components/icons/GoogleIcon';
 import { GlobalLogoIcon } from '../components/icons/GlobalLogoIcon';
 import { auth, db } from '../utils/firebase';
-import { 
-  signInWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail, 
-  GoogleAuthProvider, 
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
   signInWithPopup,
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -14,7 +14,8 @@ import {
   sendSignInLinkToEmail,
   setPersistence,
   browserLocalPersistence,
-  browserSessionPersistence
+  browserSessionPersistence,
+  User as FirebaseUser
 } from "firebase/auth";
 import { doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import PhoneInput, { isPossiblePhoneNumber } from 'react-phone-number-input';
@@ -25,6 +26,21 @@ import TabSwitcher from '../components/TabSwitcher';
 
 interface LoginPageProps {
   onLogin: (status: string) => void;
+}
+
+interface WindowWithRecaptcha extends Window {
+  recaptchaVerifier?: RecaptchaVerifier;
+}
+
+interface UserProfile {
+  email: string;
+  phoneNumber: string;
+  status: string;
+  role: string;
+  createdAt: Date;
+  firstName: string;
+  lastName: string;
+  name: string;
 }
 
 const getErrorMessage = (errorCode: string) => {
@@ -74,9 +90,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   }, [authMethod]);
 
   useEffect(() => {
-    if ((view === 'signin' || view === 'signup') && authMethod === 'phone' && !(window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'invisible', 'callback': () => {} });
-      (window as any).recaptchaVerifier.render();
+    if ((view === 'signin' || view === 'signup') && authMethod === 'phone' && !(window as WindowWithRecaptcha).recaptchaVerifier) {
+      (window as WindowWithRecaptcha).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'invisible', 'callback': () => {} });
+      (window as WindowWithRecaptcha).recaptchaVerifier.render();
     }
   }, [view, authMethod]);
 
@@ -94,7 +110,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  const checkUserStatus = async (user: any, additionalData?: { firstName?: string; lastName?: string; email?: string }) => {
+  const checkUserStatus = async (user: FirebaseUser, additionalData?: { firstName?: string; lastName?: string; email?: string }) => {
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
 
@@ -103,12 +119,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
 
     // New document creation logic
-    const newUserProfile: any = {
+    const newUserProfile: UserProfile = {
       email: user.email || additionalData?.email || '',
       phoneNumber: user.phoneNumber || '',
       status: 'pending',
       role: 'client', // Add default role here
       createdAt: new Date(),
+      firstName: '',
+      lastName: '',
+      name: '',
     };
 
     let fName = additionalData?.firstName || '';
