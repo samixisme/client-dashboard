@@ -4,7 +4,7 @@ import { useData } from '../../contexts/DataContext';
 import FeedbackCanvas from './FeedbackCanvas';
 import FeedbackSidebar from './FeedbackSidebar';
 import { getFeedbackItems } from '../../utils/feedbackUtils';
-import { FeedbackComment } from '../../types';
+import { FeedbackComment, FeedbackMockup, FeedbackVideo, FeedbackWebsite } from '../../types';
 
 export type Breakpoint = 'desktop' | 'notebook' | 'tablet' | 'phone';
 export type InteractionMode = 'navigate' | 'comment';
@@ -27,14 +27,14 @@ const FeedbackItemPage = () => {
   // Task 3.3: Sidebar View State
   const [sidebarView, setSidebarView] = useState<SidebarView>('comments');
   
-  const [item, setItem] = useState<any>(null);
+  const [item, setItem] = useState<FeedbackMockup | FeedbackVideo | FeedbackWebsite | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch item data
   useEffect(() => {
     if (projectId && itemId) {
       getFeedbackItems(projectId).then((items) => {
-        const foundItem = items.find((i: any) => i.id === itemId);
+        const foundItem = items.find((i: FeedbackMockup | FeedbackVideo | FeedbackWebsite) => i.id === itemId);
         setItem(foundItem);
         setLoading(false);
       });
@@ -43,8 +43,10 @@ const FeedbackItemPage = () => {
 
   // Task 3.2: Handler for "Go to Page" deep link
   const handleGoToPage = (url: string, device: string) => {
-    if (item && item.type === 'website') {
-        setItem((prev: any) => ({ ...prev, url })); 
+    if (item && 'url' in item) {
+        setItem((prev: FeedbackMockup | FeedbackVideo | FeedbackWebsite | null) =>
+          prev && 'url' in prev ? ({ ...prev, url }) : prev
+        );
     }
     if (['desktop', 'notebook', 'tablet', 'phone'].includes(device)) {
         setActiveBreakpoint(device as Breakpoint);
@@ -53,7 +55,7 @@ const FeedbackItemPage = () => {
   };
 
   // Filter comments for the sidebar
-  const sidebarComments = (data.feedbackComments || []).filter((c: any) => c.targetId === itemId);
+  const sidebarComments = (data.feedbackComments || []).filter((c: FeedbackComment) => c.targetId === itemId);
 
   if (loading) return <div className="p-10 text-center text-text-secondary">Loading...</div>;
   if (!item) return <div className="p-10 text-center text-text-secondary">Item not found</div>;
@@ -138,10 +140,10 @@ const FeedbackItemPage = () => {
             onCommentClick={(c) => {}}
             onClose={() => {}}
             onDelete={(id) => {
-                const idx = data.feedbackComments.findIndex((c: any) => c.id === id);
+                const idx = data.feedbackComments.findIndex((c: FeedbackComment) => c.id === id);
                 if (idx > -1) { data.feedbackComments.splice(idx, 1); forceUpdate(); }
             }}
-            onResolve={(id) => { const c = data.feedbackComments.find((c: any) => c.id === id); if (c) { c.status = 'Resolved'; forceUpdate(); } }}
+            onResolve={(id) => { const c = data.feedbackComments.find((c: FeedbackComment) => c.id === id); if (c) { c.status = 'Resolved'; forceUpdate(); } }}
             position={sidebarDock}
             onGoToPage={handleGoToPage}
         />
