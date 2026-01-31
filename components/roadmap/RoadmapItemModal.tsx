@@ -8,6 +8,7 @@ import { FileIcon } from '../icons/FileIcon';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../utils/firebase';
 import { toast } from 'sonner';
+import { DatePicker } from '../../src/components/ui/date-picker';
 
 interface RoadmapItemModalProps {
     item: RoadmapItem;
@@ -31,8 +32,10 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
         setEditedItem(prev => ({ ...prev, [name]: value }));
     };
     
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'startDate' | 'endDate') => {
-        setEditedItem(prev => ({ ...prev, [field]: new Date(e.target.value).toISOString() }));
+    const handleDateChange = (date: Date | undefined, field: 'startDate' | 'endDate') => {
+        if (date) {
+            setEditedItem(prev => ({ ...prev, [field]: date.toISOString() }));
+        }
     };
 
     const handleSave = () => {
@@ -95,15 +98,15 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
     };
     
     return (
-         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4" onClick={onClose}>
-            <div className="bg-surface w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-xl border border-border-color flex flex-col" onClick={e => e.stopPropagation()}>
+         <div className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}>
+            <div className="bg-glass/60 backdrop-blur-2xl w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl border border-border-color flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="p-6 border-b border-border-color">
                     <input 
                         type="text"
                         name="title"
                         value={editedItem.title}
                         onChange={handleChange}
-                        className="text-xl font-bold text-text-primary bg-transparent w-full focus:outline-none focus:bg-surface-light rounded-lg px-2 py-1 -mx-2"
+                        className="text-xl font-bold text-text-primary bg-transparent w-full focus:outline-none focus:bg-glass-light rounded-lg px-2 py-1 -mx-2"
                     />
                 </div>
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -111,7 +114,7 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                         <div>
                             <label className="block text-xs font-medium text-text-secondary mb-1">Status</label>
-                            <select name="status" value={editedItem.status} onChange={handleChange} className="w-full p-2 text-sm rounded-lg bg-surface-light border border-border-color text-text-primary">
+                            <select name="status" value={editedItem.status} onChange={handleChange} className="w-full p-2 text-sm rounded-lg bg-glass/40 backdrop-blur-sm border border-border-color text-text-primary focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all">
                                 <option>Planned</option>
                                 <option>In Progress</option>
                                 <option>Completed</option>
@@ -119,11 +122,23 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                         </div>
                          <div>
                             <label className="block text-xs font-medium text-text-secondary mb-1">Start Date</label>
-                            <input type="date" value={getSafeDateForInput(editedItem.startDate)} onChange={e => handleDateChange(e, 'startDate')} className="w-full p-1.5 text-sm rounded-lg bg-surface-light border border-border-color text-text-primary"/>
+                            <DatePicker
+                                value={editedItem.startDate ? new Date(editedItem.startDate) : undefined}
+                                onChange={(date) => handleDateChange(date, 'startDate')}
+                                placeholder="Select start date"
+                                className="text-sm"
+                            />
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-text-secondary mb-1">End Date</label>
-                            <input type="date" value={getSafeDateForInput(editedItem.endDate)} onChange={e => handleDateChange(e, 'endDate')} className="w-full p-1.5 text-sm rounded-lg bg-surface-light border border-border-color text-text-primary"/>
+                            <DatePicker
+                                value={editedItem.endDate ? new Date(editedItem.endDate) : undefined}
+                                onChange={(date) => handleDateChange(date, 'endDate')}
+                                placeholder="Select end date"
+                                minDate={editedItem.startDate ? new Date(editedItem.startDate) : undefined}
+                                className="text-sm"
+                            />
+                        </div>
                         </div>
                     </div>
 
@@ -136,7 +151,7 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                             onChange={handleChange}
                             rows={4}
                             placeholder="Add a description..."
-                            className="w-full p-3 text-sm rounded-lg bg-surface-light border border-border-color focus:ring-primary focus:border-primary text-text-primary"
+                            className="w-full p-3 text-sm rounded-lg bg-glass/40 backdrop-blur-sm border border-border-color focus:ring-1 focus:ring-primary/30 focus:border-primary/50 text-text-primary transition-all"
                         />
                     </div>
                     
@@ -145,7 +160,7 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                         <h3 className="text-sm font-semibold text-text-primary mb-2">Tasks ({itemTasks.length})</h3>
                         <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                             {itemTasks.map(task => (
-                                <div key={task.id} className="bg-surface-light p-2 rounded-md text-sm text-text-primary border border-border-color">{task.title}</div>
+                                <div key={task.id} className="bg-glass/40 backdrop-blur-sm p-2 rounded-md text-sm text-text-primary border border-border-color">{task.title}</div>
                             ))}
                         </div>
                     </div>
@@ -158,7 +173,7 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                         </div>
                          <div className="space-y-2">
                             {editedItem.attachments.map(att => (
-                                <div key={att.id} className="flex items-center gap-3 bg-surface-light p-2 rounded-lg border border-border-color">
+                                <div key={att.id} className="flex items-center gap-3 bg-glass/40 backdrop-blur-sm p-2 rounded-lg border border-border-color">
                                     <FileIcon className="w-6 h-6 text-text-secondary"/>
                                     <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-text-primary hover:underline flex-1 truncate">{att.name}</a>
                                     <button onClick={() => handleRemoveAttachment(att.id)} className="p-1 rounded-full hover:bg-red-500/20 text-text-secondary hover:text-red-400"><DeleteIcon className="w-4 h-4"/></button>
@@ -175,7 +190,7 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                 <div className="flex justify-between items-center p-4 border-t border-border-color">
                     <button onClick={handleDelete} className="px-4 py-2 bg-red-800 text-red-100 text-sm font-medium rounded-lg hover:bg-red-700">Delete Item</button>
                     <div className="flex gap-4">
-                        <button onClick={onClose} className="px-4 py-2 bg-surface-light text-text-primary text-sm font-medium rounded-lg hover:bg-border-color">Cancel</button>
+                        <button onClick={onClose} className="px-4 py-2 bg-glass/40 backdrop-blur-sm text-text-primary text-sm font-medium rounded-lg hover:bg-glass-light border border-border-color transition-all">Cancel</button>
                         <button onClick={handleSave} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Save Changes</button>
                     </div>
                 </div>

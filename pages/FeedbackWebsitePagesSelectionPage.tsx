@@ -53,15 +53,15 @@ const FeedbackWebsitePagesSelectionPage = () => {
         await updateFeedbackItemPages(projectId, feedbackItemId, updatedPages);
     };
 
-    if (isLoading) return <div className="h-screen w-full bg-background flex items-center justify-center text-text-primary">Loading...</div>;
-    if (!item) return <div className="h-screen w-full bg-background flex items-center justify-center text-red-500">Item not found</div>;
+    if (isLoading) return <div className="h-screen w-full flex items-center justify-center text-text-primary">Loading...</div>;
+    if (!item) return <div className="h-screen w-full flex items-center justify-center text-red-500">Item not found</div>;
 
     return (
-        <div className="min-h-screen bg-background text-text-primary p-8">
+        <div className="min-h-screen text-text-primary p-8">
             {/* Header */}
             <div className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                     <button onClick={() => navigate(`/feedback/${projectId}/websites`)} className="p-2 bg-surface hover:bg-surface-light rounded-full transition-colors">
+                     <button onClick={() => navigate(`/feedback/${projectId}/websites`)} className="p-2 bg-glass/40 backdrop-blur-sm hover:bg-glass/60 rounded-full transition-all duration-300 border border-border-color">
                         <ArrowLeftIcon className="w-5 h-5 text-text-secondary" />
                     </button>
                     <div>
@@ -104,7 +104,7 @@ const FeedbackWebsitePagesSelectionPage = () => {
                 {(!item.pages || item.pages.length === 0) && (
                     <div 
                         onClick={() => navigate(`/feedback/${projectId}/website/${feedbackItemId}/view?path=/`)}
-                        className="bg-surface border border-border-color rounded-xl p-6 cursor-pointer hover:border-primary transition-colors group relative h-40 flex flex-col justify-center items-center text-center"
+                        className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-xl p-6 cursor-pointer hover:border-primary/60 hover:shadow-lg transition-all duration-300 group relative h-40 flex flex-col justify-center items-center text-center"
                     >
                          <div className="absolute top-4 left-4 w-6 h-6 rounded-full border border-border-color flex items-center justify-center">
                             {/* Empty circle for unapproved */}
@@ -118,7 +118,7 @@ const FeedbackWebsitePagesSelectionPage = () => {
                     <div 
                         key={page.id}
                         onClick={() => navigate(`/feedback/${projectId}/website/${feedbackItemId}/view?path=${encodeURIComponent(page.url)}`)}
-                        className="bg-surface border border-border-color rounded-xl p-6 cursor-pointer hover:border-primary transition-colors group relative h-40 flex flex-col justify-center items-center text-center"
+                        className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-xl p-6 cursor-pointer hover:border-primary/60 hover:shadow-lg transition-all duration-300 group relative h-40 flex flex-col justify-center items-center text-center"
                     >
                         <div className="absolute top-4 left-4">
                             {page.approved ? (
@@ -126,7 +126,7 @@ const FeedbackWebsitePagesSelectionPage = () => {
                                     <CheckCircleIcon className="w-4 h-4" />
                                 </div>
                             ) : (
-                                <div className="w-6 h-6 rounded-full border border-border-color bg-surface-light/50" />
+                                <div className="w-6 h-6 rounded-full border border-border-color bg-glass-light/30 backdrop-blur-sm" />
                             )}
                         </div>
                         
@@ -139,7 +139,7 @@ const FeedbackWebsitePagesSelectionPage = () => {
             {/* Add Page Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-surface border border-border-color rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                    <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-2xl p-6 w-full max-w-md shadow-2xl">
                         <h2 className="text-xl font-bold mb-4">Add New Page</h2>
                         
                         <div className="space-y-4">

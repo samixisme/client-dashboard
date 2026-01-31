@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { RecurringTaskSettings, Stage } from '../../types';
 import { useData } from '../../contexts/DataContext';
+import { DateTimePicker } from '../../src/components/ui/date-time-picker';
 
 interface RecurringTaskPopoverProps {
     isOpen: boolean;
@@ -24,8 +25,9 @@ const RecurringTaskPopover: React.FC<RecurringTaskPopoverProps> = ({ isOpen, onC
             repeatOnlyWhenCompleted: false
         }
     );
-    const [nextDueDate, setNextDueDate] = useState(settings?.nextDueDate ? new Date(settings.nextDueDate).toISOString().split('T')[0] : '');
-    const [nextDueTime, setNextDueTime] = useState(settings?.nextDueDate ? new Date(settings.nextDueDate).toTimeString().substring(0,5) : '10:45');
+    const [nextDueDateTime, setNextDueDateTime] = useState<Date | undefined>(
+        settings?.nextDueDate ? new Date(settings.nextDueDate) : undefined
+    );
 
     const boardStages = data.stages.filter(s => s.boardId === boardId);
 
@@ -71,10 +73,10 @@ const RecurringTaskPopover: React.FC<RecurringTaskPopoverProps> = ({ isOpen, onC
     if (!isOpen || !anchorEl) return null;
 
     const handleSave = () => {
-        const combinedDateTime = new Date(`${nextDueDate}T${nextDueTime}:00`).toISOString();
+        if (!nextDueDateTime) return;
         onSave({
             ...localSettings,
-            nextDueDate: combinedDateTime,
+            nextDueDate: nextDueDateTime.toISOString(),
         } as RecurringTaskSettings);
         onClose();
     };
@@ -103,9 +105,14 @@ const RecurringTaskPopover: React.FC<RecurringTaskPopoverProps> = ({ isOpen, onC
                     ))}
                 </div>
 
-                <div className="flex gap-2">
-                    <InputField label="Next" type="date" value={nextDueDate} onChange={e => setNextDueDate(e.target.value)} />
-                    <InputField label="Time" type="time" value={nextDueTime} onChange={e => setNextDueTime(e.target.value)} />
+                <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Next Due Date & Time</label>
+                    <DateTimePicker
+                        value={nextDueDateTime}
+                        onChange={setNextDueDateTime}
+                        placeholder="Select date and time"
+                        showTime={true}
+                    />
                 </div>
                 
                 <div className="flex items-center gap-2">

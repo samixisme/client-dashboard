@@ -56,17 +56,17 @@ const FeedbackVideoVersionsSelectionPage = () => {
         await updateFeedbackItemVideos(projectId, feedbackItemId, updatedVideos);
     };
 
-    if (isLoading) return <div className="h-screen w-full bg-background flex items-center justify-center text-text-primary">Loading...</div>;
-    if (!item) return <div className="h-screen w-full bg-background flex items-center justify-center text-red-500">Item not found</div>;
+    if (isLoading) return <div className="h-screen w-full flex items-center justify-center text-text-primary">Loading...</div>;
+    if (!item) return <div className="h-screen w-full flex items-center justify-center text-red-500">Item not found</div>;
 
     const hasVideos = item.videos && item.videos.length > 0;
 
     return (
-        <div className="min-h-screen bg-background text-text-primary p-8">
+        <div className="min-h-screen text-text-primary p-8">
             {/* Header */}
             <div className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                     <button onClick={() => navigate(`/feedback/${projectId}/videos`)} className="p-2 bg-surface hover:bg-surface-light rounded-full transition-colors">
+                     <button onClick={() => navigate(`/feedback/${projectId}/videos`)} className="p-2 bg-glass/40 backdrop-blur-sm hover:bg-glass/60 rounded-full transition-colors">
                         <ArrowLeftIcon className="w-5 h-5 text-text-secondary" />
                     </button>
                     <div>
@@ -107,9 +107,9 @@ const FeedbackVideoVersionsSelectionPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                  {/* Default/Main Video */}
                  {!hasVideos && (
-                    <div 
+                    <div
                         onClick={() => navigate(`/feedback/${projectId}/video/${feedbackItemId}/view`)}
-                        className="bg-surface border border-border-color rounded-xl overflow-hidden cursor-pointer hover:border-primary transition-all group relative aspect-video flex flex-col shadow-sm hover:shadow-md"
+                        className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-xl overflow-hidden cursor-pointer hover:border-primary transition-all group relative aspect-video flex flex-col shadow-sm hover:shadow-md"
                     >
                          <div className="relative flex-1 bg-black overflow-hidden flex items-center justify-center">
                             {/* Simple placeholder for video preview since we can't easily generate thumbnails reliably without backend processing */}
@@ -117,7 +117,7 @@ const FeedbackVideoVersionsSelectionPage = () => {
                                 <PlayIcon className="w-6 h-6 ml-1" />
                             </div>
                          </div>
-                         <div className="p-4 bg-surface border-t border-border-color">
+                         <div className="p-4 bg-glass/40 backdrop-blur-xl border-t border-border-color">
                             <h3 className="font-bold text-lg group-hover:text-primary transition-colors">Main Version</h3>
                             <p className="text-text-secondary text-xs truncate mt-1">Default Asset</p>
                          </div>
@@ -125,10 +125,10 @@ const FeedbackVideoVersionsSelectionPage = () => {
                 )}
 
                 {filteredVideos.map(video => (
-                    <div 
+                    <div
                         key={video.id}
                         onClick={() => navigate(`/feedback/${projectId}/video/${feedbackItemId}/view?path=${encodeURIComponent(video.url)}`)}
-                        className="bg-surface border border-border-color rounded-xl overflow-hidden cursor-pointer hover:border-primary transition-all group relative aspect-video flex flex-col shadow-sm hover:shadow-md"
+                        className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-xl overflow-hidden cursor-pointer hover:border-primary transition-all group relative aspect-video flex flex-col shadow-sm hover:shadow-md"
                     >
                          <div className="relative flex-1 bg-black overflow-hidden flex items-center justify-center">
                              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-primary group-hover:text-black transition-all">
@@ -140,11 +140,11 @@ const FeedbackVideoVersionsSelectionPage = () => {
                                         <CheckCircleIcon className="w-4 h-4" />
                                     </div>
                                 ) : (
-                                    <div className="w-6 h-6 rounded-full bg-surface/50 backdrop-blur-sm border border-white/20" />
+                                    <div className="w-6 h-6 rounded-full bg-glass/40 backdrop-blur-sm border border-white/20" />
                                 )}
                             </div>
                          </div>
-                         <div className="p-4 bg-surface border-t border-border-color">
+                         <div className="p-4 bg-glass/40 backdrop-blur-xl border-t border-border-color">
                             <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{video.name}</h3>
                             <p className="text-text-secondary text-xs truncate mt-1">{video.url}</p>
                          </div>
@@ -155,7 +155,7 @@ const FeedbackVideoVersionsSelectionPage = () => {
             {/* Add Video Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-surface border border-border-color rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                    <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-2xl p-6 w-full max-w-md shadow-2xl">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="p-2 bg-primary/20 rounded-lg text-primary">
                                 <VideoIcon className="w-6 h-6" />
@@ -166,30 +166,30 @@ const FeedbackVideoVersionsSelectionPage = () => {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm text-text-secondary mb-1">Version Name</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={newVideoName}
                                     onChange={e => setNewVideoName(e.target.value)}
                                     placeholder="e.g. v2 - Adjusted Color"
-                                    className="w-full bg-surface-light border border-border-color rounded-lg px-4 py-2 text-text-primary focus:border-primary outline-none"
+                                    className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-lg px-4 py-2 text-text-primary focus:border-primary outline-none"
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm text-text-secondary mb-1">Video URL</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={newVideoUrl}
                                     onChange={e => setNewVideoUrl(e.target.value)}
                                     placeholder="https://..."
-                                    className="w-full bg-surface-light border border-border-color rounded-lg px-4 py-2 text-text-primary focus:border-primary outline-none font-mono text-sm"
+                                    className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-lg px-4 py-2 text-text-primary focus:border-primary outline-none font-mono text-sm"
                                 />
                             </div>
                         </div>
 
                         <div className="flex gap-3 mt-8">
-                            <button 
+                            <button
                                 onClick={() => setShowAddModal(false)}
-                                className="flex-1 px-4 py-2 rounded-lg font-medium hover:bg-surface-light transition-colors text-text-secondary"
+                                className="flex-1 px-4 py-2 rounded-lg font-medium hover:bg-glass-light/60 transition-colors text-text-secondary"
                             >
                                 Cancel
                             </button>

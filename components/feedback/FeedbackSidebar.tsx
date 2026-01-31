@@ -201,9 +201,9 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
 
     // Classes
-    const containerClasses = position === 'right' 
-        ? 'w-96 flex-shrink-0 bg-glass border-l border-border-color flex flex-col h-full'
-        : 'h-72 flex-shrink-0 bg-glass border-t border-border-color flex flex-col w-full';
+    const containerClasses = position === 'right'
+        ? 'w-96 flex-shrink-0 bg-glass/40 backdrop-blur-xl border-l border-border-color flex flex-col h-full'
+        : 'h-72 flex-shrink-0 bg-glass/40 backdrop-blur-xl border-t border-border-color flex flex-col w-full';
 
     const listClasses = position === 'right'
         ? 'flex-1 overflow-y-auto p-4 space-y-4'
@@ -322,7 +322,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                 {view === 'comments' && selectedCommentId && selectedComment && (
                     <div className="flex flex-col h-full w-full animate-in fade-in slide-in-from-right-4 duration-200">
                         {/* Original Comment */}
-                        <div className="bg-glass-light border border-border-color rounded-lg p-4 mb-4">
+                        <div className="bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-lg p-4 mb-4">
                             <div className="flex items-start gap-3">
                                 <img src={getMember(getAuthorId(selectedComment))?.avatarUrl} className="w-8 h-8 rounded-full bg-primary/20" />
                                 <div className="flex-1">
@@ -333,14 +333,14 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
                                     {isEditing ? (
                                         <div className="mt-2">
-                                            <textarea 
+                                            <textarea
                                                 value={editText}
                                                 onChange={e => setEditText(e.target.value)}
-                                                className="w-full bg-glass-light border border-border-color rounded p-2 text-sm text-text-primary outline-none focus:border-primary resize-none"
+                                                className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded p-2 text-sm text-text-primary outline-none focus:border-primary resize-none"
                                                 rows={3}
                                             />
                                             <div className="flex justify-end gap-2 mt-2">
-                                                <button onClick={() => setIsEditing(false)} className="px-3 py-1 bg-surface-light text-text-secondary rounded text-xs hover:text-text-primary">Cancel</button>
+                                                <button onClick={() => setIsEditing(false)} className="px-3 py-1 bg-glass-light/60 backdrop-blur-sm border border-border-color text-text-secondary rounded text-xs hover:text-text-primary">Cancel</button>
                                                 <button onClick={handleEditSave} className="px-3 py-1 bg-primary text-background font-bold rounded text-xs hover:bg-primary-hover">Save</button>
                                             </div>
                                         </div>
@@ -385,7 +385,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                                 value={replyText}
                                 onChange={e => setReplyText(e.target.value)}
                                 placeholder="Reply..."
-                                className="w-full bg-glass-light border border-border-color rounded-lg p-2 text-sm text-text-primary focus:border-primary outline-none resize-none"
+                                className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-lg p-2 text-sm text-text-primary focus:border-primary outline-none resize-none"
                                 rows={2}
                             />
                             <div className="flex justify-end mt-2">

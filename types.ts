@@ -331,6 +331,16 @@ export interface FeedbackItem {
   pages?: {id: string, name: string, url: string, approved?: boolean}[]; // For websites
   images?: {id: string, name: string, url: string, approved?: boolean}[]; // For mockups
   videos?: {id: string, name: string, url: string, approved?: boolean}[]; // For videos
+  version?: number; // Current active version number (1, 2, 3...)
+  versions?: FeedbackItemVersion[]; // Array of all version history
+}
+
+export interface FeedbackItemVersion {
+  versionNumber: number;
+  assetUrl: string; // URL for this specific version
+  createdAt: Timestamp | { seconds: number };
+  createdBy: string; // userId who created this version
+  notes?: string; // Optional version notes/changelog
 }
 
 export interface FeedbackItemComment {

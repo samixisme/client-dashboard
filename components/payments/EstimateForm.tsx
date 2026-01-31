@@ -7,6 +7,7 @@ import AddClientModal from './AddClientModal';
 import { createCalendarEvent } from '../../utils/calendarSync';
 import { useData } from '../../contexts/DataContext';
 import { toast } from 'sonner';
+import { DatePicker } from '../../src/components/ui/date-picker';
 
 interface EstimateFormProps {
     existingEstimate?: Estimate;
@@ -304,22 +305,19 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
             <div className="grid grid-cols-2 gap-8 mb-8 animate-fade-in-up relative z-10" style={{ animationDelay: '100ms' }}>
                 <div>
                     <label htmlFor="estimate-date" className="block text-sm font-medium text-text-secondary mb-1">Estimate Date</label>
-                    <input
-                        id="estimate-date"
-                        type="date"
-                        value={estimate.date}
-                        onChange={e => setEstimate({ ...estimate, date: e.target.value })}
-                        className="w-full px-3 py-2 border border-border-color bg-glass-light/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
+                    <DatePicker
+                        value={estimate.date ? new Date(estimate.date) : undefined}
+                        onChange={(date) => setEstimate({ ...estimate, date: date ? date.toISOString().split('T')[0] : '' })}
+                        placeholder="Select estimate date"
                     />
                 </div>
                 <div>
                     <label htmlFor="estimate-due-date" className="block text-sm font-medium text-text-secondary mb-1">Due Date (Optional)</label>
-                    <input
-                        id="estimate-due-date"
-                        type="date"
-                        value={estimate.dueDate || ''}
-                        onChange={e => setEstimate({ ...estimate, dueDate: e.target.value || undefined })}
-                        className="w-full px-3 py-2 border border-border-color bg-glass-light/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
+                    <DatePicker
+                        value={estimate.dueDate ? new Date(estimate.dueDate) : undefined}
+                        onChange={(date) => setEstimate({ ...estimate, dueDate: date ? date.toISOString().split('T')[0] : undefined })}
+                        placeholder="Select due date"
+                        minDate={estimate.date ? new Date(estimate.date) : undefined}
                     />
                 </div>
             </div>

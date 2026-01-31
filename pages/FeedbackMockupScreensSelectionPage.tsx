@@ -55,18 +55,18 @@ const FeedbackMockupScreensSelectionPage = () => {
         await updateFeedbackItemImages(projectId, feedbackItemId, updatedImages);
     };
 
-    if (isLoading) return <div className="h-screen w-full bg-background flex items-center justify-center text-text-primary">Loading...</div>;
-    if (!item) return <div className="h-screen w-full bg-background flex items-center justify-center text-red-500">Item not found</div>;
+    if (isLoading) return <div className="h-screen w-full flex items-center justify-center text-text-primary">Loading...</div>;
+    if (!item) return <div className="h-screen w-full flex items-center justify-center text-red-500">Item not found</div>;
 
     // Use main asset as default if no images
     const hasImages = item.images && item.images.length > 0;
 
     return (
-        <div className="min-h-screen bg-background text-text-primary p-8">
+        <div className="min-h-screen text-text-primary p-8">
             {/* Header */}
             <div className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                     <button onClick={() => navigate(`/feedback/${projectId}/mockups`)} className="p-2 bg-surface hover:bg-surface-light rounded-full transition-colors">
+                     <button onClick={() => navigate(`/feedback/${projectId}/mockups`)} className="p-2 bg-glass/40 backdrop-blur-sm hover:bg-glass/60 rounded-full transition-colors">
                         <ArrowLeftIcon className="w-5 h-5 text-text-secondary" />
                     </button>
                     <div>
@@ -109,17 +109,17 @@ const FeedbackMockupScreensSelectionPage = () => {
                    For now, let's treat the 'assetUrl' as the first screen if empty.
                 */}
                 {!hasImages && (
-                    <div 
+                    <div
                         onClick={() => navigate(`/feedback/${projectId}/mockup/${feedbackItemId}/view`)}
-                        className="bg-surface border border-border-color rounded-xl overflow-hidden cursor-pointer hover:border-primary transition-all group relative aspect-video flex flex-col shadow-sm hover:shadow-md"
+                        className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-xl overflow-hidden cursor-pointer hover:border-primary hover:bg-glass/60 transition-all group relative aspect-video flex flex-col shadow-sm hover:shadow-md"
                     >
                          <div className="relative flex-1 bg-black/20 overflow-hidden">
                             <img src={item.assetUrl} alt="Main Screen" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                            <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-surface/50 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                            <div className="absolute top-3 left-3 w-6 h-6 rounded-full bg-glass/40 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                                 {/* Empty for unapproved */}
                             </div>
                          </div>
-                         <div className="p-4 bg-surface border-t border-border-color">
+                         <div className="p-4 bg-glass/40 backdrop-blur-xl border-t border-border-color">
                             <h3 className="font-bold text-lg group-hover:text-primary transition-colors">Main Screen</h3>
                             <p className="text-text-secondary text-xs truncate mt-1">Default Asset</p>
                          </div>
@@ -127,10 +127,10 @@ const FeedbackMockupScreensSelectionPage = () => {
                 )}
 
                 {filteredImages.map(image => (
-                    <div 
+                    <div
                         key={image.id}
                         onClick={() => navigate(`/feedback/${projectId}/mockup/${feedbackItemId}/view?path=${encodeURIComponent(image.url)}`)}
-                        className="bg-surface border border-border-color rounded-xl overflow-hidden cursor-pointer hover:border-primary transition-all group relative aspect-video flex flex-col shadow-sm hover:shadow-md"
+                        className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-xl overflow-hidden cursor-pointer hover:border-primary hover:bg-glass/60 transition-all group relative aspect-video flex flex-col shadow-sm hover:shadow-md"
                     >
                          <div className="relative flex-1 bg-black/20 overflow-hidden">
                             <img src={image.url} alt={image.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -140,11 +140,11 @@ const FeedbackMockupScreensSelectionPage = () => {
                                         <CheckCircleIcon className="w-4 h-4" />
                                     </div>
                                 ) : (
-                                    <div className="w-6 h-6 rounded-full bg-surface/50 backdrop-blur-sm border border-white/20" />
+                                    <div className="w-6 h-6 rounded-full bg-glass/40 backdrop-blur-sm border border-white/20" />
                                 )}
                             </div>
                          </div>
-                         <div className="p-4 bg-surface border-t border-border-color">
+                         <div className="p-4 bg-glass/40 backdrop-blur-xl border-t border-border-color">
                             <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{image.name}</h3>
                             <p className="text-text-secondary text-xs truncate mt-1">{image.url}</p>
                          </div>

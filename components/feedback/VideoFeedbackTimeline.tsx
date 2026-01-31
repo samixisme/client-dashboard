@@ -136,7 +136,7 @@ const VideoFeedbackTimeline: React.FC<VideoFeedbackTimelineProps> = ({
     const rowHeight = 24;
 
     return (
-        <div className="bg-glass rounded-lg border border-border-color p-4">
+        <div className="bg-glass/40 backdrop-blur-xl rounded-lg border border-border-color p-4">
             {/* Header */}
             <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-4">
@@ -145,16 +145,16 @@ const VideoFeedbackTimeline: React.FC<VideoFeedbackTimelineProps> = ({
                 </div>
                 <button
                     onClick={onEditModeToggle}
-                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${isEditMode ? 'bg-primary text-black' : 'bg-glass-light text-text-primary hover:bg-border-color'}`}
+                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${isEditMode ? 'bg-primary text-black' : 'bg-glass-light/60 backdrop-blur-sm text-text-primary hover:bg-glass-light/80'}`}
                 >
                     {isEditMode ? 'Done Editing' : 'Edit Timeline'}
                 </button>
             </div>
 
             {/* Timeline */}
-            <div 
+            <div
                 ref={timelineRef}
-                className="relative bg-glass-light rounded overflow-hidden cursor-pointer"
+                className="relative bg-glass-light/60 backdrop-blur-sm rounded overflow-hidden cursor-pointer"
                 style={{ height: `${Math.max(40, maxRows * rowHeight + 16)}px` }}
                 onClick={handleTimelineClick}
             >

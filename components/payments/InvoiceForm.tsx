@@ -7,6 +7,7 @@ import AddClientModal from './AddClientModal';
 import { createCalendarEvent } from '../../utils/calendarSync';
 import { useData } from '../../contexts/DataContext';
 import { toast } from 'sonner';
+import { DatePicker } from '../../src/components/ui/date-picker';
 
 interface InvoiceFormProps {
     existingInvoice?: Invoice;
@@ -304,22 +305,19 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
             <div className="grid grid-cols-2 gap-8 mb-8 animate-fade-in-up relative z-10" style={{ animationDelay: '100ms' }}>
                 <div>
                     <label htmlFor="invoice-date" className="block text-sm font-medium text-text-secondary mb-1">Invoice Date</label>
-                    <input
-                        id="invoice-date"
-                        type="date"
-                        value={invoice.date}
-                        onChange={e => setInvoice({ ...invoice, date: e.target.value })}
-                        className="w-full px-3 py-2 border border-border-color bg-glass-light/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
+                    <DatePicker
+                        value={invoice.date ? new Date(invoice.date) : undefined}
+                        onChange={(date) => setInvoice({ ...invoice, date: date ? date.toISOString().split('T')[0] : '' })}
+                        placeholder="Select invoice date"
                     />
                 </div>
                 <div>
                     <label htmlFor="invoice-due-date" className="block text-sm font-medium text-text-secondary mb-1">Due Date (Optional)</label>
-                    <input
-                        id="invoice-due-date"
-                        type="date"
-                        value={invoice.dueDate || ''}
-                        onChange={e => setInvoice({ ...invoice, dueDate: e.target.value || undefined })}
-                        className="w-full px-3 py-2 border border-border-color bg-glass-light/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
+                    <DatePicker
+                        value={invoice.dueDate ? new Date(invoice.dueDate) : undefined}
+                        onChange={(date) => setInvoice({ ...invoice, dueDate: date ? date.toISOString().split('T')[0] : undefined })}
+                        placeholder="Select due date"
+                        minDate={invoice.date ? new Date(invoice.date) : undefined}
                     />
                 </div>
             </div>
