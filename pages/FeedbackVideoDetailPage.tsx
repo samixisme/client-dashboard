@@ -30,7 +30,8 @@ const FeedbackVideoDetailPage = () => {
     const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { user } = useData();
+    const { user, data } = useData();
+    const project = data.projects.find(p => p.id === projectId);
 
     // Core Data
     const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
@@ -110,8 +111,12 @@ const FeedbackVideoDetailPage = () => {
             });
 
             const unsubscribe = subscribeToComments(projectId, feedbackItemId, (fetchedComments) => {
+                // Filter comments by current version
+                const currentVersion = feedbackItem?.version || 1;
+                const versionComments = fetchedComments.filter(c => (c.version || 1) === currentVersion);
+
                 // Sort by startTime or timestamp
-                const sorted = fetchedComments.sort((a, b) => {
+                const sorted = versionComments.sort((a, b) => {
                     const aTime = a.startTime ?? a.timestamp ?? 0;
                     const bTime = b.startTime ?? b.timestamp ?? 0;
                     return aTime - bTime;
@@ -121,7 +126,7 @@ const FeedbackVideoDetailPage = () => {
 
             return () => unsubscribe();
         }
-    }, [projectId, feedbackItemId]);
+    }, [projectId, feedbackItemId, feedbackItem?.version]);
 
     // Fetch Users
     useEffect(() => {
@@ -282,7 +287,8 @@ const FeedbackVideoDetailPage = () => {
                 y_coordinate: popover.y,
                 pin_number: maxPin + 1,
                 status: 'Active',
-                dueDate: details?.dueDate
+                dueDate: details?.dueDate,
+                version: feedbackItem?.version || 1, // Add version to comment
             };
 
             const commentId = await addComment(projectId, feedbackItemId, commentData);
@@ -433,10 +439,13 @@ const FeedbackVideoDetailPage = () => {
             <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header with Description */}
                 <div className="p-4 border-b border-border-color bg-glass/40 backdrop-blur-xl">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3">
-                                <h1 className="text-xl font-bold text-text-primary truncate">{feedbackItem.name}</h1>
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-primary/10 border border-primary/30 rounded-full">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                    <span className="text-xs font-bold text-primary">{feedbackItem.name}</span>
+                                </div>
                                 <VersionDropdown
                                     projectId={projectId || ''}
                                     feedbackItemId={feedbackItemId || ''}
@@ -447,6 +456,9 @@ const FeedbackVideoDetailPage = () => {
                                     type="video"
                                 />
                             </div>
+                            {project && (
+                                <h1 className="text-sm font-semibold text-text-secondary truncate mb-2">{project.name}</h1>
+                            )}
 
                             {/* Description Module */}
                             {isEditingDescription ? (
@@ -477,8 +489,8 @@ const FeedbackVideoDetailPage = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <p 
-                                    className="mt-1 text-sm text-text-secondary line-clamp-2 cursor-pointer hover:text-text-primary"
+                                <p
+                                    className="text-sm text-text-secondary line-clamp-2 cursor-pointer hover:text-text-primary"
                                     onClick={() => setIsEditingDescription(true)}
                                 >
                                     {feedbackItem.description || 'Click to add description...'}

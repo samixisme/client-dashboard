@@ -139,7 +139,6 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                                 className="text-sm"
                             />
                         </div>
-                        </div>
                     </div>
 
                     {/* Description */}

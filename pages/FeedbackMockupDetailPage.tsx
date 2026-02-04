@@ -27,7 +27,8 @@ const FeedbackMockupDetailPage = () => {
   const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useData();
+  const { user, data } = useData();
+  const project = data.projects.find(p => p.id === projectId);
 
   // Data State
   const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
@@ -39,8 +40,21 @@ const FeedbackMockupDetailPage = () => {
   const path = searchParams.get('path');
   const activeImageUrl = (path && feedbackItem) ? path : feedbackItem?.assetUrl;
 
+  // Determine if viewing an individual screen (has path param) vs main/collection view
+  const isViewingIndividualScreen = !!path;
+
+  // Find the current screen name based on path
+  const currentScreenName = React.useMemo(() => {
+    if (!feedbackItem) return '';
+    if (path && feedbackItem.images) {
+      const image = feedbackItem.images.find(img => img.url === path);
+      return image?.name || 'Main Screen';
+    }
+    return 'Main Screen';
+  }, [feedbackItem, path]);
+
   // Viewer State
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.2); // Start at 20% zoom
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [pinsVisible, setPinsVisible] = useState(true);
@@ -82,12 +96,24 @@ const FeedbackMockupDetailPage = () => {
       });
 
       const unsubscribe = subscribeToComments(projectId, feedbackItemId, (fetchedComments) => {
-        setComments(fetchedComments);
+        // Filter comments by current version
+        const currentVersion = feedbackItem?.version || 1;
+        let filteredComments = fetchedComments.filter(c => (c.version || 1) === currentVersion);
+
+        // Filter by screen path for multi-image mockups
+        if (path) {
+          filteredComments = filteredComments.filter(c => c.screenPath === path);
+        } else {
+          // Main screen - show comments with no screenPath or matching main assetUrl
+          filteredComments = filteredComments.filter(c => !c.screenPath || c.screenPath === feedbackItem?.assetUrl);
+        }
+
+        setComments(filteredComments);
       });
 
       return () => unsubscribe();
     }
-  }, [projectId, feedbackItemId]);
+  }, [projectId, feedbackItemId, feedbackItem?.version]);
 
   // Fetch Users
   useEffect(() => {
@@ -213,9 +239,11 @@ const FeedbackMockupDetailPage = () => {
       if (!authorId) return;
 
       await addComment(projectId, feedbackItemId, {
-        authorId: authorId, 
+        authorId: authorId,
         commentText: newCommentText,
-        position: clickPosition
+        position: clickPosition,
+        version: feedbackItem?.version || 1,
+        screenPath: path || feedbackItem?.assetUrl, // Track which screen this comment belongs to
       });
       setNewCommentText('');
       setClickPosition(null);
@@ -298,7 +326,7 @@ const FeedbackMockupDetailPage = () => {
   if (!feedbackItem) return <div className="p-10 text-center text-text-secondary">Mockup Not Found</div>;
 
   return (
-    <div className={`flex overflow-hidden relative ${sidebarPosition === 'bottom' ? 'flex-col h-[calc(100vh-100px)]' : 'flex-row h-[calc(100vh-100px)]'}`}>
+    <div className={`flex ${sidebarPosition === 'bottom' ? 'flex-col' : 'flex-row'} h-full w-full overflow-hidden -mx-4 md:-mx-10 -mt-4 -mb-24 md:-mb-10`}>
       
       {/* 1. Main Viewer Area */}
       <div
@@ -318,30 +346,37 @@ const FeedbackMockupDetailPage = () => {
         {/* Top Header Overlay (Title & Actions) */}
         <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
              {/* Left: Breadcrumbs/Title */}
-             <div className="bg-glass/40 backdrop-blur-xl border border-border-color p-2 rounded-lg shadow-sm pointer-events-auto flex items-center gap-3">
-                 <button onClick={() => navigate(`/feedback/${projectId}/mockups`)} className="p-1.5 hover:bg-glass-light/60 rounded-md text-text-secondary hover:text-text-primary transition-colors" title="Back to Grid">
+             <div className="bg-glass/40 backdrop-blur-xl border border-border-color p-3 rounded-lg shadow-sm pointer-events-auto flex items-center gap-3 flex-wrap max-w-full">
+                 <button onClick={() => navigate(`/feedback/${projectId}/mockups`)} className="p-1.5 hover:bg-glass-light/60 rounded-md text-text-secondary hover:text-text-primary transition-colors shrink-0" title="Back to Grid">
                      <GridViewIcon className="w-5 h-5"/>
                  </button>
-                 <div className="h-4 w-px bg-border-color"></div>
-                 <div className="flex items-center gap-3">
-                     <div>
-                         <h1 className="text-sm font-bold text-text-primary leading-tight">{feedbackItem.name}</h1>
+                 <div className="h-4 w-px bg-border-color hidden sm:block shrink-0"></div>
+                 <div className="flex flex-col gap-1 flex-1 min-w-0">
+                     <div className="flex items-center gap-2 flex-wrap">
+                         <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-primary/10 border border-primary/30 rounded-full">
+                             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                             <span className="text-xs font-bold text-primary">{currentScreenName}</span>
+                         </div>
+                         {/* Only show version dropdown when NOT viewing an individual screen */}
+                         {!isViewingIndividualScreen && (
+                             <VersionDropdown
+                                 projectId={projectId || ''}
+                                 feedbackItemId={feedbackItemId || ''}
+                                 currentVersion={feedbackItem.version || 1}
+                                 versions={versions}
+                                 onVersionChange={handleVersionChange}
+                                 onCreateVersion={() => setIsUploadModalOpen(true)}
+                                 type="mockup"
+                             />
+                         )}
                      </div>
-                     <VersionDropdown
-                         projectId={projectId || ''}
-                         feedbackItemId={feedbackItemId || ''}
-                         currentVersion={feedbackItem.version || 1}
-                         versions={versions}
-                         onVersionChange={handleVersionChange}
-                         onCreateVersion={() => setIsUploadModalOpen(true)}
-                         type="mockup"
-                     />
+                     <h1 className="text-sm font-semibold text-text-secondary truncate">{feedbackItem.name}</h1>
                  </div>
              </div>
 
              {/* Right: Actions */}
              <div className="flex gap-2 pointer-events-auto">
-                 <button onClick={handleApprove} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all duration-300 ${feedbackItem.status === 'approved' ? 'bg-green-500 text-black hover:bg-green-600' : 'bg-glass/40 backdrop-blur-sm text-text-secondary hover:text-text-primary border-2 border-white/20 hover:scale-105'}`}>
+                 <button onClick={handleApprove} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all duration-300 ${feedbackItem.status === 'approved' ? 'bg-primary text-black hover:bg-primary-hover' : 'bg-glass/40 backdrop-blur-sm text-text-secondary hover:text-text-primary border-2 border-white/20 hover:scale-105'}`}>
                      <CheckCircleIcon className="w-5 h-5"/>
                      {feedbackItem.status === 'approved' ? 'Approved' : 'Approve'}
                  </button>
@@ -424,7 +459,7 @@ const FeedbackMockupDetailPage = () => {
         {/* Toolbar Overlay */}
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-glass/40 backdrop-blur-xl border border-border-color rounded-2xl p-1.5 flex items-center gap-2 shadow-2xl z-50 ring-1 ring-black/5">
              {/* Zoom Controls with Slider */}
-             <button onClick={() => setZoom(z => Math.max(0.1, z - 0.25))} className="p-2 hover:bg-glass-light/60 rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom Out"><ZoomOutIcon className="w-5 h-5"/></button>
+             <button onClick={() => setZoom(z => Math.max(0.1, z - 0.05))} className="p-2 hover:bg-glass-light/60 rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom Out"><ZoomOutIcon className="w-5 h-5"/></button>
              <input
                 type="range"
                 min="10"
@@ -435,7 +470,7 @@ const FeedbackMockupDetailPage = () => {
                 className="w-24 h-1.5 bg-border-color rounded-full appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer"
                 title={`Zoom: ${Math.round(zoom * 100)}%`}
              />
-             <button onClick={() => setZoom(z => Math.min(5, z + 0.25))} className="p-2 hover:bg-glass-light/60 rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom In"><ZoomInIcon className="w-5 h-5"/></button>
+             <button onClick={() => setZoom(z => Math.min(5, z + 0.05))} className="p-2 hover:bg-glass-light/60 rounded-xl text-text-secondary hover:text-text-primary transition-colors" title="Zoom In"><ZoomInIcon className="w-5 h-5"/></button>
              <span className="text-xs font-bold font-mono w-12 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
              <div className="w-px h-5 bg-border-color/50 mx-1"></div>
              <button onClick={handleFitToScreen} className="px-3 py-1.5 text-xs font-bold hover:bg-glass-light/60 rounded-xl text-text-primary transition-colors">Fit</button>
@@ -456,7 +491,7 @@ const FeedbackMockupDetailPage = () => {
       )}
 
       {/* 2. Sidebar Area */}
-      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-glass/40 backdrop-blur-xl border-border-color flex flex-col overflow-hidden relative shadow-2xl z-20`}>
+      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-glass/40 backdrop-blur-xl border-border-color flex flex-col overflow-hidden relative shadow-2xl z-20 shrink-0`}>
          {/* New Comment Form (Only in Comments View) */}
          {clickPosition && sidebarView === 'comments' && (
              <div className="p-4 bg-primary/5 border-b border-primary/20 flex-shrink-0 animate-in slide-in-from-right duration-200">

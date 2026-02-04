@@ -350,6 +350,8 @@ export interface FeedbackItemComment {
   commentText: string;
   createdAt: any; // Timestamp or Date
   resolved: boolean;
+  version?: number; // Version number this comment belongs to
+  screenPath?: string; // URL path of specific screen/image for mockups with multiple images
   position?: { x: number; y: number }; // ONLY for 'mockup' type
   timestamp?: number; // ONLY for 'video' type (time in seconds)
   startTime?: number; // Video comment start time in seconds

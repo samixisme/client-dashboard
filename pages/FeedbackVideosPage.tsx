@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
-import { getFeedbackItems } from '../utils/feedbackUtils';
+import { getFeedbackItems, updateFeedbackItemStatus, updateFeedbackItem } from '../utils/feedbackUtils';
 import { FeedbackItem } from '../types';
 import { VideoIcon } from '../components/icons/VideoIcon';
-import { PlayIcon } from '../components/icons/PlayIcon';
+import FeedbackItemCard from '../components/feedback/FeedbackItemCard';
 
 const FeedbackVideosPage = () => {
     const { projectId } = useParams<{ projectId: string }>();
@@ -14,6 +14,7 @@ const FeedbackVideosPage = () => {
 
     const [videos, setVideos] = useState<FeedbackItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'unapproved'>('all');
 
     useEffect(() => {
         if (projectId) {
@@ -24,6 +25,46 @@ const FeedbackVideosPage = () => {
             });
         }
     }, [projectId]);
+
+    const filteredVideos = statusFilter === 'all'
+        ? videos
+        : statusFilter === 'approved'
+        ? videos.filter(v => v.status === 'approved')
+        : videos.filter(v => v.status !== 'approved');
+
+    const handleEdit = async (videoId: string, newName: string, newDescription?: string) => {
+        if (!projectId) {
+            console.error('Missing projectId');
+            return;
+        }
+
+        try {
+            console.log('Updating video:', { videoId, newName, newDescription });
+            await updateFeedbackItem(projectId, videoId, {
+                name: newName,
+                description: newDescription
+            });
+            // Refresh data
+            const items = await getFeedbackItems(projectId);
+            const videoItems = items.filter(item => item.type === 'video');
+            setVideos(videoItems);
+            console.log('Successfully updated video');
+        } catch (error) {
+            console.error('Error updating video:', error);
+        }
+    };
+
+    const handleStatusToggle = async (videoId: string) => {
+        if (!projectId) return;
+        const video = videos.find(v => v.id === videoId);
+        if (!video) return;
+        const newStatus = video.status === 'approved' ? 'in_review' : 'approved';
+        await updateFeedbackItemStatus(projectId, videoId, newStatus);
+        // Refresh data
+        const items = await getFeedbackItems(projectId);
+        const videoItems = items.filter(item => item.type === 'video');
+        setVideos(videoItems);
+    };
 
     return (
         <div>
@@ -71,19 +112,44 @@ const FeedbackVideosPage = () => {
                 }
             `}</style>
 
-            <div className="animate-fade-in-up" style={{ animationDelay: '0ms' }}>
-                <h1 className="text-4xl font-bold text-text-primary bg-gradient-to-r from-text-primary to-text-secondary bg-clip-text">
-                    {project?.name} Videos
-                </h1>
-                <p className="mt-2 text-text-secondary/90 font-medium">
-                    Review and manage all video feedback requests.
-                </p>
+            {/* Status Filter */}
+            <div className="mt-6 flex gap-2 animate-fade-in" style={{ animationDelay: '100ms' }}>
+                <button
+                    onClick={() => setStatusFilter('all')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        statusFilter === 'all'
+                            ? 'bg-primary text-black shadow-lg'
+                            : 'bg-glass/40 backdrop-blur-xl border border-border-color text-text-secondary hover:text-text-primary hover:bg-glass/60'
+                    }`}
+                >
+                    All ({videos.length})
+                </button>
+                <button
+                    onClick={() => setStatusFilter('approved')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        statusFilter === 'approved'
+                            ? 'bg-green-500 text-white shadow-lg'
+                            : 'bg-glass/40 backdrop-blur-xl border border-border-color text-text-secondary hover:text-text-primary hover:bg-glass/60'
+                    }`}
+                >
+                    Approved ({videos.filter(v => v.status === 'approved').length})
+                </button>
+                <button
+                    onClick={() => setStatusFilter('unapproved')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                        statusFilter === 'unapproved'
+                            ? 'bg-yellow-500 text-black shadow-lg'
+                            : 'bg-glass/40 backdrop-blur-xl border border-border-color text-text-secondary hover:text-text-primary hover:bg-glass/60'
+                    }`}
+                >
+                    Unapproved ({videos.filter(v => v.status !== 'approved').length})
+                </button>
             </div>
 
             <div className="mt-8">
                 {loading ? (
                     <div className="text-center py-10 text-text-secondary">Loading videos...</div>
-                ) : videos.length === 0 ? (
+                ) : filteredVideos.length === 0 ? (
                     <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-2xl p-12 flex flex-col items-center justify-center text-center shadow-xl animate-fade-in">
                         <div className="w-20 h-20 rounded-full bg-primary/10 backdrop-blur-sm flex items-center justify-center mb-6 border border-primary/20">
                             <VideoIcon className="h-10 w-10 text-primary" />
@@ -95,52 +161,26 @@ const FeedbackVideosPage = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {videos.map((video, index) => (
-                            <Link
+                        {filteredVideos.map((video, index) => (
+                            <FeedbackItemCard
                                 key={video.id}
-                                to={`/feedback/${projectId}/video/${video.id}`}
-                                className="bg-glass/40 backdrop-blur-xl rounded-2xl border border-border-color overflow-hidden hover:border-primary/60 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:scale-[1.03] hover:bg-glass/60 transition-all duration-500 cursor-pointer group animate-fade-in-up relative block"
-                                style={{ animationDelay: `${index * 50}ms` }}
-                            >
-                                {/* Gradient overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                                <div className="aspect-video bg-black relative overflow-hidden flex items-center justify-center">
-                                    <video
-                                        src={video.assetUrl}
-                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity duration-300"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-16 h-16 rounded-full bg-primary/20 backdrop-blur-md border-2 border-primary/40 flex items-center justify-center group-hover:scale-125 group-hover:bg-primary/30 transition-all duration-300 shadow-lg">
-                                            <PlayIcon className="w-7 h-7 text-white ml-1" />
-                                        </div>
-                                    </div>
-
-                                    {/* Enhanced status badge */}
-                                    <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-lg text-xs font-semibold border backdrop-blur-sm shadow-sm transition-all duration-300 ${
-                                        video.status === 'approved'
-                                            ? 'bg-green-500/20 text-green-300 border-green-500/30'
-                                            : video.status === 'changes_requested'
-                                            ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                                            : 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
-                                    }`}>
-                                        {video.status.replace('_', ' ')}
-                                    </div>
-                                </div>
-
-                                <div className="p-5 relative z-10">
-                                    <h3 className="text-lg font-bold text-text-primary mb-2 group-hover:text-primary transition-colors duration-300">
-                                        {video.name}
-                                    </h3>
-                                    <p className="text-sm text-text-secondary/90 line-clamp-2 mb-4">
-                                        {video.description}
-                                    </p>
-                                    <div className="flex justify-between items-center text-xs text-text-secondary/80 pt-3 border-t border-border-color/30">
-                                        <span className="font-medium">{new Date(video.createdAt?.seconds * 1000).toLocaleDateString()}</span>
-                                        <span className="font-medium">{video.commentCount || 0} Comments</span>
-                                    </div>
-                                </div>
-                            </Link>
+                                type="video"
+                                id={video.id}
+                                name={video.name}
+                                description={video.description}
+                                assetUrl={video.assetUrl}
+                                version={`v${video.version || 1}`}
+                                createdAt={video.createdAt}
+                                commentCount={video.commentCount}
+                                status={video.status}
+                                projectId={projectId!}
+                                projectName={project?.name}
+                                versions={video.versions || []}
+                                currentVersion={video.version || 1}
+                                onEdit={handleEdit}
+                                onToggleApproval={handleStatusToggle}
+                                index={index}
+                            />
                         ))}
                     </div>
                 )}
