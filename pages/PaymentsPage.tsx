@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSearch } from '../contexts/SearchContext';
 import { useAdmin } from '../contexts/AdminContext';
@@ -11,7 +12,7 @@ import { userSettings } from '../data/paymentsData';
 import { toast } from 'sonner';
 import { Invoice, Estimate, Client } from '../types';
 
-// Modern StatusSelect Component with enhanced glass morphism
+// Modern StatusSelect Component with custom styled dropdown
 const StatusSelect = ({
   value,
   onChange,
@@ -19,31 +20,107 @@ const StatusSelect = ({
   value: string;
   onChange: (newStatus: string) => void;
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+
   const statusConfig = {
-    'Draft': { color: 'bg-gray-500/15 text-gray-400 border-gray-500/50 shadow-[0_0_8px_rgba(107,114,128,0.2)]' },
-    'Sent': { color: 'bg-blue-500/15 text-blue-400 border-blue-500/50 shadow-[0_0_8px_rgba(59,130,246,0.2)]' },
-    'Paid': { color: 'bg-green-500/15 text-green-400 border-green-500/50 shadow-[0_0_8px_rgba(34,197,94,0.2)]' },
-    'Overdue': { color: 'bg-red-500/15 text-red-400 border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.2)]' }
+    'Draft': { circleColor: 'bg-gray-400', shadowColor: 'shadow-[0_0_8px_rgba(156,163,175,0.6)]', hoverBg: 'hover:bg-white/5' },
+    'Sent': { circleColor: 'bg-blue-400', shadowColor: 'shadow-[0_0_8px_rgba(96,165,250,0.6)]', hoverBg: 'hover:bg-white/5' },
+    'Paid': { circleColor: 'bg-green-400', shadowColor: 'shadow-[0_0_8px_rgba(74,222,128,0.6)]', hoverBg: 'hover:bg-white/5' },
+    'Overdue': { circleColor: 'bg-red-400', shadowColor: 'shadow-[0_0_8px_rgba(248,113,113,0.6)]', hoverBg: 'hover:bg-white/5' }
   };
 
   const config = statusConfig[value as keyof typeof statusConfig];
+  const statuses = ['Draft', 'Sent', 'Paid', 'Overdue'] as const;
+
+  const handleOpen = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+      });
+    }
+    setIsOpen(!isOpen);
+  };
 
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`
-        px-3 py-1.5 border rounded-lg text-xs font-semibold backdrop-blur-sm
-        focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
-        cursor-pointer transition-all duration-300 hover:scale-105
-        ${config.color}
-      `}
-    >
-      <option value="Draft">Draft</option>
-      <option value="Sent">Sent</option>
-      <option value="Paid">Paid</option>
-      <option value="Overdue">Overdue</option>
-    </select>
+    <div className="relative inline-block">
+      <button
+        type="button"
+        ref={buttonRef}
+        onClick={handleOpen}
+        className="inline-flex items-center gap-2 bg-glass/40 backdrop-blur-xl border border-border-color/50 rounded-lg px-3 py-1.5 hover:bg-glass/60 transition-all duration-300 shadow-sm cursor-pointer"
+      >
+        <div className={`w-2 h-2 rounded-full ${config.circleColor} ${config.shadowColor}`} />
+        <span className="text-xs font-semibold text-text-primary">{value}</span>
+        <svg
+          className={`w-3 h-3 text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-[9998]"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+            }}
+          />
+          <div
+            className="fixed z-[9999] min-w-[120px] rounded-xl overflow-hidden animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150"
+            style={{
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              background: 'rgba(18, 18, 18, 0.9)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(163, 230, 53, 0.15)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <div className="p-1">
+              {statuses.map((status) => {
+                const statusConf = statusConfig[status];
+                const isSelected = status === value;
+                return (
+                  <button
+                    type="button"
+                    key={status}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChange(status);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all duration-200 cursor-pointer ${isSelected ? 'bg-primary/15' : 'hover:bg-white/5'}`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${statusConf.circleColor} ${statusConf.shadowColor}`} />
+                    <span className={`text-xs font-medium ${isSelected ? 'text-primary' : 'text-text-primary'}`}>
+                      {status}
+                    </span>
+                    {isSelected && (
+                      <svg className="w-3 h-3 text-primary ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
   );
 };
 
@@ -231,16 +308,22 @@ const PaymentsPage = () => {
                     {activeTab === 'invoices' ? (
                         <Link
                             to="/payments/invoice/new"
-                            className="px-6 py-3 bg-primary text-gray-900 text-sm font-semibold rounded-lg hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            className="p-3 bg-primary text-gray-900 rounded-xl hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center justify-center"
+                            title="Create Invoice"
                         >
-                            + Create Invoice
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
                         </Link>
                     ) : (
                         <Link
                             to="/payments/estimate/new"
-                            className="px-6 py-3 bg-primary text-gray-900 text-sm font-semibold rounded-lg hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            className="p-3 bg-primary text-gray-900 rounded-xl hover:bg-primary-hover transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 inline-flex items-center justify-center"
+                            title="Create Estimate"
                         >
-                            + Create Estimate
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
                         </Link>
                     )}
                 </div>
@@ -396,9 +479,12 @@ const PaymentsPage = () => {
                                             )}
                                             <Link
                                                 to={`/payments/invoices/edit/${invoice.id}`}
-                                                className="px-4 py-2 text-xs font-semibold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-all duration-300 border border-blue-500/20 cursor-pointer hover:scale-110 hover:shadow-[0_8px_30px_rgba(59,130,246,0.3)]"
+                                                className="p-2 text-text-secondary hover:text-primary bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"
+                                                title="Edit"
                                             >
-                                                Edit
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
                                             </Link>
                                             <button
                                                 onClick={() => {
@@ -408,9 +494,12 @@ const PaymentsPage = () => {
                                                         toast.success('Invoice deleted successfully');
                                                     }
                                                 }}
-                                                className="px-4 py-2 text-xs font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all duration-300 border border-red-500/20 cursor-pointer hover:scale-110 hover:shadow-[0_8px_30px_rgba(239,68,68,0.3)]"
+                                                className="p-2 text-text-secondary hover:text-red-400 bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"
+                                                title="Delete"
                                             >
-                                                Delete
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </td>
@@ -502,9 +591,12 @@ const PaymentsPage = () => {
                                             )}
                                             <Link
                                                 to={`/payments/estimates/edit/${estimate.id}`}
-                                                className="px-4 py-2 text-xs font-semibold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-all duration-300 border border-blue-500/20 cursor-pointer hover:scale-110 hover:shadow-[0_8px_30px_rgba(59,130,246,0.3)]"
+                                                className="p-2 text-text-secondary hover:text-primary bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"
+                                                title="Edit"
                                             >
-                                                Edit
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
                                             </Link>
                                             <button
                                                 onClick={() => {
@@ -514,9 +606,12 @@ const PaymentsPage = () => {
                                                         toast.success('Estimate deleted successfully');
                                                     }
                                                 }}
-                                                className="px-4 py-2 text-xs font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-all duration-300 border border-red-500/20 cursor-pointer hover:scale-110 hover:shadow-[0_8px_30px_rgba(239,68,68,0.3)]"
+                                                className="p-2 text-text-secondary hover:text-red-400 bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"
+                                                title="Delete"
                                             >
-                                                Delete
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </td>

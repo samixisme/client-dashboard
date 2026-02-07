@@ -4,6 +4,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import proxyHandler from './proxy';
 import { optionalApiKeyAuth } from './authMiddleware';
+import notificationsRouter from './notifications';
 
 const app = express();
 const port = 3001;
@@ -17,7 +18,7 @@ app.use(helmet({
 // CORS configuration - Allow requests from your frontend
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
-  methods: ['GET'],
+  methods: ['GET', 'POST'],
   credentials: true,
 }));
 
@@ -41,6 +42,9 @@ app.use(express.urlencoded({ limit: '1mb', extended: true }));
 app.get('/api/proxy', optionalApiKeyAuth, (req, res) => {
   proxyHandler(req, res);
 });
+
+// Novu notifications API
+app.use('/api/notifications', notificationsRouter);
 
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`);

@@ -1,44 +1,46 @@
-import { toast } from 'sonner';
 import { useNotificationHistory } from '../../contexts/NotificationHistoryContext';
+import { useNovuTrigger, NovuWorkflowId } from './useNovuTrigger';
+
+interface NovuOptions {
+  workflowId: NovuWorkflowId;
+  payload?: Record<string, unknown>;
+  targetSubscriberId?: string;
+}
 
 export const useToast = () => {
   const { addNotification } = useNotificationHistory();
+  const { trigger } = useNovuTrigger();
 
-  const showSuccess = (message: string, description?: string) => {
+  const showSuccess = (message: string, description?: string, novu?: NovuOptions) => {
     addNotification({ type: 'success', message, description });
-    return toast.success(message, {
-      description,
-      duration: 3000,
-    });
+    if (novu) {
+      trigger({ ...novu, payload: { ...novu.payload, message, description } });
+    }
   };
 
-  const showError = (message: string, description?: string) => {
+  const showError = (message: string, description?: string, novu?: NovuOptions) => {
     addNotification({ type: 'error', message, description });
-    return toast.error(message, {
-      description,
-      duration: 4000,
-    });
+    if (novu) {
+      trigger({ ...novu, payload: { ...novu.payload, message, description } });
+    }
   };
 
-  const showInfo = (message: string, description?: string) => {
+  const showInfo = (message: string, description?: string, novu?: NovuOptions) => {
     addNotification({ type: 'info', message, description });
-    return toast.info(message, {
-      description,
-      duration: 3000,
-    });
+    if (novu) {
+      trigger({ ...novu, payload: { ...novu.payload, message, description } });
+    }
   };
 
-  const showWarning = (message: string, description?: string) => {
+  const showWarning = (message: string, description?: string, novu?: NovuOptions) => {
     addNotification({ type: 'warning', message, description });
-    return toast.warning(message, {
-      description,
-      duration: 3500,
-    });
+    if (novu) {
+      trigger({ ...novu, payload: { ...novu.payload, message, description } });
+    }
   };
 
   const showLoading = (message: string) => {
     addNotification({ type: 'loading', message });
-    return toast.loading(message);
   };
 
   const showPromise = <T,>(
@@ -47,30 +49,34 @@ export const useToast = () => {
       loading,
       success,
       error,
+      novu,
     }: {
       loading: string;
       success: string | ((data: T) => string);
-      error: string | ((error: any) => string);
+      error: string | ((error: unknown) => string);
+      novu?: NovuOptions;
     }
   ) => {
     addNotification({ type: 'promise', message: loading });
-    return toast.promise(promise, {
-      loading,
-      success: (data) => {
+    return promise.then(
+      (data) => {
         const msg = typeof success === 'function' ? success(data) : success;
         addNotification({ type: 'success', message: msg });
-        return msg;
+        if (novu) {
+          trigger({ ...novu, payload: { ...novu.payload, message: msg } });
+        }
+        return data;
       },
-      error: (err) => {
+      (err) => {
         const msg = typeof error === 'function' ? error(err) : error;
         addNotification({ type: 'error', message: msg });
-        return msg;
-      },
-    });
+        throw err;
+      }
+    );
   };
 
-  const dismiss = (toastId?: string | number) => {
-    toast.dismiss(toastId);
+  const dismiss = () => {
+    // No-op since toasts are disabled
   };
 
   return {

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "superpowers:code-reviewer": {
+      "disable": true
+    },
+    "ralph": {
+      "disable": true
+    },
+    "ulw": {
+      "disable": true
+    },
+    "oh-my-opencode:ralph": {
+      "disable": true
+    },
+    "oh-my-opencode:ulw": {
+      "disable": true
+    },
+    "websearch": {
+      "disable": true
+    }
+  },
+  "permission": {
+    "websearch": "deny"
+  }
+}

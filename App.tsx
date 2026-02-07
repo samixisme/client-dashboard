@@ -9,6 +9,7 @@ import LiquidEther from './src/components/background/LiquidEther.tsx';
 import './src/components/background/global-background.css';
 import './cursor.css';
 import { Toaster } from 'sonner';
+import { Agentation } from 'agentation';
 
 // --- Other Page Imports ---
 import DashboardPage from './pages/DashboardPage';
@@ -466,6 +467,7 @@ function App() {
           },
         }}
       />
+      <Agentation />
     </>
   );
 }

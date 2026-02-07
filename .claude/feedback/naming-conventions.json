@@ -1,0 +1,70 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-02-05T02:32:38.813Z",
+  "samples_count": 8,
+  "languages": {
+    "typescript": {
+      "samples": 8,
+      "functions": {
+        "camelCase": 14,
+        "snake_case": 0,
+        "PascalCase": 2,
+        "SCREAMING_SNAKE_CASE": 0,
+        "private_snake_case": 0,
+        "dunder": 0,
+        "mixed": 0,
+        "unknown": 0
+      },
+      "classes": {
+        "camelCase": 0,
+        "snake_case": 0,
+        "PascalCase": 0,
+        "SCREAMING_SNAKE_CASE": 0,
+        "private_snake_case": 0,
+        "dunder": 0,
+        "mixed": 0,
+        "unknown": 0
+      },
+      "variables": {
+        "camelCase": 30,
+        "snake_case": 0,
+        "PascalCase": 1,
+        "SCREAMING_SNAKE_CASE": 0,
+        "private_snake_case": 0,
+        "dunder": 0,
+        "mixed": 0,
+        "unknown": 0
+      },
+      "constants": {
+        "camelCase": 0,
+        "snake_case": 0,
+        "PascalCase": 0,
+        "SCREAMING_SNAKE_CASE": 0,
+        "private_snake_case": 0,
+        "dunder": 0,
+        "mixed": 0,
+        "unknown": 0
+      },
+      "types": {
+        "camelCase": 0,
+        "snake_case": 0,
+        "PascalCase": 8,
+        "SCREAMING_SNAKE_CASE": 0,
+        "private_snake_case": 0,
+        "dunder": 0,
+        "mixed": 0,
+        "unknown": 0
+      }
+    }
+  },
+  "file_naming": {
+    "mixed": 8
+  },
+  "detected_patterns": {
+    "functions": {},
+    "classes": {},
+    "variables": {},
+    "constants": {},
+    "types": {}
+  }
+}

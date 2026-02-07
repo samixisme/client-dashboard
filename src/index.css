@@ -1,8 +1,26 @@
+@import "lenis/dist/lenis.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./styles/calendar-glass.css";
 
 @custom-variant dark (&:is(.dark *));
+
+/* Global smooth scroll fallback for browsers/elements not handled by JS */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Hide ALL scrollbars globally - scrolling still works */
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+* {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;     /* Firefox */
+}
 
 /* Your custom styles can go here */
 
@@ -224,4 +242,174 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Hide Novu branding footer */
+[data-novu-el="inbox__footer"],
+[class*="novu"] a[href*="novu.co"],
+[class*="Footer"],
+div:has(> a[href*="novu.co"]) {
+  display: none !important;
+}
+
+/* Style Novu dropdowns - reduce border-radius and remove borders */
+[data-novu-el] [role="menu"],
+[data-novu-el] [role="listbox"],
+[data-novu-el] [data-radix-popper-content-wrapper] > div,
+[data-novu-el] [data-state],
+[data-novu-el] [data-radix-menu-content],
+[data-novu-el] [data-radix-dropdown-menu-content] {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 8px !important;
+}
+
+[data-novu-el] [role="menuitem"],
+[data-novu-el] [role="option"] {
+  border: none !important;
+  outline: none !important;
+  border-radius: 4px !important;
+}
+
+/* Target all Novu popovers and dropdowns for consistent border-radius */
+[class*="novu"] [class*="Popover"],
+[class*="novu"] [class*="Dropdown"],
+[class*="novu"] [class*="Menu"],
+[class*="novu"] [class*="popover"],
+[class*="novu"] [class*="dropdown"],
+[class*="novu"] [class*="menu"] {
+  border-radius: 8px !important;
+}
+
+/* Override any inline styles on Novu dropdowns */
+div[style*="border-radius"][data-novu-el],
+div[style*="border-radius"] [data-novu-el] {
+  border-radius: 8px !important;
+}
+
+/* Reduce border-radius on ALL Novu elements */
+[data-novu-el] input,
+[data-novu-el] button,
+[data-novu-el] [class*="input"],
+[data-novu-el] [class*="Input"],
+[data-novu-el] [class*="button"],
+[data-novu-el] [class*="Button"],
+[data-novu-el] [class*="toggle"],
+[data-novu-el] [class*="Toggle"],
+[data-novu-el] [class*="switch"],
+[data-novu-el] [class*="Switch"],
+[data-novu-el] [class*="pill"],
+[data-novu-el] [class*="Pill"],
+[data-novu-el] [class*="time"],
+[data-novu-el] [class*="Time"],
+[data-novu-el] [class*="select"],
+[data-novu-el] [class*="Select"],
+[data-novu-el] span[style*="border-radius"],
+[data-novu-el] div[style*="border-radius"],
+[data-novu-el] button[style*="border-radius"],
+.nv-channelSwitchThumb,
+[class*="nv-"] [class*="Thumb"],
+[class*="nv-"] button,
+[class*="nv-"] input,
+[class*="nt-rounded"] {
+  border-radius: 8px !important;
+}
+
+/* Force consistent border-radius on any element */
+[data-novu-el] *,
+[class*="nv-"] * {
+  border-radius: 8px !important;
+}
+
+/* Switch track should be slightly more rounded for pill shape */
+[data-novu-el] [role="switch"],
+.nv-channelSwitchThumb,
+[class*="channelSwitchThumb"] {
+  border-radius: 10px !important;
+}
+
+/* Hide checkmark icons inside toggle switches - aggressive targeting */
+[data-novu-el] [role="switch"] svg,
+[data-novu-el] [class*="switch"] svg,
+[data-novu-el] [class*="Switch"] svg,
+[data-novu-el] [class*="toggle"] svg,
+[data-novu-el] [class*="Toggle"] svg,
+[class*="nv-"] svg[class*="check"],
+[class*="nv-"] svg[class*="Check"],
+[class*="nv-switch"] svg,
+[class*="nv-toggle"] svg,
+[class^="nv-"] [role="switch"] svg,
+div[class*="switch"] svg,
+div[class*="Switch"] svg,
+button[role="switch"] svg,
+span[class*="thumb"] svg,
+span[class*="Thumb"] svg {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Hide standalone checkboxes */
+[data-novu-el] input[type="checkbox"],
+[data-novu-el] [class*="checkbox"],
+[data-novu-el] [class*="Checkbox"],
+[data-novu-el] [role="checkbox"],
+input[type="checkbox"].nt-sr-only,
+input.nt-sr-only,
+.nv-channelSwitch input[type="checkbox"],
+.nt-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Ensure toggle switches remain visible */
+[data-novu-el] [role="switch"],
+[data-novu-el] [class*="switch"]:not([class*="checkbox"]),
+[data-novu-el] [class*="Switch"]:not([class*="Checkbox"]) {
+  display: flex !important;
+}
+
+/* Hide Novu development mode stripe animation */
+[class*="nv-"] [class*="stripes"],
+[class*="nt-text-stripes"],
+[class*="nt-animate-stripes"],
+[class*="stripes-size"],
+div[style*="--stripes-size"],
+div[class*="nt-bg-dev-stripes"],
+.nv-popoverContent [class*="stripes"],
+.nv-inboxContent [class*="stripes"],
+[class*="nt-relative"][class*="nt-flex"][class*="nt-shrink-0"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+}
+
+/* Hide Development mode text and branding at bottom */
+[class*="Development mode"],
+span:has(+ a[href*="novu.co"]),
+div:has(> span:contains("Development")),
+[class*="nt-z-10"][class*="nt-text-xs"][class*="nt-text-stripes"] {
+  display: none !important;
+}
+
+/* Force glass morphism on Novu inbox header and preferences header */
+[class*="nv-popoverHeader"],
+[class*="nt-"][class*="header"],
+[data-novu-el] [class*="header"],
+[data-novu-el="inbox__header"],
+[data-novu-el="preferences__header"] {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
