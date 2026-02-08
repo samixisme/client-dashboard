@@ -1,35 +1,37 @@
-
+// Import the Firebase SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
+// Compatibility shim for environments where ImportMeta typings aren't available
+const FIREBASE_ENV: any = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
+
+// Your web app's Firebase configuration (secure via environment variables)
 const firebaseConfig = {
-  apiKey: "AIzaSyDKQu4JYoxz3eub4KXe73EyteEf-gX8uhQ",
-  authDomain: "client-dashboard-v2.firebaseapp.com",
-  databaseURL: "https://client-dashboard-v2-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "client-dashboard-v2",
-  storageBucket: "client-dashboard-v2.firebasestorage.app",
-  messagingSenderId: "779958789032",
-  appId: "1:779958789032:web:76c240c04e6a886645339d"
+  apiKey: FIREBASE_ENV.VITE_FIREBASE_API_KEY ?? "",
+  authDomain: FIREBASE_ENV.VITE_FIREBASE_AUTH_DOMAIN ?? "",
+  databaseURL: FIREBASE_ENV.VITE_FIREBASE_DATABASE_URL ?? "",
+  projectId: FIREBASE_ENV.VITE_FIREBASE_PROJECT_ID ?? "",
+  storageBucket: FIREBASE_ENV.VITE_FIREBASE_STORAGE_BUCKET ?? "",
+  messagingSenderId: FIREBASE_ENV.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "",
+  appId: FIREBASE_ENV.VITE_FIREBASE_APP_ID ?? ""
 };
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
 // Initialize App Check
-// IMPORTANT: Make sure '6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9' is your actual reCAPTCHA v3 site key from the Google Cloud console.
-// Self-host your reCAPTCHA v3 site key in an environment variable for security.
-if (window.location.hostname === "localhost") {
+if (typeof window !== 'undefined' && window.location && window.location.hostname === "localhost") {
   (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: string }).FIREBASE_APPCHECK_DEBUG_TOKEN = "d87f033a-8f4d-4340-8e8b-f96ebcd3ff7c";
 }
 initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9'),
+  provider: new ReCaptchaV3Provider(FIREBASE_ENV.VITE_FIREBASE_APP_CHECK_SITE_KEY ?? '6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9c'),
   isTokenAutoRefreshEnabled: true
 });
 
-// Now, initialize and export other Firebase services
+// Export Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
@@ -59,8 +61,6 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
     return downloadURL;
   } catch (error) {
     console.error("Error uploading file:", error);
-    // Depending on the app's needs, you might want to throw a more specific error
-    // or handle it in a way that provides better user feedback.
     throw new Error("File upload failed.");
   }
 };

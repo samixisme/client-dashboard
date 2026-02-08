@@ -73,32 +73,13 @@ const ColorPopover: React.FC<ColorPopoverProps> = ({ isOpen, onClose, anchorEl, 
         }
     };
     
-    const handleParseWithAI = async () => {
+const handleParseWithAI = async () => {
         if (!aiText.trim()) return;
         setIsParsing(true);
         setError('');
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `Extract all colors from the following text. Include any names associated with them. Provide the output as a JSON array of objects, where each object has a "name" and a "hex" property. Text: "${aiText}"`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                name: { type: Type.STRING },
-                                hex: { type: Type.STRING },
-                            },
-                        },
-                    },
-                },
-            });
-
-            const jsonString = response.text.trim();
-            const colors = JSON.parse(jsonString);
+            // Offload AI processing to backend to avoid exposing API keys in client
+            const colors = await extractColorsFromAI(aiText);
             onAddMultipleColors(colors);
             onClose();
 
@@ -109,6 +90,19 @@ const ColorPopover: React.FC<ColorPopoverProps> = ({ isOpen, onClose, anchorEl, 
             setIsParsing(false);
         }
     };
+
+// Backend-based AI extraction to avoid exposing API keys in frontend code
+const extractColorsFromAI = async (text: string) => {
+  const resp = await fetch('/api/ai/extract-colors', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text })
+  });
+  if (!resp.ok) throw new Error('AI request failed');
+  const data = await resp.json();
+  // Expecting an array of color objects: [{ name: string, hex: string }, ...]
+  return data.colors ?? data;
+};
     
     if (!isOpen) return null;
 

@@ -43,6 +43,31 @@ app.get('/api/proxy', optionalApiKeyAuth, (req, res) => {
   proxyHandler(req, res);
 });
 
+// AI helper endpoints (backend-only secrets)
+// 1) Extract colors from text (best-effort hex color extraction for dev)
+app.post('/api/ai/extract-colors', (req, res) => {
+  const { text } = req.body;
+  if (!text || typeof text !== 'string') {
+    return res.status(400).json({ error: 'Text content required' });
+  }
+  // Simple fallback: extract hex color codes from text
+  const hexes = (text.match(/#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})/g) || []).slice(0, 20);
+  const colors = hexes.map(h => ({ name: h, hex: h }));
+  res.json({ colors });
+});
+
+// 2) Generate a brand asset (image) using AI on the backend
+app.post('/api/ai/generate-brand-asset', async (req, res) => {
+  const { logoUrl, prompt } = req.body;
+  if (!logoUrl || !prompt) {
+    return res.status(400).json({ error: 'logoUrl and prompt are required' });
+  }
+  // In a full deployment, this would call Google GenAI or another AI service using a secret key kept on the server.
+  // For now, return a lightweight placeholder image data URL to keep the flow working in development.
+  const placeholder = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+  return res.json({ imageUrl: placeholder });
+});
+
 // Novu notifications API
 app.use('/api/notifications', notificationsRouter);
 

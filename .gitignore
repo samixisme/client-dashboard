@@ -33,3 +33,6 @@ dist-ssr
 # Other
 .instance/
 nul
+# Environment variable files
+.env*
+.env.local
