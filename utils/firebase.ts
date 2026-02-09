@@ -8,6 +8,12 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 // Compatibility shim for environments where ImportMeta typings aren't available
 const FIREBASE_ENV: any = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
 
+// DEBUG: Check if env vars are loading (remove after debugging)
+const hasApiKey = !!FIREBASE_ENV.VITE_FIREBASE_API_KEY && FIREBASE_ENV.VITE_FIREBASE_API_KEY.length > 10;
+const hasProjectId = !!FIREBASE_ENV.VITE_FIREBASE_PROJECT_ID;
+console.log("[Firebase] Config status - API Key loaded:", hasApiKey, "| Project ID loaded:", hasProjectId);
+console.log("[Firebase] API Key length:", FIREBASE_ENV.VITE_FIREBASE_API_KEY?.length || 0);
+
 // Your web app's Firebase configuration (secure via environment variables)
 const firebaseConfig = {
   apiKey: FIREBASE_ENV.VITE_FIREBASE_API_KEY ?? "",
@@ -22,14 +28,40 @@ const firebaseConfig = {
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// Initialize App Check
-if (typeof window !== 'undefined' && window.location && window.location.hostname === "localhost") {
-  (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: string }).FIREBASE_APPCHECK_DEBUG_TOKEN = "d87f033a-8f4d-4340-8e8b-f96ebcd3ff7c";
-}
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider(FIREBASE_ENV.VITE_FIREBASE_APP_CHECK_SITE_KEY ?? '6Ld2JhMsAAAAAJPrW_WqgGrHbAw_JxkarGO2gEP9c'),
-  isTokenAutoRefreshEnabled: true
-});
+// Initialize App Check with error handling
+// NOTE: App Check is disabled for localhost development to avoid 404 errors
+// Enable it in production by setting VITE_FIREBASE_APP_CHECK_SITE_KEY
+const initAppCheck = () => {
+  const siteKey = FIREBASE_ENV.VITE_FIREBASE_APP_CHECK_SITE_KEY;
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location?.hostname === "localhost" || window.location?.hostname === "127.0.0.1");
+
+  // Skip App Check entirely on localhost - it requires Firebase Console setup
+  // and causes 404 errors if not properly configured
+  if (isLocalhost) {
+    console.info("[Firebase] App Check disabled for localhost development");
+    return null;
+  }
+
+  // Skip App Check if no site key configured
+  if (!siteKey) {
+    console.warn("[Firebase] App Check site key not configured. Set VITE_FIREBASE_APP_CHECK_SITE_KEY in .env for production");
+    return null;
+  }
+
+  try {
+    const appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(siteKey),
+      isTokenAutoRefreshEnabled: true
+    });
+    return appCheck;
+  } catch (error) {
+    console.error("[Firebase] App Check initialization failed:", error);
+    return null;
+  }
+};
+
+export const appCheck = initAppCheck();
 
 // Export Firebase services
 export const auth = getAuth(app);

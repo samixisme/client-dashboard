@@ -40,6 +40,9 @@ import FeedbackVideoVersionsSelectionPage from './pages/FeedbackVideoVersionsSel
 import MoodboardsPage from './pages/MoodboardsPage';
 import ProjectMoodboardsPage from './pages/ProjectMoodboardsPage';
 import MoodboardCanvasPage from './pages/MoodboardCanvasPage';
+import EmailTemplatesPage from './pages/EmailTemplatesPage';
+import EmailBuilderPage from './pages/EmailBuilderPage';
+import EmailPreviewPage from './pages/EmailPreviewPage';
 import BrandsPage from './pages/BrandsPage';
 import BrandDetailPage from './pages/BrandDetailPage';
 // Re-evaluating imports
@@ -58,6 +61,7 @@ import AdminBoardsPage from './pages/admin/AdminBoardsPage';
 import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
 import AdminMoodboardsPage from './pages/admin/AdminMoodboardsPage';
 import AdminTasksPage from './pages/admin/AdminTasksPage';
+import AdminEmailTemplatesPage from './pages/admin/AdminEmailTemplatesPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAICreatorPage from './pages/admin/AdminAICreatorPage';
@@ -253,6 +257,7 @@ function App() {
                       <Route path="boards" element={<AdminBoardsPage />} />
                       <Route path="feedback" element={<AdminFeedbackPage />} />
                       <Route path="moodboards" element={<AdminMoodboardsPage />} />
+                      <Route path="email-templates" element={<AdminEmailTemplatesPage />} />
                       <Route path="tasks" element={<AdminTasksPage />} />
                       <Route path="users" element={<AdminUsersPage />} />
                       <Route path="clients" element={<AdminClientsPage />} />
@@ -414,6 +419,26 @@ function App() {
                    <Route path="/moodboard/:moodboardId" element={
                       <MainLayout onLogout={handleLogout}>
                          <MoodboardCanvasPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/email-templates" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EmailTemplatesPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/email-templates/new" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EmailBuilderPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/email-templates/:templateId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EmailBuilderPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/email-templates/:templateId/preview" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EmailPreviewPage />
                       </MainLayout>
                    } />
                    <Route path="/profile" element={

@@ -1,16 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // This rule securely handles the 'users' collection.
-    // It allows a user to read and write ONLY their own document.
-    match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
-    }
 
-    // This rule allows any authenticated user to read and write to all other collections.
-    // This will fix the permission error you are currently seeing.
-    // For production, you may want to create more specific rules for each collection.
+    // ==========================================================================
+    // DEVELOPMENT MODE - Allow all authenticated users
+    // ==========================================================================
+    // TODO: Replace with granular rules before production
+    // See SECURITY.md for production-ready rules
+
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

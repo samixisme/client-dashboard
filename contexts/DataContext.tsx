@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup, FeedbackVideo, FeedbackComment } from '../types';
+import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup, FeedbackVideo, FeedbackComment, EmailTemplate } from '../types';
 import { toast } from 'sonner';
 
 // Import all data sources
@@ -49,6 +49,7 @@ const dataStore = {
     calendar_events: initialCalendarEvents,
     time_logs: initialTimeLogs,
     board_members: initialUsers, // Alias for users, used in some components
+    emailTemplates: [] as EmailTemplate[],
 };
 
 type DataStoreKey = keyof typeof dataStore;
@@ -94,6 +95,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const qActivities = query(collectionGroup(db, 'activities'));
         const qMoodboards = query(collectionGroup(db, 'moodboards'));
         const qMoodboardItems = query(collectionGroup(db, 'moodboard_items'));
+        const qEmailTemplates = query(collection(db, 'emailTemplates'), orderBy('updatedAt', 'desc'));
 
         const unsubscribers = [
             onSnapshot(qBrands, (snapshot) => {
@@ -254,6 +256,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }, (err) => {
                 console.error("Error fetching feedback comments: ", err);
                 toast.error('Error syncing feedback comments', { description: 'Please refresh the page' });
+            }),
+
+            // Email Templates listener
+            onSnapshot(qEmailTemplates, (snapshot) => {
+                const fetchedTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
+                dataStore.emailTemplates = fetchedTemplates;
+                setVersion(v => v + 1);
+            }, (err) => {
+                console.error("Error fetching email templates: ", err);
+                toast.error('Error syncing email templates', { description: 'Please refresh the page' });
             }),
         ];
 

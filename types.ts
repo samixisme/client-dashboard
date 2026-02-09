@@ -530,3 +530,36 @@ export interface PdfGenerationOptions {
     html2canvas?: { scale: number; useCORS: boolean };
     jsPDF?: { unit: string; format: string; orientation: string };
 }
+
+// Email Template Feature Types
+export type EmailTemplateStatus = 'draft' | 'published' | 'archived';
+export type EmailTemplateCategory = 'marketing' | 'transactional' | 'notification' | 'newsletter' | 'custom';
+
+export interface EmailTemplate {
+    id: string;
+    projectId?: string;
+    brandId?: string;
+    name: string;
+    subject?: string;
+    description?: string;
+    category: EmailTemplateCategory;
+    status: EmailTemplateStatus;
+    document: Record<string, unknown>;  // TReaderDocument JSON from email-builder
+    thumbnailUrl?: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+    tags?: string[];
+    isGlobal: boolean;
+}
+
+export interface EmailSendLog {
+    id: string;
+    templateId: string;
+    recipientEmail: string;
+    recipientName?: string;
+    sentBy: string;
+    sentAt: string;
+    status: 'sent' | 'failed' | 'pending';
+    errorMessage?: string;
+}
