@@ -10,9 +10,9 @@ import { SettingsIcon } from '../components/icons/SettingsIcon';
 
 const AdminDashboardPage: React.FC = () => {
   const { isAdminMode } = useAdmin();
-  const { data, updateBrands, updateProjects, updateTemplates } = useData();
+  const { data } = useData();
 
-  const activeProjectsCount = data.projects.filter(p => p.status === 'active').length;
+  const activeProjectsCount = data.projects.filter(p => p.status === 'Active').length;
   const brandsCount = data.brands.length;
   const usersCount = 1; // Placeholder as user data is not fully exposed in data context yet
 
@@ -41,9 +41,9 @@ const AdminDashboardPage: React.FC = () => {
   );
 
     const dataSources = [
-        { name: 'Brands', data: data.brands, onSave: updateBrands },
-        { name: 'Projects', data: data.projects, onSave: updateProjects },
-        { name: 'Templates', data: data.templates, onSave: updateTemplates },
+        { name: 'Brands', data: data.brands },
+        { name: 'Projects', data: data.projects },
+        { name: 'Templates', data: data.emailTemplates },
     ];
 
 

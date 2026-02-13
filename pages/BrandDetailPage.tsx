@@ -350,7 +350,7 @@ const BrandDetailPage = () => {
     if (error) return <div className="text-center p-10 text-red-500">Error: {error.message}</div>;
     if (!brand || !editedBrand) return <div className="text-center p-10">Brand not found.</div>;
 
-    const allLogoVariations: BrandLogoVariation[] = Array.from(new Set(editedBrand.logos.map(l => l.variation)));
+    const allLogoVariations: BrandLogoVariation[] = Array.from(new Set(editedBrand.logos.map(l => l.variation).filter((v): v is BrandLogoVariation => v !== undefined)));
     const availableDownloadVariations = Array.from(new Set(brand.logos.filter(l => l.type === downloadSelection.type).map(l => l.variation)));
     const brandProjects = projects.filter(p => p.brandId === brandId);
     const brandMembers = users.filter(m => editedBrand.memberIds.includes(m.id));
@@ -380,7 +380,7 @@ const BrandDetailPage = () => {
         </div>
     );
     
-    const getLogoCardClasses = (variation: BrandLogoVariation) => {
+    const getLogoCardClasses = (variation?: string) => {
         switch (variation) {
             case 'Dark Background': return 'bg-surface/80 backdrop-blur-sm';
             case 'White Background': return 'bg-glass-light/80 backdrop-blur-sm';

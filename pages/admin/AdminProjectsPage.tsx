@@ -10,6 +10,7 @@ import { db } from '../../utils/firebase';
 import { Project, Board, Stage } from '../../types';
 import { slugify } from '../../utils/slugify';
 import { deleteProjectDeep, purgeStaleData } from '../../utils/dataCleanup';
+import { toast } from 'sonner';
 
 const AdminProjectsPage: React.FC = () => {
   const { data, forceUpdate } = useData();

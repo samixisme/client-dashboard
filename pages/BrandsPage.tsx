@@ -188,7 +188,7 @@ const BrandsPage = () => {
 
     const dataSources = [
         { name: 'Brands', data: data.brands, onSave: (newData: Brand[]) => updateData('brands', newData) },
-    ];
+    ] as any[];
 
   if (loading) return <div>Loading...</div>
   if (error) return <div>Error: {error.message}</div>

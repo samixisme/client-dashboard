@@ -18,7 +18,7 @@ export const useCalendarEvents = (userId: string) => {
         if (!date) return '';
         if (typeof date === 'string') return date;
         if (date instanceof Timestamp) return date.toDate().toISOString();
-        if (date.toDate && typeof date.toDate === 'function') return date.toDate().toISOString(); // Handle object-like timestamps
+        if ('toDate' in date && typeof date.toDate === 'function') return date.toDate().toISOString(); // Handle object-like timestamps
         if (date instanceof Date) return date.toISOString();
         return String(date);
     };
@@ -30,7 +30,12 @@ export const useCalendarEvents = (userId: string) => {
         // 0. Brands
         const brandsQuery = query(collection(db, 'brands'));
         unsubscribeFunctions.push(onSnapshot(brandsQuery, (snapshot) => {
-            setBrandsList(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setBrandsList(snapshot.docs.map(doc => ({
+                id: doc.id,
+                name: doc.data().name || '',
+                createdAt: doc.data().createdAt || new Date(),
+                ...doc.data()
+            } as Brand)));
         }));
 
         // 1. Projects
@@ -78,7 +83,16 @@ export const useCalendarEvents = (userId: string) => {
         // 6.5 Clients
         const clientsQuery = query(collection(db, 'clients'));
         unsubscribeFunctions.push(onSnapshot(clientsQuery, (snapshot) => {
-            setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setClients(snapshot.docs.map(doc => ({
+                id: doc.id,
+                userId: doc.data().userId || '',
+                name: doc.data().name || '',
+                adresse: doc.data().adresse || '',
+                ice: doc.data().ice || '',
+                rc: doc.data().rc || '',
+                if: doc.data().if || '',
+                ...doc.data()
+            } as Client)));
         }));
 
          // 7. Feedback Comments (that have due dates)
@@ -88,7 +102,19 @@ export const useCalendarEvents = (userId: string) => {
               const items = snapshot.docs.map(doc => {
                   const pathSegments = doc.ref.path.split('/');
                   const projectId = pathSegments[1]; // projects/{projectId}/...
-                  return { id: doc.id, projectId, ...doc.data() };
+                  const data = doc.data();
+                  return {
+                      id: doc.id,
+                      projectId,
+                      targetId: data.targetId || '',
+                      comment: data.comment || '',
+                      reporterId: data.reporterId || '',
+                      status: data.status || 'Active',
+                      timestamp: data.timestamp || '',
+                      pin_number: data.pin_number || 0,
+                      targetType: data.targetType || 'website',
+                      ...data
+                  } as FeedbackComment;
               });
               setFeedbackComments(items);
          }));
@@ -175,7 +201,7 @@ export const useCalendarEvents = (userId: string) => {
         // Feedback Comments
         feedbackComments.forEach(comment => {
             if (comment.projectId && userProjectIds.includes(comment.projectId)) {
-                const titleText = comment.comment || comment.commentText || 'Feedback';
+                const titleText = comment.comment || 'Feedback';
                 const start = ensureDateString(comment.dueDate);
                 normalizedEvents.push({
                     id: `comment-${comment.id}`,
@@ -184,9 +210,9 @@ export const useCalendarEvents = (userId: string) => {
                     endDate: ensureDateString(comment.dueDate || start),
                     type: 'comment',
                     sourceId: comment.id,
-                    userId: comment.reporterId || comment.authorId,
+                    userId: comment.reporterId,
                     projectId: comment.projectId,
-                    feedbackItemId: comment.feedbackItemId 
+                    feedbackItemId: comment.targetId
                 });
             }
         });

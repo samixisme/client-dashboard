@@ -201,7 +201,7 @@ const PaymentsPage = () => {
         { name: 'Invoices', data: allInvoices, onSave: (newData: Invoice[]) => updateData('invoices', newData) },
         { name: 'Estimates', data: allEstimates, onSave: (newData: Estimate[]) => updateData('estimates', newData) },
         { name: 'Clients', data: clients, onSave: (newData: Client[]) => updateData('clients', newData) },
-    ];
+    ] as any[];
 
     return (
         <div>

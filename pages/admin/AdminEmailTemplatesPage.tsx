@@ -25,14 +25,14 @@ const statusColors: Record<string, string> = {
 
 export default function AdminEmailTemplatesPage() {
   const navigate = useNavigate()
-  const { dataStore } = useData()
+  const { data } = useData()
   const { user } = useUser()
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<EmailTemplateCategory | 'all'>('all')
   const [statusFilter, setStatusFilter] = useState<EmailTemplateStatus | 'all'>('all')
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
 
-  const templates = dataStore.emailTemplates || []
+  const templates = data.emailTemplates || []
 
   const filteredTemplates = useMemo(() => {
     return templates.filter((template) => {

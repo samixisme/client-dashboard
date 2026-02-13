@@ -513,7 +513,7 @@ const SettingsPage = () => {
           </div>
 
           {/* Novu In-App Notification Preferences */}
-          {userIdRef.current && import.meta.env.VITE_NOVU_APP_ID && (
+          {userIdRef.current && (import.meta.env.VITE_NOVU_APP_ID as string) && (
             <div className="mt-6 pt-6 border-t border-border-color">
               <h3 className="text-lg font-medium text-text-primary mb-2">In-App Notification Preferences</h3>
               <p className="text-sm text-text-secondary mb-4">
@@ -529,7 +529,7 @@ const SettingsPage = () => {
                 }}
               >
                 <Inbox
-                  applicationIdentifier={import.meta.env.VITE_NOVU_APP_ID}
+                  applicationIdentifier={import.meta.env.VITE_NOVU_APP_ID as string}
                   subscriberId={userIdRef.current}
                   appearance={{
                     variables: {
@@ -546,14 +546,6 @@ const SettingsPage = () => {
                     elements: {
                       bellContainer: {
                         display: 'none',
-                      },
-                      popover: {
-                        position: 'static',
-                        background: 'transparent',
-                        border: 'none',
-                        boxShadow: 'none',
-                        width: '100%',
-                        maxWidth: '100%',
                       },
                     },
                   }}

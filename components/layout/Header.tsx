@@ -32,14 +32,14 @@ const GlobalTimerWidget: React.FC = () => {
     useEffect(() => {
         let interval: number | null = null;
         if (runningTimer) {
-            interval = setInterval(() => {
+            interval = window.setInterval(() => {
                 setElapsedTime(Date.now() - runningTimer.startTime);
             }, 1000);
         } else {
             setElapsedTime(0);
         }
         return () => {
-            if (interval) clearInterval(interval);
+            if (interval) window.clearInterval(interval);
         };
     }, [runningTimer]);
 

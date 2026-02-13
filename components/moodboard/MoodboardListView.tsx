@@ -21,6 +21,7 @@ const TypeIcon = ({ type }: { type: MoodboardItem['type'] }) => {
         color: ColorPaletteIcon,
         connector: () => null,
         todo_list: () => null,
+        card: () => null,
     };
     const Icon = icons[type];
     return Icon ? <Icon className="h-5 w-5 text-text-secondary" /> : null;

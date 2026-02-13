@@ -378,8 +378,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                 return (
                                                     <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isEditMode}>
                                                         {(provided) => (
-                                                            <div ref={provided.innerRef} {...provided.draggableProps}>
-                                                                <SidebarItem item={{...item, _type: 'roadmap'}} displayOrder={`${roadmapItemOrder}`} provided={{...provided, dragHandleProps: provided.dragHandleProps}} />
+                                                            <div ref={provided.innerRef} {...(provided.draggableProps as any)}>
+                                                                <SidebarItem item={{...item, _type: 'roadmap'}} displayOrder={`${roadmapItemOrder}`} provided={{...provided, dragHandleProps: provided.dragHandleProps as any}} />
                                                                 {expandedItems.has(item.id) && (
                                                                     <Droppable droppableId={item.id} type="TASK">
                                                                         {(provided) => (
@@ -387,7 +387,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                                                 {itemTasks.map((task, taskIndex) => (
                                                                                     <Draggable key={task.id} draggableId={task.id} index={taskIndex} isDragDisabled={!isEditMode}>
                                                                                         {(provided) => (
-                                                                                            <SidebarItem item={{...task, _type: 'task'}} displayOrder={`${roadmapItemOrder}.${taskIndex + 1}`} provided={provided} />
+                                                                                            <SidebarItem item={{...task, _type: 'task'}} displayOrder={`${roadmapItemOrder}.${taskIndex + 1}`} provided={{...provided, draggableProps: provided.draggableProps as any, dragHandleProps: provided.dragHandleProps as any}} />
                                                                                         )}
                                                                                     </Draggable>
                                                                                 ))}

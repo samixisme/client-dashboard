@@ -57,7 +57,7 @@ export default function EmailPreviewPage() {
   const htmlContent = useMemo(() => {
     if (!template?.document) return ''
     try {
-      return renderToStaticMarkup(template.document, { rootBlockId: 'root' })
+      return renderToStaticMarkup(template.document as any, { rootBlockId: 'root' })
     } catch (error) {
       console.error('Failed to render email:', error)
       return '<p>Failed to render email content</p>'

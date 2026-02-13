@@ -62,6 +62,9 @@ export interface Task {
     order?: number;
     timeEstimation?: number; // in minutes
     recurring?: RecurringTaskSettings;
+    sourceType?: string; // Type of feedback source (mockup/website/video)
+    sourceFeedbackItemId?: string; // ID of the feedback item this task is linked to
+    status?: string; // Task status (pending/in_progress/completed)
 }
 
 export interface TimeLog {
@@ -198,6 +201,7 @@ interface DocumentBase {
 
 export interface Invoice extends DocumentBase {
     invoiceNumber: string;
+    brandId?: string;
 }
 
 export interface Estimate extends DocumentBase {
@@ -443,15 +447,37 @@ export type BrandLogoType = 'Full Logo' | 'Logomark' | 'Logotype';
 export type BrandLogoVariation = 'Color' | 'Dark Background' | 'White Background' | 'Grayscale';
 
 export interface BrandLogo {
-    url: string;
-    name: string;
-    tags: string[]; // e.g., 'Full Logo', 'Logomark', 'Logotype', 'Primary', 'Variations'
+    url?: string;
+    name?: string;
+    tags?: string[]; // e.g., 'Full Logo', 'Logomark', 'Logotype', 'Primary', 'Variations'
+    type?: string;
+    variation?: string;
+    formats?: { format: string; url: string }[];
 }
 
 export interface BrandColor {
     hex: string;
     name: string;
-    category: 'Primary' | 'Secondary';
+    category?: 'Primary' | 'Secondary';
+    type?: string;
+    rgb?: string;
+    hsl?: string;
+    cmyk?: string;
+}
+
+export interface BrandTypographyStyle {
+    name: string;
+    size: string;
+    weight: string;
+    letterSpacing: string;
+    lineHeight: string;
+}
+
+export interface BrandFont {
+    name: string;
+    type: string;
+    url: string;
+    styles: BrandTypographyStyle[];
 }
 
 export interface BrandTypography {
@@ -476,6 +502,7 @@ export interface Brand {
     logos?: BrandLogo[];
     colors?: BrandColor[];
     typography?: BrandTypography[];
+    fonts?: BrandFont[];
     brandVoice?: string;
     brandPositioning?: string;
     imagery?: BrandAsset[];
@@ -605,6 +632,9 @@ export interface SocialPost {
     publishedAt: string;
     status: PostStatus;
     metrics: PostMetrics;
+    accountHandle?: string;
+    type?: string;
+    postUrl?: string;
 }
 
 export interface PlatformOverview {
@@ -619,6 +649,17 @@ export interface PlatformOverview {
     posts: number;
     postsChange: number;
     topPostId?: string;
+    totalFollowers?: number;
+    followerGrowthRate?: number;
+    avgEngagementRate?: number;
+    engagementGrowthRate?: number;
+    totalLikes?: number;
+    totalComments?: number;
+    totalShares?: number;
+    totalReach?: number;
+    reachGrowthRate?: number;
+    newFollowers?: number;
+    totalPosts?: number;
 }
 
 export interface SocialAnomaly {
@@ -633,6 +674,7 @@ export interface SocialAnomaly {
     detectedAt: string;
     message: string;
     isRead: boolean;
+    description?: string;
 }
 
 export interface ScheduledPost {
@@ -644,6 +686,8 @@ export interface ScheduledPost {
     scheduledFor: string;
     status: ScheduleStatus;
     createdAt: string;
+    accountHandle?: string;
+    error?: string;
 }
 
 export interface EngagementInsight {

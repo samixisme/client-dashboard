@@ -279,15 +279,17 @@ const FeedbackVideoDetailPage = () => {
         try {
             const maxPin = comments.reduce((max, c) => Math.max(max, c.pin_number || 0), 0);
 
-            const commentData: Partial<FeedbackItemComment> = {
+            const commentData = {
+                feedbackItemId: feedbackItemId,
                 authorId: currentUserId,
                 commentText: text,
+                resolved: false,
                 startTime: details?.startTime ?? currentTime,
                 endTime: details?.endTime ?? (currentTime + 5),
                 x_coordinate: popover.x,
                 y_coordinate: popover.y,
                 pin_number: maxPin + 1,
-                status: 'Active',
+                status: 'Active' as const,
                 dueDate: details?.dueDate,
                 version: feedbackItem?.version || 1, // Add version to comment
             };
@@ -307,10 +309,17 @@ const FeedbackVideoDetailPage = () => {
     const handleCommentUpdate = async (commentId: string, updates: Partial<FeedbackComment>) => {
         if (!projectId || !feedbackItemId) return;
 
-        const itemUpdates: Partial<FeedbackItemComment> & { comment?: string } = { ...updates };
-        if (updates.comment) {
+        const itemUpdates: Partial<FeedbackItemComment> = {};
+
+        // Map FeedbackComment properties to FeedbackItemComment properties
+        if (updates.comment !== undefined) {
             itemUpdates.commentText = updates.comment;
-            delete itemUpdates.comment;
+        }
+        if (updates.dueDate !== undefined) {
+            itemUpdates.dueDate = updates.dueDate;
+        }
+        if (updates.status !== undefined) {
+            itemUpdates.status = updates.status;
         }
 
         await updateComment(projectId, feedbackItemId, commentId, itemUpdates);

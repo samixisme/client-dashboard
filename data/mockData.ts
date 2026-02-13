@@ -1,12 +1,12 @@
 import { Project, Board, Stage, Task, Tag, Comment, Activity, RoadmapItem, CustomField, BoardNotificationSettings, User, TimeLog } from '../types';
 
 export let projects: Project[] = [
-    { id: 'proj-1', brandId: 'brand-1', name: 'JRAG', description: 'A next-generation platform for cloud-native applications.', status: 'Active', createdAt: '2023-10-25T10:00:00.000Z' },
-    { id: 'proj-2', brandId: 'brand-1', name: 'Managem', description: 'Developing a new mobile experience for our users.', status: 'Active', createdAt: '2023-09-15T10:00:00.000Z' },
-    { id: 'proj-3', brandId: 'brand-2', name: 'Tassaout Media', description: 'Media management and delivery platform.', status: 'Completed', createdAt: '2023-05-20T10:00:00.000Z' },
-    { id: 'proj-4', brandId: 'brand-2', name: 'Quantum Leap', description: 'R&D for future AI integrations.', status: 'Active', createdAt: '2023-11-01T10:00:00.000Z' },
-    { id: 'proj-5', brandId: 'brand-1', name: 'Website Revamp', description: 'Complete overhaul of the main corporate website.', status: 'Archived', createdAt: '2022-01-10T10:00:00.000Z' },
-    { id: 'proj-6', brandId: 'brand-1', name: 'Mobile SDK', description: 'A new SDK for mobile developers.', status: 'Completed', createdAt: '2023-11-05T10:00:00.000Z' },
+    { id: 'proj-1', brandId: 'brand-1', name: 'JRAG', description: 'A next-generation platform for cloud-native applications.', status: 'Active', createdAt: '2023-10-25T10:00:00.000Z', memberIds: [] },
+    { id: 'proj-2', brandId: 'brand-1', name: 'Managem', description: 'Developing a new mobile experience for our users.', status: 'Active', createdAt: '2023-09-15T10:00:00.000Z', memberIds: [] },
+    { id: 'proj-3', brandId: 'brand-2', name: 'Tassaout Media', description: 'Media management and delivery platform.', status: 'Completed', createdAt: '2023-05-20T10:00:00.000Z', memberIds: [] },
+    { id: 'proj-4', brandId: 'brand-2', name: 'Quantum Leap', description: 'R&D for future AI integrations.', status: 'Active', createdAt: '2023-11-01T10:00:00.000Z', memberIds: [] },
+    { id: 'proj-5', brandId: 'brand-1', name: 'Website Revamp', description: 'Complete overhaul of the main corporate website.', status: 'Archived', createdAt: '2022-01-10T10:00:00.000Z', memberIds: [] },
+    { id: 'proj-6', brandId: 'brand-1', name: 'Mobile SDK', description: 'A new SDK for mobile developers.', status: 'Completed', createdAt: '2023-11-05T10:00:00.000Z', memberIds: [] },
 ];
 
 export let boards: Board[] = [

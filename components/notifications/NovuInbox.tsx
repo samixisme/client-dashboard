@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 export function NovuInbox() {
   const { user } = useUser();
-  const applicationIdentifier = import.meta.env.VITE_NOVU_APP_ID;
+  const applicationIdentifier = import.meta.env.VITE_NOVU_APP_ID as string;
 
   useEffect(() => {
     const hideCheckboxes = () => {
@@ -88,18 +88,11 @@ export function NovuInbox() {
             background: 'transparent',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             transition: 'background 0.2s ease, border-color 0.2s ease',
-            '&:hover': {
-              background: 'rgba(163, 230, 53, 0.05)',
-              borderColor: 'rgba(163, 230, 53, 0.5)',
-            },
           },
           popoverTrigger: {
             padding: '0',
             background: 'transparent',
             border: 'none',
-            '&:hover': {
-              background: 'transparent',
-            },
           },
           bellDot: {
             backgroundColor: 'oklch(0.577 0.245 27.325)',
@@ -309,13 +302,6 @@ export function NovuInbox() {
           },
           button: {
             borderRadius: '8px',
-          },
-          workflowContainer: {
-            borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          },
-          scheduleContainer: {
-            borderRadius: '12px',
           },
           dayToggle: {
             borderRadius: '12px',

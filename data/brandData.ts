@@ -4,7 +4,7 @@ export let brands: Brand[] = [
     {
         id: 'brand-1',
         name: 'Starlight Inc.',
-        createdAt: '2023-01-15T10:00:00.000Z',
+        createdAt: new Date('2023-01-15T10:00:00.000Z'),
         memberIds: ['user-1', 'user-2'],
         logos: [
             // Primary Logos - Full Logo
@@ -107,7 +107,7 @@ export let brands: Brand[] = [
     {
         id: 'brand-2',
         name: 'Aperture Labs',
-        createdAt: '2023-05-20T10:00:00.000Z',
+        createdAt: new Date('2023-05-20T10:00:00.000Z'),
         memberIds: ['user-1'],
         logos: [
              { 

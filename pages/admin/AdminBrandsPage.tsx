@@ -8,6 +8,7 @@ import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationMo
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { Brand } from '../../types';
+import { toast } from 'sonner';
 
 const AdminBrandsPage: React.FC = () => {
   const { data, loading, error } = useData();
