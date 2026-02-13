@@ -66,7 +66,7 @@ const AdminDashboardPage: React.FC = () => {
                 forceUpdate({});
             }
         },
-    ];
+    ] as any;
 
 
   return (
