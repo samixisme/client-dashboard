@@ -186,7 +186,7 @@ export const uploadFile = async (
   if (!drive) await initializeDrive();
 
   // Check quota
-  const fileSize = file instanceof Buffer ? file.length : file.size;
+  const fileSize = 'size' in file ? file.size : file.length;
   if (!canUpload(fileSize)) {
     const remaining = getRemainingQuota();
     throw new Error(
@@ -222,7 +222,7 @@ export const uploadFile = async (
   } else {
     // Browser File object
     media = {
-      mimeType: file.type || getMimeType(fileName),
+      mimeType: ('type' in file ? file.type : null) || getMimeType(fileName),
       body: file,
     };
   }

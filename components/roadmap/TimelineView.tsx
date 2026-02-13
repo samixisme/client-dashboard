@@ -254,7 +254,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                 ...ephemeralItem,
                 startDate: newStartDate.toISOString(),
                 endDate: newEndDate.toISOString(),
-            });
+            } as DraggableItem);
         }
     }, [dragState, ephemeralItem]);
 
@@ -379,7 +379,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                     <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isEditMode}>
                                                         {(provided) => (
                                                             <div ref={provided.innerRef} {...(provided.draggableProps as any)}>
-                                                                <SidebarItem item={{...item, _type: 'roadmap'}} displayOrder={`${roadmapItemOrder}`} provided={{...provided, dragHandleProps: provided.dragHandleProps as any}} />
+                                                                <SidebarItem item={{...item, _type: 'roadmap'}} displayOrder={`${roadmapItemOrder}`} provided={{...provided, draggableProps: provided.draggableProps as any, dragHandleProps: provided.dragHandleProps as any}} />
                                                                 {expandedItems.has(item.id) && (
                                                                     <Droppable droppableId={item.id} type="TASK">
                                                                         {(provided) => (

@@ -274,7 +274,7 @@ const SocialMediaPage: React.FC = () => {
                     <div className="space-y-6">
                         {showScheduler && (
                             <PostScheduler
-                                onSchedule={(post) => {
+                                onSchedule={(post: Omit<ScheduledPost, 'id' | 'createdAt'>) => {
                                     addScheduledPost(post);
                                     setShowScheduler(false);
                                 }}

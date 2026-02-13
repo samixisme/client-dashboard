@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FeedbackItemVersion } from '../../types';
+import { FeedbackItemVersion } from '../../../types';
 import { ChevronDown, Plus } from 'lucide-react';
 
 interface VersionDropdownProps {

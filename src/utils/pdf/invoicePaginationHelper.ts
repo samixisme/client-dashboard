@@ -1,4 +1,4 @@
-import { InvoiceItemCategory, InvoiceItemsPerPage, InvoiceItemWithCategory } from '../../types';
+import { InvoiceItemCategory, InvoiceItemsPerPage, InvoiceItemWithCategory } from '../../../types';
 
 /**
  * Paginate invoice items according to template constraints.

@@ -128,7 +128,7 @@ const ScheduledPostCard: React.FC<ScheduledPostCardProps> = ({
 
       {/* Actions */}
       <div className="flex gap-2">
-        {post.status === 'pending' && (
+        {post.status === 'scheduled' && (
           <>
             <button
               onClick={() => onPublishNow?.(post.id)}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Invoice, Client, UserSettings } from '../../types';
+import { Invoice, Client, UserSettings } from '../../../types';
 import { InvoicePdfGenerator } from '../../utils/pdf/invoicePdfGenerator';
 import { toast } from 'sonner';
 

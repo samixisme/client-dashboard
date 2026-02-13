@@ -550,9 +550,7 @@ const SettingsPage = () => {
                     },
                   }}
                   open={true}
-                  options={{
-                    hideBranding: true,
-                  }}
+                  // options prop removed - no longer supported in Novu API
                 />
               </div>
             </div>

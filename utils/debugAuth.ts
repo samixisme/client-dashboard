@@ -48,12 +48,11 @@ async function debugAuth() {
   // Step 4: Try to create JWT client
   console.log('\n4️⃣ Creating JWT Client:');
   try {
-    const auth = new google.auth.JWT(
-      credentials.client_email,
-      undefined,
-      credentials.private_key,
-      ['https://www.googleapis.com/auth/drive.file']
-    );
+    const auth = new google.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ['https://www.googleapis.com/auth/drive.file']
+    });
     console.log('   ✅ JWT client created');
 
     // Step 5: Try to authorize

@@ -1,5 +1,5 @@
-import { db } from './firebase';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
+import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { FeedbackItemVersion } from '../../types';
 
 /**
@@ -27,7 +27,7 @@ export const createFeedbackItemVersion = async (
     const newVersionEntry: FeedbackItemVersion = {
         versionNumber: newVersion,
         assetUrl: newAssetUrl,
-        createdAt: serverTimestamp(),
+        createdAt: Timestamp.now(),
         createdBy: userId,
         notes: notes || ''
     };
@@ -36,7 +36,7 @@ export const createFeedbackItemVersion = async (
     const existingVersions = currentData.versions || [{
         versionNumber: 1,
         assetUrl: currentData.assetUrl,
-        createdAt: currentData.createdAt || serverTimestamp(),
+        createdAt: currentData.createdAt || Timestamp.now(),
         createdBy: currentData.createdBy || userId,
         notes: 'Initial version'
     }];
@@ -71,7 +71,7 @@ export const getFeedbackItemVersions = async (
         return [{
             versionNumber: data.version || 1,
             assetUrl: data.assetUrl,
-            createdAt: data.createdAt || serverTimestamp(),
+            createdAt: data.createdAt || Timestamp.now(),
             createdBy: data.createdBy || 'unknown',
             notes: 'Initial version'
         }];

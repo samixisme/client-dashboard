@@ -19,6 +19,7 @@ const platformIcons: Record<SocialPlatform, { icon: React.ReactNode; color: stri
 
 const PostScheduler: React.FC<PostSchedulerProps> = ({ onSchedule, onClose }) => {
   const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState('');
   const [content, setContent] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
@@ -53,6 +54,7 @@ const PostScheduler: React.FC<PostSchedulerProps> = ({ onSchedule, onClose }) =>
 
     selectedPlatforms.forEach(platform => {
       const post: Omit<ScheduledPost, 'id' | 'status' | 'createdAt'> = {
+        accountId: selectedAccount || 'default-account-id',
         platform,
         accountHandle: 'your-handle', // Should come from selected account
         content,
