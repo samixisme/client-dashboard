@@ -56,14 +56,14 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
       const defaults: Partial<Brand> = {
         name: '',
         industry: '',
-        teamMembers: [],
         colors: [],
         typography: [],
         logos: [],
         graphics: [],
         imagery: [],
         brandVoice: '',
-        brandPositioning: ''
+        brandPositioning: '',
+        memberIds: []
       };
       
       const initial = initialData
@@ -154,11 +154,10 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
         <label className="block text-sm font-medium text-text-secondary mb-1">Team Members</label>
         <select
           multiple
-          value={(editedBrand.teamMembers || []).map(m => m.id)}
+          value={editedBrand.memberIds || []}
           onChange={e => {
             const selectedIds = Array.from(e.target.selectedOptions, option => option.value);
-            const selectedMembers = appData.users.filter(m => selectedIds.includes(m.id));
-            handleUpdate('teamMembers', selectedMembers);
+            handleUpdate('memberIds', selectedIds);
           }}
           className={inputClasses}
         >

@@ -31,7 +31,7 @@ const FormField: React.FC<FormFieldProps> = ({ fieldKey, fieldValue, onUpdate, p
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                 <label htmlFor={path} className="text-sm font-medium text-text-secondary md:text-right">{label}</label>
                 <div className="col-span-3">
-                     <p className="text-sm text-text-secondary font-mono bg-glass p-2 rounded">{fieldValue}</p>
+                     <p className="text-sm text-text-secondary font-mono bg-glass p-2 rounded">{String(fieldValue)}</p>
                 </div>
             </div>
         );

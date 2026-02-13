@@ -85,7 +85,7 @@ const StructuredEditor: React.FC<{ source: DataSource }> = ({ source }) => {
             <div className="space-y-4">
                 {items.map((item, index) => (
                     <EditableItem
-                        key={item.id || index}
+                        key={(item.id as string) || String(index)}
                         itemData={item}
                         onUpdate={(updatedItem) => handleUpdateItem(index, updatedItem)}
                         onDelete={() => handleDeleteItem(index)}

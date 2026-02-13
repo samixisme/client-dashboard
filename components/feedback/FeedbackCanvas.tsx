@@ -70,21 +70,21 @@ const FeedbackCanvas: React.FC<FeedbackCanvasProps> = ({ item, activeBreakpoint,
         overflow: 'hidden'
       }}
     >
-      <div 
+      <div
         ref={containerRef}
         className={`w-full h-full relative ${interactionMode === 'navigate' ? 'cursor-auto' : 'cursor-crosshair'}`}
         onClick={handleCanvasClick}
       >
-        {item.type === 'website' ? (
-          <iframe 
-            src={item.assetUrl || item.url} 
+        {'url' in item ? (
+          <iframe
+            src={(item as FeedbackWebsite).url}
             className={`w-full h-full border-none ${interactionMode === 'navigate' ? 'pointer-events-auto' : 'pointer-events-none'}`}
             title="Feedback Content"
           />
         ) : (
-          <img 
-            src={item.assetUrl} 
-            alt="Feedback Content" 
+          <img
+            src={'images' in item ? (item as FeedbackMockup).images[0]?.url : 'videos' in item ? (item as FeedbackVideo).videos[0]?.url : ''}
+            alt="Feedback Content"
             className="w-full h-full object-contain pointer-events-none select-none"
           />
         )}

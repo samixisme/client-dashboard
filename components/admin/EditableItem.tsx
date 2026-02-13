@@ -26,7 +26,7 @@ const EditableItem = <T extends Record<string, unknown>>({ itemData, onUpdate, o
         setIsEditing(false);
     };
 
-    const title = itemData.name || itemData.title || itemData.id || 'Item';
+    const title = String(itemData.name || itemData.title || itemData.id || 'Item');
 
     if (!isEditing) {
         return (

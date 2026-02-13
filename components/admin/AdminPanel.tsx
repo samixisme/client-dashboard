@@ -4,10 +4,10 @@ import { useAdmin } from '../../contexts/AdminContext';
 import StructuredEditor from './StructuredEditor';
 import RawJsonEditor from './RawJsonEditor';
 
-interface DataSource {
+interface DataSource<T = Record<string, unknown>> {
     name: string;
-    data: unknown;
-    onSave: (newData: unknown) => void;
+    data: T[] | unknown;
+    onSave: (newData: T[] | unknown) => void;
 }
 
 interface AdminPanelProps {
