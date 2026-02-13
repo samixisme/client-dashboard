@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
+import { Textarea } from '../ui/textarea';
 
 interface ColorPopoverProps {
     isOpen: boolean;
@@ -135,7 +136,7 @@ const extractColorsFromAI = async (text: string) => {
                     <>
                         <h3 className="font-semibold text-text-primary text-center mb-4">Import with AI</h3>
                         <p className="text-xs text-text-secondary mb-2">Paste content from a PDF, document, or website, and AI will try to extract the colors.</p>
-                        <textarea value={aiText} onChange={e => setAiText(e.target.value)} rows={6} className="w-full bg-glass-light border border-border-color rounded-md p-2 text-sm" placeholder="Paste content here..." />
+                        <Textarea value={aiText} onChange={e => setAiText(e.target.value)} rows={6} className="bg-glass-light p-2" placeholder="Paste content here..." />
                         {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
                         <div className="flex items-center justify-end gap-2 mt-4">
                             <button onClick={() => setView('main')} className="text-sm text-text-secondary hover:underline">Back</button>

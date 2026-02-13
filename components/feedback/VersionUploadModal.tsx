@@ -2,6 +2,7 @@ import React, { useState, useRef, DragEvent } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../utils/firebase';
 import { X, Upload, FileVideo, FileImage, AlertCircle } from 'lucide-react';
+import { Textarea } from '../ui/textarea';
 
 interface VersionUploadModalProps {
     isOpen: boolean;
@@ -277,12 +278,12 @@ const VersionUploadModal: React.FC<VersionUploadModalProps> = ({
                     <label className="block text-white font-semibold mb-2">
                         Version Notes
                     </label>
-                    <textarea
+                    <Textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Describe the changes in this version..."
                         disabled={uploading}
-                        className="w-full bg-glass-light/40 border border-border-color rounded-lg p-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-glass-light/40 p-3 text-white placeholder-white/40 focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
                         rows={4}
                     />
                 </div>

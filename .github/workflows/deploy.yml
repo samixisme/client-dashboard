@@ -1,0 +1,297 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  NODE_VERSION: '18'
+  DEPLOY_USER: clientdash
+  DEPLOY_HOST: 49.13.129.43
+  DEPLOY_PATH: /var/www/client-samixism
+  PM2_APP_NAME: client-dashboard
+
+jobs:
+  # Run tests and build validation
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint --if-present || echo "No lint script found"
+
+      - name: Run type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test -- --coverage --maxWorkers=2
+        env:
+          CI: true
+
+      - name: Upload coverage to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # Build application
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend and feedback widget
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Build API server
+        run: npx tsc -p tsconfig.server.json
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy-package
+          cp -r dist deploy-package/
+          cp -r api deploy-package/
+          cp package.json package-lock.json deploy-package/
+          cp ecosystem.config.js deploy-package/ || echo "ecosystem.config.js will be created on server"
+          cp -r firestore.* deploy-package/ || true
+
+          # Create version file
+          echo "{\"version\":\"${{ github.sha }}\",\"build_time\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\"}" > deploy-package/version.json
+
+      - name: Create artifact archive
+        run: |
+          cd deploy-package
+          tar -czf ../deploy-${{ github.sha }}.tar.gz .
+          cd ..
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-package
+          path: deploy-${{ github.sha }}.tar.gz
+          retention-days: 30
+
+  # Deploy to VPS
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    environment:
+      name: production
+      url: https://client.samixism.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-package
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create backup on server
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            if [ -d "${{ env.DEPLOY_PATH }}/current" ]; then
+              BACKUP_DIR="${{ env.DEPLOY_PATH }}/backups/$(date +%Y%m%d_%H%M%S)_${{ github.sha }}"
+              mkdir -p "$BACKUP_DIR"
+              cp -r ${{ env.DEPLOY_PATH }}/current/* "$BACKUP_DIR/" || true
+              echo "Backup created at $BACKUP_DIR"
+
+              # Keep only last 5 backups
+              cd ${{ env.DEPLOY_PATH }}/backups
+              ls -t | tail -n +6 | xargs -r rm -rf
+            fi
+          EOF
+
+      - name: Upload and extract deployment package
+        run: |
+          scp -i ~/.ssh/deploy_key deploy-${{ github.sha }}.tar.gz \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/releases/
+
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}/releases
+            mkdir -p ${{ github.sha }}
+            tar -xzf deploy-${{ github.sha }}.tar.gz -C ${{ github.sha }}
+            rm deploy-${{ github.sha }}.tar.gz
+          EOF
+
+      - name: Install dependencies on server
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}
+            npm ci --production
+          EOF
+
+      - name: Copy environment files
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            if [ -f "${{ env.DEPLOY_PATH }}/shared/.env" ]; then
+              cp ${{ env.DEPLOY_PATH }}/shared/.env ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env
+            fi
+
+            # Create ecosystem.config.js if not exists
+            if [ ! -f "${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/ecosystem.config.js" ]; then
+              cp ${{ env.DEPLOY_PATH }}/shared/ecosystem.config.js ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/ || true
+            fi
+          EOF
+
+      - name: Run health check on current version
+        id: pre_health
+        continue-on-error: true
+        run: |
+          RESPONSE=$(ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+            'curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health || echo "000"')
+          echo "pre_health_status=$RESPONSE" >> $GITHUB_OUTPUT
+          echo "Current health status: $RESPONSE"
+
+      - name: Deploy with PM2 (zero-downtime)
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}
+
+            # Update symlink
+            ln -sfn ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }} ${{ env.DEPLOY_PATH }}/current
+
+            # Reload PM2 with zero-downtime
+            cd ${{ env.DEPLOY_PATH }}/current
+            pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
+
+            # Save PM2 process list
+            pm2 save
+          EOF
+
+      - name: Wait for application startup
+        run: sleep 10
+
+      - name: Health check after deployment
+        id: post_health
+        run: |
+          MAX_ATTEMPTS=6
+          ATTEMPT=0
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            RESPONSE=$(ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+              'curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health || echo "000"')
+
+            echo "Health check attempt $((ATTEMPT+1))/$MAX_ATTEMPTS: $RESPONSE"
+
+            if [ "$RESPONSE" = "200" ]; then
+              echo "Health check passed!"
+              echo "health_status=success" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            ATTEMPT=$((ATTEMPT+1))
+            sleep 5
+          done
+
+          echo "Health check failed after $MAX_ATTEMPTS attempts"
+          echo "health_status=failed" >> $GITHUB_OUTPUT
+          exit 1
+
+      - name: Rollback on failure
+        if: steps.post_health.outputs.health_status == 'failed'
+        run: |
+          echo "Deployment failed, initiating rollback..."
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}/backups
+            LATEST_BACKUP=$(ls -t | head -n1)
+
+            if [ -n "$LATEST_BACKUP" ]; then
+              echo "Rolling back to: $LATEST_BACKUP"
+              rm -rf ${{ env.DEPLOY_PATH }}/current
+              cp -r "$LATEST_BACKUP" ${{ env.DEPLOY_PATH }}/current
+              cd ${{ env.DEPLOY_PATH }}/current
+              pm2 reload ecosystem.config.js
+              echo "Rollback completed"
+            else
+              echo "No backup found for rollback!"
+              exit 1
+            fi
+          EOF
+          exit 1
+
+      - name: Cleanup old releases
+        if: steps.post_health.outputs.health_status == 'success'
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}/releases
+            # Keep only last 5 releases
+            ls -t | tail -n +6 | xargs -r rm -rf
+            echo "Cleanup completed"
+          EOF
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pre-deployment health:** ${{ steps.pre_health.outputs.pre_health_status || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Post-deployment health:** ${{ steps.post_health.outputs.health_status || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+  # Notify deployment status
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: Deployment notification
+        run: |
+          if [ "${{ needs.deploy.result }}" = "success" ]; then
+            echo "✅ Deployment successful"
+          else
+            echo "❌ Deployment failed"
+          fi

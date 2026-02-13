@@ -1,0 +1,11 @@
+/* emoji-mart theme overrides to match app's dark glass-morphism + lime green */
+em-emoji-picker {
+  --em-rgb-background: 38, 38, 38;
+  --em-rgb-input: 50, 50, 50;
+  --em-rgb-color: 244, 244, 245;
+  --em-rgb-accent: 163, 230, 53;
+  --em-color-border: rgba(255, 255, 255, 0.1);
+  --em-color-border-over: rgba(163, 230, 53, 0.3);
+  --border-radius: 12px;
+  max-height: 360px;
+}

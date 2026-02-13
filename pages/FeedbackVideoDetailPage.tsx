@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Textarea } from '../components/ui/textarea';
 import {
     getFeedbackItem,
     subscribeToComments,
@@ -463,7 +464,7 @@ const FeedbackVideoDetailPage = () => {
                             {/* Description Module */}
                             {isEditingDescription ? (
                                 <div className="mt-2">
-                                    <textarea
+                                    <Textarea
                                         value={editedDescription}
                                         onChange={(e) => setEditedDescription(e.target.value)}
                                         className="w-full p-2 bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-lg text-sm text-text-primary resize-none focus:ring-1 focus:ring-primary outline-none"

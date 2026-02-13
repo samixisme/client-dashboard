@@ -7,6 +7,7 @@ import { DeleteIcon } from '../icons/DeleteIcon';
 import { PlayIcon } from '../icons/PlayIcon';
 import { CommentsIcon } from '../icons/CommentsIcon';
 import VersionDropdown from './VersionDropdown';
+import { Textarea } from '../ui/textarea';
 
 interface FeedbackItemVersion {
     versionNumber: number;
@@ -214,10 +215,10 @@ const FeedbackItemCard: React.FC<FeedbackItemCardProps> = ({
                                 placeholder={type === 'video' ? 'Video name' : 'Screen name'}
                             />
                             {type === 'video' && (
-                                <textarea
+                                <Textarea
                                     value={editDescription}
                                     onChange={(e) => setEditDescription(e.target.value)}
-                                    className="w-full bg-glass-light/60 border border-border-color rounded-lg px-3 py-2 text-sm text-text-secondary focus:border-primary outline-none resize-none"
+                                    className="bg-glass-light/60 px-3 py-2 text-text-secondary"
                                     rows={2}
                                     placeholder="Description"
                                 />

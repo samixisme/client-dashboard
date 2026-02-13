@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
+import { Textarea } from '../components/ui/textarea';
 import { RoadmapItem, Task } from '../types';
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '../utils/calendarSync';
 import { KanbanViewIcon } from '../components/icons/KanbanViewIcon';
@@ -373,7 +374,7 @@ const RoadmapPage = () => {
 
                                             {addingTaskTo === item.id && !isUnassignedColumn ? (
                                                 <div className="mt-3 p-1 animate-scale-in">
-                                                    <textarea
+                                                    <Textarea
                                                         value={newTaskTitle}
                                                         onChange={(e) => setNewTaskTitle(e.target.value)}
                                                         placeholder="Enter task title..."

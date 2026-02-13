@@ -13,6 +13,7 @@ import { FileIcon } from './icons/FileIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
 import { RoadmapIcon } from './icons/RoadmapIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
+import { Textarea } from './ui/textarea';
 import LogTimeModal from './tasks/LogTimeModal';
 import RecurringTaskPopover from './tasks/RecurringTaskPopover';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -404,10 +405,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                 <EditIcon className="w-5 h-5"/>
                                 <h3 className="text-lg font-semibold text-text-primary">Description</h3>
                             </div>
-                            <textarea
+                            <Textarea
                                 name="description" value={editedTask.description} onChange={handleChange}
                                 rows={5} placeholder="Add a more detailed description of the task here..."
-                                className="w-full p-3 text-sm rounded-lg bg-glass/40 backdrop-blur-sm border border-border-color focus:ring-1 focus:ring-primary/30 focus:border-primary/50 text-text-primary transition-all"
+                                className="p-3"
                             />
                         </div>
                         
@@ -445,7 +446,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                              <div className="flex items-start gap-3 mb-6">
                                 <img src="https://picsum.photos/100" alt="admin" className="w-8 h-8 rounded-full"/>
                                 <div className="flex-1">
-                                    <textarea value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Write a comment..." rows={2} className="w-full p-2 text-sm rounded-lg bg-glass/40 backdrop-blur-sm border border-border-color focus:ring-1 focus:ring-primary/30 focus:border-primary/50 text-text-primary transition-all"/>
+                                    <Textarea value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Write a comment..." rows={2} />
                                     <button onClick={handlePostComment} className="mt-2 px-3 py-1.5 bg-primary text-background text-xs font-bold rounded-lg hover:bg-primary-hover">Comment</button>
                                 </div>
                              </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Textarea } from '../components/ui/textarea';
 import { useData } from '../contexts/DataContext';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db, uploadFile } from '../utils/firebase';
@@ -742,10 +743,10 @@ const BrandDetailPage = () => {
                     </div>
                 </AssetSection>
                 <AssetSection title="Brand Voice & Vocabulary" id="voice-section" onDownload={() => handlePrint('voice-section')}>
-                    <textarea value={editedBrand.brandVoice} onChange={e => handleBrandStringChange('brandVoice', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={8} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
+                    <Textarea value={editedBrand.brandVoice} onChange={e => handleBrandStringChange('brandVoice', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={8} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
                 </AssetSection>
                 <AssetSection title="Brand Positioning" id="positioning-section" onDownload={() => handlePrint('positioning-section')}>
-                     <textarea value={editedBrand.brandPositioning} onChange={e => handleBrandStringChange('brandPositioning', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={6} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
+                     <Textarea value={editedBrand.brandPositioning} onChange={e => handleBrandStringChange('brandPositioning', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={6} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
                 </AssetSection>
                 {renderAssetGallery('imagery')}
                 {renderAssetGallery('graphics')}

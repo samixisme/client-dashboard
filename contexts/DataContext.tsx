@@ -79,25 +79,48 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     useEffect(() => {
-        setLoading(true);
-        const qBrands = query(collection(db, 'brands'), orderBy('name'));
-        const qUsers = query(collection(db, 'users'));
-        const qProjects = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
-        
-        // Use collectionGroup to query subcollections across all projects
-        const qBoards = query(collectionGroup(db, 'boards'));
-        const qStages = query(collectionGroup(db, 'stages'));
-        const qTasks = query(collectionGroup(db, 'tasks'));
-        const qTags = query(collectionGroup(db, 'tags'));
-        const qTimeLogs = query(collectionGroup(db, 'time_logs'));
-        const qRoadmapItems = query(collectionGroup(db, 'roadmap'));
-        const qComments = query(collectionGroup(db, 'comments'));
-        const qActivities = query(collectionGroup(db, 'activities'));
-        const qMoodboards = query(collectionGroup(db, 'moodboards'));
-        const qMoodboardItems = query(collectionGroup(db, 'moodboard_items'));
-        const qEmailTemplates = query(collection(db, 'emailTemplates'), orderBy('updatedAt', 'desc'));
+        // Don't query Firestore until user is authenticated
+        if (!user) {
+            setLoading(false);
+            return;
+        }
 
-        const unsubscribers = [
+        let unsubscribers: (() => void)[] = [];
+        let isMounted = true;
+
+        const startListeners = async () => {
+            try {
+                // Force token refresh to ensure Firestore has valid credentials
+                await user.getIdToken(true);
+            } catch (err) {
+                console.error("[DataContext] Failed to get auth token:", err);
+                return;
+            }
+
+            if (!isMounted) return;
+
+            setLoading(true);
+            const qBrands = query(collection(db, 'brands'), orderBy('name'));
+            const qUsers = query(collection(db, 'users'));
+            const qProjects = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
+
+            // Use root-level collections instead of collectionGroup
+            // collectionGroup requires special index configuration
+            const qBoards = query(collection(db, 'boards'));
+            const qStages = query(collection(db, 'stages'));
+            const qTasks = query(collection(db, 'tasks'));
+            const qTags = query(collection(db, 'tags'));
+            const qTimeLogs = query(collection(db, 'time_logs'));
+            const qRoadmapItems = query(collection(db, 'roadmap'));
+            const qComments = query(collection(db, 'comments'));
+            const qActivities = query(collection(db, 'activities'));
+            const qMoodboards = query(collection(db, 'moodboards'));
+            const qMoodboardItems = query(collection(db, 'moodboard_items'));
+            const qFeedbackItems = query(collection(db, 'feedbackItems'));
+            const qFeedbackComments = query(collection(db, 'feedbackComments'));
+            const qEmailTemplates = query(collection(db, 'emailTemplates'));
+
+            unsubscribers = [
             onSnapshot(qBrands, (snapshot) => {
                 dataStore.brands = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand));
                 setVersion(v => v + 1);
@@ -269,12 +292,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }),
         ];
 
-        Promise.all(unsubscribers.map(unsub => new Promise(res => setTimeout(res, 200)))).finally(() => setLoading(false));
+            Promise.all(unsubscribers.map(() => new Promise(res => setTimeout(res, 200)))).finally(() => {
+                if (isMounted) setLoading(false);
+            });
+        };
+
+        startListeners();
 
         return () => {
+            isMounted = false;
             unsubscribers.forEach(unsub => unsub());
         };
-    }, []);
+    }, [user]);
 
     const forceUpdate = useCallback(() => {
         setVersion(v => v + 1);

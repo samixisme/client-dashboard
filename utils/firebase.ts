@@ -5,14 +5,16 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
+// Set debug token BEFORE any Firebase initialization for localhost App Check
+const isLocalhost = typeof window !== 'undefined' &&
+  (window.location?.hostname === "localhost" || window.location?.hostname === "127.0.0.1");
+
+if (isLocalhost) {
+  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
 // Compatibility shim for environments where ImportMeta typings aren't available
 const FIREBASE_ENV: any = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
-
-// DEBUG: Check if env vars are loading (remove after debugging)
-const hasApiKey = !!FIREBASE_ENV.VITE_FIREBASE_API_KEY && FIREBASE_ENV.VITE_FIREBASE_API_KEY.length > 10;
-const hasProjectId = !!FIREBASE_ENV.VITE_FIREBASE_PROJECT_ID;
-console.log("[Firebase] Config status - API Key loaded:", hasApiKey, "| Project ID loaded:", hasProjectId);
-console.log("[Firebase] API Key length:", FIREBASE_ENV.VITE_FIREBASE_API_KEY?.length || 0);
 
 // Your web app's Firebase configuration (secure via environment variables)
 const firebaseConfig = {
@@ -28,35 +30,21 @@ const firebaseConfig = {
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// Initialize App Check with error handling
-// NOTE: App Check is disabled for localhost development to avoid 404 errors
-// Enable it in production by setting VITE_FIREBASE_APP_CHECK_SITE_KEY
+// Initialize App Check - uses debug tokens for localhost, reCAPTCHA for production
 const initAppCheck = () => {
   const siteKey = FIREBASE_ENV.VITE_FIREBASE_APP_CHECK_SITE_KEY;
-  const isLocalhost = typeof window !== 'undefined' &&
-    (window.location?.hostname === "localhost" || window.location?.hostname === "127.0.0.1");
 
-  // Skip App Check entirely on localhost - it requires Firebase Console setup
-  // and causes 404 errors if not properly configured
-  if (isLocalhost) {
-    console.info("[Firebase] App Check disabled for localhost development");
-    return null;
-  }
-
-  // Skip App Check if no site key configured
-  if (!siteKey) {
-    console.warn("[Firebase] App Check site key not configured. Set VITE_FIREBASE_APP_CHECK_SITE_KEY in .env for production");
+  if (!siteKey && !isLocalhost) {
     return null;
   }
 
   try {
     const appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(siteKey),
+      provider: new ReCaptchaV3Provider(siteKey || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
       isTokenAutoRefreshEnabled: true
     });
     return appCheck;
   } catch (error) {
-    console.error("[Firebase] App Check initialization failed:", error);
     return null;
   }
 };
@@ -79,20 +67,14 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
     throw new Error("No file provided for upload.");
   }
 
-  // Create a unique filename to prevent overwrites
   const uniqueFilename = `${Date.now()}-${file.name}`;
   const storageRef = ref(storage, `${path}/${uniqueFilename}`);
 
   try {
-    // Upload the file
     const uploadTask = await uploadBytes(storageRef, file);
-
-    // Get the public download URL
     const downloadURL = await getDownloadURL(uploadTask.ref);
-
     return downloadURL;
   } catch (error) {
-    console.error("Error uploading file:", error);
     throw new Error("File upload failed.");
   }
 };

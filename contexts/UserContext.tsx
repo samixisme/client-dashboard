@@ -28,6 +28,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const fetchUserData = async (uid: string) => {
     try {
+      // Force token refresh to ensure Firestore has valid credentials
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await currentUser.getIdToken(true);
+      }
+
       const userDocRef = doc(db, "users", uid);
       const userDoc = await getDoc(userDocRef);
 

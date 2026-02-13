@@ -102,45 +102,45 @@ export default function EmailPreviewPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950">
+    <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-border-color">
+      <header className="flex items-center justify-between px-4 py-3 bg-glass/60 backdrop-blur-xl border-b border-border-color">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(`/email-templates/${templateId}`)}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-zinc-400" />
+            <ArrowLeft className="w-5 h-5 text-text-secondary" />
           </button>
 
           <div>
-            <h1 className="text-lg font-semibold text-white">{template?.name}</h1>
+            <h1 className="text-lg font-semibold text-text-primary">{template?.name}</h1>
             {template?.subject && (
-              <p className="text-sm text-zinc-400">Subject: {template.subject}</p>
+              <p className="text-sm text-text-secondary">Subject: {template.subject}</p>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Device switcher */}
-          <div className="flex items-center bg-zinc-800 border border-border-color rounded-lg overflow-hidden">
+          <div className="flex items-center bg-glass/60 backdrop-blur-xl border border-border-color rounded-xl p-1 shadow-md">
             <button
               onClick={() => setDevice('desktop')}
-              className={`p-2 ${device === 'desktop' ? 'bg-primary text-black' : 'text-zinc-400 hover:text-white'}`}
+              className={`p-2 rounded-lg transition-all duration-300 ${device === 'desktop' ? 'bg-primary text-background shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-110' : 'text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-105'}`}
               title="Desktop"
             >
               <Monitor className="w-4 h-4" />
             </button>
             <button
               onClick={() => setDevice('tablet')}
-              className={`p-2 ${device === 'tablet' ? 'bg-primary text-black' : 'text-zinc-400 hover:text-white'}`}
+              className={`p-2 rounded-lg transition-all duration-300 ${device === 'tablet' ? 'bg-primary text-background shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-110' : 'text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-105'}`}
               title="Tablet"
             >
               <Tablet className="w-4 h-4" />
             </button>
             <button
               onClick={() => setDevice('mobile')}
-              className={`p-2 ${device === 'mobile' ? 'bg-primary text-black' : 'text-zinc-400 hover:text-white'}`}
+              className={`p-2 rounded-lg transition-all duration-300 ${device === 'mobile' ? 'bg-primary text-background shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-110' : 'text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-105'}`}
               title="Mobile"
             >
               <Smartphone className="w-4 h-4" />
@@ -149,7 +149,7 @@ export default function EmailPreviewPage() {
 
           <button
             onClick={handleCopyHtml}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 border border-border-color rounded-lg text-sm text-white hover:bg-zinc-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl text-sm text-text-primary hover:bg-glass-light/80 hover:border-primary/40 transition-all duration-300"
           >
             {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
             Copy HTML
@@ -157,7 +157,7 @@ export default function EmailPreviewPage() {
 
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 border border-border-color rounded-lg text-sm text-white hover:bg-zinc-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl text-sm text-text-primary hover:bg-glass-light/80 hover:border-primary/40 transition-all duration-300"
           >
             <Download className="w-4 h-4" />
             Download
@@ -165,7 +165,7 @@ export default function EmailPreviewPage() {
 
           <button
             onClick={handleSendTest}
-            className="flex items-center gap-2 px-4 py-1.5 bg-primary text-black font-medium rounded-lg hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-4 py-1.5 bg-primary text-background font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] hover:scale-105 transition-all duration-300 shadow-md"
           >
             <Send className="w-4 h-4" />
             Send Test
@@ -174,7 +174,7 @@ export default function EmailPreviewPage() {
       </header>
 
       {/* Preview area */}
-      <div className="flex-1 overflow-auto p-8 bg-zinc-900/50">
+      <div className="flex-1 overflow-auto p-8 bg-glass/20 backdrop-blur-sm">
         <div
           className="mx-auto bg-white rounded-lg shadow-2xl overflow-hidden transition-all duration-300"
           style={{ width: deviceWidths[device], maxWidth: '100%' }}
@@ -189,8 +189,8 @@ export default function EmailPreviewPage() {
       </div>
 
       {/* Device indicator */}
-      <div className="text-center py-2 bg-zinc-900 border-t border-border-color">
-        <p className="text-xs text-zinc-500">
+      <div className="text-center py-2 bg-glass/40 backdrop-blur-xl border-t border-border-color">
+        <p className="text-xs text-text-secondary">
           {device.charAt(0).toUpperCase() + device.slice(1)} Preview ({deviceWidths[device]}px)
         </p>
       </div>

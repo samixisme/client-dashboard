@@ -3,6 +3,7 @@ import { RoadmapItem, Task } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { AddIcon } from '../icons/AddIcon';
 import { AttachmentIcon } from '../icons/AttachmentIcon';
+import { Textarea } from '../ui/textarea';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { FileIcon } from '../icons/FileIcon';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -144,13 +145,13 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                     {/* Description */}
                     <div>
                         <label className="block text-sm font-semibold text-text-primary mb-2">Description</label>
-                        <textarea
+                        <Textarea
                             name="description"
                             value={editedItem.description}
                             onChange={handleChange}
                             rows={4}
                             placeholder="Add a description..."
-                            className="w-full p-3 text-sm rounded-lg bg-glass/40 backdrop-blur-sm border border-border-color focus:ring-1 focus:ring-primary/30 focus:border-primary/50 text-text-primary transition-all"
+                            className="p-3"
                         />
                     </div>
                     

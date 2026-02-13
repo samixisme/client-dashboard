@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MoodboardItem, MoodboardItemStyle } from '../../types';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { DownloadIcon } from '../icons/DownloadIcon';
+import { Textarea } from '../ui/textarea';
 
 interface InspectorPanelProps {
     item: MoodboardItem | null;
@@ -104,8 +105,8 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ item, onUpdate, onClose
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold text-text-secondary">Content</label>
-                                    <textarea 
-                                        className="w-full bg-glass-light border border-border-color rounded-lg p-3 text-sm text-text-primary focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-y min-h-[120px]"
+                                    <Textarea
+                                        className="bg-glass-light p-3 focus:ring-2 focus:ring-primary resize-y min-h-[120px]"
                                         value={item.content.text || ''}
                                         onChange={(e) => handleContentChange('text', e.target.value)}
                                         placeholder="Type something..."
@@ -151,8 +152,8 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ item, onUpdate, onClose
                                             </div>
                                             <div className="space-y-1">
                                                 <label className="text-[10px] text-text-secondary">Description</label>
-                                                <textarea 
-                                                    className="w-full bg-glass-light border border-border-color rounded-lg p-2 text-sm text-text-primary focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-y min-h-[60px]"
+                                                <Textarea
+                                                    className="bg-glass-light p-2 focus:ring-2 focus:ring-primary resize-y min-h-[60px]"
                                                     value={item.content.description || ''}
                                                     onChange={(e) => handleContentChange('description', e.target.value)}
                                                     placeholder="Add a description..."

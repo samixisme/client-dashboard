@@ -3,6 +3,7 @@ import { useData } from '../../../contexts/DataContext';
 import { Task, Stage } from '../../../types';
 import { AddIcon } from '../../icons/AddIcon';
 import { backgroundPatterns } from '../../../data/patterns';
+import { Textarea } from '../../ui/textarea';
 
 interface ListViewProps {
     boardId: string;
@@ -85,11 +86,11 @@ const ListView: React.FC<ListViewProps> = ({
                         </div>
                         {addingToStage === stage.id ? (
                             <div className="mt-3 p-2">
-                                <textarea
+                                <Textarea
                                     value={newTaskTitle}
                                     onChange={(e) => setNewTaskTitle(e.target.value)}
                                     placeholder="Enter task title..."
-                                    className="w-full p-2 text-sm rounded-xl bg-surface-light backdrop-blur-sm border border-border-color focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm focus:shadow-lg"
+                                    className="p-2 rounded-xl bg-surface-light focus:ring-2 focus:ring-primary shadow-sm focus:shadow-lg"
                                     rows={2} autoFocus
                                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddTaskClick(stage.id))}
                                 />

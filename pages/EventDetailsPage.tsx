@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Textarea } from '../components/ui/textarea';
 import { useCalendarEvents } from '../hooks/useCalendarEvents';
 import { useData } from '../contexts/DataContext';
 import { CalendarEvent } from '../types';
@@ -218,13 +219,13 @@ const EventDetailsPage = () => {
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                                 Description / Notes
                             </label>
-                            <textarea
+                            <Textarea
                                 className="w-full h-full bg-transparent text-text-primary focus:outline-none resize-none placeholder-text-secondary/50 text-base leading-relaxed focus:placeholder-text-secondary/30 transition-all duration-300"
                                 placeholder="Add detailed notes, agenda items, or context for this event..."
                                 value={editedDescription}
                                 onChange={e => setEditedDescription(e.target.value)}
                                 rows={6}
-                            ></textarea>
+                            />
                          </div>
                     </div>
 

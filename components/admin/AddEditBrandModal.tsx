@@ -8,6 +8,7 @@ import { slugify } from '../../utils/slugify';
 import { useData } from '../../contexts/DataContext';
 import { AddIcon } from '../icons/AddIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
+import { Textarea } from '../ui/textarea';
 import { FileIcon } from '../icons/FileIcon';
 import { toast } from 'sonner';
 
@@ -269,11 +270,11 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
     <div className="space-y-4">
         <div>
             <label className="font-semibold mb-2 block">Brand Voice</label>
-            <textarea placeholder="Describe the brand's tone and voice..." value={editedBrand.brandVoice || ''} onChange={e => handleUpdate('brandVoice', e.target.value)} className={inputClasses} rows={6}></textarea>
+            <Textarea placeholder="Describe the brand's tone and voice..." value={editedBrand.brandVoice || ''} onChange={e => handleUpdate('brandVoice', e.target.value)} className={inputClasses} rows={6} />
         </div>
         <div>
             <label className="font-semibold mb-2 block">Brand Positioning</label>
-            <textarea placeholder="Describe the brand's positioning..." value={editedBrand.brandPositioning || ''} onChange={e => handleUpdate('brandPositioning', e.target.value)} className={inputClasses} rows={6}></textarea>
+            <Textarea placeholder="Describe the brand's positioning..." value={editedBrand.brandPositioning || ''} onChange={e => handleUpdate('brandPositioning', e.target.value)} className={inputClasses} rows={6} />
         </div>
     </div>
   );

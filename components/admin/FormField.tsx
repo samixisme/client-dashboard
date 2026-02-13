@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Textarea } from '../ui/textarea';
 // We need a forwardRef to handle the recursive nature of StructuredEditor
 const StructuredEditor = React.lazy(() => import('./StructuredEditor'));
 
@@ -76,12 +77,12 @@ const FormField: React.FC<FormFieldProps> = ({ fieldKey, fieldValue, onUpdate, p
             );
         } else if (fieldValue.length > 100 || fieldValue.includes('\n')) {
             inputElement = (
-                <textarea
+                <Textarea
                     id={path}
                     value={fieldValue}
                     rows={5}
                     onChange={(e) => onUpdate(fieldKey, e.target.value)}
-                    className="w-full px-3 py-2 border border-border-color bg-glass placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    className="px-3 py-2 bg-glass"
                 />
             );
         } else {
@@ -113,12 +114,12 @@ const FormField: React.FC<FormFieldProps> = ({ fieldKey, fieldValue, onUpdate, p
         } else {
             // Otherwise, render a textarea for simple arrays (e.g., of strings)
              inputElement = (
-                <textarea
+                <Textarea
                     id={path}
                     value={fieldValue.join(', ')}
                     rows={3}
                     onChange={(e) => onUpdate(fieldKey, e.target.value.split(',').map(s => s.trim()))}
-                    className="w-full px-3 py-2 border border-border-color bg-glass placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    className="px-3 py-2 bg-glass"
                 />
             );
         }

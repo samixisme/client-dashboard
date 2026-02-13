@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { FeedbackMockup, MockupImage } from '../../types';
 import { AddIcon } from '../icons/AddIcon';
+import { Textarea } from '../ui/textarea';
 
 const FeedbackMockupsView = ({ projectId }: { projectId: string }) => {
     const { data, forceUpdate } = useData();
@@ -59,11 +60,11 @@ const FeedbackMockupsView = ({ projectId }: { projectId: string }) => {
                         className="w-full bg-surface/90 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
                         required
                     />
-                    <textarea
+                    <Textarea
                         value={newUrls}
                         onChange={e => setNewUrls(e.target.value)}
                         placeholder="Image URLs, separated by commas"
-                        className="w-full bg-surface/90 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 resize-none"
+                        className="bg-surface/90 rounded-xl px-4 py-3"
                         rows={3}
                         required
                     />

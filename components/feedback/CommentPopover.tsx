@@ -3,6 +3,7 @@ import { FeedbackComment, User } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
+import { EmojiPickerInline } from '../ui/emoji-picker-inline';
 
 interface CommentPopoverProps {
     comment: FeedbackComment | null;
@@ -137,11 +138,11 @@ export const CommentThread = ({ replies, getMember, currentUserId, onDelete }: {
 
 const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, contentRef, zoom, onClose, onSubmit, onUpdate, onResolve, onDelete, targetType, videoCurrentTime, users, currentUserId }) => {
     const board_members = users || [];
-    
+
     const [newReply, setNewReply] = useState('');
     const popoverRef = useRef<HTMLDivElement>(null);
     const [style, setStyle] = useState<React.CSSProperties>({ opacity: 0 });
-    
+
     const [startTime, setStartTime] = useState(comment?.startTime ?? videoCurrentTime ?? 0);
     const [endTime, setEndTime] = useState(comment?.endTime ?? (videoCurrentTime ? videoCurrentTime + 5 : 5));
     const [isEditingTime, setIsEditingTime] = useState(false);
@@ -151,6 +152,11 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
 
     const [isEditingComment, setIsEditingComment] = useState(false);
     const [editCommentText, setEditCommentText] = useState(comment?.comment || '');
+
+    // Refs for the 3 textareas with emoji pickers
+    const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const newCommentTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const editCommentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
 
     useEffect(() => {
@@ -546,12 +552,14 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
                                 <p style={styles.name}>{getMember(comment.reporterId)?.name || 'Unknown User'}</p>
                                 {isEditingComment ? (
                                     <div className="mt-1">
-                                        <textarea 
+                                        <textarea
+                                            ref={editCommentTextareaRef}
                                             value={editCommentText}
                                             onChange={e => setEditCommentText(e.target.value)}
                                             style={{...styles.textarea, marginBottom: '6px'}}
                                             rows={2}
                                         />
+                                        <EmojiPickerInline textareaRef={editCommentTextareaRef} value={editCommentText} onChange={setEditCommentText} />
                                         <div className="flex justify-end gap-2">
                                             <button onClick={() => setIsEditingComment(false)} style={{...styles.actionBtn, backgroundColor: '#3F3F46', color: '#F4F4F5'}}>Cancel</button>
                                             <button onClick={handleCommentEditSave} style={styles.actionBtn}>Save</button>
@@ -628,13 +636,15 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
 
                     {/* Reply Input */}
                     <div style={styles.section}>
-                        <textarea 
-                            value={newReply} 
-                            onChange={e => setNewReply(e.target.value)} 
-                            placeholder="Leave a comment..." 
-                            rows={2} 
+                        <textarea
+                            ref={replyTextareaRef}
+                            value={newReply}
+                            onChange={e => setNewReply(e.target.value)}
+                            placeholder="Leave a comment..."
+                            rows={2}
                             style={styles.textarea}
                         />
+                        <EmojiPickerInline textareaRef={replyTextareaRef} value={newReply} onChange={setNewReply} />
                     </div>
 
                     {/* Submit Button */}
@@ -671,14 +681,15 @@ const CommentPopover: React.FC<CommentPopoverProps> = ({ comment, coords, conten
 
                         {/* Comment Input */}
                         <div style={styles.section}>
-                            <textarea 
-                                ref={textareaRef}
-                                value={newReply} 
-                                onChange={e => setNewReply(e.target.value)} 
-                                placeholder="Leave a comment..." 
-                                rows={2} 
+                            <textarea
+                                ref={newCommentTextareaRef}
+                                value={newReply}
+                                onChange={e => setNewReply(e.target.value)}
+                                placeholder="Leave a comment..."
+                                rows={2}
                                 style={styles.textarea}
                             />
+                            <EmojiPickerInline textareaRef={newCommentTextareaRef} value={newReply} onChange={setNewReply} />
                         </div>
                         
                         {/* Due Date */}

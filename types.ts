@@ -563,3 +563,105 @@ export interface EmailSendLog {
     status: 'sent' | 'failed' | 'pending';
     errorMessage?: string;
 }
+
+// Social Media Dashboard Types
+export type SocialPlatform = 'instagram' | 'twitter' | 'facebook' | 'linkedin' | 'tiktok' | 'youtube';
+export type PostStatus = 'published' | 'scheduled' | 'draft' | 'failed';
+export type AnomalyType = 'spike' | 'drop' | 'unusual_engagement' | 'viral';
+export type AnomalySeverity = 'low' | 'medium' | 'high' | 'critical';
+export type ScheduleStatus = 'scheduled' | 'published' | 'failed' | 'cancelled';
+
+export interface SocialAccount {
+    id: string;
+    platform: SocialPlatform;
+    handle: string;
+    displayName: string;
+    avatarUrl: string;
+    followers: number;
+    following: number;
+    posts: number;
+    isConnected: boolean;
+    lastSynced: string;
+}
+
+export interface PostMetrics {
+    likes: number;
+    comments: number;
+    shares: number;
+    impressions: number;
+    reach: number;
+    engagementRate: number;
+    clicks?: number;
+    saves?: number;
+    videoViews?: number;
+}
+
+export interface SocialPost {
+    id: string;
+    accountId: string;
+    platform: SocialPlatform;
+    content: string;
+    mediaUrls?: string[];
+    publishedAt: string;
+    status: PostStatus;
+    metrics: PostMetrics;
+}
+
+export interface PlatformOverview {
+    platform: SocialPlatform;
+    accountId: string;
+    followers: number;
+    followersChange: number;
+    engagement: number;
+    engagementChange: number;
+    impressions: number;
+    impressionsChange: number;
+    posts: number;
+    postsChange: number;
+    topPostId?: string;
+}
+
+export interface SocialAnomaly {
+    id: string;
+    accountId: string;
+    platform: SocialPlatform;
+    type: AnomalyType;
+    severity: AnomalySeverity;
+    metric: string;
+    expectedValue: number;
+    actualValue: number;
+    detectedAt: string;
+    message: string;
+    isRead: boolean;
+}
+
+export interface ScheduledPost {
+    id: string;
+    accountId: string;
+    platform: SocialPlatform;
+    content: string;
+    mediaUrls?: string[];
+    scheduledFor: string;
+    status: ScheduleStatus;
+    createdAt: string;
+}
+
+export interface EngagementInsight {
+    id: string;
+    platform: SocialPlatform;
+    period: 'daily' | 'weekly' | 'monthly';
+    date: string;
+    likes: number;
+    comments: number;
+    shares: number;
+    impressions: number;
+    reach: number;
+    engagementRate: number;
+}
+
+export interface SocialDashboardFilters {
+    platforms: SocialPlatform[];
+    dateRange: 'last7days' | 'last30days' | 'last90days' | 'custom';
+    customStartDate?: string;
+    customEndDate?: string;
+}

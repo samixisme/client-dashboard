@@ -141,7 +141,21 @@ const FeedbackWebsiteDetailPage = () => {
   // Handle Fullscreen Change
   useEffect(() => {
       const handleFullscreenChange = () => {
-          setIsFullscreen(!!document.fullscreenElement);
+          const fsEl = document.fullscreenElement;
+          setIsFullscreen(!!fsEl);
+
+          // Move custom cursor into/out of fullscreen container so it stays visible
+          const ring = document.querySelector<HTMLElement>('.custom-cursor');
+          const dot = document.querySelector<HTMLElement>('.custom-cursor-dot');
+          if (!ring || !dot) return;
+
+          if (fsEl && fsEl === rootRef.current) {
+              fsEl.appendChild(ring);
+              fsEl.appendChild(dot);
+          } else if (!fsEl) {
+              const root = document.getElementById('root');
+              if (root) { root.prepend(dot); root.prepend(ring); }
+          }
       };
       document.addEventListener('fullscreenchange', handleFullscreenChange);
       return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);

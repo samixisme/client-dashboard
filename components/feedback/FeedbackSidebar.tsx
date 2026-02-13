@@ -4,7 +4,8 @@ import { useData } from '../../contexts/DataContext';
 import { CancelIcon } from '../icons/CancelIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
-import CommentPopover, { CommentThread } from './CommentPopover';  
+import CommentPopover, { CommentThread } from './CommentPopover';
+import { Textarea } from '../ui/textarea';
 
 // Reusing CommentPopover logic but adapting for Sidebar (Detail View)
 // We will extract the "Thread" logic later if needed, but for now we can render a "Detail" component here.
@@ -333,10 +334,10 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
                                     {isEditing ? (
                                         <div className="mt-2">
-                                            <textarea
+                                            <Textarea
                                                 value={editText}
                                                 onChange={e => setEditText(e.target.value)}
-                                                className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded p-2 text-sm text-text-primary outline-none focus:border-primary resize-none"
+                                                className="bg-glass-light/60 rounded p-2"
                                                 rows={3}
                                             />
                                             <div className="flex justify-end gap-2 mt-2">
@@ -381,11 +382,11 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
                         {/* Reply Input */}
                         <div className="mt-auto border-t border-border-color pt-4">
-                            <textarea
+                            <Textarea
                                 value={replyText}
                                 onChange={e => setReplyText(e.target.value)}
                                 placeholder="Reply..."
-                                className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-lg p-2 text-sm text-text-primary focus:border-primary outline-none resize-none"
+                                className="bg-glass-light/60 rounded-lg p-2"
                                 rows={2}
                             />
                             <div className="flex justify-end mt-2">

@@ -167,7 +167,23 @@ const MoodboardCanvasPage = () => {
     }, [moodboardId, viewMode]);
 
     useEffect(() => {
-        const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+        const onFullscreenChange = () => {
+            const fsEl = document.fullscreenElement;
+            setIsFullscreen(!!fsEl);
+
+            // Move custom cursor into/out of fullscreen container so it stays visible
+            const ring = document.querySelector<HTMLElement>('.custom-cursor');
+            const dot = document.querySelector<HTMLElement>('.custom-cursor-dot');
+            if (!ring || !dot) return;
+
+            if (fsEl && fsEl === fullscreenContainerRef.current) {
+                fsEl.appendChild(ring);
+                fsEl.appendChild(dot);
+            } else if (!fsEl) {
+                const root = document.getElementById('root');
+                if (root) { root.prepend(dot); root.prepend(ring); }
+            }
+        };
         document.addEventListener('fullscreenchange', onFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }, []);

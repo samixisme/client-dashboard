@@ -22,7 +22,6 @@ export function useLenis<T extends HTMLElement>(
 
     const lenis = new Lenis({
       wrapper: wrapper,
-      content: wrapper,
       duration: options.duration ?? 1.2,
       easing: options.easing ?? ((t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))),
       orientation: 'vertical',
@@ -41,7 +40,18 @@ export function useLenis<T extends HTMLElement>(
     }
     requestAnimationFrame(raf);
 
+    // Watch for content mutations (async data loads, React state changes)
+    // so Lenis recalculates scroll limits when the DOM changes
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const observer = new MutationObserver(() => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => lenis.resize(), 100);
+    });
+    observer.observe(wrapper, { childList: true, subtree: true, attributes: true });
+
     return () => {
+      observer.disconnect();
+      clearTimeout(resizeTimer);
       lenis.destroy();
       lenisRef.current = null;
     };

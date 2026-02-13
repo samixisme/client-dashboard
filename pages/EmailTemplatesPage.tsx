@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 
 export default function EmailTemplatesPage() {
   const navigate = useNavigate()
-  const { dataStore } = useData()
+  const { data } = useData()
   const { user } = useUser()
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<EmailTemplateCategory | 'all'>('all')
@@ -21,7 +21,7 @@ export default function EmailTemplatesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
 
-  const templates = dataStore.emailTemplates || []
+  const templates = data.emailTemplates || []
 
   const filteredTemplates = useMemo(() => {
     return templates.filter((template) => {
@@ -110,41 +110,44 @@ export default function EmailTemplatesPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Email Templates</h1>
-          <p className="text-zinc-400 mt-1">Create and manage your email templates</p>
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-4 animate-fade-in">
+        <div className="animate-fade-in-up" style={{ animationDelay: '0ms' }}>
+          <h1 className="text-4xl font-bold text-text-primary bg-gradient-to-r from-text-primary to-text-secondary bg-clip-text">Email Templates</h1>
+          <p className="mt-2 text-text-secondary/90 font-medium">Create and manage your email templates</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-black font-medium rounded-lg hover:bg-primary/90 transition-colors"
+          className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group/btn flex items-center gap-2"
         >
-          <Plus className="w-4 h-4" />
-          New Template
+          <span className="relative z-10 flex items-center gap-2">
+            <Plus className="w-4 h-4 group-hover/btn:rotate-90 transition-transform duration-300" />
+            New Template
+          </span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
+      <div className="flex flex-wrap items-center gap-3 mb-6 animate-slide-in-right">
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+        <div className="relative flex-1 min-w-[200px] max-w-md group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary group-focus-within:text-primary transition-all duration-300" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search templates..."
-            className="w-full pl-10 pr-4 py-2 bg-zinc-800 border border-border-color rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-primary"
+            className="w-full pl-10 pr-4 py-2.5 bg-glass backdrop-blur-xl border border-border-color rounded-xl text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm focus:shadow-lg"
           />
         </div>
 
         {/* Category filter */}
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-zinc-400" />
+          <Filter className="w-4 h-4 text-text-secondary" />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as EmailTemplateCategory | 'all')}
-            className="px-3 py-2 bg-zinc-800 border border-border-color rounded-lg text-white focus:outline-none focus:border-primary"
+            className="px-3 py-2.5 bg-glass/60 backdrop-blur-xl border border-border-color rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm"
           >
             <option value="all">All Categories</option>
             <option value="marketing">Marketing</option>
@@ -159,7 +162,7 @@ export default function EmailTemplatesPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as EmailTemplateStatus | 'all')}
-          className="px-3 py-2 bg-zinc-800 border border-border-color rounded-lg text-white focus:outline-none focus:border-primary"
+          className="px-3 py-2.5 bg-glass/60 backdrop-blur-xl border border-border-color rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm"
         >
           <option value="all">All Statuses</option>
           <option value="draft">Draft</option>
@@ -168,16 +171,16 @@ export default function EmailTemplatesPage() {
         </select>
 
         {/* View toggle */}
-        <div className="flex items-center bg-zinc-800 border border-border-color rounded-lg overflow-hidden">
+        <div className="flex items-center bg-glass/60 backdrop-blur-xl rounded-xl p-1.5 border border-border-color shadow-md">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-2 ${viewMode === 'grid' ? 'bg-primary text-black' : 'text-zinc-400 hover:text-white'}`}
+            className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'grid' ? 'bg-primary text-background shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-110' : 'text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-105'}`}
           >
             <Grid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 ${viewMode === 'list' ? 'bg-primary text-black' : 'text-zinc-400 hover:text-white'}`}
+            className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'list' ? 'bg-primary text-background shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-110' : 'text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-105'}`}
           >
             <List className="w-4 h-4" />
           </button>
@@ -185,7 +188,7 @@ export default function EmailTemplatesPage() {
       </div>
 
       {/* Template count */}
-      <p className="text-sm text-zinc-500 mb-4">
+      <p className="text-sm text-text-secondary mb-4 animate-fade-in">
         {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''}
       </p>
 
@@ -194,14 +197,15 @@ export default function EmailTemplatesPage() {
         <div
           className={
             viewMode === 'grid'
-              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+              ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
               : 'flex flex-col gap-3'
           }
         >
-          {filteredTemplates.map((template) => (
+          {filteredTemplates.map((template, index) => (
             <EmailTemplateCard
               key={template.id}
               template={template}
+              index={index}
               onDuplicate={handleDuplicate}
               onDelete={handleDelete}
             />
@@ -209,11 +213,11 @@ export default function EmailTemplatesPage() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-            <Plus className="w-8 h-8 text-zinc-600" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-glass-light/60 backdrop-blur-sm flex items-center justify-center border border-border-color/50 animate-scale-in">
+            <Plus className="w-8 h-8 text-text-secondary" />
           </div>
-          <h3 className="text-lg font-medium text-white mb-2">No templates found</h3>
-          <p className="text-zinc-400 mb-4">
+          <h3 className="text-lg font-medium text-text-primary mb-2">No templates found</h3>
+          <p className="text-text-secondary mb-4">
             {searchQuery || categoryFilter !== 'all' || statusFilter !== 'all'
               ? 'Try adjusting your filters'
               : 'Get started by creating your first email template'}
@@ -221,10 +225,13 @@ export default function EmailTemplatesPage() {
           {!searchQuery && categoryFilter === 'all' && statusFilter === 'all' && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-black font-medium rounded-lg hover:bg-primary/90 transition-colors"
+              className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group/btn inline-flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" />
-              Create Template
+              <span className="relative z-10 flex items-center gap-2">
+                <Plus className="w-4 h-4 group-hover/btn:rotate-90 transition-transform duration-300" />
+                Create Template
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
             </button>
           )}
         </div>

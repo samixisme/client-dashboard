@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { Textarea } from '../components/ui/textarea';
 import { getFeedbackItem, subscribeToComments, addComment, toggleCommentResolved, updateFeedbackItemStatus, deleteComment, updateComment, getFeedbackItemVersions, createFeedbackItemVersion, switchToFeedbackItemVersion } from '../utils/feedbackUtils';
 import { FeedbackItem, FeedbackItemComment, User, FeedbackComment, FeedbackItemVersion } from '../types';
 import { useData } from '../contexts/DataContext';
@@ -502,7 +503,7 @@ const FeedbackMockupDetailPage = () => {
                      <button onClick={() => setClickPosition(null)} className="text-xs text-text-secondary hover:text-text-primary underline">Cancel</button>
                  </div>
                  <form onSubmit={handleSubmitComment}>
-                     <textarea
+                     <Textarea
                         className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none mb-3 resize-none shadow-sm text-text-primary placeholder:text-text-secondary"
                         rows={3}
                         placeholder="What's your feedback?"

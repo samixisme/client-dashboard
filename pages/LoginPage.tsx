@@ -318,7 +318,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     }
   };
   
-  const inputClasses = "h-[48px] w-full px-3 py-3 border border-border-color bg-glass-light rounded-lg sm:text-sm";
+  const inputClasses = "h-[48px] w-full px-4 py-3 border border-border-color/50 bg-glass-light/40 backdrop-blur-sm rounded-xl text-text-primary placeholder:text-text-secondary/50 sm:text-sm focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:shadow-[0_0_15px_rgba(var(--primary-rgb),0.15)] hover:border-border-color/80 transition-all duration-300";
 
   const signInOptions = [
     { key: 'email', label: 'Email' },
@@ -374,7 +374,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                             <input type="password" autoComplete="current-password" required className={inputClasses} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
                         </div>
                         ) : authMethod === 'phone' ? (
-                        <PhoneInput placeholder="Phone number" value={phoneNumber} onChange={setPhoneNumber} className="h-[48px] w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus-within:ring-1 focus-within:ring-primary focus-within:border-primary sm:text-sm" />
+                        <PhoneInput placeholder="Phone number" value={phoneNumber} onChange={setPhoneNumber} className="h-[48px] w-full px-4 py-2 border border-border-color/50 bg-glass-light/40 backdrop-blur-sm text-text-primary rounded-xl focus-within:ring-1 focus-within:ring-primary/30 focus-within:border-primary/60 focus-within:shadow-[0_0_15px_rgba(var(--primary-rgb),0.15)] hover:border-border-color/80 transition-all duration-300 sm:text-sm" />
                         ) : (
                         <input type="email" autoComplete="email" required className={inputClasses} placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} />
                         )}
@@ -439,7 +439,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-medium text-text-secondary uppercase">Phone Number</label>
-                                    <PhoneInput placeholder="Phone number" value={phoneNumber} onChange={setPhoneNumber} className="h-[48px] w-full px-3 py-2 border border-border-color bg-glass-light text-text-primary rounded-lg focus-within:ring-1 focus-within:ring-primary focus-within:border-primary sm:text-sm" />
+                                    <PhoneInput placeholder="Phone number" value={phoneNumber} onChange={setPhoneNumber} className="h-[48px] w-full px-4 py-2 border border-border-color/50 bg-glass-light/40 backdrop-blur-sm text-text-primary rounded-xl focus-within:ring-1 focus-within:ring-primary/30 focus-within:border-primary/60 focus-within:shadow-[0_0_15px_rgba(var(--primary-rgb),0.15)] hover:border-border-color/80 transition-all duration-300 sm:text-sm" />
                                 </div>
                             </div>
                         )}
@@ -461,7 +461,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                         ref={(el) => { if (el) inputRefs.current[index] = el; }}
                         type="text"
                         maxLength={1}
-                        className="w-12 h-12 text-center text-xl font-bold border border-border-color bg-glass-light rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-text-primary"
+                        className="w-12 h-12 text-center text-xl font-bold border border-border-color/50 bg-glass-light/40 backdrop-blur-sm rounded-xl focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:shadow-[0_0_15px_rgba(var(--primary-rgb),0.15)] hover:border-border-color/80 outline-none transition-all duration-300 text-text-primary"
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
                         onKeyDown={(e) => handleOtpKeyDown(index, e)}

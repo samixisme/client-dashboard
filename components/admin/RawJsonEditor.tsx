@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Textarea } from '../ui/textarea';
 
 interface DataSource {
     name: string;
@@ -40,11 +41,12 @@ const RawJsonEditor: React.FC<RawJsonEditorProps> = ({ source }) => {
     return (
         <div className="h-full flex flex-col">
             <h3 className="text-xl font-semibold text-text-primary mb-4">{source.name} (Raw)</h3>
-            <textarea
+            <Textarea
+                emoji={false}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="w-full flex-1 p-4 font-mono text-sm rounded-lg bg-black/50 border border-border-color focus:ring-primary focus:border-primary text-text-primary resize-none"
-                spellCheck="false"
+                className="flex-1 p-4 font-mono bg-black/50"
+                spellCheck={false}
             />
             {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
             <div className="mt-4 flex justify-end">

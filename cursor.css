@@ -1,6 +1,7 @@
 
-body, a, button, [role="button"], input, select, textarea, [data-interactive="true"] {
-  cursor: none;
+/* Hide native cursor on ALL elements globally */
+*, *::before, *::after {
+  cursor: none !important;
 }
 
 .custom-cursor {
@@ -12,7 +13,7 @@ body, a, button, [role="button"], input, select, textarea, [data-interactive="tr
   border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 50%;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 2147483647;
   transform: translate(-50%, -50%);
   transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, filter 0.3s ease;
   mix-blend-mode: difference;
@@ -27,7 +28,7 @@ body, a, button, [role="button"], input, select, textarea, [data-interactive="tr
   background-color: white;
   border-radius: 50%;
   pointer-events: none;
-  z-index: 10000;
+  z-index: 2147483647;
   transform: translate(-50%, -50%);
   transition: opacity 0.3s ease;
   mix-blend-mode: difference;
@@ -45,11 +46,12 @@ body, a, button, [role="button"], input, select, textarea, [data-interactive="tr
   opacity: 0;
 }
 
+/* Touch devices - disable custom cursor entirely */
 @media (hover: none) and (pointer: coarse) {
   .custom-cursor, .custom-cursor-dot {
     display: none;
   }
-  body, a, button, [role="button"], input, select, textarea, [data-interactive="true"] {
-    cursor: auto;
+  *, *::before, *::after {
+    cursor: auto !important;
   }
 }

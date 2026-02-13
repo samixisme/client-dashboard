@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { clients as initialClients, invoices } from '../../data/paymentsData';
 import { Invoice, Client, ItemCategory, LineItem, User } from '../../types';
 import AddClientModal from './AddClientModal';
+import { Textarea } from '../ui/textarea';
 import { createCalendarEvent } from '../../utils/calendarSync';
 import { useData } from '../../contexts/DataContext';
 import { toast } from 'sonner';
@@ -394,14 +395,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
                                         </span>
                                         {item.name}
                                     </label>
-                                    <textarea
+                                    <Textarea
                                         value={item.asteriskNote || ''}
                                         onChange={e => {
                                             const catId = cat.id;
                                             handleItemChange(catId, item.id, 'asteriskNote', e.target.value);
                                         }}
                                         rows={3}
-                                        className="w-full px-3 py-2 border border-border-color bg-glass/80 backdrop-blur-sm text-text-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300 sm:text-sm"
+                                        className="px-3 py-2 bg-glass/80 focus:ring-2 focus:ring-primary focus:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]"
                                         placeholder="Enter specific terms and conditions for this item..."
                                     />
                                 </div>
