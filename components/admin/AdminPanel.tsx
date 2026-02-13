@@ -1,14 +1,8 @@
 
 import React, { useState } from 'react';
 import { useAdmin } from '../../contexts/AdminContext';
-import StructuredEditor from './StructuredEditor';
+import StructuredEditor, { DataSource } from './StructuredEditor';
 import RawJsonEditor from './RawJsonEditor';
-
-interface DataSource<T = Record<string, unknown>> {
-    name: string;
-    data: T[] | unknown;
-    onSave: (newData: T[] | unknown) => void;
-}
 
 interface AdminPanelProps {
     dataSources: DataSource[];

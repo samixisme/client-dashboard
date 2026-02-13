@@ -183,11 +183,16 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
         });
         if (externalActivities) {
             externalActivities.forEach(act => {
-                const author = getMember(act.userId);
+                // Activity type doesn't have userId, using a fallback
+                const author = { id: 'system', name: 'System', avatarUrl: '' };
                 let date = new Date();
                 if (act.timestamp) {
-                    if (act.timestamp.seconds) date = new Date(act.timestamp.seconds * 1000);
-                    else if (typeof act.timestamp === 'string') date = new Date(act.timestamp);
+                    // Handle both Firestore Timestamp and string formats
+                    if (typeof act.timestamp === 'object' && act.timestamp && 'seconds' in act.timestamp) {
+                        date = new Date((act.timestamp as any).seconds * 1000);
+                    } else if (typeof act.timestamp === 'string') {
+                        date = new Date(act.timestamp);
+                    }
                 }
                 newActivities.push({
                     id: act.id,

@@ -9,6 +9,9 @@ import { CommentsIcon } from '../icons/CommentsIcon';
 import VersionDropdown from './VersionDropdown';
 import { Textarea } from '../ui/textarea';
 
+// Local interface matching the imported FeedbackItemVersion from types.ts
+import { FeedbackItemVersion as ImportedFeedbackItemVersion } from '../../types';
+
 interface FeedbackItemVersion {
     versionNumber: number;
     assetUrl: string;
@@ -121,6 +124,11 @@ const FeedbackItemCard: React.FC<FeedbackItemCardProps> = ({
         }
     };
 
+    const handleMediaClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        handleClick();
+    };
+
     const formatDate = (date: { seconds: number } | string | undefined) => {
         if (!date) return 'N/A';
         const dateObj = typeof date === 'string'
@@ -140,7 +148,7 @@ const FeedbackItemCard: React.FC<FeedbackItemCardProps> = ({
 
                 {/* Media */}
                 <div
-                    onClick={handleClick}
+                    onClick={handleMediaClick}
                     className="aspect-video bg-black relative overflow-hidden flex items-center justify-center cursor-pointer rounded-t-2xl"
                 >
                     {type === 'video' ? (
@@ -282,7 +290,7 @@ const FeedbackItemCard: React.FC<FeedbackItemCardProps> = ({
                                         projectId={projectId}
                                         feedbackItemId={feedbackItemId || id}
                                         currentVersion={currentVersion}
-                                        versions={versions}
+                                        versions={versions as ImportedFeedbackItemVersion[]}
                                         onVersionChange={(versionNumber) => {
                                             if (onNavigate) {
                                                 onNavigate(versionNumber);

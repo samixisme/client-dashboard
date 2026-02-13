@@ -34,8 +34,11 @@ const FeedbackItemPage = () => {
   useEffect(() => {
     if (projectId && itemId) {
       getFeedbackItems(projectId).then((items) => {
-        const foundItem = items.find((i: FeedbackMockup | FeedbackVideo | FeedbackWebsite) => i.id === itemId);
-        setItem(foundItem);
+        const foundItem = items.find((i) => i.id === itemId);
+        // Cast FeedbackItem to the union type based on its type property
+        if (foundItem) {
+          setItem(foundItem as any as FeedbackMockup | FeedbackVideo | FeedbackWebsite);
+        }
         setLoading(false);
       });
     }

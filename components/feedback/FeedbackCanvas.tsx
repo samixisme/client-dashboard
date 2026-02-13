@@ -150,9 +150,9 @@ const FeedbackCanvas: React.FC<FeedbackCanvasProps> = ({ item, activeBreakpoint,
         {activePin && (
             <div ref={contentRef} className="absolute inset-0 pointer-events-none z-50">
                 <div className="pointer-events-auto">
-                    <CommentPopover 
+                    <CommentPopover
                         comment={activePin}
-                        coords={{ x: (activePin.x / 100) * (containerRef.current?.offsetWidth || 0), y: (activePin.y / 100) * (containerRef.current?.offsetHeight || 0) }}
+                        coords={{ x: ((activePin.x_coordinate || 0) / 100) * (containerRef.current?.offsetWidth || 0), y: ((activePin.y_coordinate || 0) / 100) * (containerRef.current?.offsetHeight || 0) }}
                         contentRef={containerRef}
                         zoom={1}
                         onClose={closePopover}

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import EditableItem from './EditableItem';
 import { toast } from 'sonner';
 
-interface DataSource<T = Record<string, unknown>> {
+export interface DataSource<T = Record<string, unknown>> {
     name: string;
     data: T[];
     onSave: (newData: T[]) => void;
