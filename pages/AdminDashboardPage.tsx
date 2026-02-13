@@ -16,7 +16,7 @@ const AdminDashboardPage: React.FC = () => {
   const brandsCount = data.brands.length;
   const usersCount = 1; // Placeholder as user data is not fully exposed in data context yet
 
-  const StatCard = ({ title, value, icon: Icon, colorClass }: { title: string, value: string | number, icon: any, colorClass: string }) => (
+  const StatCard = ({ title, value, icon: Icon, colorClass }: { title: string, value: string | number, icon: React.ComponentType<{ className?: string }>, colorClass: string }) => (
     <div className="bg-glass border border-border-color rounded-xl p-6 flex items-center gap-4 shadow-sm">
       <div className={`p-3 rounded-lg ${colorClass} bg-opacity-20`}>
         <Icon className={`h-8 w-8 ${colorClass}`} />
@@ -28,7 +28,7 @@ const AdminDashboardPage: React.FC = () => {
     </div>
   );
 
-  const QuickLinkCard = ({ title, description, to, icon: Icon }: { title: string, description: string, to: string, icon: any }) => (
+  const QuickLinkCard = ({ title, description, to, icon: Icon }: { title: string, description: string, to: string, icon: React.ComponentType<{ className?: string }> }) => (
     <Link to={to} className="bg-glass border border-border-color rounded-xl p-6 hover:bg-glass-light transition-all hover:shadow-md group">
       <div className="flex items-start justify-between mb-4">
         <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">

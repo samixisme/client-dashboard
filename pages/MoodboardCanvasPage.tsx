@@ -20,7 +20,10 @@ import {
 import ColorPopover from '../components/moodboard/ColorPopover';
 import ViewSwitcher, { ViewOption } from '../components/board/ViewSwitcher';
 
-declare const htmlToImage: any;
+declare const htmlToImage: {
+    toPng: (node: HTMLElement, options?: { filter?: (node: HTMLElement) => boolean }) => Promise<string>;
+    toJpeg: (node: HTMLElement, options?: { quality?: number; filter?: (node: HTMLElement) => boolean }) => Promise<string>;
+};
 
 const viewOptions: ViewOption[] = [
     { id: 'canvas', name: 'Canvas', Icon: KanbanViewIcon },
@@ -34,7 +37,7 @@ const SNAP_SIZE = 20;
 const CANVAS_SIZE = 5000;
 const CANVAS_OFFSET = CANVAS_SIZE / 2;
 
-const ToolbarButton = forwardRef<HTMLButtonElement, { onClick?: React.MouseEventHandler<HTMLButtonElement>; Icon: React.FC<any>; label: string; isActive?: boolean; disabled?: boolean }>(({ onClick, Icon, label, isActive = false, disabled = false }, ref) => (
+const ToolbarButton = forwardRef<HTMLButtonElement, { onClick?: React.MouseEventHandler<HTMLButtonElement>; Icon: React.FC<{ className?: string }>; label: string; isActive?: boolean; disabled?: boolean }>(({ onClick, Icon, label, isActive = false, disabled = false }, ref) => (
     <button 
         ref={ref} 
         onClick={(e) => {
@@ -129,11 +132,8 @@ const MoodboardCanvasPage = () => {
         });
 
         if (minX === Infinity) {
-            console.log("recenterCanvas: No items found with position.");
             return;
         }
-
-        console.log(`recenterCanvas: Bounds [${minX}, ${minY}, ${maxX}, ${maxY}]`);
 
         const contentWidth = maxX - minX;
         const contentHeight = maxY - minY;
@@ -150,12 +150,8 @@ const MoodboardCanvasPage = () => {
         const contentCenterX = minX + contentWidth / 2 + CANVAS_OFFSET;
         const contentCenterY = minY + contentHeight / 2 + CANVAS_OFFSET;
 
-        console.log(`recenterCanvas: Center [${contentCenterX}, ${contentCenterY}] (Offset Applied), New Zoom: ${newZoom}`);
-
         const newScrollLeft = (contentCenterX * newZoom) - (viewportWidth / 2);
         const newScrollTop = (contentCenterY * newZoom) - (viewportHeight / 2);
-        
-        console.log(`recenterCanvas: Target Scroll [${newScrollLeft}, ${newScrollTop}]`);
 
         setPostZoomScroll({ x: newScrollLeft, y: newScrollTop });
         setZoom(newZoom);
@@ -171,7 +167,23 @@ const MoodboardCanvasPage = () => {
     }, [moodboardId, viewMode]);
 
     useEffect(() => {
-        const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+        const onFullscreenChange = () => {
+            const fsEl = document.fullscreenElement;
+            setIsFullscreen(!!fsEl);
+
+            // Move custom cursor into/out of fullscreen container so it stays visible
+            const ring = document.querySelector<HTMLElement>('.custom-cursor');
+            const dot = document.querySelector<HTMLElement>('.custom-cursor-dot');
+            if (!ring || !dot) return;
+
+            if (fsEl && fsEl === fullscreenContainerRef.current) {
+                fsEl.appendChild(ring);
+                fsEl.appendChild(dot);
+            } else if (!fsEl) {
+                const root = document.getElementById('root');
+                if (root) { root.prepend(dot); root.prepend(ring); }
+            }
+        };
         document.addEventListener('fullscreenchange', onFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }, []);
@@ -435,9 +447,9 @@ const MoodboardCanvasPage = () => {
             if (payload.type === 'resource') {
                 const { x, y } = getCanvasCoords(e.nativeEvent);
                 const now = new Date().toISOString();
-                
+
                 // Determine content based on resource type
-                let content: any = {
+                let content: MoodboardItem['content'] = {
                     resourceType: payload.resourceType,
                     referenceId: payload.resourceId,
                     title: payload.resourceData.name || payload.resourceData.title || 'Resource',
@@ -837,7 +849,7 @@ const MoodboardCanvasPage = () => {
             </div>
 
             <div className="flex items-center gap-2">
-                <ViewSwitcher currentView={viewMode} onSwitchView={(v) => setViewMode(v as any)} options={viewOptions} widthClass="w-36"/>
+                <ViewSwitcher currentView={viewMode} onSwitchView={(v) => setViewMode(v as 'canvas' | 'list')} options={viewOptions} widthClass="w-36"/>
                 <ToolbarButton onClick={() => setIsDownloadModalOpen(true)} Icon={DownloadIcon} label="Download Moodboard" />
                 <ToolbarButton onClick={toggleFullscreen} Icon={isFullscreen ? ExitFullscreenIcon : FullscreenIcon} label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'} />
             </div>
@@ -924,14 +936,12 @@ const MoodboardCanvasPage = () => {
                                                 }}
                                                 onDoubleClick={(e) => {
                                                     e.stopPropagation();
-                                                    console.log("Double Clicked Item:", item.id);
                                                     setSelectedItemId(item.id);
                                                     setIsInspectorOpen(true);
                                                 }}
                                                 onDelete={handleDeleteItem} 
                                                 onDownloadRequest={handleDownloadItem} 
                                                 onEdit={(item) => {
-                                                    console.log("onEdit triggered for item:", item.id);
                                                     setSelectedItemId(item.id);
                                                     setIsInspectorOpen(true);
                                                 }}

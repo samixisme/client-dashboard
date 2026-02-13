@@ -5,6 +5,16 @@ import { onAuthStateChanged, updatePassword, EmailAuthProvider, reauthenticateWi
 import { toast } from 'sonner';
 import ImageCropper from '../components/ImageCropper';
 import { useUser } from '../contexts/UserContext';
+import { Inbox } from '@novu/react';
+
+interface SettingsData {
+  firstName: string;
+  lastName: string;
+  avatarUrl: string;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  theme: string;
+}
 
 const SettingsPage = () => {
   // Form fields
@@ -32,7 +42,7 @@ const SettingsPage = () => {
   const [changingPassword, setChangingPassword] = useState(false);
 
   // Refs
-  const originalDataRef = useRef<any>(null);
+  const originalDataRef = useRef<SettingsData | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const userIdRef = useRef<string | null>(null);
 
@@ -232,10 +242,10 @@ const SettingsPage = () => {
       toast.success('Avatar uploaded', {
         description: 'Remember to save your changes'
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
       toast.error('Upload failed', {
-        description: error.message || 'Please try again'
+        description: error instanceof Error ? error.message : 'Please try again'
       });
     } finally {
       setUploadingAvatar(false);
@@ -293,9 +303,10 @@ const SettingsPage = () => {
       toast.success('Password updated', {
         description: 'Your password has been changed successfully'
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password change error:', error);
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      const firebaseError = error as { code?: string };
+      if (firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
         toast.error('Incorrect password', {
           description: 'Current password is incorrect'
         });
@@ -500,6 +511,60 @@ const SettingsPage = () => {
               </button>
             </div>
           </div>
+
+          {/* Novu In-App Notification Preferences */}
+          {userIdRef.current && import.meta.env.VITE_NOVU_APP_ID && (
+            <div className="mt-6 pt-6 border-t border-border-color">
+              <h3 className="text-lg font-medium text-text-primary mb-2">In-App Notification Preferences</h3>
+              <p className="text-sm text-text-secondary mb-4">
+                Configure which in-app notifications you receive and set up schedules.
+              </p>
+              <div
+                className="rounded-lg border border-border-color overflow-hidden"
+                style={{
+                  background: 'rgba(18, 18, 18, 0.85)',
+                  backdropFilter: 'blur(32px)',
+                  WebkitBackdropFilter: 'blur(32px)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                }}
+              >
+                <Inbox
+                  applicationIdentifier={import.meta.env.VITE_NOVU_APP_ID}
+                  subscriberId={userIdRef.current}
+                  appearance={{
+                    variables: {
+                      colorBackground: 'transparent',
+                      colorForeground: 'oklch(0.985 0 0)',
+                      colorPrimary: 'oklch(0.922 0 0)',
+                      colorPrimaryForeground: 'oklch(0.205 0 0)',
+                      colorSecondary: 'rgba(32, 32, 32, 0.8)',
+                      colorSecondaryForeground: 'oklch(0.985 0 0)',
+                      colorNeutral: 'rgba(255, 255, 255, 0.08)',
+                      fontSize: '14px',
+                      borderRadius: '8px',
+                    },
+                    elements: {
+                      bellContainer: {
+                        display: 'none',
+                      },
+                      popover: {
+                        position: 'static',
+                        background: 'transparent',
+                        border: 'none',
+                        boxShadow: 'none',
+                        width: '100%',
+                        maxWidth: '100%',
+                      },
+                    },
+                  }}
+                  open={true}
+                  options={{
+                    hideBranding: true,
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Appearance Settings */}

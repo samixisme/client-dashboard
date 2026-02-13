@@ -9,6 +9,7 @@ import { FeedbackType } from '../../types';
 import { addFeedbackItem } from '../../utils/feedbackUtils';
 import { uploadFile } from '../../utils/firebase';
 import { toast } from 'sonner';
+import { Textarea } from '../ui/textarea';
 
 interface AddFeedbackRequestModalProps {
     projectId: string;
@@ -162,7 +163,7 @@ const InputField = (props: React.InputHTMLAttributes<HTMLInputElement> & {label:
 const TextAreaField = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {label: string}) => (
     <div>
         <label className="block text-sm font-medium text-text-secondary mb-2">{props.label}</label>
-        <textarea {...props} rows={3} className="w-full px-4 py-3 border border-border-color bg-glass-light/60 backdrop-blur-sm text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 sm:text-sm disabled:opacity-50 resize-none transition-all duration-300 placeholder:text-text-secondary" />
+        <Textarea {...props} rows={3} className="px-4 py-3 bg-glass-light/60 rounded-xl focus:ring-2 focus:ring-primary sm:text-sm disabled:opacity-50" />
     </div>
 );
 

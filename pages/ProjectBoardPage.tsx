@@ -11,6 +11,7 @@ import ListView from '../components/board/views/ListView';
 import TableView from '../components/board/views/TableView';
 import ProjectCalendarView from '../components/board/ProjectCalendarView';
 import ViewSwitcher, { ViewOption } from '../components/board/ViewSwitcher';
+import IconViewSwitcher from '../components/board/IconViewSwitcher';
 import AddStageModal from '../components/board/AddStageModal';
 import StageActionsPopover from '../components/board/StageActionsPopover';
 import MoveTasksModal from '../components/board/MoveTasksModal';
@@ -203,7 +204,7 @@ const ProjectBoardPage = () => {
 
     })();
     
-    const handleDragEnd = async (result: any) => {
+    const handleDragEnd = async (result: { destination?: { droppableId: string; index: number }; source: { droppableId: string; index: number }; draggableId: string }) => {
         const { destination, source, draggableId } = result;
 
         if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
@@ -380,6 +381,8 @@ const ProjectBoardPage = () => {
             try {
                  await updateDoc(doc(db, 'projects', project.id, 'boards', boardId!, 'stages', stageId), { status });
             } catch (e) {
+                console.error('Error updating stage status:', e);
+                toast.error('Failed to update stage status');
             }
             forceUpdate();
         }
@@ -407,7 +410,10 @@ const ProjectBoardPage = () => {
         if (project && boardId) {
              try {
                 await deleteDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId));
-            } catch (e) {}
+            } catch (e) {
+                console.error('Error archiving stage:', e);
+                toast.error('Failed to archive stage');
+            }
         }
 
         forceUpdate();
@@ -426,7 +432,10 @@ const ProjectBoardPage = () => {
             stage.sortConfig = config;
              try {
                 updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId), { sortConfig: config });
-            } catch (e) {}
+            } catch (e) {
+                console.error('Error updating stage sort config:', e);
+                toast.error('Failed to update sort settings');
+            }
             forceUpdate();
         }
         setStageActionState({ anchorEl: null, stage: null });
@@ -438,7 +447,10 @@ const ProjectBoardPage = () => {
             stage.backgroundPattern = patternId;
              try {
                 updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId), { backgroundPattern: patternId });
-            } catch (e) {}
+            } catch (e) {
+                console.error('Error updating stage background pattern:', e);
+                toast.error('Failed to update stage background');
+            }
             forceUpdate();
         }
         setStageActionState({ anchorEl: null, stage: null });
@@ -452,7 +464,10 @@ const ProjectBoardPage = () => {
                 if (project && boardId) {
                     try {
                          await updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stage.id), { order: index });
-                    } catch(e) {}
+                    } catch(e) {
+                        console.error('Error updating stage order:', e);
+                        toast.error('Failed to update stage order');
+                    }
                 }
             }
         });
@@ -501,21 +516,28 @@ const ProjectBoardPage = () => {
 
             {/* Header Toolbar */}
             <div className="flex justify-end items-center mb-8 flex-wrap gap-4 animate-fade-in relative z-50">
-                <div className="flex items-center gap-3 flex-wrap animate-slide-in-right">
-                    {isMobile && viewMode === 'kanban' && (
-                         <button
-                            onClick={() => setIsAddStageModalOpen(true)}
-                            className="px-4 py-2.5 flex items-center gap-2 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group/btn"
-                        >
-                            <span className="relative z-10 flex items-center gap-2">
-                                <AddIcon className="h-4 w-4 group-hover/btn:rotate-90 transition-transform duration-300" />
-                                Add Stage
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
-                        </button>
-                    )}
-                    <ViewSwitcher currentView={viewMode} onSwitchView={handleViewSwitch} options={boardViewOptions} />
-                </div>
+                {isMobile && (
+                    <div className="flex items-center gap-3 flex-wrap animate-slide-in-right">
+                        {viewMode === 'kanban' && (
+                            <button
+                                onClick={() => setIsAddStageModalOpen(true)}
+                                className="px-4 py-2.5 flex items-center gap-2 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group/btn"
+                            >
+                                <span className="relative z-10 flex items-center gap-2">
+                                    <AddIcon className="h-4 w-4 group-hover/btn:rotate-90 transition-transform duration-300" />
+                                    Add Stage
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
+                            </button>
+                        )}
+                        <IconViewSwitcher
+                            currentView={viewMode}
+                            onSwitchView={handleViewSwitch}
+                            options={boardViewOptions}
+                            orientation="horizontal"
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Board */}
@@ -523,18 +545,30 @@ const ProjectBoardPage = () => {
                 <div className="flex-1 flex h-full overflow-auto pb-4">
                     {renderView()}
                 </div>
-                {!isMobile && viewMode === 'kanban' && (
-                    <div className="flex-shrink-0 pl-4 h-full flex items-center">
-                        <button
-                            onClick={() => setIsAddStageModalOpen(true)}
-                            className="flex flex-col items-center justify-center gap-2 w-16 h-40 bg-primary hover:bg-primary-hover rounded-xl hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-105 transition-all duration-300 shadow-lg text-background relative overflow-hidden group/stage-btn"
-                        >
-                            <div className="bg-background/20 rounded p-1.5 relative z-10">
-                                <AddIcon className="h-5 w-5 group-hover/stage-btn:rotate-90 transition-transform duration-300" />
-                            </div>
-                            <span className="font-semibold text-sm [writing-mode:vertical-rl] rotate-180 tracking-wider relative z-10">Add Stage</span>
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent -translate-y-full group-hover/stage-btn:translate-y-full transition-transform duration-1000" />
-                        </button>
+                {!isMobile && (
+                    <div className="flex-shrink-0 pl-4 h-full flex flex-col items-center gap-6 pt-4">
+                        <IconViewSwitcher
+                            currentView={viewMode}
+                            onSwitchView={handleViewSwitch}
+                            options={boardViewOptions}
+                            orientation="vertical"
+                        />
+
+                        {viewMode === 'kanban' && (
+                            <>
+                                <div className="w-full h-px bg-border-color/30" />
+                                <button
+                                    onClick={() => setIsAddStageModalOpen(true)}
+                                    className="flex flex-col items-center justify-center gap-2 w-16 h-40 bg-primary hover:bg-primary-hover rounded-xl hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-105 transition-all duration-300 shadow-lg text-background relative overflow-hidden group/stage-btn"
+                                >
+                                    <div className="bg-background/20 rounded p-1.5 relative z-10">
+                                        <AddIcon className="h-5 w-5 group-hover/stage-btn:rotate-90 transition-transform duration-300" />
+                                    </div>
+                                    <span className="font-semibold text-sm [writing-mode:vertical-rl] rotate-180 tracking-wider relative z-10">Add Stage</span>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent -translate-y-full group-hover/stage-btn:translate-y-full transition-transform duration-1000" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 )}
             </div>

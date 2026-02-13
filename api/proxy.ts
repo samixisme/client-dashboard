@@ -30,7 +30,10 @@ export default async (req: Request, res: Response) => {
   try {
     const response = await axios.get(url, {
       responseType: 'text',
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' },
+      maxContentLength: 50 * 1024 * 1024, // 50MB limit to prevent DoS
+      maxBodyLength: 50 * 1024 * 1024,
+      timeout: 30000, // 30 second timeout
     });
     const $ = cheerio.load(response.data);
 
@@ -135,10 +138,10 @@ export default async (req: Request, res: Response) => {
     $('body').append(scriptTag);
 
     res.status(200).send($.html());
-  } catch (error: any) {
+  } catch (error) {
     // Log detailed error server-side only
     console.error('Proxy Error:', {
-      message: error.message,
+      message: error instanceof Error ? error.message : 'Unknown error',
       url: url,
       timestamp: new Date().toISOString()
     });

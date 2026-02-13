@@ -1,14 +1,23 @@
 import { Request, Response, NextFunction } from 'express';
 
 /**
- * Optional API Key authentication middleware
- * Only enforces auth if API_KEY environment variable is set
+ * API Key authentication middleware
+ * REQUIRED in production, optional in development
  */
 export function optionalApiKeyAuth(req: Request, res: Response, next: NextFunction) {
   const expectedApiKey = process.env.API_KEY;
 
-  // If no API_KEY is configured, skip authentication (backward compatible)
-  if (!expectedApiKey) {
+  // In production, API_KEY is REQUIRED
+  if (process.env.NODE_ENV === 'production' && !expectedApiKey) {
+    console.error('🚨 SECURITY ERROR: API_KEY environment variable is required in production!');
+    return res.status(500).json({
+      error: 'Server configuration error. Contact administrator.'
+    });
+  }
+
+  // If no API_KEY is configured in development, skip authentication (backward compatible)
+  if (!expectedApiKey && process.env.NODE_ENV !== 'production') {
+    console.warn('⚠️  API running without authentication in development mode');
     return next();
   }
 

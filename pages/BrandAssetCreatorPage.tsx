@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { Brand, BrandLogo } from '../types';
 import Stepper from '../components/ai/Stepper';
-import { GoogleGenAI, Modality } from '@google/genai';
+// AI generation is now performed on the backend to avoid exposing API keys in client
 import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
 import { DownloadIcon } from '../components/icons/DownloadIcon';
 import { RedoIcon } from '../components/icons/RedoIcon';
@@ -190,51 +190,33 @@ const BrandAssetCreatorPage = () => {
             if (!logoUrl) {
                 throw new Error("Selected logo has no image URL.");
             }
-            const { base64Data, mimeType } = await urlToPngBase64(logoUrl);
-
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-            
+            // Delegate image generation to backend to avoid exposing API keys here
             const prompt = `Using the provided logo image, create a high-quality, photorealistic mockup of it on a ${selectedMedium.name}. The scene should be professional, clean, and well-lit. The final image should have ${selectedFormat.description}.`;
-            
-            const imagePart = {
-                inlineData: { data: base64Data, mimeType },
-            };
-            const textPart = { text: prompt };
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
-                contents: { parts: [imagePart, textPart] },
-                config: {
-                    responseModalities: [Modality.IMAGE],
-                },
+            const res = await fetch('/api/ai/generate-brand-asset', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ logoUrl, prompt })
             });
-            
-            let generatedImageBase64 = '';
-            for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    generatedImageBase64 = part.inlineData.data;
-                    break;
-                }
-            }
-
-            if (generatedImageBase64) {
-                const imageUrl = `data:image/png;base64,${generatedImageBase64}`;
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.error ?? 'AI generation failed');
+            const imageUrl = data.imageUrl ?? (data.imageBase64 ? `data:image/png;base64,${data.imageBase64}` : null);
+            if (imageUrl) {
                 setGeneratedImage(imageUrl);
             } else {
-                throw new Error("The model did not return an image. Please try again.");
+                throw new Error("AI generation did not return an image.");
             }
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error(e);
-            setError(`Failed to generate image: ${e.message}.`);
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+            setError(`Failed to generate image: ${errorMessage}.`);
             setCredits(c => c + GENERATION_COST); // Refund credits on failure
         } finally {
             setIsGenerating(false);
         }
     };
 
-    // FIX: Changed imageUrl prop to 'any' to resolve a subtle TypeScript error.
-    const SelectionCard = ({ title, imageUrl, isSelected, onClick }: { title: string, imageUrl: any, isSelected: boolean, onClick: () => void }) => (
+    const SelectionCard = ({ title, imageUrl, isSelected, onClick }: { title: string, imageUrl: string, isSelected: boolean, onClick: () => void }) => (
         <button onClick={onClick} className={`bg-glass rounded-lg border-2 text-left overflow-hidden transition-all duration-200 ${isSelected ? 'border-primary shadow-lg' : 'border-border-color hover:border-primary/50'}`}>
             <img src={imageUrl} alt={title} className="w-full h-32 object-cover" />
             <div className="p-3">

@@ -141,7 +141,21 @@ const FeedbackWebsiteDetailPage = () => {
   // Handle Fullscreen Change
   useEffect(() => {
       const handleFullscreenChange = () => {
-          setIsFullscreen(!!document.fullscreenElement);
+          const fsEl = document.fullscreenElement;
+          setIsFullscreen(!!fsEl);
+
+          // Move custom cursor into/out of fullscreen container so it stays visible
+          const ring = document.querySelector<HTMLElement>('.custom-cursor');
+          const dot = document.querySelector<HTMLElement>('.custom-cursor-dot');
+          if (!ring || !dot) return;
+
+          if (fsEl && fsEl === rootRef.current) {
+              fsEl.appendChild(ring);
+              fsEl.appendChild(dot);
+          } else if (!fsEl) {
+              const root = document.getElementById('root');
+              if (root) { root.prepend(dot); root.prepend(ring); }
+          }
       };
       document.addEventListener('fullscreenchange', handleFullscreenChange);
       return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -301,7 +315,7 @@ const FeedbackWebsiteDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full items-center justify-center bg-background p-8">
+      <div className="flex flex-col h-full items-center justify-center p-8">
         <div className="text-center">
           <h1 className="text-xl font-semibold mb-2 text-text-primary">Loading Feedback Session...</h1>
           <p className="text-text-secondary">Please wait while we prepare your live feedback environment.</p>
@@ -312,11 +326,11 @@ const FeedbackWebsiteDetailPage = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col h-full items-center justify-center bg-background p-8">
+      <div className="flex flex-col h-full items-center justify-center p-8">
         <div className="text-center">
           <h1 className="text-xl font-semibold mb-2 text-red-600">Error</h1>
           <p className="text-text-secondary">{error}</p>
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="mt-4 px-4 py-2 bg-primary text-black font-bold rounded hover:bg-primary-hover transition-colors"
           >
@@ -338,18 +352,18 @@ const FeedbackWebsiteDetailPage = () => {
   };
 
   return (
-    <div ref={rootRef} className={`flex overflow-hidden relative w-full ${isFullscreen ? 'h-screen bg-background' : 'h-[calc(100vh-100px)]'} ${sidebarPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}>
-      
+    <div ref={rootRef} className={`flex overflow-hidden relative w-full ${isFullscreen ? 'h-screen' : 'h-[calc(100vh-100px)]'} ${sidebarPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}>
+
       {/* Main Viewer Area */}
-      <div className="flex-1 bg-background relative overflow-hidden flex justify-center">
+      <div className="flex-1 relative overflow-hidden flex justify-center">
          
          {/* Top Header Overlay */}
          <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
              {/* Left: Title & Back */}
-             <div className="bg-surface/90 backdrop-blur-md border border-border-color p-2 rounded-lg shadow-sm pointer-events-auto flex items-center gap-3">
-                 <button 
-                    onClick={() => navigate(-1)} 
-                    className="p-1.5 hover:bg-surface-light rounded-md text-text-secondary hover:text-text-primary transition-colors" 
+             <div className="bg-glass/60 backdrop-blur-xl shadow-lg ring-1 ring-white/10 border border-border-color p-2 rounded-lg pointer-events-auto flex items-center gap-3">
+                 <button
+                    onClick={() => navigate(-1)}
+                    className="p-1.5 hover:bg-surface-light rounded-md text-text-secondary hover:text-text-primary transition-colors"
                     title="Back"
                  >
                      <ArrowLeftIcon className="w-5 h-5"/>
@@ -374,10 +388,10 @@ const FeedbackWebsiteDetailPage = () => {
                              await updateFeedbackItemStatus(projectId, feedbackItemId, newStatus, auth.currentUser?.uid);
                          }
                      }}
-                     className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${
-                         item?.status === 'approved' 
-                             ? 'bg-primary text-black' 
-                             : 'bg-surface/90 backdrop-blur-md text-text-primary hover:bg-primary/20 border border-border-color'
+                     className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 ${
+                         item?.status === 'approved'
+                             ? 'bg-primary text-black transition-all duration-300'
+                             : 'bg-glass/60 backdrop-blur-xl text-text-primary hover:bg-glass/80 hover:border-primary/50 border-2 border-border-color transition-all duration-300'
                      }`}
                  >
                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -385,13 +399,13 @@ const FeedbackWebsiteDetailPage = () => {
                      </svg>
                      {item?.status === 'approved' ? 'Approved' : 'Approve'}
                  </button>
-                 <button 
+                 <button
                     onClick={() => {
                         if (iframeRef.current) {
                             iframeRef.current.src = iframeRef.current.src;
                         }
-                    }} 
-                    className="p-2 bg-surface/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm" 
+                    }}
+                    className="p-2 bg-glass/60 backdrop-blur-xl rounded-lg text-text-secondary hover:text-primary hover:bg-glass/80 border border-border-color shadow-sm transition-all duration-300"
                     title="Refresh Preview"
                  >
                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -401,10 +415,10 @@ const FeedbackWebsiteDetailPage = () => {
                          <path d="M16 16h5v5"/>
                      </svg>
                  </button>
-                 <button onClick={toggleFullscreen} className="p-2 bg-surface/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm" title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
+                 <button onClick={toggleFullscreen} className="p-2 bg-glass/40 backdrop-blur-xl rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm" title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
                      {isFullscreen ? <ExitFullscreenIcon className="w-5 h-5"/> : <FullscreenIcon className="w-5 h-5"/>}
                  </button>
-                 <button onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} className="p-2 bg-surface/90 backdrop-blur-md rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm hidden md:block" title="Dock Sidebar">
+                 <button onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} className="p-2 bg-glass/40 backdrop-blur-xl rounded-lg text-text-secondary hover:text-primary hover:bg-surface-light border border-border-color shadow-sm hidden md:block" title="Dock Sidebar">
                      <div className={`w-4 h-4 border-2 border-current ${sidebarPosition === 'right' ? 'border-b-transparent' : 'border-r-transparent'}`}></div>
                  </button>
              </div>
@@ -413,7 +427,7 @@ const FeedbackWebsiteDetailPage = () => {
          {/* Bottom Toolbar Overlay (Devices & Modes) */}
          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-2 z-50">
              {/* Device Switcher */}
-             <div className="bg-surface/90 backdrop-blur-md border border-border-color rounded-lg p-1 flex items-center gap-1 shadow-sm">
+             <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-lg p-1 flex items-center gap-1 shadow-sm">
                 {/* Desktop/Full */}
                 <button
                     onClick={() => setDevice('desktop')}
@@ -459,9 +473,9 @@ const FeedbackWebsiteDetailPage = () => {
                     </svg>
                 </button>
              </div>
-             
+
              {/* Mode Switcher */}
-             <div className="bg-surface/90 backdrop-blur-md border border-border-color rounded-lg p-1 flex items-center gap-1 shadow-sm">
+             <div className="bg-glass/40 backdrop-blur-xl border border-border-color rounded-lg p-1 flex items-center gap-1 shadow-sm">
                  <button
                     onClick={() => setInteractionMode('navigate')}
                     className={`p-2 rounded-md transition-all ${interactionMode === 'navigate' ? 'bg-primary text-black' : 'text-text-secondary hover:text-primary hover:bg-surface-light'}`}
@@ -486,9 +500,9 @@ const FeedbackWebsiteDetailPage = () => {
 
          {/* Toggle Sidebar Button (When Closed) */}
          {!isSidebarOpen && (
-            <button 
+            <button
                 onClick={() => setIsSidebarOpen(true)}
-                className="absolute top-1/2 right-0 transform -translate-y-1/2 z-50 p-2 bg-surface shadow-lg rounded-l-xl text-text-primary hover:text-primary transition-all border border-r-0 border-border-color"
+                className="absolute top-1/2 right-0 transform -translate-y-1/2 z-50 p-2 bg-glass/40 backdrop-blur-xl shadow-lg rounded-l-xl text-text-primary hover:text-primary transition-all border border-r-0 border-border-color"
             >
                 <ArrowRightIcon className="w-5 h-5 transform rotate-180"/>
             </button>
@@ -518,7 +532,7 @@ const FeedbackWebsiteDetailPage = () => {
       </div>
 
       {/* Sidebar (Host Side) */}
-      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-surface border-border-color flex flex-col overflow-hidden relative shadow-2xl z-20`}>
+      <div className={`${isSidebarOpen ? (sidebarPosition === 'right' ? 'w-96 border-l' : 'h-80 w-full border-t') : 'w-0 h-0 opacity-0'} transition-all duration-300 ease-in-out bg-glass/40 backdrop-blur-xl border-border-color flex flex-col overflow-hidden relative shadow-2xl z-20`}>
          <FeedbackSidebar 
             view={sidebarView} 
             onViewChange={setSidebarView} 

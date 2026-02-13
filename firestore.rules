@@ -1,18 +1,101 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // This rule securely handles the 'users' collection.
-    // It allows a user to read and write ONLY their own document.
-    match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // This rule allows any authenticated user to read and write to all other collections.
-    // This will fix the permission error you are currently seeing.
-    // For production, you may want to create more specific rules for each collection.
+    function isApprovedUser() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
+    }
+
+    function isAdmin() {
+      return isApprovedUser() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isProjectMember(projectId) {
+      return isApprovedUser() &&
+             (request.auth.uid in get(/databases/$(database)/documents/projects/$(projectId)).data.members ||
+              isAdmin());
+    }
+
+    // Users collection - own profile only
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated();  // Allow signup
+      allow update: if request.auth.uid == userId || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Projects - members only
+    match /projects/{projectId} {
+      allow read: if isProjectMember(projectId);
+      allow create: if isApprovedUser();
+      allow update, delete: if isProjectMember(projectId);
+
+      // Boards subcollection
+      match /boards/{boardId} {
+        allow read, write: if isProjectMember(projectId);
+
+        // Tasks in boards
+        match /tasks/{taskId} {
+          allow read, write: if isProjectMember(projectId);
+        }
+      }
+    }
+
+    // Brands - admin only
+    match /brands/{brandId} {
+      allow read: if isApprovedUser();
+      allow write: if isAdmin();
+    }
+
+    // Feedback - project members
+    match /feedback/{feedbackId} {
+      allow read: if isApprovedUser();
+      allow create: if isApprovedUser();
+      allow update, delete: if isProjectMember(resource.data.projectId);
+    }
+
+    // Comments - project members
+    match /comments/{commentId} {
+      allow read: if isApprovedUser();
+      allow create: if isApprovedUser();
+      allow update, delete: if request.auth.uid == resource.data.authorId || isAdmin();
+    }
+
+    // Moodboards - project members
+    match /moodboards/{moodboardId} {
+      allow read: if isProjectMember(resource.data.projectId);
+      allow write: if isProjectMember(resource.data.projectId);
+    }
+
+    // Email templates - admin only
+    match /email_templates/{templateId} {
+      allow read: if isApprovedUser();
+      allow write: if isAdmin();
+    }
+
+    // Roadmap items - admin only
+    match /roadmap/{itemId} {
+      allow read: if isApprovedUser();
+      allow write: if isAdmin();
+    }
+
+    // Activity logs - read only for own UID
+    match /activity/{activityId} {
+      allow read: if isApprovedUser();
+      allow create: if isApprovedUser();
+      allow update, delete: if false;  // Immutable logs
+    }
+
+    // Deny all other access
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

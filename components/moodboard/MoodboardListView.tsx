@@ -13,7 +13,7 @@ type SortConfig = {
 };
 
 const TypeIcon = ({ type }: { type: MoodboardItem['type'] }) => {
-    const icons: Record<MoodboardItem['type'], React.FC<any>> = {
+    const icons: Record<MoodboardItem['type'], React.FC<{ className?: string }>> = {
         text: TextIcon,
         image: ImageIcon,
         link: LinkIcon,
@@ -39,16 +39,17 @@ const MoodboardListView = ({ items }: { items: MoodboardItem[] }) => {
         let sortableItems = [...items.filter(i => i.type !== 'connector')];
         if (sortConfig !== null) {
             sortableItems.sort((a, b) => {
-                let aValue: any, bValue: any;
+                let aValue: string | number | undefined;
+                let bValue: string | number | undefined;
 
                 if (sortConfig.key === 'creator') {
                     aValue = getCreatorName(a.creatorId);
                     bValue = getCreatorName(b.creatorId);
                 } else {
-                    aValue = a[sortConfig.key as keyof MoodboardItem];
-                    bValue = b[sortConfig.key as keyof MoodboardItem];
+                    aValue = a[sortConfig.key as keyof MoodboardItem] as string | number | undefined;
+                    bValue = b[sortConfig.key as keyof MoodboardItem] as string | number | undefined;
                 }
-                
+
                 if (aValue < bValue) {
                     return sortConfig.direction === 'ascending' ? -1 : 1;
                 }

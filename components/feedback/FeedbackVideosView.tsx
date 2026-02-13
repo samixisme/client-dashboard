@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useData } from '../../contexts/DataContext';
 import { FeedbackVideo, VideoAsset } from '../../types';
 import { AddIcon } from '../icons/AddIcon';
+import { Textarea } from '../ui/textarea';
 
 const FeedbackVideosView = ({ projectId }: { projectId: string }) => {
     const { data, forceUpdate } = useData();
@@ -63,18 +64,18 @@ const FeedbackVideosView = ({ projectId }: { projectId: string }) => {
                         className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 transition-all duration-300"
                         required
                     />
-                    <textarea
+                    <Textarea
                         value={newDescription}
                         onChange={e => setNewDescription(e.target.value)}
                         placeholder="Description"
-                        className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 transition-all duration-300 resize-none"
+                        className="bg-glass-light/60 rounded-xl px-4 py-3"
                         rows={2}
                     />
-                    <textarea
+                    <Textarea
                         value={newVideoUrls}
                         onChange={e => setNewVideoUrls(e.target.value)}
                         placeholder="Video URLs, separated by commas"
-                        className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 transition-all duration-300 resize-none"
+                        className="bg-glass-light/60 rounded-xl px-4 py-3"
                         rows={2}
                         required
                     />

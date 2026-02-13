@@ -572,10 +572,10 @@ const FeedbackItemPage = () => {
 
     const ToolbarButton = ({ Icon, tooltip, onClick, isActive = false }: { Icon: React.FC<any>, tooltip: string, onClick: () => void, isActive?: boolean}) => (
         <div className="relative group">
-            <button onClick={onClick} className={`p-3 rounded-lg transition-colors ${isActive ? 'bg-primary text-background' : 'bg-glass-light text-text-secondary hover:text-text-primary'}`}>
+            <button onClick={onClick} className={`p-3 rounded-lg transition-all duration-300 ${isActive ? 'bg-primary text-background shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)]' : 'bg-glass-light/60 backdrop-blur-sm text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-110'}`}>
                 <Icon className="w-5 h-5"/>
             </button>
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-background text-text-primary text-xs font-semibold rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-glass/95 backdrop-blur-xl border border-border-color text-text-primary text-xs font-semibold rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
                 {tooltip}
             </div>
         </div>
@@ -604,27 +604,27 @@ const FeedbackItemPage = () => {
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <div className="flex items-center gap-4">
                      <h1 className="text-2xl font-bold text-text-primary mt-2 truncate">{item.name} {currentImage && `> ${currentImage.name}`} {currentVideoAsset && `> ${currentVideoAsset.name}`}</h1>
-                     <button onClick={handleToggleApproval} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${isApproved ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30' : 'bg-glass hover:bg-glass-light text-text-secondary'}`}>
+                     <button onClick={handleToggleApproval} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-300 backdrop-blur-sm ${isApproved ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30 border border-green-500/40 shadow-[0_0_12px_rgba(34,197,94,0.3)]' : 'bg-glass/40 hover:bg-glass/60 text-text-secondary border border-border-color hover:scale-105'}`}>
                         <CheckCircleIcon className={`w-5 h-5 ${isApproved ? 'text-green-400' : ''}`}/> {isApproved ? 'Approved' : 'Approve'}
                     </button>
                 </div>
                  <div className="flex items-center gap-2">
                     {isWebsite && (
-                        <div className="flex items-center bg-glass rounded-lg p-1 border border-border-color">
+                        <div className="flex items-center bg-glass/40 backdrop-blur-xl rounded-lg p-1 border border-border-color shadow-md">
                             {(['desktop', 'notebook', 'tablet', 'phone'] as DeviceView[]).map(view => (
                                 <button
                                     key={view}
                                     onClick={() => setDeviceView(view)}
-                                    className={`px-3 py-1 text-sm font-medium rounded-md capitalize transition-colors ${deviceView === view ? 'bg-primary text-background' : 'text-text-secondary hover:bg-glass-light'}`}
+                                    className={`px-3 py-1 text-sm font-medium rounded-md capitalize transition-all duration-300 ${deviceView === view ? 'bg-primary text-background shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)]' : 'text-text-secondary hover:bg-glass-light/60 hover:text-text-primary'}`}
                                 >
                                     {view}
                                 </button>
                             ))}
                         </div>
                     )}
-                    <button onClick={() => setZoom(fitZoom)} className="p-2 bg-glass rounded-lg hover:bg-glass-light text-sm font-semibold w-20 text-center" title="Fit to screen">{Math.round(zoom * 100)}%</button>
-                    <button onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} className="p-2 bg-glass rounded-lg hover:bg-glass-light" title="Zoom out"><ZoomOutIcon className="w-5 h-5"/></button>
-                    <button onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="p-2 bg-glass rounded-lg hover:bg-glass-light" title="Zoom in"><ZoomInIcon className="w-5 h-5"/></button>
+                    <button onClick={() => setZoom(fitZoom)} className="p-2 bg-glass/40 backdrop-blur-xl rounded-lg hover:bg-glass/60 hover:scale-105 transition-all duration-300 text-sm font-semibold w-20 text-center border border-border-color shadow-md" title="Fit to screen">{Math.round(zoom * 100)}%</button>
+                    <button onClick={() => setZoom(z => Math.max(0.1, z - 0.1))} className="p-2 bg-glass/40 backdrop-blur-xl rounded-lg hover:bg-glass/60 hover:scale-105 transition-all duration-300 border border-border-color shadow-md" title="Zoom out"><ZoomOutIcon className="w-5 h-5"/></button>
+                    <button onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="p-2 bg-glass/40 backdrop-blur-xl rounded-lg hover:bg-glass/60 hover:scale-105 transition-all duration-300 border border-border-color shadow-md" title="Zoom in"><ZoomInIcon className="w-5 h-5"/></button>
                  </div>
             </div>
 
@@ -715,7 +715,7 @@ const FeedbackItemPage = () => {
                     </div>
                     
                     {isVideo && duration > 0 && (
-                         <div ref={timelineRef} className="flex-shrink-0 bg-glass py-2 rounded-lg border border-border-color">
+                         <div ref={timelineRef} className="flex-shrink-0 bg-glass/40 backdrop-blur-xl py-2 rounded-lg border border-border-color shadow-md">
                             <div className="relative h-8 flex items-center mx-4" >
                                  <div 
                                     className="relative h-4 w-full bg-surface rounded-full cursor-pointer group"
@@ -793,9 +793,9 @@ const FeedbackItemPage = () => {
             )}
             
             <div className="flex justify-center items-center gap-4 mt-4 flex-shrink-0">
-                <div className="p-2 bg-glass border border-border-color rounded-xl flex items-center gap-2 shadow-lg">
+                <div className="p-2 bg-glass/40 backdrop-blur-xl border border-border-color rounded-xl flex items-center gap-2 shadow-xl">
                     <ToolbarButton tooltip={sidebarPosition === 'right' ? "Dock to Bottom" : "Dock to Side"} Icon={sidebarPosition === 'right' ? CommentsIcon : ActivityIcon} onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} />
-                    <div className="w-px h-6 bg-border-color"></div>
+                    <div className="w-px h-6 bg-border-color/50"></div>
                     <ToolbarButton tooltip="Comments" Icon={CommentsIcon} onClick={() => setSidebarView(v => v === 'comments' ? null : 'comments')} isActive={sidebarView === 'comments'} />
                     <ToolbarButton tooltip="Activity" Icon={ActivityIcon} onClick={() => setSidebarView(v => v === 'activity' ? null : 'activity')} isActive={sidebarView === 'activity'} />
                     {isMockup && <ToolbarButton tooltip="Grid View" Icon={GridViewIcon} onClick={() => navigate(`/feedback/${projectId}/mockups/${itemId}`)}/>}

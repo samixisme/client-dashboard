@@ -8,7 +8,7 @@ import { CheckCircleIcon } from '../icons/CheckCircleIcon';
 const FeedbackWebsitesView = ({ projectId }: { projectId: string }) => {
     const { data, forceUpdate } = useData();
     const websites = data.feedbackWebsites.filter(m => m.projectId === projectId);
-    
+
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [newUrl, setNewUrl] = useState('');
@@ -38,7 +38,7 @@ const FeedbackWebsitesView = ({ projectId }: { projectId: string }) => {
             <div className="flex justify-end mb-4">
                 <button
                     onClick={() => setIsAdding(true)}
-                    className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group flex items-center gap-2"
+                    className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group"
                 >
                     <span className="relative z-10 flex items-center gap-2">
                         <AddIcon className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300"/>
@@ -49,13 +49,13 @@ const FeedbackWebsitesView = ({ projectId }: { projectId: string }) => {
             </div>
 
             {isAdding && (
-                <form onSubmit={handleAdd} className="bg-glass/60 backdrop-blur-xl p-6 rounded-2xl border border-primary/30 mb-6 space-y-4 shadow-xl animate-scale-in">
+                <form onSubmit={handleAdd} className="bg-glass-light/60 backdrop-blur-xl p-6 rounded-2xl border border-primary/40 mb-6 space-y-4 shadow-xl animate-fade-in">
                     <input
                         type="text"
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Website Name"
-                        className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 transition-all duration-300"
+                        className="w-full bg-surface/90 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
                         required
                     />
                     <input
@@ -63,22 +63,22 @@ const FeedbackWebsitesView = ({ projectId }: { projectId: string }) => {
                         value={newUrl}
                         onChange={e => setNewUrl(e.target.value)}
                         placeholder="https://example.com"
-                        className="w-full bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary/50 transition-all duration-300"
+                        className="w-full bg-surface/90 backdrop-blur-sm border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
                         required
                     />
                     <div className="flex gap-3 justify-end">
                         <button
                             type="button"
                             onClick={() => setIsAdding(false)}
-                            className="px-4 py-2 bg-glass-light/60 backdrop-blur-sm text-text-primary text-sm font-medium rounded-xl hover:bg-border-color hover:scale-105 transition-all duration-300 border border-border-color"
+                            className="px-5 py-2.5 bg-surface/90 backdrop-blur-sm text-text-primary text-sm font-semibold rounded-xl hover:bg-glass-light hover:scale-105 transition-all duration-300 border border-border-color shadow-sm"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:scale-105 hover:shadow-lg transition-all duration-300 shadow-md"
+                            className="px-5 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:scale-105 hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.4)] transition-all duration-300 shadow-lg"
                         >
-                            Save
+                            Save Website
                         </button>
                     </div>
                 </form>
@@ -93,7 +93,7 @@ const FeedbackWebsitesView = ({ projectId }: { projectId: string }) => {
                         return (
                              <li
                                 key={website.id}
-                                className="p-5 flex items-center justify-between hover:bg-glass-light/60 hover:shadow-lg transition-all duration-300 group"
+                                className="p-5 flex items-center justify-between hover:bg-glass-light/40 backdrop-blur-sm hover:shadow-lg transition-all duration-300 group"
                                 style={{ animationDelay: `${index * 30}ms` }}
                             >
                                 <div>

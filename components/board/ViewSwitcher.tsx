@@ -4,7 +4,7 @@ import { ChevronDownIcon } from '../icons/ChevronDownIcon';
 export interface ViewOption {
     id: string;
     name: string;
-    Icon: React.FC<any>;
+    Icon: React.FC<{ className?: string }>;
 }
 
 interface ViewSwitcherProps {

@@ -9,6 +9,7 @@ import LiquidEther from './src/components/background/LiquidEther.tsx';
 import './src/components/background/global-background.css';
 import './cursor.css';
 import { Toaster } from 'sonner';
+import { Agentation } from 'agentation';
 
 // --- Other Page Imports ---
 import DashboardPage from './pages/DashboardPage';
@@ -39,11 +40,17 @@ import FeedbackVideoVersionsSelectionPage from './pages/FeedbackVideoVersionsSel
 import MoodboardsPage from './pages/MoodboardsPage';
 import ProjectMoodboardsPage from './pages/ProjectMoodboardsPage';
 import MoodboardCanvasPage from './pages/MoodboardCanvasPage';
+import EmailTemplatesPage from './pages/EmailTemplatesPage';
+import EmailBuilderPage from './pages/EmailBuilderPage';
+import EmailPreviewPage from './pages/EmailPreviewPage';
 import BrandsPage from './pages/BrandsPage';
 import BrandDetailPage from './pages/BrandDetailPage';
 // Re-evaluating imports
 import { CalendarPage } from './pages/CalendarPage.tsx';
 import EventDetailsPage from './pages/EventDetailsPage';
+import SocialMediaPage from './pages/SocialMediaPage';
+import SocialMediaAccountsPage from './pages/SocialMediaAccountsPage';
+import SocialMediaPostDetailPage from './pages/SocialMediaPostDetailPage';
 import BrandAssetCreatorPage from './pages/BrandAssetCreatorPage';
 import ProjectLayout from './components/layout/ProjectLayout';
 import PendingApprovalPage from './pages/PendingApprovalPage';
@@ -57,6 +64,7 @@ import AdminBoardsPage from './pages/admin/AdminBoardsPage';
 import AdminFeedbackPage from './pages/admin/AdminFeedbackPage';
 import AdminMoodboardsPage from './pages/admin/AdminMoodboardsPage';
 import AdminTasksPage from './pages/admin/AdminTasksPage';
+import AdminEmailTemplatesPage from './pages/admin/AdminEmailTemplatesPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAICreatorPage from './pages/admin/AdminAICreatorPage';
@@ -132,6 +140,9 @@ function App() {
       setError(null);
       if (user) {
         try {
+          // Force token refresh to ensure Firestore has valid credentials
+          await user.getIdToken(true);
+
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
@@ -141,7 +152,7 @@ function App() {
              setUserStatus('pending');
           }
           setIsAuthenticated(true);
-        } catch (err: any) {
+        } catch (err) {
           toast.error('Database connection failed', {
             description: 'Please try again'
           });
@@ -170,72 +181,43 @@ function App() {
     });
   }
 
-  if (isInitializing) {
-    return <div className="h-screen w-screen bg-background" />;
-  }
+  // --- Determine which content to render ---
+  const renderContent = () => {
+    if (isInitializing) {
+      return <div className="h-screen w-screen bg-background" />;
+    }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-red-500 p-4 text-center">
-        <div>
-          <h2 className="text-xl font-bold mb-2">Error</h2>
-          <p>{error}</p>
-          <button onClick={handleLogout} className="mt-4 px-4 py-2 bg-primary text-white rounded">Sign Out</button>
+    if (error) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-background text-red-500 p-4 text-center">
+          <div>
+            <h2 className="text-xl font-bold mb-2">Error</h2>
+            <p>{error}</p>
+            <button onClick={handleLogout} className="mt-4 px-4 py-2 bg-primary text-white rounded">Sign Out</button>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (!isAuthenticated) {
+    if (!isAuthenticated) {
+      return (
+          <Routes>
+            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+            <Route path="*" element={<Navigate to="/login" />} />
+          </Routes>
+      );
+    }
+
+    if (userStatus === 'pending') {
+      return (
+          <Routes>
+              <Route path="/pending-approval" element={<PendingApprovalPage onLogout={handleLogout} />} />
+              <Route path="*" element={<Navigate to="/pending-approval" />} />
+          </Routes>
+      );
+    }
+
     return (
-        <Routes>
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-    );
-  }
-
-  if (userStatus === 'pending') {
-    return (
-        <Routes>
-            <Route path="/pending-approval" element={<PendingApprovalPage onLogout={handleLogout} />} />
-            <Route path="*" element={<Navigate to="/pending-approval" />} />
-        </Routes>
-    );
-  }
-  
-  return (
-    <>
-      {/* Global Liquid Ether Background */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100vh',
-        zIndex: -1
-      }}>
-        <LiquidEther
-          colors={['#A3E635', '#84CC16', '#65A30D']}
-          mouseForce={43}
-          cursorSize={30}
-          isViscous
-          viscous={67}
-          iterationsViscous={48}
-          iterationsPoisson={32}
-          resolution={0.5}
-          isBounce={false}
-          autoDemo={false}
-          autoSpeed={0.9}
-          autoIntensity={3.4}
-          takeoverDuration={0.25}
-          autoResumeDelay={3000}
-          autoRampDuration={0.6}
-        />
-      </div>
-
-      <div ref={cursorRef} className="custom-cursor"></div>
-      <div ref={cursorDotRef} className="custom-cursor-dot"></div>
       <NotificationHistoryProvider>
         <UserProvider>
           <AdminProvider>
@@ -252,6 +234,7 @@ function App() {
                       <Route path="boards" element={<AdminBoardsPage />} />
                       <Route path="feedback" element={<AdminFeedbackPage />} />
                       <Route path="moodboards" element={<AdminMoodboardsPage />} />
+                      <Route path="email-templates" element={<AdminEmailTemplatesPage />} />
                       <Route path="tasks" element={<AdminTasksPage />} />
                       <Route path="users" element={<AdminUsersPage />} />
                       <Route path="clients" element={<AdminClientsPage />} />
@@ -415,6 +398,41 @@ function App() {
                          <MoodboardCanvasPage />
                       </MainLayout>
                    } />
+                   <Route path="/email-templates" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EmailTemplatesPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/email-templates/new" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EmailBuilderPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/email-templates/:templateId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EmailBuilderPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/email-templates/:templateId/preview" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <EmailPreviewPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/social-media" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <SocialMediaPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/social-media/accounts" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <SocialMediaAccountsPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/social-media/post/:postId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <SocialMediaPostDetailPage />
+                      </MainLayout>
+                   } />
                    <Route path="/profile" element={
                       <MainLayout onLogout={handleLogout}>
                          <ProfilePage />
@@ -451,6 +469,47 @@ function App() {
         </AdminProvider>
       </UserProvider>
       </NotificationHistoryProvider>
+    );
+  };
+
+  return (
+    <>
+      {/* Custom cursor - always rendered regardless of auth state */}
+      <div ref={cursorRef} className="custom-cursor"></div>
+      <div ref={cursorDotRef} className="custom-cursor-dot"></div>
+
+      {/* Global Liquid Ether Background - only for authenticated main app */}
+      {isAuthenticated && userStatus !== 'pending' && !error && !isInitializing && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100vh',
+          zIndex: -1
+        }}>
+          <LiquidEther
+            colors={['#A3E635', '#84CC16', '#65A30D']}
+            mouseForce={43}
+            cursorSize={30}
+            isViscous
+            viscous={67}
+            iterationsViscous={48}
+            iterationsPoisson={32}
+            resolution={0.5}
+            isBounce={false}
+            autoDemo={false}
+            autoSpeed={0.9}
+            autoIntensity={3.4}
+            takeoverDuration={0.25}
+            autoResumeDelay={3000}
+            autoRampDuration={0.6}
+          />
+        </div>
+      )}
+
+      {renderContent()}
+
       <Toaster
         position="top-right"
         expand={true}
@@ -466,6 +525,7 @@ function App() {
           },
         }}
       />
+      <Agentation />
     </>
   );
 }

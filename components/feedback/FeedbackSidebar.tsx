@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { FeedbackComment, FeedbackItemComment, User, SidebarView } from '../../types';
+import { FeedbackComment, FeedbackItemComment, User, SidebarView, Activity } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { CancelIcon } from '../icons/CancelIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
-import CommentPopover, { CommentThread } from './CommentPopover';  
+import CommentPopover, { CommentThread } from './CommentPopover';
+import { Textarea } from '../ui/textarea';
 
 // Reusing CommentPopover logic but adapting for Sidebar (Detail View)
 // We will extract the "Thread" logic later if needed, but for now we can render a "Detail" component here.
@@ -14,10 +15,10 @@ import CommentPopover, { CommentThread } from './CommentPopover';
 // To save tokens and time, I will inline the detail logic here, inspired by CommentPopover.
 
 interface FeedbackSidebarProps {
-    view: SidebarView; 
-    onViewChange: (view: SidebarView) => void; 
+    view: SidebarView;
+    onViewChange: (view: SidebarView) => void;
     comments: (FeedbackComment | FeedbackItemComment)[];
-    externalActivities?: any[]; 
+    externalActivities?: Activity[];
     onCommentClick: (comment: FeedbackComment | FeedbackItemComment) => void;
     onClose: () => void;
     onNavigate?: (path: string) => void;
@@ -74,7 +75,8 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
         const comment = comments.find(c => c.id === selectedCommentId);
         if (!comment) return;
 
-        const deleteRecursively = (replies: any[]): any[] => {
+        type Reply = { id: string; authorId: string; text: string; timestamp: string; replies?: Reply[] };
+        const deleteRecursively = (replies: Reply[]): Reply[] => {
              return replies.filter(r => r.id !== replyId).map(r => ({
                  ...r,
                  replies: r.replies ? deleteRecursively(r.replies) : []
@@ -200,9 +202,9 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
 
     // Classes
-    const containerClasses = position === 'right' 
-        ? 'w-96 flex-shrink-0 bg-glass border-l border-border-color flex flex-col h-full'
-        : 'h-72 flex-shrink-0 bg-glass border-t border-border-color flex flex-col w-full';
+    const containerClasses = position === 'right'
+        ? 'w-96 flex-shrink-0 bg-glass/40 backdrop-blur-xl border-l border-border-color flex flex-col h-full'
+        : 'h-72 flex-shrink-0 bg-glass/40 backdrop-blur-xl border-t border-border-color flex flex-col w-full';
 
     const listClasses = position === 'right'
         ? 'flex-1 overflow-y-auto p-4 space-y-4'
@@ -270,7 +272,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                          const videoTime = getVideoTime(comment);
                          const videoEndTime = getVideoEndTime(comment);
                          const pageUrl = getPageUrl(comment);
-                         const deviceView = (comment as any).deviceView || 'Desktop';
+                         const deviceView = (comment as FeedbackComment).deviceView || (comment as FeedbackItemComment).device || 'Desktop';
                         return (
                             <div key={comment.id} onClick={() => handleCommentClickInternal(comment)} className={itemClasses}>
                                 {videoTime !== undefined && (
@@ -288,13 +290,13 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                                         </span>
                                         <span className="text-sm font-semibold text-text-primary">{getMember(getAuthorId(comment))?.name || 'User'}</span>
                                         <span className="text-[10px] px-2 py-0.5 rounded-lg bg-glass-light/60 backdrop-blur-sm text-text-secondary border border-border-color/30 ml-auto">{deviceView}</span>
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg backdrop-blur-sm border ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'text-green-400 bg-green-500/15 border-green-500/30' : 'text-primary bg-primary/15 border-primary/30'}`}>
-                                            {(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'Resolved' : 'Active'}
+                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg backdrop-blur-sm border ${(comment as FeedbackItemComment).resolved || (comment as FeedbackComment).status === 'Resolved' ? 'text-green-400 bg-green-500/15 border-green-500/30' : 'text-primary bg-primary/15 border-primary/30'}`}>
+                                            {(comment as FeedbackItemComment).resolved || (comment as FeedbackComment).status === 'Resolved' ? 'Resolved' : 'Active'}
                                         </span>
                                     </div>
 
                                     {/* Comment Text */}
-                                    <p className={`text-sm text-text-secondary mb-3 leading-relaxed ${(comment as FeedbackItemComment).resolved || comment.status === 'Resolved' ? 'line-through opacity-70' : ''}`}>
+                                    <p className={`text-sm text-text-secondary mb-3 leading-relaxed ${(comment as FeedbackItemComment).resolved || (comment as FeedbackComment).status === 'Resolved' ? 'line-through opacity-70' : ''}`}>
                                         {getCommentText(comment)}
                                     </p>
 
@@ -321,7 +323,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                 {view === 'comments' && selectedCommentId && selectedComment && (
                     <div className="flex flex-col h-full w-full animate-in fade-in slide-in-from-right-4 duration-200">
                         {/* Original Comment */}
-                        <div className="bg-glass-light border border-border-color rounded-lg p-4 mb-4">
+                        <div className="bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-lg p-4 mb-4">
                             <div className="flex items-start gap-3">
                                 <img src={getMember(getAuthorId(selectedComment))?.avatarUrl} className="w-8 h-8 rounded-full bg-primary/20" />
                                 <div className="flex-1">
@@ -332,14 +334,14 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
                                     {isEditing ? (
                                         <div className="mt-2">
-                                            <textarea 
+                                            <Textarea
                                                 value={editText}
                                                 onChange={e => setEditText(e.target.value)}
-                                                className="w-full bg-glass-light border border-border-color rounded p-2 text-sm text-text-primary outline-none focus:border-primary resize-none"
+                                                className="bg-glass-light/60 rounded p-2"
                                                 rows={3}
                                             />
                                             <div className="flex justify-end gap-2 mt-2">
-                                                <button onClick={() => setIsEditing(false)} className="px-3 py-1 bg-surface-light text-text-secondary rounded text-xs hover:text-text-primary">Cancel</button>
+                                                <button onClick={() => setIsEditing(false)} className="px-3 py-1 bg-glass-light/60 backdrop-blur-sm border border-border-color text-text-secondary rounded text-xs hover:text-text-primary">Cancel</button>
                                                 <button onClick={handleEditSave} className="px-3 py-1 bg-primary text-background font-bold rounded text-xs hover:bg-primary-hover">Save</button>
                                             </div>
                                         </div>
@@ -380,11 +382,11 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
 
                         {/* Reply Input */}
                         <div className="mt-auto border-t border-border-color pt-4">
-                            <textarea
+                            <Textarea
                                 value={replyText}
                                 onChange={e => setReplyText(e.target.value)}
                                 placeholder="Reply..."
-                                className="w-full bg-glass-light border border-border-color rounded-lg p-2 text-sm text-text-primary focus:border-primary outline-none resize-none"
+                                className="bg-glass-light/60 rounded-lg p-2"
                                 rows={2}
                             />
                             <div className="flex justify-end mt-2">

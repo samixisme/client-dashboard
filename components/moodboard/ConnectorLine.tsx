@@ -137,13 +137,12 @@ const ConnectorLine: React.FC<ConnectorLineProps> = ({ connector, items, onDelet
     const midY = (startPoint.y + endPoint.y) / 2;
 
     return (
-        <g 
-            className="cursor-pointer group" 
-            style={{ pointerEvents: 'all' }} 
-            onClick={(e) => { 
-                console.log("Connector clicked", connector.id); 
-                e.stopPropagation(); 
-                onDelete(connector.id); 
+        <g
+            className="cursor-pointer group"
+            style={{ pointerEvents: 'all' }}
+            onClick={(e) => {
+                e.stopPropagation();
+                onDelete(connector.id);
             }}
         >
              <defs>

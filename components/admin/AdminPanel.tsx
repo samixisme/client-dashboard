@@ -6,8 +6,8 @@ import RawJsonEditor from './RawJsonEditor';
 
 interface DataSource {
     name: string;
-    data: any;
-    onSave: (newData: any) => void;
+    data: unknown;
+    onSave: (newData: unknown) => void;
 }
 
 interface AdminPanelProps {

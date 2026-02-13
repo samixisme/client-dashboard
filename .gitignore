@@ -22,3 +22,43 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code config (user-specific)
+.claude/
+.claude-flow/
+.agent/
+
+# Husky hooks (local)
+.husky/
+
+# MCP config
+.mcp.json
+
+# Other
+.instance/
+nul
+# Environment variable files
+.env*
+.env.local
+
+# Firebase credentials (NEVER commit)
+google-service-account.json
+*-service-account.json
+
+# Deployment and temporary files
+firestore.rules.backup
+firestore.rules.temp
+firestore.rules.production
+ecosystem.config.js
+
+# AI assistant directories
+.gemini/
+.swarm/
+.hive-mind/
+.spec-workflow/
+.cache/
+
+# Temporary/invalid files
+$null
+-
+nul

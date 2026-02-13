@@ -72,8 +72,6 @@ export class InvoicePdfGenerator {
 
         // Set SpaceGrotesk as the default font (note: no space in font name for jsPDF)
         pdf.setFont('SpaceGrotesk', 'normal');
-
-        console.log('Current font set to:', 'SpaceGrotesk');
     }
 
     /**
@@ -136,7 +134,7 @@ export class InvoicePdfGenerator {
             pdf.setFontSize(8);
 
             // Split text into multiple lines if needed
-            const noteLines = pdf.splitTextToSize(item.asteriskNote || '', maxWidth);
+            const noteLines = pdf.splitTextToSize(item.asteriskNote || '', maxWidth) as string[];
             noteLines.forEach((line: string) => {
                 pdf.text(line, textStartX, currentY);
                 currentY += lineHeight;

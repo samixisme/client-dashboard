@@ -9,6 +9,7 @@ import { SettingsIcon } from '../icons/SettingsIcon';
 import { ProjectsIcon } from '../icons/ProjectsIcon';
 import { BrandIcon } from '../icons/BrandIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
+import { SocialMediaIcon } from '../icons/SocialMediaIcon';
 
 const mainNavItems = [
     { to: "/dashboard", Icon: DashboardIcon, label: "Dashboard" },
@@ -16,6 +17,7 @@ const mainNavItems = [
     { to: "/projects", Icon: ProjectsIcon, label: "Projects" },
     { to: "/calendar", Icon: CalendarIcon, label: "Calendar" },
     { to: "/payments", Icon: PaymentsIcon, label: "Payments" },
+    { to: "/social-media", Icon: SocialMediaIcon, label: "Social Media" },
 ];
 
 const bottomNavItems = [
@@ -24,15 +26,19 @@ const bottomNavItems = [
 
 // FIX: Moved NavItem outside of Sidebar component for performance, best practices, and to resolve a typing issue.
 // Added React.FC type to ensure TypeScript recognizes it as a component that can accept a 'key' prop.
-const NavItem: React.FC<{ to: string; Icon: React.FC<any>; label: string }> = ({ to, Icon, label }) => {
+const NavItem: React.FC<{ to: string; Icon: React.FC<{ className?: string }>; label: string }> = ({ to, Icon, label }) => {
   const location = useLocation();
     
   const isProjectsPath = to === '/projects';
-  
-  // Custom logic to keep "Projects" active on board/roadmap pages
+  const isSocialMediaPath = to === '/social-media';
+
+  // Custom logic to keep "Projects" and "Social Media" active on sub-routes
   const checkIsActive = (isActive: boolean) => {
       if (isProjectsPath) {
           return isActive || location.pathname.startsWith('/board/') || location.pathname.startsWith('/projects/') || location.pathname.startsWith('/feedback/') || location.pathname.startsWith('/moodboards/');
+      }
+      if (isSocialMediaPath) {
+          return isActive || location.pathname.startsWith('/social-media/');
       }
       return isActive;
   };

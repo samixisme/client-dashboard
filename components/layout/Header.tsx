@@ -6,6 +6,7 @@ import { useNotificationHistory } from '../../contexts/NotificationHistoryContex
 import { useUser } from '../../contexts/UserContext';
 import { TimerIcon } from '../icons/TimerIcon';
 import { Link } from 'react-router-dom';
+import { NovuInbox } from '../notifications/NovuInbox';
 
 // Helper function to calculate relative time
 const timeSince = (date: Date): string => {
@@ -101,23 +102,24 @@ const Header: React.FC = () => {
 
   return (
     <div className="flex items-center justify-end space-x-3 flex-wrap">
-        {/* Global Timer */}
+        <NovuInbox />
+
         <GlobalTimerWidget />
 
         {/* User Avatar with Dropdown */}
         <div className="relative">
             <button
               onClick={handleProfileMenuToggle}
-              className="relative h-12 w-12 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary transition-all duration-300"
+              className="relative h-12 w-12 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary transition-all duration-300"
             >
                 {user?.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
                     alt="User Avatar"
-                    className="h-12 w-12 rounded-full object-cover border-2 border-border-color hover:border-primary transition-all duration-300 shadow-lg"
+                    className="h-12 w-12 rounded-xl object-cover border-2 border-border-color hover:border-primary transition-all duration-300 shadow-lg"
                   />
                 ) : (
-                  <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white font-bold border-2 border-border-color hover:border-primary transition-all duration-300 shadow-lg">
+                  <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-white font-bold border-2 border-border-color hover:border-primary transition-all duration-300 shadow-lg">
                     {getInitials()}
                   </div>
                 )}

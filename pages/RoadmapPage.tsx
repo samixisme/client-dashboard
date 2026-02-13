@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
+import { Textarea } from '../components/ui/textarea';
 import { RoadmapItem, Task } from '../types';
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '../utils/calendarSync';
 import { KanbanViewIcon } from '../components/icons/KanbanViewIcon';
@@ -373,7 +374,7 @@ const RoadmapPage = () => {
 
                                             {addingTaskTo === item.id && !isUnassignedColumn ? (
                                                 <div className="mt-3 p-1 animate-scale-in">
-                                                    <textarea
+                                                    <Textarea
                                                         value={newTaskTitle}
                                                         onChange={(e) => setNewTaskTitle(e.target.value)}
                                                         placeholder="Enter task title..."
@@ -521,46 +522,49 @@ const RoadmapPage = () => {
                 }
             `}</style>
 
-            {viewMode === 'timeline' && (
-                <div className="mb-6 bg-glass/40 backdrop-blur-xl p-5 rounded-2xl border border-border-color shadow-xl flex items-center gap-4 animate-scale-in transition-all duration-500 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:border-primary/40" style={{ animationDelay: '200ms' }}>
-                    <label className="text-sm font-bold text-text-secondary uppercase tracking-wider">Project Duration:</label>
-                    <input
-                        type="date"
-                        value={projectStartDate || ''}
-                        onChange={(e) => setOverrideDates(d => ({ ...d, start: e.target.value }))}
-                        disabled={!isEditMode}
-                        className="bg-glass backdrop-blur-xl border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary disabled:opacity-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm focus:shadow-lg"
-                    />
-                    <span className="text-text-secondary font-bold">to</span>
-                    <input
-                        type="date"
-                        value={projectEndDate || ''}
-                        onChange={(e) => setOverrideDates(d => ({ ...d, end: e.target.value }))}
-                        disabled={!isEditMode}
-                        className="bg-glass backdrop-blur-xl border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary disabled:opacity-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm focus:shadow-lg"
-                    />
-                    {(overrideDates.start || overrideDates.end) && isEditMode && (
-                        <button onClick={handleResetDuration} className="text-xs font-bold text-text-secondary hover:text-primary transition-all duration-300 px-3 py-2 rounded-lg hover:bg-glass-light hover:scale-105 uppercase tracking-wider">Reset to Auto</button>
-                    )}
-
-                    {/* Edit and View Switcher Controls */}
-                    <div className="ml-auto flex items-center gap-3 flex-wrap">
-                        {isEditMode && (
-                             <button onClick={handleCreateItem} className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group/btn">
-                                <span className="relative z-10 flex items-center gap-2">
-                                    <svg className="w-4 h-4 group-hover/btn:rotate-90 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
-                                    Add Roadmap
-                                </span>
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
-                            </button>
+            {/* Header with View Switcher - Always Visible */}
+            <div className="mb-6 bg-glass/40 backdrop-blur-xl p-5 rounded-2xl border border-border-color shadow-xl flex items-center gap-4 animate-scale-in transition-all duration-500 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:border-primary/40 relative z-50" style={{ animationDelay: '200ms' }}>
+                {viewMode === 'timeline' && (
+                    <>
+                        <label className="text-sm font-bold text-text-secondary uppercase tracking-wider">Project Duration:</label>
+                        <input
+                            type="date"
+                            value={projectStartDate || ''}
+                            onChange={(e) => setOverrideDates(d => ({ ...d, start: e.target.value }))}
+                            disabled={!isEditMode}
+                            className="bg-glass backdrop-blur-xl border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary disabled:opacity-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm focus:shadow-lg"
+                        />
+                        <span className="text-text-secondary font-bold">to</span>
+                        <input
+                            type="date"
+                            value={projectEndDate || ''}
+                            onChange={(e) => setOverrideDates(d => ({ ...d, end: e.target.value }))}
+                            disabled={!isEditMode}
+                            className="bg-glass backdrop-blur-xl border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary disabled:opacity-50 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm focus:shadow-lg"
+                        />
+                        {(overrideDates.start || overrideDates.end) && isEditMode && (
+                            <button onClick={handleResetDuration} className="text-xs font-bold text-text-secondary hover:text-primary transition-all duration-300 px-3 py-2 rounded-lg hover:bg-glass-light hover:scale-105 uppercase tracking-wider">Reset to Auto</button>
                         )}
-                        <button onClick={handleToggleEditMode} className={`px-5 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2.5 transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 ${isEditMode ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'bg-white/5 backdrop-blur-xl text-text-primary hover:bg-white/10 border border-[rgba(163,230,53,0.1)] hover:border-primary/40'}`}>
-                            {isEditMode ? <><SaveIcon className="h-4 w-4"/> Done</> : <><EditIcon className="h-4 w-4"/> Edit</>}
+                    </>
+                )}
+
+                {/* Edit and View Switcher Controls */}
+                <div className={`flex items-center gap-3 flex-wrap ${viewMode === 'timeline' ? 'ml-auto' : ''}`}>
+                    {isEditMode && (
+                         <button onClick={handleCreateItem} className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group/btn">
+                            <span className="relative z-10 flex items-center gap-2">
+                                <svg className="w-4 h-4 group-hover/btn:rotate-90 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                                Add Roadmap
+                            </span>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
                         </button>
-                        <ViewSwitcher currentView={viewMode} onSwitchView={(view) => setViewMode(view as ViewMode)} options={roadmapViewOptions} />
-                    </div>
+                    )}
+                    <button onClick={handleToggleEditMode} className={`px-5 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2.5 transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 ${isEditMode ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'bg-white/5 backdrop-blur-xl text-text-primary hover:bg-white/10 border border-[rgba(163,230,53,0.1)] hover:border-primary/40'}`}>
+                        {isEditMode ? <><SaveIcon className="h-4 w-4"/> Done</> : <><EditIcon className="h-4 w-4"/> Edit</>}
+                    </button>
+                    <ViewSwitcher currentView={viewMode} onSwitchView={(view) => setViewMode(view as ViewMode)} options={roadmapViewOptions} />
                 </div>
-            )}
+            </div>
 
             <div className="flex-1 flex flex-col overflow-hidden">
                 {viewMode === 'kanban' ? (

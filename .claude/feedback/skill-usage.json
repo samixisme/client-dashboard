@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "skills": {
+    "ui-ux-pro-max:ui-ux-pro-max": 1,
+    "frontend-design:frontend-design": 1
+  },
+  "sessions": {
+    "client-dashboard-nobranch-0205-0031-f5ee": [
+      "ui-ux-pro-max:ui-ux-pro-max",
+      "frontend-design:frontend-design"
+    ]
+  },
+  "last_updated": "2026-02-05T17:26:26.931Z"
+}

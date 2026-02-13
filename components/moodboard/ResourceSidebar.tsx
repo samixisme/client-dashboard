@@ -7,7 +7,7 @@ const ResourceSidebar = () => {
     const { data } = useData();
     const [activeTab, setActiveTab] = useState<'boards' | 'tasks' | 'roadmap' | 'comments'>('boards');
 
-    const handleDragStart = (e: React.DragEvent, item: any, type: string) => {
+    const handleDragStart = (e: React.DragEvent, item: Board | Task | RoadmapItem | Comment, type: string) => {
         // Create a JSON payload for the drop handler
         const payload = JSON.stringify({
             type: 'resource',
@@ -107,7 +107,7 @@ const ResourceSidebar = () => {
                     ].map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setActiveTab(tab.id as 'boards' | 'tasks' | 'roadmap' | 'comments')}
                             title={tab.id}
                             className={`flex-1 p-2 rounded-md transition-all ${activeTab === tab.id ? 'bg-primary text-white shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass'}`}
                         >

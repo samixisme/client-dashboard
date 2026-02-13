@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Textarea } from '../components/ui/textarea';
 import { useData } from '../contexts/DataContext';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db, uploadFile } from '../utils/firebase';
@@ -201,7 +202,7 @@ const BrandDetailPage = () => {
         }
     };
     
-    const handleGenericUpdate = <T,>(section: keyof Brand, index: number, field: keyof T, value: any) => {
+    const handleGenericUpdate = <T,>(section: keyof Brand, index: number, field: keyof T, value: T[keyof T]) => {
         if (!editedBrand) return;
         const newSection = [...(editedBrand[section] as T[])] as T[];
         newSection[index] = { ...newSection[index], [field]: value };
@@ -228,7 +229,7 @@ const BrandDetailPage = () => {
 
     const handleAddItem = (section: keyof Brand) => {
         if (!editedBrand) return;
-        let newItem: any;
+        let newItem: BrandColor | BrandFont | BrandAsset;
         switch (section) {
             case 'colors': newItem = { name: 'New Color', type: 'Secondary', hex: '#ffffff', rgb: '255, 255, 255', hsl: '0, 0%, 100%', cmyk: '0, 0, 0, 0' }; break;
             case 'fonts': newItem = { name: 'New Font', type: 'Secondary', url: '#', styles: [{ name: 'Body', size: '16px', weight: '400', letterSpacing: '0.5px', lineHeight: '24px' }] }; break;
@@ -236,7 +237,7 @@ const BrandDetailPage = () => {
             case 'graphics': newItem = { name: 'New Graphic', url: `https://picsum.photos/seed/${Date.now()}/400/300` }; break;
             default: return;
         }
-        setEditedBrand(currentBrand => currentBrand ? ({ ...currentBrand, [section]: [...(currentBrand[section] as any[]), newItem] }) : null);
+        setEditedBrand(currentBrand => currentBrand ? ({ ...currentBrand, [section]: [...(currentBrand[section] as (BrandColor | BrandFont | BrandAsset)[]), newItem] }) : null);
     };
     
     const handleAddLogo = (type: BrandLogoType, variation: BrandLogoVariation) => {
@@ -248,7 +249,7 @@ const BrandDetailPage = () => {
     const handleDeleteItem = (section: keyof Brand, index: number) => {
         if (!editedBrand) return;
         if (window.confirm('Are you sure you want to delete this item?')) {
-            const newSection = (editedBrand[section] as any[]).filter((_, i) => i !== index);
+            const newSection = (editedBrand[section] as unknown[]).filter((_, i) => i !== index);
             setEditedBrand({ ...editedBrand, [section]: newSection });
         }
     };
@@ -742,10 +743,10 @@ const BrandDetailPage = () => {
                     </div>
                 </AssetSection>
                 <AssetSection title="Brand Voice & Vocabulary" id="voice-section" onDownload={() => handlePrint('voice-section')}>
-                    <textarea value={editedBrand.brandVoice} onChange={e => handleBrandStringChange('brandVoice', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={8} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
+                    <Textarea value={editedBrand.brandVoice} onChange={e => handleBrandStringChange('brandVoice', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={8} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
                 </AssetSection>
                 <AssetSection title="Brand Positioning" id="positioning-section" onDownload={() => handlePrint('positioning-section')}>
-                     <textarea value={editedBrand.brandPositioning} onChange={e => handleBrandStringChange('brandPositioning', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={6} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
+                     <Textarea value={editedBrand.brandPositioning} onChange={e => handleBrandStringChange('brandPositioning', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={6} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
                 </AssetSection>
                 {renderAssetGallery('imagery')}
                 {renderAssetGallery('graphics')}

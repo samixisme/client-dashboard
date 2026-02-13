@@ -29,7 +29,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user }) 
     }
   }, [isOpen, user]);
 
-  const handleUpdate = (field: keyof User, value: any) => {
+  const handleUpdate = (field: keyof User, value: unknown) => {
     setEditedUser(prev => ({ ...prev, [field]: value }));
   };
 

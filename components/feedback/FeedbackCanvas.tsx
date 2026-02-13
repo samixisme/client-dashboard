@@ -2,10 +2,10 @@ import React, { useState, useRef } from 'react';
 import { useData } from '../../contexts/DataContext';
 import CommentPopover from './CommentPopover';
 import { Breakpoint, InteractionMode } from './FeedbackItemPage';
-import { FeedbackComment } from '../../types';
+import { FeedbackComment, FeedbackMockup, FeedbackVideo, FeedbackWebsite } from '../../types';
 
 interface FeedbackCanvasProps {
-  item: any;
+  item: FeedbackMockup | FeedbackVideo | FeedbackWebsite;
   activeBreakpoint: Breakpoint;
   interactionMode: InteractionMode;
   projectId: string;
@@ -26,8 +26,8 @@ const FeedbackCanvas: React.FC<FeedbackCanvasProps> = ({ item, activeBreakpoint,
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Task 1.2: Filter comments based on device breakpoint
-  const pins = (data.feedbackComments || []).filter((c: any) => 
-    c.targetId === item.id && 
+  const pins = (data.feedbackComments || []).filter((c: FeedbackComment) =>
+    c.targetId === item.id &&
     (!c.deviceView || c.deviceView === activeBreakpoint)
   );
 
@@ -58,7 +58,7 @@ const FeedbackCanvas: React.FC<FeedbackCanvasProps> = ({ item, activeBreakpoint,
       setTempPin(null);
   };
 
-  const activePin = (data.feedbackComments || []).find((p: any) => p.id === activePinId);
+  const activePin = (data.feedbackComments || []).find((p: FeedbackComment) => p.id === activePinId);
 
   return (
     <div 
@@ -90,13 +90,13 @@ const FeedbackCanvas: React.FC<FeedbackCanvasProps> = ({ item, activeBreakpoint,
         )}
 
         {/* Render Pins */}
-        {pins.map((pin: any) => (
+        {pins.map((pin: FeedbackComment) => (
           <div
             key={pin.id}
             className={`absolute w-8 h-8 -ml-4 -mt-4 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg cursor-pointer transform transition-transform hover:scale-110 z-10
                 ${pin.status === 'Resolved' ? 'opacity-50 bg-green-500' : 'opacity-100 bg-primary'}
             `}
-            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+            style={{ left: `${pin.x_coordinate}%`, top: `${pin.y_coordinate}%` }}
             onClick={(e) => handlePinClick(e, pin.id)}
           >
             {pin.pin_number}
@@ -115,24 +115,24 @@ const FeedbackCanvas: React.FC<FeedbackCanvasProps> = ({ item, activeBreakpoint,
                         onClose={closePopover}
                         onSubmit={(text, details) => {
                             // Task 1.2: Review Order Pin Numbering
-                            const existingPins = pins.filter((p: any) => p.pageUrl === (item.url || '/') && p.deviceView === activeBreakpoint);
-                            const maxPinNumber = existingPins.reduce((max: number, p: any) => Math.max(max, p.pin_number || 0), 0);
-                            
+                            const existingPins = pins.filter((p: FeedbackComment) => p.pageUrl === ((item as FeedbackWebsite).url || '/') && p.deviceView === activeBreakpoint);
+                            const maxPinNumber = existingPins.reduce((max: number, p: FeedbackComment) => Math.max(max, p.pin_number || 0), 0);
+
                             const newPin: FeedbackComment = {
                                 id: `comment-${Date.now()}`,
                                 targetId: item.id,
                                 projectId,
-                                x: tempPin.x,
-                                y: tempPin.y,
+                                x_coordinate: tempPin.x,
+                                y_coordinate: tempPin.y,
                                 pin_number: maxPinNumber + 1,
                                 status: 'Active',
                                 deviceView: activeBreakpoint,
-                                pageUrl: item.url || '/',
+                                pageUrl: (item as FeedbackWebsite).url || '/',
                                 reporterId: 'user-1',
                                 comment: text,
                                 replies: [],
-                                createdAt: new Date().toISOString(),
-                                targetType: item.type,
+                                timestamp: new Date().toISOString(),
+                                targetType: 'website',
                                 dueDate: details?.dueDate
                             };
                             if (!data.feedbackComments) data.feedbackComments = [];
@@ -160,7 +160,7 @@ const FeedbackCanvas: React.FC<FeedbackCanvasProps> = ({ item, activeBreakpoint,
                         onUpdate={(id, updates) => { Object.assign(activePin, updates); forceUpdate(); }}
                         onResolve={() => { activePin.status = 'Resolved'; forceUpdate(); }}
                         onDelete={(id) => {
-                            const idx = data.feedbackComments.findIndex((c: any) => c.id === id);
+                            const idx = data.feedbackComments.findIndex((c: FeedbackComment) => c.id === id);
                             if (idx > -1) data.feedbackComments.splice(idx, 1);
                             forceUpdate();
                             closePopover();

@@ -4,6 +4,7 @@ import { useData } from '../../contexts/DataContext';
 import { Project } from '../../types';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from '../../utils/firebase';
+import { Textarea } from '../ui/textarea';
 import { slugify } from '../../utils/slugify';
 import { ImageIcon } from '../icons/ImageIcon';
 import { toast } from 'sonner';
@@ -138,13 +139,13 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({ isOpen, onClo
                     </div>
                      <div>
                         <label htmlFor="projectDescription" className="block text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">Description</label>
-                        <textarea
+                        <Textarea
                             id="projectDescription"
                             rows={4}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Describe your project..."
-                            className="appearance-none block w-full px-4 py-3 border border-border-color bg-glass-light placeholder-text-secondary text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 font-medium shadow-sm resize-none"
+                            className="px-4 py-3 bg-glass-light rounded-xl font-medium shadow-sm"
                         />
                     </div>
                      <div>

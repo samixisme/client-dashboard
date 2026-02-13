@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Stage, Task } from '../../../types';
 import { AddIcon } from '../../icons/AddIcon';
 import { SettingsIcon } from '../../icons/SettingsIcon';
+import { Textarea } from '../../ui/textarea';
 import TaskCard from '../TaskCard';
 import { backgroundPatterns } from '../../../data/patterns';
 
 interface KanbanViewProps {
     boardId: string;
-    onDragEnd: (result: any) => void;
+    onDragEnd: (result: DropResult) => void;
     onTaskClick: (task: Task) => void;
     onOpenStageActions: (anchorEl: HTMLElement, stage: Stage) => void;
     stages: Stage[];
@@ -81,11 +82,11 @@ const KanbanView: React.FC<KanbanViewProps> = ({
                                         
                                         {addingToStage === stage.id ? (
                                             <div className="mt-3 p-1">
-                                                <textarea
+                                                <Textarea
                                                     value={newTaskTitle}
                                                     onChange={(e) => setNewTaskTitle(e.target.value)}
                                                     placeholder="Enter task title..."
-                                                    className="w-full p-2 text-sm rounded-xl bg-surface-light backdrop-blur-sm border border-border-color focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 shadow-sm focus:shadow-lg"
+                                                    className="p-2 rounded-xl bg-surface-light focus:ring-2 focus:ring-primary shadow-sm focus:shadow-lg"
                                                     rows={2} autoFocus
                                                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddTaskClick(stage.id))}
                                                 />

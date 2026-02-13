@@ -14,9 +14,10 @@ import {
   collectionGroup,
   increment,
   setDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { FeedbackItem, FeedbackItemComment, FeedbackStatus } from "../types";
+import { Activity, FeedbackItem, FeedbackItemComment, FeedbackStatus, FeedbackItemVersion } from "../types";
 
 // --- Feedback Items ---
 
@@ -117,7 +118,7 @@ export const logActivity = async (
 export const subscribeToActivities = (
   projectId: string,
   objectId: string,
-  callback: (activities: any[]) => void,
+  callback: (activities: Activity[]) => void,
 ) => {
   const q = query(
     collection(db, "projects", projectId, "activities"),
@@ -131,7 +132,7 @@ export const subscribeToActivities = (
       const activities = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as Activity[];
       callback(activities);
     },
     (error) => {
@@ -215,6 +216,23 @@ export const updateFeedbackItemVideos = async (
     await updateDoc(itemRef, { videos });
   } catch (error) {
     console.error("Error updating feedback item videos:", error);
+    throw error;
+  }
+};
+
+/**
+ * Updates the name and description of a feedback item.
+ */
+export const updateFeedbackItem = async (
+  projectId: string,
+  itemId: string,
+  updates: { name?: string; description?: string },
+): Promise<void> => {
+  try {
+    const itemRef = doc(db, "projects", projectId, "feedbackItems", itemId);
+    await updateDoc(itemRef, updates);
+  } catch (error) {
+    console.error("Error updating feedback item:", error);
     throw error;
   }
 };
@@ -307,6 +325,7 @@ export const addComment = async (
         feedbackItemId: itemId,
         createdAt: serverTimestamp(),
         resolved: false,
+        version: commentData.version || 1, // Ensure version is always set
       },
     );
 
@@ -326,11 +345,12 @@ export const addComment = async (
     );
 
     // 4. Sync to task if dueDate is present
-    if ((commentData as any).dueDate) {
+    const commentDataWithDueDate = commentData as Omit<FeedbackItemComment, "id" | "createdAt" | "feedbackItemId" | "resolved">;
+    if (commentDataWithDueDate.dueDate) {
       await syncCommentToTask(
         commentRef.id,
         commentData.commentText || '',
-        (commentData as any).dueDate,
+        commentDataWithDueDate.dueDate,
         commentData.authorId,
         projectId,
         itemId
@@ -418,14 +438,6 @@ export const deleteComment = async (
   userId?: string,
 ): Promise<void> => {
   try {
-    console.log(
-      "Deleting comment:",
-      commentId,
-      "from item:",
-      itemId,
-      "in project:",
-      projectId,
-    );
     const commentRef = doc(
       db,
       "projects",
@@ -613,10 +625,118 @@ export const cleanupOrphanedData = async (projectId: string): Promise<{ tasksDel
       activitiesDeleted++;
     }
 
-    console.log(`Cleanup complete: ${tasksDeleted} tasks and ${activitiesDeleted} activities deleted for project ${projectId}`);
     return { tasksDeleted, activitiesDeleted };
   } catch (error) {
     console.error("Error cleaning up orphaned data:", error);
     throw error;
   }
 };
+
+// --- Version Management ---
+
+/**
+ * Create a new version for a feedback item
+ * Increments version number and adds to versions array
+ */
+export const createFeedbackItemVersion = async (
+  projectId: string,
+  feedbackItemId: string,
+  newAssetUrl: string,
+  userId: string,
+  notes?: string
+): Promise<number> => {
+  // Use the correct collection name: "feedbackItems" (camelCase)
+  const feedbackItemRef = doc(db, 'projects', projectId, 'feedbackItems', feedbackItemId);
+  const feedbackDoc = await getDoc(feedbackItemRef);
+
+  if (!feedbackDoc.exists()) {
+    console.error('Feedback item not found at path:', `projects/${projectId}/feedbackItems/${feedbackItemId}`);
+    throw new Error('Feedback item not found');
+  }
+
+  const currentData = feedbackDoc.data();
+  const currentVersion = currentData.version || 1;
+  const newVersion = currentVersion + 1;
+
+  const newVersionEntry: FeedbackItemVersion = {
+    versionNumber: newVersion,
+    assetUrl: newAssetUrl,
+    createdAt: Timestamp.now() as any,
+    createdBy: userId,
+    notes: notes || ''
+  };
+
+  // Get existing versions or create array with current version as v1
+  const existingVersions = currentData.versions || [{
+    versionNumber: 1,
+    assetUrl: currentData.assetUrl,
+    createdAt: currentData.createdAt || Timestamp.now(),
+    createdBy: currentData.createdBy || userId,
+    notes: 'Initial version'
+  }];
+
+  await updateDoc(feedbackItemRef, {
+    version: newVersion,
+    assetUrl: newAssetUrl,
+    versions: [...existingVersions, newVersionEntry]
+  });
+
+  return newVersion;
+};
+
+/**
+ * Get all versions for a feedback item
+ */
+export const getFeedbackItemVersions = async (
+  projectId: string,
+  feedbackItemId: string
+): Promise<FeedbackItemVersion[]> => {
+  // Use the correct collection name: "feedbackItems" (camelCase)
+  const feedbackItemRef = doc(db, 'projects', projectId, 'feedbackItems', feedbackItemId);
+  const feedbackDoc = await getDoc(feedbackItemRef);
+
+  if (!feedbackDoc.exists()) return [];
+
+  const data = feedbackDoc.data();
+
+  // If no versions array, create one from current data
+  if (!data.versions) {
+    return [{
+      versionNumber: data.version || 1,
+      assetUrl: data.assetUrl,
+      createdAt: data.createdAt || Timestamp.now(),
+      createdBy: data.createdBy || 'unknown',
+      notes: 'Initial version'
+    }];
+  }
+
+  return data.versions;
+};
+
+/**
+ * Switch to a specific version
+ * Updates the active assetUrl and version number
+ */
+export const switchToFeedbackItemVersion = async (
+  projectId: string,
+  feedbackItemId: string,
+  versionNumber: number
+): Promise<void> => {
+  // Use the correct collection name: "feedbackItems" (camelCase)
+  const feedbackItemRef = doc(db, 'projects', projectId, 'feedbackItems', feedbackItemId);
+  const feedbackDoc = await getDoc(feedbackItemRef);
+
+  if (!feedbackDoc.exists()) throw new Error('Feedback item not found');
+
+  const data = feedbackDoc.data();
+  const versions = data.versions || [];
+
+  const targetVersion = versions.find((v: FeedbackItemVersion) => v.versionNumber === versionNumber);
+  if (!targetVersion) throw new Error('Version not found');
+
+  await updateDoc(feedbackItemRef, {
+    version: versionNumber,
+    assetUrl: targetVersion.assetUrl
+  });
+};
+

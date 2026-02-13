@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useCalendarEvents } from '../hooks/useCalendarEvents';
 import { useData } from '../contexts/DataContext';
 import { useCalendar } from '../contexts/CalendarContext';
-import { CalendarEvent } from '../types';
+import { CalendarEvent, Brand } from '../types';
 import { createCalendarEvent, updateSourceItemDate, updateCalendarEventById, updateSourceItemAssignees } from '../utils/calendarSync';
 import { toast } from 'sonner';
 // import { projects, tasks, boards, roadmapItems } from '../data/mockData';
@@ -30,14 +30,14 @@ const toDateKey = (date: Date | string): string => {
     return `${year}-${month}-${day}`;
 };
 
-const startOfDay = (date: Date | string | number | any): Date => {
+const startOfDay = (date: Date | string | number): Date => {
     if (!date) return new Date(0);
     // Handle Firestore Timestamp objects directly if they slip through
     let d: Date;
-    if (date.seconds !== undefined) d = new Date(date.seconds * 1000);
-    else if (date.toDate && typeof date.toDate === 'function') d = date.toDate();
+    if (typeof date === 'object' && 'seconds' in date) d = new Date((date as { seconds: number }).seconds * 1000);
+    else if (typeof date === 'object' && 'toDate' in date && typeof (date as { toDate: Function }).toDate === 'function') d = (date as { toDate: () => Date }).toDate();
     else d = new Date(date);
-    
+
     if (isNaN(d.getTime())) return new Date(0);
     const result = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     result.setHours(0, 0, 0, 0);
@@ -90,7 +90,7 @@ export const CalendarPage = () => {
     // UI State
     const [searchParams] = useSearchParams();
     const brandId = searchParams.get('brandId');
-    const brand = brandId ? (brands || []).find((b: any) => b.id === brandId) : null;
+    const brand = brandId ? (brands || []).find((b: Brand) => b.id === brandId) : null;
 
     // Use calendar context for shared state
     const { currentDate, setCurrentDate, view, setView, setHeaderTitle, setIsCalendarPage } = useCalendar();
@@ -199,7 +199,7 @@ export const CalendarPage = () => {
             await updateSourceItemDate(selectedEvent.sourceId, selectedEvent.type, {
                 startDate: updatedEventData.startDate,
                 endDate: updatedEventData.endDate,
-            });
+            }, selectedEvent.projectId);
              await updateSourceItemAssignees(selectedEvent.sourceId, selectedEvent.type, editedAssingees);
         }
 

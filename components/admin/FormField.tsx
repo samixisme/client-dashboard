@@ -1,12 +1,13 @@
 
 import React from 'react';
+import { Textarea } from '../ui/textarea';
 // We need a forwardRef to handle the recursive nature of StructuredEditor
 const StructuredEditor = React.lazy(() => import('./StructuredEditor'));
 
 interface FormFieldProps {
     fieldKey: string;
-    fieldValue: any;
-    onUpdate: (key: string, value: any) => void;
+    fieldValue: unknown;
+    onUpdate: (key: string, value: unknown) => void;
     path: string; // e.g., "colors[0].name"
 }
 
@@ -14,12 +15,12 @@ const FormField: React.FC<FormFieldProps> = ({ fieldKey, fieldValue, onUpdate, p
     const label = fieldKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
     
     // Recursive update handler for nested objects
-    const handleNestedUpdate = (nestedKey: string, nestedValue: any) => {
-        onUpdate(fieldKey, { ...fieldValue, [nestedKey]: nestedValue });
+    const handleNestedUpdate = (nestedKey: string, nestedValue: unknown) => {
+        onUpdate(fieldKey, { ...fieldValue as Record<string, unknown>, [nestedKey]: nestedValue });
     };
 
     // Recursive update handler for nested arrays of objects
-    const handleArrayUpdate = (newArray: any[]) => {
+    const handleArrayUpdate = (newArray: unknown[]) => {
         onUpdate(fieldKey, newArray);
     };
 
@@ -76,12 +77,12 @@ const FormField: React.FC<FormFieldProps> = ({ fieldKey, fieldValue, onUpdate, p
             );
         } else if (fieldValue.length > 100 || fieldValue.includes('\n')) {
             inputElement = (
-                <textarea
+                <Textarea
                     id={path}
                     value={fieldValue}
                     rows={5}
                     onChange={(e) => onUpdate(fieldKey, e.target.value)}
-                    className="w-full px-3 py-2 border border-border-color bg-glass placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    className="px-3 py-2 bg-glass"
                 />
             );
         } else {
@@ -113,12 +114,12 @@ const FormField: React.FC<FormFieldProps> = ({ fieldKey, fieldValue, onUpdate, p
         } else {
             // Otherwise, render a textarea for simple arrays (e.g., of strings)
              inputElement = (
-                <textarea
+                <Textarea
                     id={path}
                     value={fieldValue.join(', ')}
                     rows={3}
                     onChange={(e) => onUpdate(fieldKey, e.target.value.split(',').map(s => s.trim()))}
-                    className="w-full px-3 py-2 border border-border-color bg-glass placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    className="px-3 py-2 bg-glass"
                 />
             );
         }

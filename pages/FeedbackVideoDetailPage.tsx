@@ -1,22 +1,28 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { 
-    getFeedbackItem, 
-    subscribeToComments, 
-    addComment, 
+import { Textarea } from '../components/ui/textarea';
+import {
+    getFeedbackItem,
+    subscribeToComments,
+    addComment,
     updateComment,
-    toggleCommentResolved, 
+    toggleCommentResolved,
     deleteComment,
     updateFeedbackItemStatus,
-    syncCommentToCalendar
+    syncCommentToCalendar,
+    getFeedbackItemVersions,
+    createFeedbackItemVersion,
+    switchToFeedbackItemVersion
 } from '../utils/feedbackUtils';
-import { FeedbackItem, FeedbackItemComment, FeedbackComment, User } from '../types';
+import { FeedbackItem, FeedbackItemComment, FeedbackComment, User, FeedbackItemVersion } from '../types';
 import { useData } from '../contexts/DataContext';
 import FeedbackSidebar from '../components/feedback/FeedbackSidebar';
 import VideoPlayerHUD from '../components/feedback/VideoPlayerHUD';
 import VideoFeedbackTimeline from '../components/feedback/VideoFeedbackTimeline';
 import VideoAnnotationLayer from '../components/feedback/VideoAnnotationLayer';
 import CommentPopover from '../components/feedback/CommentPopover';
+import VersionDropdown from '../components/feedback/VersionDropdown';
+import VersionUploadModal from '../components/feedback/VersionUploadModal';
 import { ArrowRightIcon } from '../components/icons/ArrowRightIcon';
 import { db, auth } from '../utils/firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -25,7 +31,8 @@ const FeedbackVideoDetailPage = () => {
     const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { user } = useData();
+    const { user, data } = useData();
+    const project = data.projects.find(p => p.id === projectId);
 
     // Core Data
     const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
@@ -77,6 +84,10 @@ const FeedbackVideoDetailPage = () => {
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const [editedDescription, setEditedDescription] = useState('');
 
+    // Version Management
+    const [versions, setVersions] = useState<FeedbackItemVersion[]>([]);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
     // Auth
     const [currentUserId, setCurrentUserId] = useState<string>(auth.currentUser?.uid || '');
 
@@ -101,8 +112,12 @@ const FeedbackVideoDetailPage = () => {
             });
 
             const unsubscribe = subscribeToComments(projectId, feedbackItemId, (fetchedComments) => {
+                // Filter comments by current version
+                const currentVersion = feedbackItem?.version || 1;
+                const versionComments = fetchedComments.filter(c => (c.version || 1) === currentVersion);
+
                 // Sort by startTime or timestamp
-                const sorted = fetchedComments.sort((a, b) => {
+                const sorted = versionComments.sort((a, b) => {
                     const aTime = a.startTime ?? a.timestamp ?? 0;
                     const bTime = b.startTime ?? b.timestamp ?? 0;
                     return aTime - bTime;
@@ -112,7 +127,7 @@ const FeedbackVideoDetailPage = () => {
 
             return () => unsubscribe();
         }
-    }, [projectId, feedbackItemId]);
+    }, [projectId, feedbackItemId, feedbackItem?.version]);
 
     // Fetch Users
     useEffect(() => {
@@ -127,6 +142,13 @@ const FeedbackVideoDetailPage = () => {
         };
         fetchUsers();
     }, []);
+
+    // Fetch Versions
+    useEffect(() => {
+        if (projectId && feedbackItemId) {
+            getFeedbackItemVersions(projectId, feedbackItemId).then(setVersions);
+        }
+    }, [projectId, feedbackItemId]);
 
     // Video Event Handlers
     const handlePlay = () => {
@@ -257,7 +279,7 @@ const FeedbackVideoDetailPage = () => {
         try {
             const maxPin = comments.reduce((max, c) => Math.max(max, c.pin_number || 0), 0);
 
-            const commentData: any = {
+            const commentData: Partial<FeedbackItemComment> = {
                 authorId: currentUserId,
                 commentText: text,
                 startTime: details?.startTime ?? currentTime,
@@ -266,7 +288,8 @@ const FeedbackVideoDetailPage = () => {
                 y_coordinate: popover.y,
                 pin_number: maxPin + 1,
                 status: 'Active',
-                dueDate: details?.dueDate
+                dueDate: details?.dueDate,
+                version: feedbackItem?.version || 1, // Add version to comment
             };
 
             const commentId = await addComment(projectId, feedbackItemId, commentData);
@@ -283,8 +306,8 @@ const FeedbackVideoDetailPage = () => {
 
     const handleCommentUpdate = async (commentId: string, updates: Partial<FeedbackComment>) => {
         if (!projectId || !feedbackItemId) return;
-        
-        const itemUpdates: any = { ...updates };
+
+        const itemUpdates: Partial<FeedbackItemComment> & { comment?: string } = { ...updates };
         if (updates.comment) {
             itemUpdates.commentText = updates.comment;
             delete itemUpdates.comment;
@@ -342,11 +365,38 @@ const FeedbackVideoDetailPage = () => {
         handleCommentClick(comment);
     };
 
+    // Version Handlers
+    const handleVersionChange = async (versionNumber: number) => {
+        if (!projectId || !feedbackItemId) return;
+        try {
+            await switchToFeedbackItemVersion(projectId, feedbackItemId, versionNumber);
+            // Refresh feedback item to get new assetUrl
+            const updatedItem = await getFeedbackItem(projectId, feedbackItemId);
+            setFeedbackItem(updatedItem);
+        } catch (error) {
+            console.error('Failed to switch version:', error);
+        }
+    };
+
+    const handleCreateVersion = async (fileUrl: string, notes: string) => {
+        if (!projectId || !feedbackItemId || !user?.uid) return;
+        try {
+            await createFeedbackItemVersion(projectId, feedbackItemId, fileUrl, user.uid, notes);
+            // Refresh versions and feedback item
+            const updatedVersions = await getFeedbackItemVersions(projectId, feedbackItemId);
+            setVersions(updatedVersions);
+            const updatedItem = await getFeedbackItem(projectId, feedbackItemId);
+            setFeedbackItem(updatedItem);
+        } catch (error) {
+            console.error('Failed to create version:', error);
+        }
+    };
+
     // Convert comment for popover
     const activeComment = useMemo(() => {
         if (!popover.isOpen || !popover.comment) return null;
         if (popover.isNew) return null;
-        
+
         const latest = comments.find(c => c.id === popover.comment?.id) || popover.comment;
         return {
             id: latest.id,
@@ -387,27 +437,44 @@ const FeedbackVideoDetailPage = () => {
     return (
         <div className={`flex overflow-hidden ${sidebarPosition === 'bottom' ? 'flex-col' : 'flex-row'} h-[calc(100vh-100px)]`}>
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col bg-background overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header with Description */}
-                <div className="p-4 border-b border-border-color bg-glass">
-                    <div className="flex items-start justify-between gap-4">
+                <div className="p-4 border-b border-border-color bg-glass/40 backdrop-blur-xl">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
                         <div className="flex-1 min-w-0">
-                            <h1 className="text-xl font-bold text-text-primary truncate">{feedbackItem.name}</h1>
-                            
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-primary/10 border border-primary/30 rounded-full">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                    <span className="text-xs font-bold text-primary">{feedbackItem.name}</span>
+                                </div>
+                                <VersionDropdown
+                                    projectId={projectId || ''}
+                                    feedbackItemId={feedbackItemId || ''}
+                                    currentVersion={feedbackItem.version || 1}
+                                    versions={versions}
+                                    onVersionChange={handleVersionChange}
+                                    onCreateVersion={() => setIsUploadModalOpen(true)}
+                                    type="video"
+                                />
+                            </div>
+                            {project && (
+                                <h1 className="text-sm font-semibold text-text-secondary truncate mb-2">{project.name}</h1>
+                            )}
+
                             {/* Description Module */}
                             {isEditingDescription ? (
                                 <div className="mt-2">
-                                    <textarea
+                                    <Textarea
                                         value={editedDescription}
                                         onChange={(e) => setEditedDescription(e.target.value)}
-                                        className="w-full p-2 bg-glass-light border border-border-color rounded-lg text-sm text-text-primary resize-none focus:ring-1 focus:ring-primary outline-none"
+                                        className="w-full p-2 bg-glass-light/60 backdrop-blur-sm border border-border-color rounded-lg text-sm text-text-primary resize-none focus:ring-1 focus:ring-primary outline-none"
                                         rows={3}
                                         placeholder="Add a description..."
                                     />
                                     <div className="flex gap-2 mt-2">
                                         <button
                                             onClick={() => setIsEditingDescription(false)}
-                                            className="px-3 py-1 text-xs bg-glass-light text-text-primary rounded hover:bg-border-color"
+                                            className="px-3 py-1 text-xs bg-glass-light/60 backdrop-blur-sm text-text-primary rounded hover:bg-glass-light/60"
                                         >
                                             Cancel
                                         </button>
@@ -423,8 +490,8 @@ const FeedbackVideoDetailPage = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <p 
-                                    className="mt-1 text-sm text-text-secondary line-clamp-2 cursor-pointer hover:text-text-primary"
+                                <p
+                                    className="text-sm text-text-secondary line-clamp-2 cursor-pointer hover:text-text-primary"
                                     onClick={() => setIsEditingDescription(true)}
                                 >
                                     {feedbackItem.description || 'Click to add description...'}
@@ -446,9 +513,9 @@ const FeedbackVideoDetailPage = () => {
                                     }
                                 }}
                                 className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${
-                                    feedbackItem.status === 'approved' 
-                                        ? 'bg-primary text-black' 
-                                        : 'bg-glass-light text-text-primary hover:bg-primary/20 border border-border-color'
+                                    feedbackItem.status === 'approved'
+                                        ? 'bg-primary text-black'
+                                        : 'bg-glass/40 backdrop-blur-sm text-text-primary hover:bg-glass/60 border border-border-color'
                                 }`}
                             >
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -458,10 +525,10 @@ const FeedbackVideoDetailPage = () => {
                             </button>
                             
                             {/* Show/Hide Controls Toggle */}
-                            <button 
+                            <button
                                 onClick={() => setShowControls(!showControls)}
                                 className={`p-2 rounded-lg transition-colors border border-border-color ${
-                                    showControls ? 'bg-glass-light text-text-primary' : 'bg-primary/20 text-primary'
+                                    showControls ? 'bg-glass/40 backdrop-blur-sm text-text-primary' : 'bg-primary/20 text-primary'
                                 }`}
                                 title={showControls ? 'Hide Controls (Focus Mode)' : 'Show Controls'}
                             >
@@ -486,9 +553,9 @@ const FeedbackVideoDetailPage = () => {
                             )}
                             
                             {/* Sidebar Position Toggle */}
-                            <button 
+                            <button
                                 onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')}
-                                className="p-2 bg-glass-light rounded-lg text-text-primary hover:bg-border-color border border-border-color"
+                                className="p-2 bg-glass/40 backdrop-blur-sm rounded-lg text-text-primary hover:bg-glass/60 border border-border-color"
                                 title="Toggle sidebar position"
                             >
                                 <div className={`w-4 h-4 border-2 border-current ${sidebarPosition === 'right' ? 'border-b-transparent' : 'border-r-transparent'}`} />
@@ -560,7 +627,7 @@ const FeedbackVideoDetailPage = () => {
 
                 {/* HUD Controls - Collapsible */}
                 {showControls && (
-                    <div className="p-4 bg-surface border-t border-border-color">
+                    <div className="p-4 bg-glass/40 backdrop-blur-xl border-t border-border-color">
                         <VideoPlayerHUD
                             videoRef={videoRef}
                             duration={duration}
@@ -589,7 +656,7 @@ const FeedbackVideoDetailPage = () => {
 
                 {/* Feedback Timeline - Collapsible */}
                 {showControls && (
-                    <div className="p-4 bg-surface border-t border-border-color">
+                    <div className="p-4 bg-glass/40 backdrop-blur-xl border-t border-border-color">
                         <VideoFeedbackTimeline
                             comments={comments}
                             duration={duration}
@@ -609,10 +676,10 @@ const FeedbackVideoDetailPage = () => {
 
             {/* Sidebar */}
             <div className={`${
-                isSidebarOpen 
-                    ? (sidebarPosition === 'right' ? 'w-80 lg:w-96 max-w-[calc(100vw-80px)] border-l' : 'h-64 lg:h-80 w-full border-t') 
+                isSidebarOpen
+                    ? (sidebarPosition === 'right' ? 'w-80 lg:w-96 max-w-[calc(100vw-80px)] border-l' : 'h-64 lg:h-80 w-full border-t')
                     : 'w-0 h-0 opacity-0 pointer-events-none'
-            } transition-all duration-300 bg-surface border-border-color flex flex-col overflow-hidden z-20 flex-shrink-0`}>
+            } transition-all duration-300 bg-glass/40 backdrop-blur-xl border-border-color flex flex-col overflow-hidden z-20 flex-shrink-0`}>
                 {/* Sidebar Header */}
                 <div className="p-4 border-b border-border-color flex justify-between items-center flex-shrink-0">
                     <div>
@@ -680,6 +747,16 @@ const FeedbackVideoDetailPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Version Upload Modal */}
+            <VersionUploadModal
+                isOpen={isUploadModalOpen}
+                onClose={() => setIsUploadModalOpen(false)}
+                onUpload={handleCreateVersion}
+                type="video"
+                projectId={projectId || ''}
+                feedbackItemId={feedbackItemId || ''}
+            />
         </div>
     );
 };

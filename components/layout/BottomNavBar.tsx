@@ -8,6 +8,7 @@ import { ProjectsIcon } from '../icons/ProjectsIcon';
 import { BrandIcon } from '../icons/BrandIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
 import { MoreIcon } from '../icons/MoreIcon';
+import { EmailIcon } from '../icons/EmailIcon';
 import MoreMenu from './MoreMenu';
 
 const mainNavItems = [
@@ -18,6 +19,7 @@ const mainNavItems = [
 ];
 
 const moreNavItems = [
+    { to: "/email-templates", Icon: EmailIcon, label: "Emails" },
     { to: "/brands", Icon: BrandIcon, label: "Brands" },
     { to: "/settings", Icon: SettingsIcon, label: "Settings" },
 ];

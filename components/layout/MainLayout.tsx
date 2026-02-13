@@ -13,6 +13,8 @@ import { BoardIcon } from '../icons/BoardIcon';
 import { RoadmapIcon } from '../icons/RoadmapIcon';
 import { FeedbackIcon } from '../icons/FeedbackIcon';
 import { MoodboardIcon } from '../icons/MoodboardIcon';
+import { useLenis } from '../../src/hooks/useLenis';
+import { useGlobalSmoothScroll } from '../../src/hooks/useGlobalSmoothScroll';
 
 
 interface MainLayoutProps {
@@ -26,6 +28,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
   const { data } = useData();
   const { view, setView, headerTitle, navigateDate, today, isCalendarPage } = useCalendar();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const mainRef = useLenis<HTMLElement>();
+
+  // Enable smooth scrolling on all nested scrollable elements
+  useGlobalSmoothScroll();
 
   // Updated matching to be more robust
   const boardMatch = useMatch('/board/:boardId');
@@ -149,30 +155,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
 
           <div className="hidden md:flex items-center gap-4">
             <Header />
-             {/* Profile dropdown */}
-            <div className="relative">
-              <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-2 focus:outline-none">
-                <img
-                  className="h-12 w-12 rounded-2xl object-cover border border-border-color"
-                  src="https://picsum.photos/100"
-                  alt="User"
-                />
-              </button>
-              {profileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-glass rounded-xl shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-10 border border-border-color">
-                  <Link to="/admin" onClick={() => setProfileDropdownOpen(false)} className="block px-4 py-2 text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary">Admin Dashboard</Link>
-                  <Link to="/profile" onClick={() => setProfileDropdownOpen(false)} className="block px-4 py-2 text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary">Profile</Link>
-                  <Link to="/settings" onClick={() => setProfileDropdownOpen(false)} className="block px-4 py-2 text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary">Settings</Link>
-                  <button onClick={handleLogoutClick} className="w-full text-left block px-4 py-2 text-sm text-text-secondary hover:bg-glass-light hover:text-text-primary">
-                    Sign out
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
         
-        <main className={`flex-1 overflow-x-hidden overflow-y-auto bg-background px-4 md:px-10 pt-4 pb-24 md:pb-10 transition-all duration-300`}>
+        <main ref={mainRef} className={`flex-1 overflow-x-hidden overflow-y-auto bg-background px-4 md:px-10 pt-4 pb-24 md:pb-10 transition-all duration-300`}>
           {children}
         </main>
       </div>

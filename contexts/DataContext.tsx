@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem } from '../types';
+import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup, FeedbackVideo, FeedbackComment, EmailTemplate } from '../types';
 import { toast } from 'sonner';
 
 // Import all data sources
@@ -49,6 +49,7 @@ const dataStore = {
     calendar_events: initialCalendarEvents,
     time_logs: initialTimeLogs,
     board_members: initialUsers, // Alias for users, used in some components
+    emailTemplates: [] as EmailTemplate[],
 };
 
 type DataStoreKey = keyof typeof dataStore;
@@ -58,7 +59,7 @@ interface DataContextType {
     loading: boolean;
     error: Error | null;
     user: FirebaseUser | null;
-    updateData: (key: DataStoreKey, newData: any[]) => void;
+    updateData: (key: DataStoreKey, newData: unknown[]) => void;
     forceUpdate: () => void;
 }
 
@@ -78,24 +79,48 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     useEffect(() => {
-        setLoading(true);
-        const qBrands = query(collection(db, 'brands'), orderBy('name'));
-        const qUsers = query(collection(db, 'users'));
-        const qProjects = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
-        
-        // Use collectionGroup to query subcollections across all projects
-        const qBoards = query(collectionGroup(db, 'boards'));
-        const qStages = query(collectionGroup(db, 'stages'));
-        const qTasks = query(collectionGroup(db, 'tasks'));
-        const qTags = query(collectionGroup(db, 'tags'));
-        const qTimeLogs = query(collectionGroup(db, 'time_logs'));
-        const qRoadmapItems = query(collectionGroup(db, 'roadmap'));
-        const qComments = query(collectionGroup(db, 'comments'));
-        const qActivities = query(collectionGroup(db, 'activities'));
-        const qMoodboards = query(collectionGroup(db, 'moodboards'));
-        const qMoodboardItems = query(collectionGroup(db, 'moodboard_items'));
+        // Don't query Firestore until user is authenticated
+        if (!user) {
+            setLoading(false);
+            return;
+        }
 
-        const unsubscribers = [
+        let unsubscribers: (() => void)[] = [];
+        let isMounted = true;
+
+        const startListeners = async () => {
+            try {
+                // Force token refresh to ensure Firestore has valid credentials
+                await user.getIdToken(true);
+            } catch (err) {
+                console.error("[DataContext] Failed to get auth token:", err);
+                return;
+            }
+
+            if (!isMounted) return;
+
+            setLoading(true);
+            const qBrands = query(collection(db, 'brands'), orderBy('name'));
+            const qUsers = query(collection(db, 'users'));
+            const qProjects = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
+
+            // Use root-level collections instead of collectionGroup
+            // collectionGroup requires special index configuration
+            const qBoards = query(collection(db, 'boards'));
+            const qStages = query(collection(db, 'stages'));
+            const qTasks = query(collection(db, 'tasks'));
+            const qTags = query(collection(db, 'tags'));
+            const qTimeLogs = query(collection(db, 'time_logs'));
+            const qRoadmapItems = query(collection(db, 'roadmap'));
+            const qComments = query(collection(db, 'comments'));
+            const qActivities = query(collection(db, 'activities'));
+            const qMoodboards = query(collection(db, 'moodboards'));
+            const qMoodboardItems = query(collection(db, 'moodboard_items'));
+            const qFeedbackItems = query(collection(db, 'feedbackItems'));
+            const qFeedbackComments = query(collection(db, 'feedbackComments'));
+            const qEmailTemplates = query(collection(db, 'emailTemplates'));
+
+            unsubscribers = [
             onSnapshot(qBrands, (snapshot) => {
                 dataStore.brands = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand));
                 setVersion(v => v + 1);
@@ -229,13 +254,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const fetchedItems = snapshot.docs.map(doc => {
                      const pathSegments = doc.ref.path.split('/');
                      const projectId = pathSegments[1];
-                     return { id: doc.id, projectId, ...doc.data() } as any; 
+                     const data = doc.data();
+                     return { id: doc.id, projectId, ...data };
                 });
-                
+
                 // Distribute to specific arrays based on type
-                dataStore.feedbackWebsites = [...initialFeedbackWebsites, ...fetchedItems.filter(i => i.type === 'website')];
-                dataStore.feedbackMockups = [...initialFeedbackMockups, ...fetchedItems.filter(i => i.type === 'mockup')];
-                dataStore.feedbackVideos = [...initialFeedbackVideos, ...fetchedItems.filter(i => i.type === 'video')];
+                dataStore.feedbackWebsites = [...initialFeedbackWebsites, ...fetchedItems.filter((i): i is FeedbackWebsite => (i as {type?: string}).type === 'website')] as FeedbackWebsite[];
+                dataStore.feedbackMockups = [...initialFeedbackMockups, ...fetchedItems.filter((i): i is FeedbackMockup => (i as {type?: string}).type === 'mockup')] as FeedbackMockup[];
+                dataStore.feedbackVideos = [...initialFeedbackVideos, ...fetchedItems.filter((i): i is FeedbackVideo => (i as {type?: string}).type === 'video')] as FeedbackVideo[];
 
                 setVersion(v => v + 1);
             }, (err) => {
@@ -245,7 +271,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Listen to comments (feedback items subcollection)
             onSnapshot(query(collectionGroup(db, 'comments')), (snapshot) => {
-                 const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+                 const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeedbackComment));
                  // Filter to ensure we only get feedback comments if 'comments' is reused elsewhere?
                  // For now, assume global comments are feedback comments or compatible.
                  dataStore.feedbackComments = [...initialFeedbackComments, ...fetchedItems];
@@ -254,26 +280,42 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 console.error("Error fetching feedback comments: ", err);
                 toast.error('Error syncing feedback comments', { description: 'Please refresh the page' });
             }),
+
+            // Email Templates listener
+            onSnapshot(qEmailTemplates, (snapshot) => {
+                const fetchedTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
+                dataStore.emailTemplates = fetchedTemplates;
+                setVersion(v => v + 1);
+            }, (err) => {
+                console.error("Error fetching email templates: ", err);
+                toast.error('Error syncing email templates', { description: 'Please refresh the page' });
+            }),
         ];
 
-        Promise.all(unsubscribers.map(unsub => new Promise(res => setTimeout(res, 200)))).finally(() => setLoading(false));
+            Promise.all(unsubscribers.map(() => new Promise(res => setTimeout(res, 200)))).finally(() => {
+                if (isMounted) setLoading(false);
+            });
+        };
+
+        startListeners();
 
         return () => {
+            isMounted = false;
             unsubscribers.forEach(unsub => unsub());
         };
-    }, []);
+    }, [user]);
 
     const forceUpdate = useCallback(() => {
         setVersion(v => v + 1);
     }, []);
 
-    const updateData = useCallback((key: DataStoreKey, newData: any[]) => {
+    const updateData = useCallback((key: DataStoreKey, newData: unknown[]) => {
         const dataArray = dataStore[key];
         if (Array.isArray(dataArray)) {
             dataArray.length = 0;
             Array.prototype.push.apply(dataArray, newData);
         } else {
-            (dataStore as any)[key] = newData[0]; 
+            (dataStore as Record<string, unknown>)[key] = newData[0];
         }
         forceUpdate();
     }, [forceUpdate]);

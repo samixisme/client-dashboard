@@ -331,6 +331,16 @@ export interface FeedbackItem {
   pages?: {id: string, name: string, url: string, approved?: boolean}[]; // For websites
   images?: {id: string, name: string, url: string, approved?: boolean}[]; // For mockups
   videos?: {id: string, name: string, url: string, approved?: boolean}[]; // For videos
+  version?: number; // Current active version number (1, 2, 3...)
+  versions?: FeedbackItemVersion[]; // Array of all version history
+}
+
+export interface FeedbackItemVersion {
+  versionNumber: number;
+  assetUrl: string; // URL for this specific version
+  createdAt: Timestamp | { seconds: number };
+  createdBy: string; // userId who created this version
+  notes?: string; // Optional version notes/changelog
 }
 
 export interface FeedbackItemComment {
@@ -340,6 +350,8 @@ export interface FeedbackItemComment {
   commentText: string;
   createdAt: any; // Timestamp or Date
   resolved: boolean;
+  version?: number; // Version number this comment belongs to
+  screenPath?: string; // URL path of specific screen/image for mockups with multiple images
   position?: { x: number; y: number }; // ONLY for 'mockup' type
   timestamp?: number; // ONLY for 'video' type (time in seconds)
   startTime?: number; // Video comment start time in seconds
@@ -517,4 +529,139 @@ export interface PdfGenerationOptions {
     image?: { type: string; quality: number };
     html2canvas?: { scale: number; useCORS: boolean };
     jsPDF?: { unit: string; format: string; orientation: string };
+}
+
+// Email Template Feature Types
+export type EmailTemplateStatus = 'draft' | 'published' | 'archived';
+export type EmailTemplateCategory = 'marketing' | 'transactional' | 'notification' | 'newsletter' | 'custom';
+
+export interface EmailTemplate {
+    id: string;
+    projectId?: string;
+    brandId?: string;
+    name: string;
+    subject?: string;
+    description?: string;
+    category: EmailTemplateCategory;
+    status: EmailTemplateStatus;
+    document: Record<string, unknown>;  // TReaderDocument JSON from email-builder
+    thumbnailUrl?: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+    tags?: string[];
+    isGlobal: boolean;
+}
+
+export interface EmailSendLog {
+    id: string;
+    templateId: string;
+    recipientEmail: string;
+    recipientName?: string;
+    sentBy: string;
+    sentAt: string;
+    status: 'sent' | 'failed' | 'pending';
+    errorMessage?: string;
+}
+
+// Social Media Dashboard Types
+export type SocialPlatform = 'instagram' | 'twitter' | 'facebook' | 'linkedin' | 'tiktok' | 'youtube';
+export type PostStatus = 'published' | 'scheduled' | 'draft' | 'failed';
+export type AnomalyType = 'spike' | 'drop' | 'unusual_engagement' | 'viral';
+export type AnomalySeverity = 'low' | 'medium' | 'high' | 'critical';
+export type ScheduleStatus = 'scheduled' | 'published' | 'failed' | 'cancelled';
+
+export interface SocialAccount {
+    id: string;
+    platform: SocialPlatform;
+    handle: string;
+    displayName: string;
+    avatarUrl: string;
+    followers: number;
+    following: number;
+    posts: number;
+    isConnected: boolean;
+    lastSynced: string;
+}
+
+export interface PostMetrics {
+    likes: number;
+    comments: number;
+    shares: number;
+    impressions: number;
+    reach: number;
+    engagementRate: number;
+    clicks?: number;
+    saves?: number;
+    videoViews?: number;
+}
+
+export interface SocialPost {
+    id: string;
+    accountId: string;
+    platform: SocialPlatform;
+    content: string;
+    mediaUrls?: string[];
+    publishedAt: string;
+    status: PostStatus;
+    metrics: PostMetrics;
+}
+
+export interface PlatformOverview {
+    platform: SocialPlatform;
+    accountId: string;
+    followers: number;
+    followersChange: number;
+    engagement: number;
+    engagementChange: number;
+    impressions: number;
+    impressionsChange: number;
+    posts: number;
+    postsChange: number;
+    topPostId?: string;
+}
+
+export interface SocialAnomaly {
+    id: string;
+    accountId: string;
+    platform: SocialPlatform;
+    type: AnomalyType;
+    severity: AnomalySeverity;
+    metric: string;
+    expectedValue: number;
+    actualValue: number;
+    detectedAt: string;
+    message: string;
+    isRead: boolean;
+}
+
+export interface ScheduledPost {
+    id: string;
+    accountId: string;
+    platform: SocialPlatform;
+    content: string;
+    mediaUrls?: string[];
+    scheduledFor: string;
+    status: ScheduleStatus;
+    createdAt: string;
+}
+
+export interface EngagementInsight {
+    id: string;
+    platform: SocialPlatform;
+    period: 'daily' | 'weekly' | 'monthly';
+    date: string;
+    likes: number;
+    comments: number;
+    shares: number;
+    impressions: number;
+    reach: number;
+    engagementRate: number;
+}
+
+export interface SocialDashboardFilters {
+    platforms: SocialPlatform[];
+    dateRange: 'last7days' | 'last30days' | 'last90days' | 'custom';
+    customStartDate?: string;
+    customEndDate?: string;
 }

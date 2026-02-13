@@ -158,8 +158,8 @@ const BrandsPage = () => {
 
         tempBrands.sort((a, b) => {
             let comparison = 0;
-            const aDate = a.createdAt ? (a.createdAt as any).toDate ? (a.createdAt as any).toDate() : new Date(a.createdAt as any) : new Date(0);
-            const bDate = b.createdAt ? (b.createdAt as any).toDate ? (b.createdAt as any).toDate() : new Date(b.createdAt as any) : new Date(0);
+            const aDate = a.createdAt ? (typeof a.createdAt === 'object' && 'toDate' in a.createdAt ? a.createdAt.toDate() : new Date(a.createdAt as Date)) : new Date(0);
+            const bDate = b.createdAt ? (typeof b.createdAt === 'object' && 'toDate' in b.createdAt ? b.createdAt.toDate() : new Date(b.createdAt as Date)) : new Date(0);
 
             if (sortState.sortBy === 'createdAt') {
                 comparison = aDate.getTime() - bDate.getTime();
@@ -180,14 +180,14 @@ const BrandsPage = () => {
             createdAt: new Date(),
             memberIds: memberIds,
         };
-        data.brands.push(newBrand as any);
+        data.brands.push(newBrand);
         forceUpdate();
         toast.success('Brand created');
         setIsAddBrandModalOpen(false);
     };
 
     const dataSources = [
-        { name: 'Brands', data: data.brands, onSave: (newData: any) => updateData('brands', newData) },
+        { name: 'Brands', data: data.brands, onSave: (newData: Brand[]) => updateData('brands', newData) },
     ];
 
   if (loading) return <div>Loading...</div>
@@ -324,7 +324,7 @@ const BrandsPage = () => {
                 <tbody>
                     {filteredBrands.map((brand, index) => {
                         const projectCount = projects.filter(p => p.brandId === brand.id).length;
-                        const createdAt = (brand.createdAt as any)?.toDate ? (brand.createdAt as any).toDate() : new Date(brand.createdAt as any);
+                        const createdAt = typeof brand.createdAt === 'object' && brand.createdAt && 'toDate' in brand.createdAt ? brand.createdAt.toDate() : new Date(brand.createdAt as Date);
                         const members = data.users.filter(m => brand.memberIds?.includes(m.id));
                         return (
                             <tr

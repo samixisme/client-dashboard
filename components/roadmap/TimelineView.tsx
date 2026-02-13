@@ -260,10 +260,13 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
 
     const handleMouseUp = useCallback(() => {
         if (dragState && ephemeralItem && wasDraggedRef.current) {
-            const updater = ephemeralItem._type === 'task' ? onUpdateTask : onUpdateItem;
             // Create a clean object to pass up, without internal properties like _type
             const { _type, ...cleanItem } = ephemeralItem;
-            (updater as any)(cleanItem);
+            if (ephemeralItem._type === 'task') {
+                onUpdateTask(cleanItem as Task);
+            } else {
+                onUpdateItem(cleanItem as RoadmapItem);
+            }
         }
         setDragState(null);
         setEphemeralItem(null);
@@ -308,7 +311,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
 
 
     // --- Render Components ---
-    const SidebarItem = ({item, displayOrder, provided}: {item: any, displayOrder: string, provided?: any}) => {
+    const SidebarItem = ({item, displayOrder, provided}: {item: DraggableItem, displayOrder: string, provided?: { innerRef: (element: HTMLElement | null) => void; draggableProps: Record<string, unknown>; dragHandleProps?: Record<string, unknown> | null }}) => {
         const hasChildren = item._type === 'roadmap' && tasksByRoadmapItem.has(item.id);
         const itemLevel = item._type === 'task' ? 1 : 0;
 
@@ -316,7 +319,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
             <div
                 ref={provided?.innerRef}
                 {...provided?.draggableProps}
-                className="h-12 flex items-center border-b border-t border-border-color -mt-px bg-glass-light hover:bg-glass transition-all duration-200"
+                className="h-12 flex items-center border-b border-t border-primary/10 -mt-px bg-black/95 hover:bg-black/80 hover:border-primary/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 animate-fade-in-up cursor-pointer"
                 style={provided?.draggableProps.style}
             >
                 <div className="flex items-center gap-2 px-2 w-full">
@@ -325,9 +328,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                             <DragHandleIcon className="h-5 w-5"/>
                         </div>
                     )}
-                    
-                    <div 
-                        className="flex-shrink-0 bg-white/5 text-text-secondary font-mono text-xs rounded-md h-6 w-10 flex items-center justify-center"
+
+                    <div
+                        className="flex-shrink-0 bg-glass/40 text-text-secondary font-mono text-xs rounded-md h-6 w-10 flex items-center justify-center border border-primary/20 shadow-sm"
                         style={{ marginLeft: `${itemLevel * 1.5}rem`}}
                     >
                         {displayOrder}
@@ -336,7 +339,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                     {!isSidebarCollapsed && (
                         <div className="flex items-center gap-1 overflow-hidden">
                             {hasChildren ? (
-                                <button onClick={() => toggleExpand(item.id)} className="p-0.5 rounded-sm hover:bg-glass">
+                                <button onClick={() => toggleExpand(item.id)} className="p-0.5 rounded-sm hover:bg-glass/60 hover:scale-110 transition-all duration-200 focus:ring-2 focus:ring-primary">
                                     <ChevronDownIcon className={`w-4 h-4 text-text-secondary transition-transform ${expandedItems.has(item.id) ? '' : '-rotate-90'}`} />
                                 </button>
                             ) : (
@@ -353,14 +356,14 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
     const visibleItemCount = sortedRoadmapItems.length + Array.from(expandedItems).reduce((acc, id) => acc + (tasksByRoadmapItem.get(id)?.length || 0), 0);
 
     return (
-        <div className="bg-glass backdrop-blur-lg rounded-2xl border border-border-color overflow-hidden h-full flex flex-col shadow-xl">
+        <div className="bg-glass/60 backdrop-blur-2xl rounded-2xl border border-primary/20 overflow-hidden h-full flex flex-col shadow-2xl shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)] animate-fade-in relative">
             <div ref={timelineContainerRef} className="flex-1 overflow-auto custom-scrollbar">
                 <div className="flex w-fit min-h-full">
                     {/* Sidebar */}
-                    <div className={`sticky left-0 flex-shrink-0 border-r border-border-color bg-glass/95 backdrop-blur-md z-20 transition-all duration-300 ${isSidebarCollapsed ? 'w-24' : 'w-80'}`}>
-                        <div className="h-16 flex items-center justify-between px-4 border-b border-border-color sticky top-0 bg-glass/95 backdrop-blur-md z-30 shadow-sm">
-                            <h3 className={`font-bold text-text-primary transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0 select-none' : 'opacity-100'}`}>Tasks</h3>
-                            <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110" title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+                    <div className={`sticky left-0 flex-shrink-0 border-r border-primary/30 bg-black/95 backdrop-blur-3xl shadow-[2px_0_15px_rgba(0,0,0,0.1)] z-20 transition-all duration-300 ${isSidebarCollapsed ? 'w-24' : 'w-80'}`}>
+                        <div className={`h-16 flex items-center px-4 border-b border-primary/20 sticky top-0 bg-black/95 backdrop-blur-3xl z-30 shadow-xl shadow-[0_4px_15px_rgba(var(--primary-rgb),0.1)] ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+                            <h3 className={`font-bold text-lg bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0 select-none absolute' : 'opacity-100'}`}>Tasks</h3>
+                            <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1.5 rounded-lg hover:bg-white/10 hover:border-primary/60 border border-transparent transition-all duration-200 hover:scale-110 hover:shadow-lg focus:ring-2 focus:ring-primary" title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
                                 <ChevronDownIcon className={`h-5 w-5 text-text-secondary transition-transform duration-300 ${isSidebarCollapsed ? '-rotate-90' : 'rotate-90'}`} />
                             </button>
                         </div>
@@ -409,13 +412,13 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                     {/* Timeline Content Area */}
                     <div className="relative" style={{ width: gridWidth }}>
                         {/* Header (sticky) */}
-                        <div className="sticky top-0 bg-glass/95 backdrop-blur-md z-10 shadow-sm">
+                        <div className="sticky top-0 bg-glass-light/80 backdrop-blur-2xl z-10 shadow-xl shadow-[0_4px_20px_rgba(var(--primary-rgb),0.15)]">
                             <div className="flex relative">
                                 {months.map(({ date, days }, index) => {
                                     const isLastMonth = index === months.length - 1;
                                     return (
-                                        <div key={date.toISOString()} className={`h-8 flex-shrink-0 border-b border-border-color flex items-center justify-center hover:bg-glass-light/30 transition-colors duration-200 ${!isLastMonth ? 'border-r border-border-color' : ''}`} style={{ width: days * DAY_WIDTH }}>
-                                            <span className="text-sm font-bold text-text-primary">{date.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                                        <div key={date.toISOString()} className={`h-8 flex-shrink-0 border-b border-primary/20 flex items-center justify-center hover:bg-glass/60 hover:shadow-lg transition-all duration-200 ${!isLastMonth ? 'border-r border-primary/20' : ''}`} style={{ width: days * DAY_WIDTH }}>
+                                            <span className="text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{date.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
                                         </div>
                                     )
                                 })}
@@ -426,9 +429,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                     const isLast = i === totalDays - 1;
                                     const isToday = day.toDateString() === new Date().toDateString();
                                     return (
-                                        <div key={i} className={`h-8 flex-shrink-0 ${!isLast ? 'border-r border-border-color' : ''} flex flex-col items-center justify-center hover:bg-glass-light/30 transition-colors duration-200 ${isToday ? 'bg-primary/10' : ''} overflow-hidden`} style={{ width: DAY_WIDTH }}>
+                                        <div key={i} className={`h-8 flex-shrink-0 ${!isLast ? 'border-r border-primary/20' : ''} flex flex-col items-center justify-center hover:bg-glass/60 hover:scale-105 transition-all duration-200 ${isToday ? 'bg-primary/20 shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)] animate-pulse-glow' : ''} overflow-hidden`} style={{ width: DAY_WIDTH }}>
                                             <p className="text-xs text-text-secondary font-medium leading-none">{day.toLocaleDateString('default', { weekday: 'short' }).charAt(0)}</p>
-                                            <p className={`text-xs font-bold leading-none mt-0.5 ${isToday ? 'text-primary' : 'text-text-primary'}`}>{day.getDate()}</p>
+                                            <p className={`text-xs font-bold leading-none mt-0.5 ${isToday ? 'text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.6)]' : 'text-text-primary'}`}>{day.getDate()}</p>
                                         </div>
                                     )
                                 })}
@@ -447,16 +450,16 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                     return (
                                         <div
                                             key={i}
-                                            className={`h-full ${!isLast ? 'border-r border-border-color' : ''} flex-shrink-0 ${isWeekend ? 'bg-white/5' : ''} ${isToday ? 'bg-primary/5' : ''}`}
+                                            className={`h-full ${!isLast ? 'border-r border-primary/10' : ''} flex-shrink-0 ${isWeekend ? 'bg-white/5' : ''} ${isToday ? 'bg-primary/10 shadow-[inset_0_0_20px_rgba(var(--primary-rgb),0.15)]' : ''}`}
                                             style={{ width: DAY_WIDTH }}
                                         />
                                     );
                                 })}
                             </div>
-                            
+
                             {/* Horizontal lines */}
                             {Array.from({ length: visibleItemCount }).map((_, i) => (
-                                <div key={i} className="h-12 border-b border-border-color"></div>
+                                <div key={i} className="h-12 border-b border-primary/10"></div>
                             ))}
                             
                             {/* Bars */}
@@ -502,7 +505,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                             <div key={item.id}>
                                                {width > 0 && (
                                                     <div
-                                                        className={`absolute h-8 rounded-lg flex items-center group z-10 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:brightness-110 shadow-md ${isEditMode ? 'cursor-move' : 'cursor-pointer'}`}
+                                                        className={`absolute h-8 rounded-lg flex items-center group z-10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[0_0_25px_rgba(var(--primary-rgb),0.5)] hover:brightness-110 shadow-xl animate-scale-in ${isEditMode ? 'cursor-move' : 'cursor-pointer'}`}
                                                         style={{
                                                             top: `${index * 3 + 0.5}rem`,
                                                             left: left + 2,
@@ -519,7 +522,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                             }
                                                         }}
                                                     >
-                                                        {isEditMode && <div className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 z-20" onMouseDown={(e) => handleBarDragStart(item, 'resize-left', e)}></div>}
+                                                        {isEditMode && <div className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-primary/30 rounded-l-lg z-20 transition-opacity duration-200" onMouseDown={(e) => handleBarDragStart(item, 'resize-left', e)}></div>}
                                                         <div className="flex items-center gap-2 px-2 overflow-hidden min-w-0 flex-1">
                                                             <span className="text-sm font-semibold text-background truncate min-w-0 flex-shrink">{item.title}</span>
                                                             {width > 150 && <span className="text-xs font-mono text-background/80 truncate flex-shrink-0">{formatDate(itemStartDate)} - {formatDate(itemEndDate)}</span>}
@@ -531,7 +534,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        {isEditMode && <div className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 z-20" onMouseDown={(e) => handleBarDragStart(item, 'resize-right', e)}></div>}
+                                                        {isEditMode && <div className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-primary/30 rounded-r-lg z-20 transition-opacity duration-200" onMouseDown={(e) => handleBarDragStart(item, 'resize-right', e)}></div>}
                                                     </div>
                                                )}
                                             </div>

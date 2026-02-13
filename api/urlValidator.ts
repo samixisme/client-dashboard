@@ -70,7 +70,7 @@ export function validateUrl(urlString: string): { isValid: boolean; error?: stri
  * @param value - The value to validate
  * @returns boolean indicating if valid
  */
-export function validateId(value: any): boolean {
+export function validateId(value: unknown): boolean {
   if (!value) return false;
   if (typeof value !== 'string') return false;
   // Allow alphanumeric, hyphens, and underscores (common ID formats)

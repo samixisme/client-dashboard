@@ -11,6 +11,7 @@ import { SettingsIcon } from '../icons/SettingsIcon';
 import { AiSparkleIcon } from '../icons/AiSparkleIcon';
 import { PaymentsIcon } from '../icons/PaymentsIcon';
 import { BoardIcon } from '../icons/BoardIcon'; // Import BoardIcon
+import { EmailIcon } from '../icons/EmailIcon';
 
 const AdminSidebar: React.FC = () => {
   const navLinkClasses = ({ isActive }: { isActive: boolean }) => 
@@ -56,6 +57,10 @@ const AdminSidebar: React.FC = () => {
         <NavLink to="/admin/moodboards" className={navLinkClasses}>
             <MoodboardIcon className="h-5 w-5" />
             Moodboards
+        </NavLink>
+        <NavLink to="/admin/email-templates" className={navLinkClasses}>
+            <EmailIcon className="h-5 w-5" />
+            Email Templates
         </NavLink>
         
         <div className="pt-4 pb-2 px-4 text-xs font-semibold text-text-secondary uppercase tracking-wider">Management</div>
