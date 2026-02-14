@@ -49,7 +49,7 @@ google-service-account.json
 firestore.rules.backup
 firestore.rules.temp
 firestore.rules.production
-ecosystem.config.js
+# ecosystem.config.js - Now committed to repo for production deployment
 
 # AI assistant directories
 .gemini/
