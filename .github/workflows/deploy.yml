@@ -17,7 +17,7 @@ on:
           - staging
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   DEPLOY_USER: clientdash
   DEPLOY_HOST: 49.13.129.43
   DEPLOY_PATH: /home/clientdash/client-dashboard
