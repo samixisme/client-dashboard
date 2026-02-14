@@ -210,10 +210,25 @@ jobs:
 
             # Reload PM2 with zero-downtime
             cd ${{ env.DEPLOY_PATH }}/current
+
+            # Debug: Check if dist-server exists
+            echo "=== Checking deployment structure ==="
+            ls -la
+            echo "=== Checking dist-server ==="
+            ls -la dist-server/ || echo "⚠️ dist-server not found!"
+            echo "=== Checking dist-server/api ==="
+            ls -la dist-server/api/ || echo "⚠️ dist-server/api not found!"
+
             pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
 
             # Save PM2 process list
             pm2 save
+
+            # Show PM2 logs immediately after start
+            echo "=== PM2 Status ==="
+            pm2 status
+            echo "=== Recent PM2 Logs ==="
+            pm2 logs --lines 50 --nostream || true
           EOF
 
       - name: Wait for application startup
