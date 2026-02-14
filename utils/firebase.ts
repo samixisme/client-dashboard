@@ -13,8 +13,17 @@ const isLocalhost = typeof window !== 'undefined' &&
 const isProductionDebug = typeof window !== 'undefined' &&
   window.location?.hostname === "client.samixism.com";
 
+// Debug logging to see what's happening
+if (typeof window !== 'undefined') {
+  console.log('[Firebase Debug] Current hostname:', window.location?.hostname);
+  console.log('[Firebase Debug] isLocalhost:', isLocalhost);
+  console.log('[Firebase Debug] isProductionDebug:', isProductionDebug);
+}
+
 if (isLocalhost || isProductionDebug) {
   (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  console.log('[Firebase Debug] App Check debug token enabled');
+  console.log('[Firebase Debug] Debug token will appear after App Check initialization');
 }
 
 // Your web app's Firebase configuration (secure via environment variables)
