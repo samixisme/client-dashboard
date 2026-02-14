@@ -20,7 +20,7 @@ env:
   NODE_VERSION: '18'
   DEPLOY_USER: clientdash
   DEPLOY_HOST: 49.13.129.43
-  DEPLOY_PATH: /var/www/client-samixism
+  DEPLOY_PATH: /home/clientdash/client-dashboard
   PM2_APP_NAME: client-dashboard
 
 jobs:
@@ -135,6 +135,14 @@ jobs:
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ env.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Ensure deployment directory structure exists
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            # Create all required directories
+            mkdir -p ${{ env.DEPLOY_PATH }}/{releases,backups,shared}
+            echo "✅ Directory structure created/verified"
+          EOF
 
       - name: Create backup on server
         run: |
