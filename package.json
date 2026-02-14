@@ -87,6 +87,6 @@
     "test:verbose": "jest --verbose",
     "test:drive": "tsx utils/testDrive.ts",
     "diagnose:drive": "tsx utils/diagnoseDrive.ts",
-    "prepare": "husky"
+    "prepare": "husky || true"
   }
 }
