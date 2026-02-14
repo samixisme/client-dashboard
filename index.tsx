@@ -5,6 +5,7 @@ import App from './App';
 import { HashRouter } from 'react-router-dom';
 import './src/index.css'; // Import Tailwind CSS
 import './cursor.css'; // Import cursor styles
+import './shimmer.css'; // Import shimmer animation styles
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
