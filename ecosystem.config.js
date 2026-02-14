@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'client-dashboard-api',
-      script: './api/server.js',
+      script: './dist-server/api/server.js',
       instances: 2,
       exec_mode: 'cluster',
       env: {

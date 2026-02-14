@@ -83,14 +83,14 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: Build API server
+      - name: Build API server (TypeScript compilation)
         run: npx tsc -p tsconfig.server.json
 
       - name: Create deployment package
         run: |
           mkdir -p deploy-package
           cp -r dist deploy-package/
-          cp -r api deploy-package/
+          cp -r dist-server deploy-package/
           cp package.json package-lock.json deploy-package/
           cp ecosystem.config.js deploy-package/ || echo "ecosystem.config.js will be created on server"
           cp -r firestore.* deploy-package/ || true
