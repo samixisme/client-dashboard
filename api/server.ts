@@ -15,6 +15,9 @@ dotenv.config();
 const app = express();
 const port = 3001;
 
+// Trust proxy - Required when behind nginx reverse proxy
+app.set('trust proxy', true);
+
 // Security middleware - Helmet for security headers
 app.use(helmet({
   contentSecurityPolicy: false, // Disabled because proxy modifies CSP
