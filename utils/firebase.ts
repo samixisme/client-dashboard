@@ -45,17 +45,25 @@ const app = initializeApp(firebaseConfig);
 const initAppCheck = () => {
   const siteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY;
 
-  if (!siteKey && !isLocalhost) {
+  // Don't initialize App Check ONLY if there's no site key AND we're not in debug mode
+  if (!siteKey && !isLocalhost && !isProductionDebug) {
+    console.log('[Firebase Debug] Skipping App Check: no site key and not in debug mode');
     return null;
   }
+
+  console.log('[Firebase Debug] Initializing App Check...');
+  console.log('[Firebase Debug] Site key:', siteKey ? 'provided' : 'using fallback test key');
+  console.log('[Firebase Debug] Debug mode:', isLocalhost || isProductionDebug);
 
   try {
     const appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(siteKey || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
       isTokenAutoRefreshEnabled: true
     });
+    console.log('[Firebase Debug] App Check initialized successfully');
     return appCheck;
   } catch (error) {
+    console.error('[Firebase Debug] App Check initialization failed:', error);
     return null;
   }
 };
