@@ -15,8 +15,8 @@ dotenv.config();
 const app = express();
 const port = 3001;
 
-// Trust proxy - Required when behind nginx reverse proxy
-app.set('trust proxy', true);
+// Trust proxy - Single nginx reverse proxy
+app.set('trust proxy', 1);
 
 // Security middleware - Helmet for security headers
 app.use(helmet({
@@ -51,6 +51,47 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
+
+// Health check endpoints (BEFORE rate limiter to avoid blocking monitoring)
+// Health check endpoint for load balancer and monitoring
+app.get('/health', (req, res) => {
+  const healthcheck = {
+    uptime: process.uptime(),
+    message: 'OK',
+    timestamp: Date.now(),
+    service: 'client-dashboard-api',
+    version: process.env.npm_package_version || '1.0.0',
+  };
+
+  try {
+    res.status(200).json(healthcheck);
+  } catch (error) {
+    healthcheck.message = error instanceof Error ? error.message : 'Unknown error';
+    res.status(503).json(healthcheck);
+  }
+});
+
+// Readiness check (for Kubernetes-style orchestration)
+app.get('/ready', (req, res) => {
+  // Add checks for database connections, external services, etc.
+  const ready = {
+    ready: true,
+    timestamp: Date.now(),
+    checks: {
+      server: 'ok',
+      // Add more checks as needed:
+      // database: await checkDatabase(),
+      // firebase: await checkFirebase(),
+    }
+  };
+
+  res.status(200).json(ready);
+});
+
+// Liveness check (minimal check that process is alive)
+app.get('/alive', (req, res) => {
+  res.status(200).json({ alive: true });
+});
 
 // Rate limiting - Prevent abuse
 const limiter = rateLimit({
@@ -106,46 +147,6 @@ app.use('/api/social', socialRouter);
 
 // Webhook handlers (Instagram, Facebook, Twitter, etc.)
 app.use('/api/webhooks', webhookRouter);
-
-// Health check endpoint for load balancer and monitoring
-app.get('/health', (req, res) => {
-  const healthcheck = {
-    uptime: process.uptime(),
-    message: 'OK',
-    timestamp: Date.now(),
-    service: 'client-dashboard-api',
-    version: process.env.npm_package_version || '1.0.0',
-  };
-
-  try {
-    res.status(200).json(healthcheck);
-  } catch (error) {
-    healthcheck.message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(503).json(healthcheck);
-  }
-});
-
-// Readiness check (for Kubernetes-style orchestration)
-app.get('/ready', (req, res) => {
-  // Add checks for database connections, external services, etc.
-  const ready = {
-    ready: true,
-    timestamp: Date.now(),
-    checks: {
-      server: 'ok',
-      // Add more checks as needed:
-      // database: await checkDatabase(),
-      // firebase: await checkFirebase(),
-    }
-  };
-
-  res.status(200).json(ready);
-});
-
-// Liveness check (minimal check that process is alive)
-app.get('/alive', (req, res) => {
-  res.status(200).json({ alive: true });
-});
 
 // PM2 ready signal support
 if (process.send) {
