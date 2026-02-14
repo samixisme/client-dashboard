@@ -28,23 +28,11 @@ const firebaseConfig = {
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// Initialize App Check - uses debug tokens for localhost, reCAPTCHA for production
+// Initialize App Check - TEMPORARILY DISABLED for debugging
+// App Check was blocking Firestore requests on production domain
 const initAppCheck = () => {
-  const siteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY;
-
-  if (!siteKey && !isLocalhost) {
-    return null;
-  }
-
-  try {
-    const appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(siteKey || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
-      isTokenAutoRefreshEnabled: true
-    });
-    return appCheck;
-  } catch (error) {
-    return null;
-  }
+  // TODO: Re-enable after adding proper ReCaptcha site key or debug token
+  return null;
 };
 
 export const appCheck = initAppCheck();
