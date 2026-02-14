@@ -9,7 +9,11 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 const isLocalhost = typeof window !== 'undefined' &&
   (window.location?.hostname === "localhost" || window.location?.hostname === "127.0.0.1");
 
-if (isLocalhost) {
+// Also enable debug token for production domain during development
+const isProductionDebug = typeof window !== 'undefined' &&
+  window.location?.hostname === "client.samixism.com";
+
+if (isLocalhost || isProductionDebug) {
   (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 
