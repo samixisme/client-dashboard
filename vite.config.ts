@@ -17,8 +17,6 @@ export default defineConfig(({ mode }) => {
     console.log('[Vite Config] VITE_FIREBASE_PROJECT_ID from process.env:', process.env.VITE_FIREBASE_PROJECT_ID);
 
     return {
-      // In CI, don't try to load .env files - use process.env directly
-      envDir: isCI ? false : '.',
       envPrefix: 'VITE_',
       server: {
         port: 3000,
