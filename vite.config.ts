@@ -3,7 +3,11 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
+    // In production (CI/CD), use process.env (from GitHub Secrets)
+    // In development, load from .env files
+    const env = mode === 'production' && process.env.CI
+      ? process.env
+      : loadEnv(mode, '.', '');
     return {
       server: {
         port: 3000,
