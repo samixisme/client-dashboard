@@ -3,13 +3,26 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
+    // Debug logging
+    console.log('[Vite Config] mode:', mode);
+    console.log('[Vite Config] process.env.CI:', process.env.CI);
+    console.log('[Vite Config] process.env.GITHUB_ACTIONS:', process.env.GITHUB_ACTIONS);
+    console.log('[Vite Config] process.env.NODE_ENV:', process.env.NODE_ENV);
+
     // In production (CI/CD), use process.env (from GitHub Secrets)
     // In development, load from .env files
-    // GitHub Actions sets GITHUB_ACTIONS=true, CI=true, and NODE_ENV=production
-    const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+    // Check if we have Firebase env vars directly available (from GitHub Actions)
+    const hasFirebaseEnvVars = !!(process.env.VITE_FIREBASE_PROJECT_ID);
+    const isCI = hasFirebaseEnvVars || process.env.CI || process.env.GITHUB_ACTIONS;
+
+    console.log('[Vite Config] hasFirebaseEnvVars:', hasFirebaseEnvVars);
+    console.log('[Vite Config] isCI:', isCI);
+
     const env = mode === 'production' && isCI
       ? process.env
       : loadEnv(mode, '.', '');
+
+    console.log('[Vite Config] Using env source:', mode === 'production' && isCI ? 'process.env (CI)' : 'loadEnv (local)');
     return {
       server: {
         port: 3000,
