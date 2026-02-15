@@ -21,9 +21,13 @@ if (typeof window !== 'undefined') {
 }
 
 if (isLocalhost || isProductionDebug) {
-  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  console.log('[Firebase Debug] App Check debug token enabled');
-  console.log('[Firebase Debug] Debug token will appear after App Check initialization');
+  // FIXED debug token for client.samixism.com - register this in Firebase Console
+  const debugToken = 'abcd1234-5678-90ef-ghij-klmnopqrstuv';
+  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+  console.log('[Firebase Debug] ========================================');
+  console.log('[Firebase Debug] APP CHECK DEBUG TOKEN:', debugToken);
+  console.log('[Firebase Debug] ========================================');
+  console.log('[Firebase Debug] Register this in Firebase Console > App Check > Debug tokens');
 }
 
 // Your web app's Firebase configuration (secure via environment variables)
