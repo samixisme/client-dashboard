@@ -9,21 +9,17 @@ export default defineConfig(({ mode }) => {
     console.log('[Vite Config] process.env.GITHUB_ACTIONS:', process.env.GITHUB_ACTIONS);
     console.log('[Vite Config] process.env.NODE_ENV:', process.env.NODE_ENV);
 
-    // In production (CI/CD), use process.env (from GitHub Secrets)
-    // In development, load from .env files
-    // Check if we have Firebase env vars directly available (from GitHub Actions)
-    const hasFirebaseEnvVars = !!(process.env.VITE_FIREBASE_PROJECT_ID);
-    const isCI = hasFirebaseEnvVars || process.env.CI || process.env.GITHUB_ACTIONS;
+    // In CI/CD, environment variables are already in process.env from GitHub Secrets
+    // We need to explicitly pass them to Vite's define to embed them in the build
+    const isCI = !!(process.env.CI || process.env.GITHUB_ACTIONS);
 
-    console.log('[Vite Config] hasFirebaseEnvVars:', hasFirebaseEnvVars);
     console.log('[Vite Config] isCI:', isCI);
+    console.log('[Vite Config] VITE_FIREBASE_PROJECT_ID from process.env:', process.env.VITE_FIREBASE_PROJECT_ID);
 
-    const env = mode === 'production' && isCI
-      ? process.env
-      : loadEnv(mode, '.', '');
-
-    console.log('[Vite Config] Using env source:', mode === 'production' && isCI ? 'process.env (CI)' : 'loadEnv (local)');
     return {
+      // In CI, don't try to load .env files - use process.env directly
+      envDir: isCI ? false : '.',
+      envPrefix: 'VITE_',
       server: {
         port: 3000,
         host: '0.0.0.0',
@@ -36,18 +32,16 @@ export default defineConfig(({ mode }) => {
         }
       },
       plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        // Firebase environment variables for build-time replacement
-        'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY),
-        'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN),
-        'import.meta.env.VITE_FIREBASE_DATABASE_URL': JSON.stringify(env.VITE_FIREBASE_DATABASE_URL),
-        'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID),
-        'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(env.VITE_FIREBASE_STORAGE_BUCKET),
-        'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
-        'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID)
-      },
+      define: isCI ? {
+        // Explicitly inject GitHub Secrets into the build
+        'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(process.env.VITE_FIREBASE_API_KEY),
+        'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(process.env.VITE_FIREBASE_AUTH_DOMAIN),
+        'import.meta.env.VITE_FIREBASE_DATABASE_URL': JSON.stringify(process.env.VITE_FIREBASE_DATABASE_URL),
+        'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(process.env.VITE_FIREBASE_PROJECT_ID),
+        'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(process.env.VITE_FIREBASE_STORAGE_BUCKET),
+        'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(process.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+        'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(process.env.VITE_FIREBASE_APP_ID),
+      } : {},
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
