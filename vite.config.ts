@@ -5,7 +5,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     // In production (CI/CD), use process.env (from GitHub Secrets)
     // In development, load from .env files
-    const env = mode === 'production' && process.env.CI
+    // GitHub Actions sets GITHUB_ACTIONS=true, CI=true, and NODE_ENV=production
+    const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+    const env = mode === 'production' && isCI
       ? process.env
       : loadEnv(mode, '.', '');
     return {
