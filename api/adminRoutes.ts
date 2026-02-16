@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { getAuth, getFirestore, isAdminInitialized } from './firebaseAdmin';
 
 const router = Router();
@@ -7,7 +7,7 @@ const router = Router();
  * Middleware to check if Firebase Admin is initialized
  * Returns 503 if not available
  */
-function requireAdminSDK(req: Request, res: Response, next: Function) {
+function requireAdminSDK(req: Request, res: Response, next: NextFunction) {
   if (!isAdminInitialized()) {
     return res.status(503).json({
       success: false,
@@ -84,15 +84,15 @@ router.get('/users/:uid', async (req: Request, res: Response) => {
       success: true,
       data: {
         uid: userRecord.uid,
-        email: userRecord.email,
-        displayName: userRecord.displayName,
-        phoneNumber: userRecord.phoneNumber,
-        photoURL: userRecord.photoURL,
+        email: userRecord.email || null,
+        displayName: userRecord.displayName || null,
+        phoneNumber: userRecord.phoneNumber || null,
+        photoURL: userRecord.photoURL || null,
         disabled: userRecord.disabled,
         emailVerified: userRecord.emailVerified,
         customClaims: userRecord.customClaims || {},
         createdAt: userRecord.metadata.creationTime,
-        lastSignInTime: userRecord.metadata.lastSignInTime
+        lastSignInTime: userRecord.metadata.lastSignInTime || null
       }
     });
   } catch (error) {
@@ -166,10 +166,10 @@ router.put('/users/:uid', async (req: Request, res: Response) => {
       success: true,
       data: {
         uid: userRecord.uid,
-        email: userRecord.email,
-        displayName: userRecord.displayName,
-        phoneNumber: userRecord.phoneNumber,
-        photoURL: userRecord.photoURL,
+        email: userRecord.email || null,
+        displayName: userRecord.displayName || null,
+        phoneNumber: userRecord.phoneNumber || null,
+        photoURL: userRecord.photoURL || null,
         disabled: userRecord.disabled
       }
     });
