@@ -8,6 +8,7 @@ import { optionalApiKeyAuth } from './authMiddleware';
 import notificationsRouter from './notifications';
 import socialRouter from './social';
 import webhookRouter from './webhooks';
+import adminRouter from './adminRoutes';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -147,6 +148,9 @@ app.use('/api/social', socialRouter);
 
 // Webhook handlers (Instagram, Facebook, Twitter, etc.)
 app.use('/api/webhooks', webhookRouter);
+
+// Admin API endpoints (Firebase Admin SDK - user management, custom claims, bulk operations)
+app.use('/admin/api', optionalApiKeyAuth, adminRouter);
 
 // PM2 ready signal support
 if (process.send) {
