@@ -298,8 +298,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Calendar Events listener
             onSnapshot(query(collection(db, 'calendar_events')), (snapshot) => {
-                const fetchedEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fetchedEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CalendarEvent));
                 dataStore.calendar_events = [...initialCalendarEvents, ...fetchedEvents];
+                dataStore.calendarEvents = [...initialCalendarEvents, ...fetchedEvents];
                 setVersion(v => v + 1);
             }, (err) => {
                 console.error("Error fetching calendar events: ", err);
@@ -308,7 +309,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Social Accounts listener
             onSnapshot(query(collection(db, 'social_accounts')), (snapshot) => {
-                const fetchedAccounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fetchedAccounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SocialAccount));
                 dataStore.socialAccounts = fetchedAccounts;
                 setVersion(v => v + 1);
             }, (err) => {
@@ -318,7 +319,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Social Posts listener
             onSnapshot(query(collection(db, 'social_posts')), (snapshot) => {
-                const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SocialPost));
                 dataStore.socialPosts = fetchedPosts;
                 setVersion(v => v + 1);
             }, (err) => {
@@ -328,7 +329,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Scheduled Posts listener
             onSnapshot(query(collection(db, 'scheduled_posts')), (snapshot) => {
-                const fetchedScheduled = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fetchedScheduled = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ScheduledPost));
                 dataStore.scheduledPosts = fetchedScheduled;
                 setVersion(v => v + 1);
             }, (err) => {
@@ -338,7 +339,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Social Anomalies listener
             onSnapshot(query(collection(db, 'social_anomalies')), (snapshot) => {
-                const fetchedAnomalies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const fetchedAnomalies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SocialAnomaly));
                 dataStore.socialAnomalies = fetchedAnomalies;
                 setVersion(v => v + 1);
             }, (err) => {
