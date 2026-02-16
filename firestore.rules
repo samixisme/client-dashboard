@@ -7,17 +7,145 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Users collection - own profile only (NO CIRCULAR DEPENDENCY)
-    match /users/{userId} {
-      allow read: if isAuthenticated() && request.auth.uid == userId;
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && request.auth.uid == userId;
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // ALL OTHER COLLECTIONS - Allow all authenticated users
-    // This eliminates the circular dependency completely
-    match /{document=**} {
+    // Users collection - own profile only OR admin can read all
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Admin-controlled collections - only admins can write
+    match /brands/{brandId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+
+      // Boards subcollection
+      match /boards/{boardId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated(); // Allow members to edit boards
+
+        // Stages subcollection
+        match /stages/{stageId} {
+          allow read, write: if isAuthenticated();
+        }
+      }
+    }
+
+    match /calendar_events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /roadmap/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /roadmap_items/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /social_accounts/{accountId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /social_posts/{postId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /scheduled_posts/{postId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /social_anomalies/{anomalyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /emailTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /estimates/{estimateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Collaborative collections - all authenticated users can write
+    match /boards/{boardId} {
       allow read, write: if isAuthenticated();
+    }
+
+    match /stages/{stageId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /tags/{tagId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /comments/{commentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /activities/{activityId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /time_logs/{logId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /moodboards/{moodboardId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /moodboard_items/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /feedbackItems/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /feedbackComments/{commentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Catch-all for any other collections - read only for authenticated users
+    match /{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

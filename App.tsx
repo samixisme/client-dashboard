@@ -70,6 +70,9 @@ import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAICreatorPage from './pages/admin/AdminAICreatorPage';
 import AdminPaymentsPage from './pages/admin/AdminPaymentsPage';
 import AdminClientsPage from './pages/admin/AdminClientsPage';
+import AdminCalendarEventsPage from './pages/admin/AdminCalendarEventsPage';
+import AdminRoadmapPage from './pages/admin/AdminRoadmapPage';
+import AdminSocialMediaPage from './pages/admin/AdminSocialMediaPage';
 
 import { SearchProvider } from './contexts/SearchContext';
 import { AdminProvider } from './contexts/AdminContext';
@@ -241,6 +244,9 @@ function App() {
                       <Route path="settings" element={<AdminSettingsPage />} />
                       <Route path="aicreator" element={<AdminAICreatorPage />} />
                       <Route path="payments" element={<AdminPaymentsPage />} />
+                      <Route path="calendar-events" element={<AdminCalendarEventsPage />} />
+                      <Route path="roadmap" element={<AdminRoadmapPage />} />
+                      <Route path="social-media" element={<AdminSocialMediaPage />} />
                   </Route>
 
                   {/* Main Application Routes - Wrapped in MainLayout */}

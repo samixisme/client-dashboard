@@ -50,6 +50,11 @@ const dataStore = {
     time_logs: initialTimeLogs,
     board_members: initialUsers, // Alias for users, used in some components
     emailTemplates: [] as EmailTemplate[],
+    calendarEvents: initialCalendarEvents,
+    socialAccounts: [] as any[],
+    socialPosts: [] as any[],
+    scheduledPosts: [] as any[],
+    socialAnomalies: [] as any[],
 };
 
 type DataStoreKey = keyof typeof dataStore;
@@ -289,6 +294,56 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }, (err) => {
                 console.error("Error fetching email templates: ", err);
                 toast.error('Error syncing email templates', { description: 'Please refresh the page' });
+            }),
+
+            // Calendar Events listener
+            onSnapshot(query(collection(db, 'calendar_events')), (snapshot) => {
+                const fetchedEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dataStore.calendar_events = [...initialCalendarEvents, ...fetchedEvents];
+                setVersion(v => v + 1);
+            }, (err) => {
+                console.error("Error fetching calendar events: ", err);
+                toast.error('Error syncing calendar events', { description: 'Please refresh the page' });
+            }),
+
+            // Social Accounts listener
+            onSnapshot(query(collection(db, 'social_accounts')), (snapshot) => {
+                const fetchedAccounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dataStore.socialAccounts = fetchedAccounts;
+                setVersion(v => v + 1);
+            }, (err) => {
+                console.error("Error fetching social accounts: ", err);
+                toast.error('Error syncing social accounts', { description: 'Please refresh the page' });
+            }),
+
+            // Social Posts listener
+            onSnapshot(query(collection(db, 'social_posts')), (snapshot) => {
+                const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dataStore.socialPosts = fetchedPosts;
+                setVersion(v => v + 1);
+            }, (err) => {
+                console.error("Error fetching social posts: ", err);
+                toast.error('Error syncing social posts', { description: 'Please refresh the page' });
+            }),
+
+            // Scheduled Posts listener
+            onSnapshot(query(collection(db, 'scheduled_posts')), (snapshot) => {
+                const fetchedScheduled = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dataStore.scheduledPosts = fetchedScheduled;
+                setVersion(v => v + 1);
+            }, (err) => {
+                console.error("Error fetching scheduled posts: ", err);
+                toast.error('Error syncing scheduled posts', { description: 'Please refresh the page' });
+            }),
+
+            // Social Anomalies listener
+            onSnapshot(query(collection(db, 'social_anomalies')), (snapshot) => {
+                const fetchedAnomalies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                dataStore.socialAnomalies = fetchedAnomalies;
+                setVersion(v => v + 1);
+            }, (err) => {
+                console.error("Error fetching social anomalies: ", err);
+                toast.error('Error syncing social anomalies', { description: 'Please refresh the page' });
             }),
         ];
 
