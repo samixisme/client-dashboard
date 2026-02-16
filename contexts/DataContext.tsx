@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup, FeedbackVideo, FeedbackComment, EmailTemplate } from '../types';
+import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup, FeedbackVideo, FeedbackComment, EmailTemplate, CalendarEvent, SocialAccount, SocialPost, ScheduledPost, SocialAnomaly } from '../types';
 import { toast } from 'sonner';
 
 // Import all data sources
@@ -51,10 +51,10 @@ const dataStore = {
     board_members: initialUsers, // Alias for users, used in some components
     emailTemplates: [] as EmailTemplate[],
     calendarEvents: initialCalendarEvents,
-    socialAccounts: [] as any[],
-    socialPosts: [] as any[],
-    scheduledPosts: [] as any[],
-    socialAnomalies: [] as any[],
+    socialAccounts: [] as SocialAccount[],
+    socialPosts: [] as SocialPost[],
+    scheduledPosts: [] as ScheduledPost[],
+    socialAnomalies: [] as SocialAnomaly[],
 };
 
 type DataStoreKey = keyof typeof dataStore;
