@@ -76,7 +76,7 @@ router.post('/users', async (req: Request, res: Response) => {
  */
 router.get('/users/:uid', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
 
     const userRecord = await getAuth().getUser(uid);
 
@@ -149,7 +149,7 @@ router.get('/users', async (req: Request, res: Response) => {
  */
 router.put('/users/:uid', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
     const { email, displayName, phoneNumber, photoURL, disabled, password } = req.body;
 
     const updateData: any = {};
@@ -188,7 +188,7 @@ router.put('/users/:uid', async (req: Request, res: Response) => {
  */
 router.delete('/users/:uid', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
 
     await getAuth().deleteUser(uid);
 
@@ -211,7 +211,7 @@ router.delete('/users/:uid', async (req: Request, res: Response) => {
  */
 router.post('/users/:uid/disable', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
 
     const userRecord = await getAuth().updateUser(uid, { disabled: true });
 
@@ -237,7 +237,7 @@ router.post('/users/:uid/disable', async (req: Request, res: Response) => {
  */
 router.post('/users/:uid/enable', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
 
     const userRecord = await getAuth().updateUser(uid, { disabled: false });
 
@@ -268,7 +268,7 @@ router.post('/users/:uid/enable', async (req: Request, res: Response) => {
  */
 router.post('/users/:uid/claims', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
     const { claims } = req.body;
 
     if (!claims || typeof claims !== 'object') {
@@ -302,7 +302,7 @@ router.post('/users/:uid/claims', async (req: Request, res: Response) => {
  */
 router.get('/users/:uid/claims', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
 
     const userRecord = await getAuth().getUser(uid);
 
