@@ -5,8 +5,10 @@ import { useTimer } from '../../contexts/TimerContext';
 import { useNotificationHistory } from '../../contexts/NotificationHistoryContext';
 import { useUser } from '../../contexts/UserContext';
 import { TimerIcon } from '../icons/TimerIcon';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { NovuInbox } from '../notifications/NovuInbox';
+import { auth } from '../../utils/firebase';
+import { signOut } from 'firebase/auth';
 
 // Helper function to calculate relative time
 const timeSince = (date: Date): string => {
@@ -80,6 +82,7 @@ const Header: React.FC = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { notifications, unreadCount, markAsRead } = useNotificationHistory();
   const { user } = useUser();
+  const navigate = useNavigate();
 
   const handleProfileMenuToggle = () => {
     setProfileMenuOpen(prev => !prev);
@@ -267,9 +270,14 @@ const Header: React.FC = () => {
                       }}
                     >
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setProfileMenuOpen(false);
-                            // Add your logout logic here
+                            try {
+                              await signOut(auth);
+                              navigate('/login');
+                            } catch (error) {
+                              console.error('Error signing out:', error);
+                            }
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-500/10 transition-all duration-200 group"
                         >
