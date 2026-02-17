@@ -154,7 +154,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
           )}
 
           <div className="hidden md:flex items-center gap-4">
-            <Header />
+            <Header onLogout={onLogout} />
           </div>
         </div>
         

@@ -78,7 +78,11 @@ const GlobalTimerWidget: React.FC = () => {
     );
 };
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onLogout: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onLogout }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { notifications, unreadCount, markAsRead } = useNotificationHistory();
   const { user } = useUser();
@@ -270,14 +274,9 @@ const Header: React.FC = () => {
                       }}
                     >
                         <button
-                          onClick={async () => {
+                          onClick={() => {
                             setProfileMenuOpen(false);
-                            try {
-                              await signOut(auth);
-                              navigate('/login');
-                            } catch (error) {
-                              console.error('Error signing out:', error);
-                            }
+                            onLogout();
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-500/10 transition-all duration-200 group"
                         >
