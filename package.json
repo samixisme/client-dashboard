@@ -79,7 +79,7 @@
     "dev": "concurrently \"npm:dev:vite\" \"npm:dev:api\"",
     "dev:vite": "vite --config vite.server.config.ts",
     "dev:api": "ts-node-dev --project tsconfig.server.json --respawn api/server.ts",
-    "build": "vite build && cp dist/feedback.js public/feedback.js",
+    "build": "vite build && node -e \"const fs=require('fs');fs.copyFileSync('dist/feedback.js','public/feedback.js');console.log('feedback.js copied to public/')\"",
     "lint": "eslint .",
     "serve": "vite preview",
     "test": "jest",

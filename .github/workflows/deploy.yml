@@ -99,7 +99,7 @@ jobs:
           cp -r dist deploy-package/
           cp -r dist-server deploy-package/
           cp package.json package-lock.json deploy-package/
-          cp ecosystem.config.js deploy-package/ || echo "ecosystem.config.js will be created on server"
+          cp ecosystem.config.js deploy-package/
           cp -r firestore.* deploy-package/ || true
 
           # Create version file
@@ -146,8 +146,7 @@ jobs:
       - name: Ensure deployment directory structure exists
         run: |
           ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
-            # Create all required directories
-            mkdir -p ${{ env.DEPLOY_PATH }}/{releases,backups,shared}
+            mkdir -p ${{ env.DEPLOY_PATH }}/{releases,backups,shared,logs}
             echo "✅ Directory structure created/verified"
           EOF
 
@@ -178,24 +177,33 @@ jobs:
             rm deploy-${{ github.sha }}.tar.gz
           EOF
 
-      - name: Install dependencies on server
+      - name: Install production dependencies on server
         run: |
           ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
             cd ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}
-            npm ci --production
+            # FIX: Use plain 'npm ci' (not --production) so ALL deps including
+            # transitive runtime deps resolve correctly. DevDeps add ~50MB but
+            # prevent silent runtime failures from missing packages.
+            npm ci
           EOF
 
       - name: Copy environment files
         run: |
           ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+            # Copy shared .env if it exists
             if [ -f "${{ env.DEPLOY_PATH }}/shared/.env" ]; then
               cp ${{ env.DEPLOY_PATH }}/shared/.env ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env
+              echo "✅ .env copied from shared/"
+            else
+              echo "⚠️  WARNING: No shared/.env found!"
+              echo "    Create it at ${{ env.DEPLOY_PATH }}/shared/.env with:"
+              echo "    NODE_ENV=production"
+              echo "    PORT=3001"
+              echo "    ALLOWED_ORIGINS=https://client.samixism.com"
+              echo "    API_KEY=<your-key>"
             fi
 
-            # Create ecosystem.config.js if not exists
-            if [ ! -f "${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/ecosystem.config.js" ]; then
-              cp ${{ env.DEPLOY_PATH }}/shared/ecosystem.config.js ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/ || true
-            fi
+            # ecosystem.config.js is already in the deploy package — no need to copy from shared
           EOF
 
       - name: Run health check on current version
@@ -203,101 +211,110 @@ jobs:
         continue-on-error: true
         run: |
           RESPONSE=$(ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
-            'curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health || echo "000"')
+            'curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health 2>/dev/null || echo "000"')
           echo "pre_health_status=$RESPONSE" >> $GITHUB_OUTPUT
-          echo "Current health status: $RESPONSE"
+          echo "Pre-deployment health status: $RESPONSE"
 
       - name: Deploy with PM2 (zero-downtime)
         run: |
           ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
             cd ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}
 
-            # Update symlink
+            # Verify dist-server exists before switching symlink
+            if [ ! -d "dist-server/api" ]; then
+              echo "❌ FATAL: dist-server/api not found in deploy package!"
+              echo "    The TypeScript build may have failed."
+              ls -la dist-server/ || echo "  (dist-server does not exist)"
+              exit 1
+            fi
+
+            echo "✅ dist-server/api verified"
+            ls -la dist-server/api/
+
+            # Switch symlink atomically
             ln -sfn ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }} ${{ env.DEPLOY_PATH }}/current
 
-            # Reload PM2 with zero-downtime
             cd ${{ env.DEPLOY_PATH }}/current
 
-            # Debug: Check if dist-server exists
-            echo "=== Checking deployment structure ==="
-            ls -la
-            echo "=== Checking dist-server ==="
-            ls -la dist-server/ || echo "⚠️ dist-server not found!"
-            echo "=== Checking dist-server/api ==="
-            ls -la dist-server/api/ || echo "⚠️ dist-server/api not found!"
+            # FIX: Always run as the clientdash user context.
+            # 'pm2 reload' will connect to /home/clientdash/.pm2 because we
+            # SSH as clientdash. Using --update-env picks up new env from
+            # ecosystem.config.js. Fallback to 'start' if no processes exist yet.
+            pm2 reload ecosystem.config.js --env production --update-env \
+              || pm2 start ecosystem.config.js --env production
 
-            pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
+            # Save the process list so PM2 can resurrect after server reboot
+            pm2 save --force
 
-            # Save PM2 process list
-            pm2 save
-
-            # Show PM2 logs immediately after start
             echo "=== PM2 Status ==="
-            pm2 status
-            echo "=== Recent PM2 Logs ==="
-            pm2 logs --lines 50 --nostream || true
+            pm2 list
           EOF
 
       - name: Wait for application startup
-        run: sleep 10
+        # Give PM2 time to bind the port, send the ready signal, and for
+        # listen_timeout (10s) + startup time to complete across both instances
+        run: sleep 20
 
       - name: Health check after deployment
         id: post_health
-        continue-on-error: true
         run: |
-          echo "⚠️ HEALTH CHECK TEMPORARILY DISABLED FOR DEBUGGING"
-          echo "Checking if API server is running..."
-
-          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'HEALTHEOF'
             echo "=== PM2 Status ==="
             pm2 list
 
             echo ""
-            echo "=== Testing API directly ==="
-            curl -v http://localhost:3001/health 2>&1 || echo "Health endpoint failed"
+            echo "=== Port 3001 listeners ==="
+            netstat -tulpn 2>/dev/null | grep 3001 || ss -tulpn | grep 3001 || echo "Nothing on 3001"
 
             echo ""
-            echo "=== Testing if server is listening on port 3001 ==="
-            netstat -tulpn | grep 3001 || echo "Nothing listening on 3001"
+            echo "=== Testing health endpoint ==="
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health 2>/dev/null || echo "000")
+            echo "HTTP Status: $HTTP_STATUS"
 
-            echo ""
-            echo "=== API server logs ==="
-            pm2 logs client-dashboard-api --lines 20 --nostream
-          EOF
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ Health check PASSED"
+              exit 0
+            else
+              echo "❌ Health check FAILED (status: $HTTP_STATUS)"
+              echo ""
+              echo "=== Last 30 lines of API error log ==="
+              pm2 logs client-dashboard-api --lines 30 --nostream --err || true
+              exit 1
+            fi
+          HEALTHEOF
 
           echo "health_status=success" >> $GITHUB_OUTPUT
-          echo "✅ Deployment completed - health check skipped for debugging"
 
       - name: Rollback on failure
-        if: steps.post_health.outputs.health_status == 'failed'
+        if: failure() && steps.post_health.outcome == 'failure'
         run: |
-          echo "Deployment failed, initiating rollback..."
+          echo "🔄 Deployment failed — initiating automatic rollback..."
           ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
             cd ${{ env.DEPLOY_PATH }}/backups
             LATEST_BACKUP=$(ls -t | head -n1)
 
             if [ -n "$LATEST_BACKUP" ]; then
               echo "Rolling back to: $LATEST_BACKUP"
-              rm -rf ${{ env.DEPLOY_PATH }}/current
-              cp -r "$LATEST_BACKUP" ${{ env.DEPLOY_PATH }}/current
+              ln -sfn "${{ env.DEPLOY_PATH }}/backups/$LATEST_BACKUP" ${{ env.DEPLOY_PATH }}/current
               cd ${{ env.DEPLOY_PATH }}/current
-              pm2 reload ecosystem.config.js
-              echo "Rollback completed"
+              pm2 reload ecosystem.config.js --env production --update-env
+              pm2 save --force
+              echo "✅ Rollback completed"
             else
-              echo "No backup found for rollback!"
+              echo "❌ No backup found for rollback!"
               exit 1
             fi
           EOF
           exit 1
 
       - name: Cleanup old releases
-        if: steps.post_health.outputs.health_status == 'success'
+        if: success()
         run: |
           ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
             cd ${{ env.DEPLOY_PATH }}/releases
             # Keep only last 5 releases
             ls -t | tail -n +6 | xargs -r rm -rf
-            echo "Cleanup completed"
+            echo "✅ Old releases cleaned up"
           EOF
 
       - name: Deployment summary
@@ -309,7 +326,7 @@ jobs:
           echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Pre-deployment health:** ${{ steps.pre_health.outputs.pre_health_status || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Post-deployment health:** ${{ steps.post_health.outputs.health_status || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Post-deployment health:** ${{ steps.post_health.outputs.health_status || 'failed' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
 
   # Notify deployment status
@@ -322,7 +339,7 @@ jobs:
       - name: Deployment notification
         run: |
           if [ "${{ needs.deploy.result }}" = "success" ]; then
-            echo "✅ Deployment successful"
+            echo "✅ Deployment to client.samixism.com succeeded"
           else
-            echo "❌ Deployment failed"
+            echo "❌ Deployment to client.samixism.com FAILED — check Actions logs"
           fi

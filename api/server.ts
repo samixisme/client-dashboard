@@ -26,15 +26,18 @@ app.use(helmet({
 }));
 
 // CORS configuration - Strict origin validation in production
+const PRODUCTION_DEFAULT_ORIGINS = ['https://client.samixism.com', 'http://client.samixism.com'];
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : (process.env.NODE_ENV === 'production'
-      ? [] // No wildcard in production - must set ALLOWED_ORIGINS
+      ? PRODUCTION_DEFAULT_ORIGINS // Fallback to known production origins instead of crashing
       : ['http://localhost:3000', 'http://localhost:5173']); // Dev mode only
 
-if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
-  console.error('⚠️  SECURITY WARNING: ALLOWED_ORIGINS must be set in production!');
-  process.exit(1);
+if (process.env.NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
+  // Warn loudly in logs but DO NOT crash — PM2 will just restart into a crash loop
+  console.error('⚠️  SECURITY WARNING: ALLOWED_ORIGINS env var not set! Using hardcoded fallback:', PRODUCTION_DEFAULT_ORIGINS);
+  console.error('    Set ALLOWED_ORIGINS in /home/clientdash/client-dashboard/shared/.env to silence this warning.');
 }
 
 app.use(cors({
@@ -152,11 +155,12 @@ app.use('/api/webhooks', webhookRouter);
 // Admin API endpoints (Firebase Admin SDK - user management, custom claims, bulk operations)
 app.use('/admin/api', optionalApiKeyAuth, adminRouter);
 
-// PM2 ready signal support
-if (process.send) {
-  process.send('ready');
-}
-
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`);
+
+  // PM2 ready signal — MUST be sent AFTER listen() confirms port is bound
+  // Sending it before listen() causes PM2 cluster reload race conditions
+  if (process.send) {
+    process.send('ready');
+  }
 });

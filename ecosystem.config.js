@@ -15,9 +15,12 @@ module.exports = {
         PORT: 3001,
         ALLOWED_ORIGINS: 'https://client.samixism.com,http://client.samixism.com',
       },
+
       // Auto-restart configuration
       max_memory_restart: '500M',
-      min_uptime: '10s',
+      // BUG FIX: was '10s' — if startup takes >10s (Firebase Admin init, etc.) PM2
+      // counts it as a failed start. 30s gives the server room to breathe.
+      min_uptime: '30s',
       max_restarts: 10,
       autorestart: true,
 
@@ -29,21 +32,27 @@ module.exports = {
 
       // Graceful shutdown
       kill_timeout: 5000,
-      listen_timeout: 3000,
+      // BUG FIX: was 3000ms — if Firebase Admin SDK takes >3s to init, PM2 kills
+      // the instance as "not ready". 10s is safer for cloud SDK initialisation.
+      listen_timeout: 10000,
       shutdown_with_message: true,
+
+      // BUG FIX: removed cron_restart — a nightly hard restart at 3 AM was
+      // killing in-flight requests AND re-triggering the ALLOWED_ORIGINS crash
+      // loop whenever the env wasn't persisted correctly in PM2's dump.
 
       // Monitoring
       instance_var: 'INSTANCE_ID',
 
-      // Health check
+      // BUG FIX: wait_ready: true means PM2 waits for process.send('ready').
+      // We now send that signal INSIDE app.listen() callback (after port is
+      // bound), so this is safe. Previously it was sent before listen() and
+      // caused cluster reload race conditions.
       wait_ready: true,
 
       // Advanced features
-      vizion: true,
-      post_update: ['npm install'],
-
-      // Cron restart (optional - restart daily at 3 AM)
-      cron_restart: '0 3 * * *',
+      vizion: false, // disabled — we manage deploys via GitHub Actions, not pm2 deploy
+      post_update: [],
 
       // Source map support
       source_map_support: true,
@@ -81,7 +90,7 @@ module.exports = {
     },
   ],
 
-  // Deployment configuration
+  // Deployment configuration (reference only — actual deploys use GitHub Actions)
   deploy: {
     production: {
       user: 'clientdash',
