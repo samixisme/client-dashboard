@@ -16,70 +16,83 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overview, loading = f
     );
   };
 
+  // Derive aggregated values, falling back to primary fields when optional ones are absent
+  const totalFollowers = overview?.totalFollowers ?? overview?.followers ?? 0;
+  const followerGrowthRate = overview?.followerGrowthRate ?? overview?.followersChange ?? 0;
+  const avgEngagementRate = overview?.avgEngagementRate ?? overview?.engagement ?? 0;
+  const engagementGrowthRate = overview?.engagementGrowthRate ?? overview?.engagementChange ?? 0;
+  const totalLikes = overview?.totalLikes ?? 0;
+  const totalComments = overview?.totalComments ?? 0;
+  const totalShares = overview?.totalShares ?? 0;
+  const totalReach = overview?.totalReach ?? overview?.impressions ?? 0;
+  const reachGrowthRate = overview?.reachGrowthRate ?? overview?.impressionsChange ?? 0;
+  const newFollowers = overview?.newFollowers ?? 0;
+  const totalPosts = overview?.totalPosts ?? overview?.posts ?? 0;
+
   const stats = overview ? [
     {
       title: 'Total Followers',
-      value: overview.totalFollowers.toLocaleString(),
-      change: overview.followerGrowthRate,
+      value: totalFollowers.toLocaleString(),
+      change: followerGrowthRate,
       changeLabel: 'vs last period',
       icon: <Users className="h-5 w-5" />,
-      sparklineData: generateSparkline(overview.totalFollowers, 0.05),
+      sparklineData: generateSparkline(totalFollowers, 0.05),
     },
     {
       title: 'Engagement Rate',
-      value: `${overview.avgEngagementRate.toFixed(2)}%`,
-      change: overview.engagementGrowthRate,
+      value: `${avgEngagementRate.toFixed(2)}%`,
+      change: engagementGrowthRate,
       changeLabel: 'vs last period',
       icon: <TrendingUp className="h-5 w-5" />,
-      sparklineData: generateSparkline(overview.avgEngagementRate, 0.15),
+      sparklineData: generateSparkline(avgEngagementRate, 0.15),
     },
     {
       title: 'Total Likes',
-      value: overview.totalLikes.toLocaleString(),
+      value: totalLikes.toLocaleString(),
       change: 12.5,
       changeLabel: 'this week',
       icon: <Heart className="h-5 w-5" />,
-      sparklineData: generateSparkline(overview.totalLikes, 0.2),
+      sparklineData: generateSparkline(totalLikes, 0.2),
     },
     {
       title: 'Total Comments',
-      value: overview.totalComments.toLocaleString(),
+      value: totalComments.toLocaleString(),
       change: 8.3,
       changeLabel: 'this week',
       icon: <MessageCircle className="h-5 w-5" />,
-      sparklineData: generateSparkline(overview.totalComments, 0.18),
+      sparklineData: generateSparkline(totalComments, 0.18),
     },
     {
       title: 'Total Shares',
-      value: overview.totalShares.toLocaleString(),
+      value: totalShares.toLocaleString(),
       change: 15.7,
       changeLabel: 'this week',
       icon: <Share2 className="h-5 w-5" />,
-      sparklineData: generateSparkline(overview.totalShares, 0.25),
+      sparklineData: generateSparkline(totalShares, 0.25),
     },
     {
       title: 'Total Reach',
-      value: overview.totalReach.toLocaleString(),
-      change: overview.reachGrowthRate,
+      value: totalReach.toLocaleString(),
+      change: reachGrowthRate,
       changeLabel: 'vs last period',
       icon: <Eye className="h-5 w-5" />,
-      sparklineData: generateSparkline(overview.totalReach, 0.12),
+      sparklineData: generateSparkline(totalReach, 0.12),
     },
     {
       title: 'New Followers',
-      value: overview.newFollowers.toLocaleString(),
+      value: newFollowers.toLocaleString(),
       change: 18.2,
       changeLabel: 'this week',
       icon: <UserPlus className="h-5 w-5" />,
-      sparklineData: generateSparkline(overview.newFollowers, 0.3),
+      sparklineData: generateSparkline(newFollowers, 0.3),
     },
     {
       title: 'Total Posts',
-      value: overview.totalPosts.toLocaleString(),
+      value: totalPosts.toLocaleString(),
       change: 5.1,
       changeLabel: 'this week',
       icon: <BarChart3 className="h-5 w-5" />,
-      sparklineData: generateSparkline(overview.totalPosts, 0.08),
+      sparklineData: generateSparkline(totalPosts, 0.08),
     },
   ] : [];
 
@@ -133,9 +146,9 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ overview, loading = f
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">Performance Summary</h3>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Your overall engagement is up <span className="font-bold text-lime-400">{overview.engagementGrowthRate.toFixed(1)}%</span> compared to last period.
-                You've gained <span className="font-bold text-lime-400">{overview.newFollowers.toLocaleString()}</span> new followers
-                and reached <span className="font-bold text-lime-400">{overview.totalReach.toLocaleString()}</span> people
+                Your overall engagement is up <span className="font-bold text-lime-400">{engagementGrowthRate.toFixed(1)}%</span> compared to last period.
+                You've gained <span className="font-bold text-lime-400">{newFollowers.toLocaleString()}</span> new followers
+                and reached <span className="font-bold text-lime-400">{totalReach.toLocaleString()}</span> people
                 across all platforms.
               </p>
             </div>

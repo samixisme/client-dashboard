@@ -28,14 +28,16 @@ const ScheduledPostCard: React.FC<ScheduledPostCardProps> = ({
   const { icon, color, name } = platformIcons[post.platform];
 
   const getStatusBadge = () => {
-    const statusConfig = {
+    const statusConfig: Record<string, { label: string; color: string }> = {
+      scheduled: { label: 'Scheduled', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
       pending: { label: 'Scheduled', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
       publishing: { label: 'Publishing...', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
       published: { label: 'Published', color: 'bg-lime-500/20 text-lime-400 border-lime-500/30' },
+      cancelled: { label: 'Cancelled', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30' },
       failed: { label: 'Failed', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
     };
 
-    const config = statusConfig[post.status];
+    const config = statusConfig[post.status] ?? statusConfig['scheduled'];
 
     return (
       <div className={`px-2.5 py-1 rounded-lg text-xs font-semibold border ${config.color}`}>
@@ -128,7 +130,7 @@ const ScheduledPostCard: React.FC<ScheduledPostCardProps> = ({
 
       {/* Actions */}
       <div className="flex gap-2">
-        {post.status === 'scheduled' && (
+        {(post.status === 'scheduled' || (post.status as string) === 'pending') && (
           <>
             <button
               onClick={() => onPublishNow?.(post.id)}
