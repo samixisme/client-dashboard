@@ -68,7 +68,10 @@ module.exports = {
       name: 'client-dashboard-nginx',
       script: 'serve',
       env: {
-        PM2_SERVE_PATH: './dist',
+        // BUG FIX: was './dist' (relative) — when PM2's recorded cwd pointed to
+        // a deleted old release, ./dist resolved to a missing directory → 404 on
+        // every request. Absolute path is immune to cwd drift across deployments.
+        PM2_SERVE_PATH: '/home/clientdash/client-dashboard/current/dist',
         PM2_SERVE_PORT: 3000,
         PM2_SERVE_SPA: 'true',
         PM2_SERVE_HOMEPAGE: '/index.html',
