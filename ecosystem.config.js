@@ -67,15 +67,10 @@ module.exports = {
     {
       name: 'client-dashboard-nginx',
       script: 'serve',
-      env: {
-        // BUG FIX: was './dist' (relative) — when PM2's recorded cwd pointed to
-        // a deleted old release, ./dist resolved to a missing directory → 404 on
-        // every request. Absolute path is immune to cwd drift across deployments.
-        PM2_SERVE_PATH: '/home/clientdash/client-dashboard/current/dist',
-        PM2_SERVE_PORT: 3000,
-        PM2_SERVE_SPA: 'true',
-        PM2_SERVE_HOMEPAGE: '/index.html',
-      },
+      // BUG FIX: PM2's serve module env vars (PM2_SERVE_*) don't reliably pass
+      // the -s (SPA) flag, causing 404 on all routes. Instead, pass args directly
+      // so serve gets: serve -s /home/.../dist -l 3000
+      args: '-s /home/clientdash/client-dashboard/dist -l 3000',
       instances: 1,
       exec_mode: 'fork',
 
