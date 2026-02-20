@@ -26,5 +26,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
+  "include": ["**/*.ts", "**/*.tsx", "facebook-sdk.d.ts"],
   "exclude": ["node_modules", "dist", "functions"]
 }
