@@ -44,17 +44,20 @@ export const getFacebookLoginStatus = (): Promise<FBStatusResponse> =>
 
 /**
  * Trigger the Facebook Login dialog (client-side popup).
- * Requests the scopes needed for Facebook Login for Business:
- *   - pages_show_list          → list Pages managed by the user
- *   - pages_read_engagement    → read Page likes, comments, shares
- *   - pages_read_user_content  → read posts/content on the Page
- *   - business_management      → access Business Manager assets
- * return_scopes: true          → authResponse.grantedScopes tells us exactly
- *                                which permissions the user actually approved
  *
- * Removed invalid scopes:
- *   ✗ pages_manage_posts  → deprecated, replaced by pages_read_user_content
- *   ✗ read_insights       → deprecated, now requires pages_read_engagement
+ * Scope strategy:
+ *   Development mode  → only permissions that work without App Review
+ *   Production        → full set requires App Review approval from Meta
+ *
+ * Currently requesting Dev Mode safe scopes only:
+ *   - pages_show_list       → list Pages managed by the user
+ *   - pages_read_engagement → read Page likes, comments, shares, insights
+ *
+ * Permissions needing App Review before production use:
+ *   - pages_read_user_content  (user-generated content on pages)
+ *   - business_management      (Business Manager asset access)
+ *
+ * return_scopes: true → authResponse.grantedScopes shows what was actually approved
  */
 const fbLogin = (): Promise<FBStatusResponse> =>
   new Promise(async (resolve) => {
@@ -62,7 +65,7 @@ const fbLogin = (): Promise<FBStatusResponse> =>
     window.FB.login(
       (response) => resolve(response),
       {
-        scope: 'pages_show_list,pages_read_engagement,pages_read_user_content,business_management',
+        scope: 'pages_show_list,pages_read_engagement',
         return_scopes: true,
       }
     );

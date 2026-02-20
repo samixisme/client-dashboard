@@ -52,7 +52,7 @@ function getPlatformConfig(platform: string): PlatformOAuthConfig | null {
             authUrl: 'https://www.facebook.com/v22.0/dialog/oauth',
             tokenUrl: 'https://graph.facebook.com/v22.0/oauth/access_token',
             apiBase: 'https://graph.facebook.com/v22.0',
-            scopes: ['pages_show_list', 'pages_read_engagement', 'pages_read_user_content', 'business_management'],
+            scopes: ['pages_show_list', 'pages_read_engagement'],
         },
         linkedin: {
             authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
