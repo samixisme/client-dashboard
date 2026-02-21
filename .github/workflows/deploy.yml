@@ -275,6 +275,9 @@ jobs:
 
             # Atomically update /dist to point to new release's frontend build.
             # PM2 serve reads /home/clientdash/client-dashboard/dist directly.
+            # BUG FIX: ln -sfn cannot replace a real directory with a symlink.
+            # Must remove the old real dir first, then create the symlink.
+            rm -rf ${{ env.DEPLOY_PATH }}/dist
             ln -sfn ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/dist ${{ env.DEPLOY_PATH }}/dist
 
             # Update /current to point to new release (API server uses this for dist-server/).

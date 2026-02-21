@@ -67,10 +67,9 @@ module.exports = {
     {
       name: 'client-dashboard-nginx',
       script: 'serve',
-      // BUG FIX: PM2's serve module env vars (PM2_SERVE_*) don't reliably pass
-      // the -s (SPA) flag, causing 404 on all routes. Instead, pass args directly
-      // so serve gets: serve -s /home/.../dist -l 3000
-      args: '-s /home/clientdash/client-dashboard/dist -l 3000',
+      // BUG FIX: serve v14+ dropped the -l shorthand — must use --listen.
+      // Also -s must come before the path for SPA mode to apply correctly.
+      args: '-s /home/clientdash/client-dashboard/dist --listen 3000',
       instances: 1,
       exec_mode: 'fork',
 
