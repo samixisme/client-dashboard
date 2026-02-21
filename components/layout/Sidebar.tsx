@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { GlobalLogoIcon } from '../icons/GlobalLogoIcon';
 import { DashboardIcon } from '../icons/DashboardIcon';
+import BrandProjectSwitcher from './BrandProjectSwitcher';
 import { PaymentsIcon } from '../icons/PaymentsIcon';
-import { ProfileIcon } from '../icons/ProfileIcon';
+
 import { SettingsIcon } from '../icons/SettingsIcon';
 import { ProjectsIcon } from '../icons/ProjectsIcon';
 import { BrandIcon } from '../icons/BrandIcon';
@@ -70,11 +70,9 @@ const Sidebar = () => {
     <aside 
         className="hidden md:flex flex-col items-center bg-background px-4 pb-4 w-24 relative z-30 no-print"
     >
-        {/* Logo at the top */}
+        {/* Brand / Project Switcher */}
         <div className="py-5 flex-shrink-0">
-             <div className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-primary border border-border-color">
-                <GlobalLogoIcon className="h-7 w-auto text-text-primary" />
-            </div>
+            <BrandProjectSwitcher />
         </div>
         
         {/* Main Navigation (centered) */}
