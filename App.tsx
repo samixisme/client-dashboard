@@ -81,6 +81,8 @@ import { TimerProvider } from './contexts/TimerContext';
 import { CalendarProvider } from './contexts/CalendarContext';
 import { UserProvider } from './contexts/UserContext';
 import { NotificationHistoryProvider } from './contexts/NotificationHistoryContext';
+import { ActiveProjectProvider } from './contexts/ActiveProjectContext';
+import ToolsPage from './pages/ToolsPage';
 import { toast } from 'sonner';
 
 function App() {
@@ -225,6 +227,7 @@ function App() {
         <UserProvider>
           <AdminProvider>
             <DataProvider>
+              <ActiveProjectProvider>
               <TimerProvider>
                 <CalendarProvider>
                   <SearchProvider>
@@ -464,16 +467,24 @@ function App() {
                       <Route path="/projects/:projectId/roadmap" element={<RoadmapPage />} />
                    </Route>
 
+                   {/* Project Tools Hub */}
+                   <Route path="/tools/:projectId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <ToolsPage />
+                      </MainLayout>
+                   } />
+
                    {/* Fallback */}
                    <Route path="*" element={<Navigate to="/" />} />
 
                 </Routes>
                 </SearchProvider>
-              </CalendarProvider>
-            </TimerProvider>
-          </DataProvider>
-        </AdminProvider>
-      </UserProvider>
+                </CalendarProvider>
+              </TimerProvider>
+              </ActiveProjectProvider>
+            </DataProvider>
+          </AdminProvider>
+        </UserProvider>
       </NotificationHistoryProvider>
     );
   };
