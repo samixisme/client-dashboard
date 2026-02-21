@@ -68,7 +68,7 @@ const NavItem: React.FC<{ to: string; Icon: React.FC<{ className?: string }>; la
 const Sidebar = () => {
   return (
     <aside 
-        className="hidden md:flex flex-col items-center bg-background px-4 pb-4 w-24 relative z-30 no-print"
+        className="hidden md:flex flex-col items-center bg-background px-4 pb-4 w-24 relative z-30 no-print overflow-visible"
     >
         {/* Brand / Project Switcher */}
         <div className="py-5 flex-shrink-0">
