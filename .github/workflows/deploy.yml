@@ -191,48 +191,62 @@ jobs:
           EOF
 
       - name: Write environment file from secrets
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_DATABASE_URL: ${{ secrets.VITE_FIREBASE_DATABASE_URL }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          FACEBOOK_CLIENT_ID: ${{ secrets.FACEBOOK_CLIENT_ID }}
+          FACEBOOK_CLIENT_SECRET: ${{ secrets.FACEBOOK_CLIENT_SECRET }}
+          INSTAGRAM_CLIENT_ID: ${{ secrets.INSTAGRAM_CLIENT_ID }}
+          INSTAGRAM_CLIENT_SECRET: ${{ secrets.INSTAGRAM_CLIENT_SECRET }}
+          TWITTER_CLIENT_ID: ${{ secrets.TWITTER_CLIENT_ID }}
+          TWITTER_CLIENT_SECRET: ${{ secrets.TWITTER_CLIENT_SECRET }}
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          SOCIAL_OAUTH_REDIRECT_URI: ${{ secrets.SOCIAL_OAUTH_REDIRECT_URI }}
+          NOVU_API_KEY: ${{ secrets.NOVU_API_KEY }}
         run: |
-          # Write .env directly from GitHub Secrets — no dependency on shared/.env on server.
-          # This ensures every deployment has all required env vars, nothing is ever missing.
-          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} "cat > ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env << 'ENVEOF'
-NODE_ENV=production
-PORT=3001
-ALLOWED_ORIGINS=https://client.samixism.com
-RATE_LIMIT_MAX=50
-
-# API Base URL (baked into frontend at build time via vite.config.ts — also kept here for reference)
-VITE_API_URL=https://client.samixism.com
-
-# Firebase (frontend — baked into bundle at build time)
-VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}
-VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-VITE_FIREBASE_DATABASE_URL=${{ secrets.VITE_FIREBASE_DATABASE_URL }}
-VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}
-
-# Social OAuth credentials (backend — used by API server at runtime)
-FACEBOOK_CLIENT_ID=${{ secrets.FACEBOOK_CLIENT_ID }}
-FACEBOOK_CLIENT_SECRET=${{ secrets.FACEBOOK_CLIENT_SECRET }}
-INSTAGRAM_CLIENT_ID=${{ secrets.INSTAGRAM_CLIENT_ID }}
-INSTAGRAM_CLIENT_SECRET=${{ secrets.INSTAGRAM_CLIENT_SECRET }}
-TWITTER_CLIENT_ID=${{ secrets.TWITTER_CLIENT_ID }}
-TWITTER_CLIENT_SECRET=${{ secrets.TWITTER_CLIENT_SECRET }}
-LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}
-LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}
-TIKTOK_CLIENT_KEY=${{ secrets.TIKTOK_CLIENT_KEY }}
-TIKTOK_CLIENT_SECRET=${{ secrets.TIKTOK_CLIENT_SECRET }}
-YOUTUBE_CLIENT_ID=${{ secrets.YOUTUBE_CLIENT_ID }}
-YOUTUBE_CLIENT_SECRET=${{ secrets.YOUTUBE_CLIENT_SECRET }}
-
-# OAuth redirect URI
-SOCIAL_OAUTH_REDIRECT_URI=${{ secrets.SOCIAL_OAUTH_REDIRECT_URI }}
-
-# Novu notifications
-NOVU_API_KEY=${{ secrets.NOVU_API_KEY }}
-ENVEOF
-echo '✅ .env written from GitHub Secrets'"
+          # Build .env on the runner then scp it — avoids heredoc-in-quoted-SSH YAML issues.
+          # Secrets are expanded by the GitHub Actions runner (never stored in YAML).
+          printf '%s\n' \
+            "NODE_ENV=production" \
+            "PORT=3001" \
+            "ALLOWED_ORIGINS=https://client.samixism.com" \
+            "RATE_LIMIT_MAX=50" \
+            "VITE_API_URL=https://client.samixism.com" \
+            "VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}" \
+            "VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}" \
+            "VITE_FIREBASE_DATABASE_URL=${VITE_FIREBASE_DATABASE_URL}" \
+            "VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}" \
+            "VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET}" \
+            "VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID}" \
+            "VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID}" \
+            "FACEBOOK_CLIENT_ID=${FACEBOOK_CLIENT_ID}" \
+            "FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}" \
+            "INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}" \
+            "INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}" \
+            "TWITTER_CLIENT_ID=${TWITTER_CLIENT_ID}" \
+            "TWITTER_CLIENT_SECRET=${TWITTER_CLIENT_SECRET}" \
+            "LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}" \
+            "LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}" \
+            "TIKTOK_CLIENT_KEY=${TIKTOK_CLIENT_KEY}" \
+            "TIKTOK_CLIENT_SECRET=${TIKTOK_CLIENT_SECRET}" \
+            "YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID}" \
+            "YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET}" \
+            "SOCIAL_OAUTH_REDIRECT_URI=${SOCIAL_OAUTH_REDIRECT_URI}" \
+            "NOVU_API_KEY=${NOVU_API_KEY}" \
+            > /tmp/deploy.env
+          scp -i ~/.ssh/deploy_key /tmp/deploy.env \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env
+          echo "✅ .env written from GitHub Secrets"
 
       - name: Run health check on current version
         id: pre_health
