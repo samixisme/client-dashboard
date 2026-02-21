@@ -86,12 +86,14 @@ const ProjectCard: React.FC<{
                         {brand.name}
                     </p>
                 </div>
-                <span
-                    className="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: status.bg, color: status.color }}
-                >
-                    {status.label}
-                </span>
+                {isActive && (
+                    <span
+                        className="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(163,230,53,0.12)', color: '#a3e635' }}
+                    >
+                        Active
+                    </span>
+                )}
             </div>
         </button>
     );
