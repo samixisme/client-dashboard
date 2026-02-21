@@ -3,18 +3,14 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-    // Debug logging
-    console.log('[Vite Config] mode:', mode);
-    console.log('[Vite Config] process.env.CI:', process.env.CI);
-    console.log('[Vite Config] process.env.GITHUB_ACTIONS:', process.env.GITHUB_ACTIONS);
-    console.log('[Vite Config] process.env.NODE_ENV:', process.env.NODE_ENV);
+    // Load .env, .env.local, .env.[mode], .env.[mode].local from project root.
+    // process.env vars (e.g. from GitHub Actions secrets) take priority over .env files.
+    const envFromFile = loadEnv(mode, process.cwd(), 'VITE_');
 
-    // In CI/CD, environment variables are already in process.env from GitHub Secrets
-    // We need to explicitly pass them to Vite's define to embed them in the build
-    const isCI = !!(process.env.CI || process.env.GITHUB_ACTIONS);
-
-    console.log('[Vite Config] isCI:', isCI);
-    console.log('[Vite Config] VITE_FIREBASE_PROJECT_ID from process.env:', process.env.VITE_FIREBASE_PROJECT_ID);
+    // Merge: process.env takes priority (CI secrets), then .env file values
+    const env = { ...envFromFile, ...Object.fromEntries(
+      Object.entries(process.env).filter(([k]) => k.startsWith('VITE_'))
+    )};
 
     return {
       envPrefix: 'VITE_',
@@ -30,16 +26,17 @@ export default defineConfig(({ mode }) => {
         }
       },
       plugins: [react()],
-      define: isCI ? {
-        // Explicitly inject GitHub Secrets into the build
-        'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(process.env.VITE_FIREBASE_API_KEY),
-        'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(process.env.VITE_FIREBASE_AUTH_DOMAIN),
-        'import.meta.env.VITE_FIREBASE_DATABASE_URL': JSON.stringify(process.env.VITE_FIREBASE_DATABASE_URL),
-        'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(process.env.VITE_FIREBASE_PROJECT_ID),
-        'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(process.env.VITE_FIREBASE_STORAGE_BUCKET),
-        'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(process.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
-        'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(process.env.VITE_FIREBASE_APP_ID),
-      } : {},
+      define: {
+        // Always inject all VITE_ vars so both CI (process.env) and server (.env file) work
+        'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY),
+        'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN),
+        'import.meta.env.VITE_FIREBASE_DATABASE_URL': JSON.stringify(env.VITE_FIREBASE_DATABASE_URL),
+        'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID),
+        'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(env.VITE_FIREBASE_STORAGE_BUCKET),
+        'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+        'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID),
+        'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL),
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
