@@ -217,6 +217,8 @@ jobs:
           NOVU_API_KEY: ${{ secrets.NOVU_API_KEY }}
           PAYMENTER_URL: ${{ secrets.PAYMENTER_URL }}
           PAYMENTER_API_KEY: ${{ secrets.PAYMENTER_API_KEY }}
+          MEILISEARCH_HOST: ${{ secrets.MEILISEARCH_HOST }}
+          MEILISEARCH_MASTER_KEY: ${{ secrets.MEILISEARCH_MASTER_KEY }}
         run: |
           # Build .env on the runner then scp it — avoids heredoc-in-quoted-SSH YAML issues.
           # Secrets are expanded by the GitHub Actions runner (never stored in YAML).
@@ -249,6 +251,8 @@ jobs:
             "NOVU_API_KEY=${NOVU_API_KEY}" \
             "PAYMENTER_URL=${PAYMENTER_URL}" \
             "PAYMENTER_API_KEY=${PAYMENTER_API_KEY}" \
+            "MEILISEARCH_HOST=${MEILISEARCH_HOST}" \
+            "MEILISEARCH_MASTER_KEY=${MEILISEARCH_MASTER_KEY}" \
             > /tmp/deploy.env
           scp -i ~/.ssh/deploy_key /tmp/deploy.env \
             ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env
@@ -303,9 +307,13 @@ jobs:
           EOF
 
       - name: Wait for application startup
-        # Give PM2 time to bind the port, send the ready signal, and for
-        # listen_timeout (10s) + startup time to complete across both instances
         run: sleep 20
+
+      - name: Re-index Meilisearch
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+            "cd ${{ env.DEPLOY_PATH }}/current && node dist-server/api/searchSync.js" \
+            || echo "⚠️  Meilisearch sync failed — search index may be stale"
 
       - name: Health check after deployment
         id: post_health
