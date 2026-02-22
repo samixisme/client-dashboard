@@ -5,30 +5,16 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
-// Set debug token BEFORE any Firebase initialization for localhost App Check
+// Debug token only on localhost — NEVER on production domains.
+// The token below is registered in Firebase Console > App Check > Debug tokens.
+// It is intentionally not secret (it only works when registered), but must not
+// be set on production where reCAPTCHA enforcement applies.
 const isLocalhost = typeof window !== 'undefined' &&
-  (window.location?.hostname === "localhost" || window.location?.hostname === "127.0.0.1");
+  (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1');
 
-// Also enable debug token for production domain during development
-const isProductionDebug = typeof window !== 'undefined' &&
-  window.location?.hostname === "client.samixism.com";
-
-// Debug logging to see what's happening
-if (typeof window !== 'undefined') {
-  console.log('[Firebase Debug] Current hostname:', window.location?.hostname);
-  console.log('[Firebase Debug] isLocalhost:', isLocalhost);
-  console.log('[Firebase Debug] isProductionDebug:', isProductionDebug);
-}
-
-if (isLocalhost || isProductionDebug) {
-  // FIXED debug token for client.samixism.com - register this in Firebase Console
-  // Must be a valid UUID v4 format
-  const debugToken = 'a7b3c9d2-e4f5-4a6b-8c7d-9e0f1a2b3c4d';
-  (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
-  console.log('[Firebase Debug] ========================================');
-  console.log('[Firebase Debug] APP CHECK DEBUG TOKEN:', debugToken);
-  console.log('[Firebase Debug] ========================================');
-  console.log('[Firebase Debug] Register this in Firebase Console > App Check > Debug tokens');
+if (isLocalhost) {
+  (self as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN =
+    import.meta.env.VITE_APPCHECK_DEBUG_TOKEN ?? true;
 }
 
 // Your web app's Firebase configuration (secure via environment variables)
@@ -46,29 +32,19 @@ const firebaseConfig = {
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// Initialize App Check - uses debug tokens for localhost, reCAPTCHA for production
+// Initialize App Check with reCAPTCHA v3.
+// Requires VITE_FIREBASE_APP_CHECK_SITE_KEY to be set in production.
+// On localhost the debug token above is used automatically by the SDK.
 const initAppCheck = () => {
   const siteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY;
-
-  // Don't initialize App Check ONLY if there's no site key AND we're not in debug mode
-  if (!siteKey && !isLocalhost && !isProductionDebug) {
-    console.log('[Firebase Debug] Skipping App Check: no site key and not in debug mode');
-    return null;
-  }
-
-  console.log('[Firebase Debug] Initializing App Check...');
-  console.log('[Firebase Debug] Site key:', siteKey ? 'provided' : 'using fallback test key');
-  console.log('[Firebase Debug] Debug mode:', isLocalhost || isProductionDebug);
+  if (!siteKey) return null;
 
   try {
-    const appCheck = initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(siteKey || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
+    return initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(siteKey),
       isTokenAutoRefreshEnabled: true
     });
-    console.log('[Firebase Debug] App Check initialized successfully');
-    return appCheck;
-  } catch (error) {
-    console.error('[Firebase Debug] App Check initialization failed:', error);
+  } catch {
     return null;
   }
 };
