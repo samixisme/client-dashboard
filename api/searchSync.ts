@@ -196,8 +196,11 @@ export async function runFullSync() {
 
 // Allow direct execution: tsx api/searchSync.ts
 if (require.main === module) {
-  runFullSync().catch((err) => {
-    console.error('Sync failed:', err);
-    process.exit(1);
-  });
+  runFullSync()
+    .then(() => admin.app().delete())
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('Sync failed:', err);
+      process.exit(1);
+    });
 }
