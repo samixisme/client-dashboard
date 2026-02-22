@@ -1,0 +1,66 @@
+services:
+  paymenter_db:
+    image: mariadb:lts
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - "./paymenter/database:/var/lib/mysql"
+    environment:
+      MYSQL_PASSWORD: "${PAYMENTER_DB_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${PAYMENTER_DB_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "paymenter"
+      MYSQL_USER: "paymenter"
+    networks:
+      - paymenter_nw
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  paymenter_cache:
+    image: redis:alpine
+    restart: always
+    networks:
+      - paymenter_nw
+
+  paymenter:
+    image: ghcr.io/paymenter/paymenter:latest
+    restart: always
+    ports:
+      - "8090:80"
+    volumes:
+      - "./paymenter/storage/logs:/app/storage/logs"
+      - "./paymenter/storage/public:/app/storage/app/public"
+      - "./paymenter/themes:/app/themes"
+      - "./paymenter/extensions:/app/extensions"
+      - "./paymenter/var:/app/var"
+      - "paymenter_app:/app"
+    environment:
+      APP_KEY: "${PAYMENTER_APP_KEY:-}"
+      APP_URL: "${PAYMENTER_APP_URL:-http://localhost:8090}"
+      APP_ENV: "${PAYMENTER_ENV:-local}"
+      DB_CONNECTION: "mariadb"
+      DB_HOST: "paymenter_db"
+      DB_PORT: "3306"
+      DB_DATABASE: "paymenter"
+      DB_USERNAME: "paymenter"
+      DB_PASSWORD: "${PAYMENTER_DB_PASSWORD}"
+      CACHE_STORE: "redis"
+      REDIS_HOST: "paymenter_cache"
+      CURRENCY: "MAD"
+      PAYMENTER_SKIP_DEFAULT: "false"
+    networks:
+      - paymenter_nw
+    depends_on:
+      paymenter_db:
+        condition: service_healthy
+      paymenter_cache:
+        condition: service_started
+
+networks:
+  paymenter_nw:
+    driver: bridge
+
+volumes:
+  paymenter_app:

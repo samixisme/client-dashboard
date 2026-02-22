@@ -40,7 +40,81 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
-        }
+        },
+        // Force a single instance of these packages — BlockSuite sub-packages
+        // (block-std, affine-components, etc.) each bundle their own copy of
+        // @blocksuite/store and yjs, which breaks constructor identity checks
+        // and causes "was already imported" errors at runtime.
+        dedupe: [
+          // BlockSuite core — one instance shared across all sub-packages
+          '@blocksuite/store',
+          '@blocksuite/block-std',
+          '@blocksuite/global',
+          '@blocksuite/sync',
+          // Lit — all BlockSuite elements extend LitElement from this one copy.
+          // Without deduplication each sub-package resolves its own lit copy,
+          // making customElements.define use a different LitElement base class
+          // than the one used at new-time → "Illegal constructor" on first render.
+          'lit',
+          'lit-html',
+          'lit-element',
+          '@lit/reactive-element',
+          // Signals — same singleton requirement as Lit
+          '@preact/signals-core',
+          'yjs',
+          'y-protocols',
+        ],
+      },
+      optimizeDeps: {
+        // @blocksuite/* packages are pure native ESM and must NOT be pre-bundled —
+        // doing so creates two separate module instances of @blocksuite/store which
+        // breaks LitElement constructor identity → "Illegal constructor" at runtime.
+        exclude: [
+          '@blocksuite/presets',
+          '@blocksuite/store',
+          '@blocksuite/blocks',
+          '@blocksuite/block-std',
+          '@blocksuite/global',
+          '@blocksuite/sync',
+          '@blocksuite/inline',
+          '@blocksuite/affine-components',
+          '@blocksuite/affine-shared',
+          '@blocksuite/affine-model',
+          '@blocksuite/affine-block-surface',
+          '@blocksuite/affine-block-list',
+          '@blocksuite/affine-block-paragraph',
+          '@blocksuite/affine-block-embed',
+          '@blocksuite/affine-widget-scroll-anchoring',
+          '@blocksuite/data-view',
+          '@blocksuite/icons',
+        ],
+        // Complete list of CJS-only packages transitively imported by @blocksuite/*.
+        // Determined by scanning all @blocksuite/*/dist/*.js files for bare imports
+        // and checking each package's package.json for ESM indicators (type:module,
+        // module field, import condition in exports). These 7 are the only pure-CJS
+        // packages — everything else (@preact/signals-core, yjs, y-protocols, lib0,
+        // lit, etc.) is already native ESM and does not need explicit include.
+        include: [
+          // CJS-only packages transitively used by @blocksuite/* (pure ESM, excluded above).
+          // Vite never crawls into excluded packages, so their CJS deps must be listed here
+          // explicitly so Vite pre-bundles them into proper ESM wrappers.
+          'lodash.chunk',
+          'lodash.clonedeep',
+          'lodash.ismatch',
+          'lodash.merge',
+          'lodash.mergewith',
+          'lz-string',
+          'simple-xml-to-json',
+          // 'extend' is a pure-CJS package (no type:module, no module field, no exports map).
+          // It is a dep of 'unified' (BlockSuite markdown) and Firebase's googleapis-common.
+          // Without this entry Vite serves extend/index.js raw and the browser throws:
+          //   SyntaxError: does not provide an export named 'default'
+          'extend',
+          // 'debug' is a pure-CJS package used by micromark (BlockSuite markdown).
+          // 'ms' is debug's CJS dependency for time formatting.
+          'debug',
+          'ms',
+        ],
       },
       build: {
         rollupOptions: {

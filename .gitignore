@@ -1,3 +1,8 @@
+# Meilisearch local binary and data
+meilisearch.exe
+meilisearch-data/
+.claude-webui-attachments/
+
 # Logs
 logs
 *.log
@@ -57,6 +62,14 @@ firestore.rules.production
 .hive-mind/
 .spec-workflow/
 .cache/
+
+# Paymenter Docker data (never commit)
+paymenter/database/
+paymenter/storage/
+paymenter/themes/
+paymenter/extensions/
+paymenter/var/
+paymenter/.env.paymenter
 
 # Temporary/invalid files
 $null

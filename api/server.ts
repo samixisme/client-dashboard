@@ -3,15 +3,18 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import proxyHandler from './proxy';
 import { optionalApiKeyAuth } from './authMiddleware';
 import notificationsRouter from './notifications';
 import socialRouter from './social';
 import webhookRouter from './webhooks';
 import adminRouter from './adminRoutes';
+import paymenterRouter from './paymenterRoutes';
+import driveRouter from './driveRoutes';
+import searchRouter from './searchRoutes';
 
-// Load environment variables from .env file
-dotenv.config();
 
 const app = express();
 const port = 3001;
@@ -154,6 +157,15 @@ app.use('/api/webhooks', webhookRouter);
 
 // Admin API endpoints (Firebase Admin SDK - user management, custom claims, bulk operations)
 app.use('/admin/api', optionalApiKeyAuth, adminRouter);
+
+// Paymenter billing & subscription proxy
+app.use('/api/paymenter', paymenterRouter);
+
+// Google Drive file manager
+app.use('/api/drive', driveRouter);
+
+// Meilisearch search proxy (keeps master key server-side)
+app.use('/api/search', optionalApiKeyAuth, searchRouter);
 
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`);

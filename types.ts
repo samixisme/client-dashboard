@@ -236,6 +236,42 @@ export interface UserSettings {
     signatureBoxAutoEntrepreneur: string;
 }
 
+// ─── Paymenter Subscription & Billing Types ──────────────────────────────────
+
+export interface PaymenterClientRef {
+  paymenterClientId: number;
+  paymenterEmail: string;
+  syncedAt: string;
+}
+
+export interface Subscription {
+  id: string;                                        // Paymenter service ID (stringified)
+  clientId: string;                                  // Local Firestore client ID
+  paymenterClientId: number;                         // Paymenter's internal user ID
+  planName: string;                                  // e.g. "Web Hosting Basic"
+  price: number;                                     // Amount in MAD
+  billingCycle: 'monthly' | 'quarterly' | 'yearly';
+  status: 'active' | 'suspended' | 'cancelled' | 'pending';
+  nextDueDate: string;                               // ISO string
+  createdAt: string;                                 // ISO string
+  notes?: string;
+}
+
+export interface BillingRecord {
+  id: string;
+  subscriptionId: string;
+  clientId: string;
+  amount: number;
+  currency: 'MAD';
+  status: 'unpaid' | 'paid' | 'overdue';
+  dueDate: string;                                   // ISO string
+  paidAt?: string;                                   // ISO string
+  paymentMethod: 'bank_transfer' | 'other';
+  reference?: string;                                // Bank transfer reference
+}
+
+// ─── Feedback Feature Types ───────────────────────────────────────────────────
+
 // Feedback Feature Types
 export type DeviceView = 'desktop' | 'notebook' | 'tablet' | 'phone';
 export type SidebarPosition = 'right' | 'bottom';
@@ -708,4 +744,21 @@ export interface SocialDashboardFilters {
     dateRange: 'last7days' | 'last30days' | 'last90days' | 'custom';
     customStartDate?: string;
     customEndDate?: string;
+}
+
+// ── AFFiNE Docs & Whiteboards ─────────────────────────────────────────────────
+export type DocMode = 'page' | 'edgeless';
+
+export interface Doc {
+    id: string;
+    projectId: string;       // ties into existing Project hierarchy
+    brandId: string;         // denormalised for quick filtering
+    title: string;
+    mode: DocMode;           // 'page' = document editor, 'edgeless' = whiteboard
+    emoji?: string;          // optional title emoji (AFFiNE style)
+    createdAt: string;       // ISO string — consistent with all other types
+    updatedAt: string;
+    createdBy: string;       // Firebase Auth UID
+    isPinned?: boolean;
+    linkedBoardId?: string;  // optional link to existing Board (for task extraction)
 }

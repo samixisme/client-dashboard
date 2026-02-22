@@ -1,60 +1,51 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, collectionGroup, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem, Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup, FeedbackVideo, FeedbackComment, EmailTemplate, CalendarEvent, SocialAccount, SocialPost, ScheduledPost, SocialAnomaly } from '../types';
+import {
+    Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem,
+    Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup,
+    FeedbackVideo, FeedbackComment, EmailTemplate, CalendarEvent, SocialAccount,
+    SocialPost, ScheduledPost, SocialAnomaly, Doc,
+    Client, Invoice, Estimate, UserSettings,
+} from '../types';
 import { toast } from 'sonner';
 
-// Import all data sources
-import { projects as initialProjects, boards as initialBoards, stages as initialStages, tasks as initialTasks, tags as initialTags, comments as initialComments, activities as initialActivities, roadmapItems as initialRoadmapItems, custom_fields as initialCustomFields, board_notification_settings as initialBoardNotificationSettings, users as initialUsers, time_logs as initialTimeLogs } from '../data/mockData';
-import { clients as initialClients, invoices as initialInvoices, estimates as initialEstimates, userSettings as initialUserSettings } from '../data/paymentsData';
-import { feedbackWebsites as initialFeedbackWebsites, feedbackMockups as initialFeedbackMockups, feedbackVideos as initialFeedbackVideos, feedbackComments as initialFeedbackComments } from '../data/feedbackData';
-import { moodboards as initialMoodboards, moodboardItems as initialMoodboardItems } from '../data/moodboardData';
-import { calendar_events as initialCalendarEvents } from '../data/calendarData';
-
-const initialWidgets = [
-  { id: 1, title: 'Total Revenue', content: '$45,231.89', change: '+20.1% from last month' },
-  { id: 2, title: 'Subscriptions', content: '+2350', change: '+180.1% from last month' },
-  { id: 3, title: 'Sales', content: '+12,234', change: '+19% from last month' },
-  { id: 4, title: 'Active Now', content: '+573', change: '+201 since last hour' },
-];
-
-// This is a bit of a hack to make the mock data mutable and global.
-// In a real app, this would be an API call and a state management library like Redux or Zustand.
+// ─── Data Store (all-Firebase, no hardcoded mock data) ─────────────────────────
 const dataStore = {
-    dashboardWidgets: initialWidgets,
-    projects: initialProjects,
-    boards: initialBoards,
-    stages: initialStages,
-    tasks: initialTasks,
-    tags: initialTags,
-    comments: initialComments,
-    activities: initialActivities,
-    roadmapItems: initialRoadmapItems,
-    custom_fields: initialCustomFields,
-    board_notification_settings: initialBoardNotificationSettings,
-    users: initialUsers,
-    brands: [] as Brand[],
-    clients: initialClients,
-    invoices: initialInvoices,
-    estimates: initialEstimates,
-    userSettings: [initialUserSettings], // Admin panel works with arrays, so wrap it
-    feedbackWebsites: initialFeedbackWebsites,
-    feedbackMockups: initialFeedbackMockups,
-    feedbackVideos: initialFeedbackVideos,
-    feedbackComments: initialFeedbackComments,
-    moodboards: initialMoodboards,
-    moodboardItems: initialMoodboardItems,
-    calendar_events: initialCalendarEvents,
-    time_logs: initialTimeLogs,
-    board_members: initialUsers, // Alias for users, used in some components
-    emailTemplates: [] as EmailTemplate[],
-    calendarEvents: initialCalendarEvents,
-    socialAccounts: [] as SocialAccount[],
-    socialPosts: [] as SocialPost[],
-    scheduledPosts: [] as ScheduledPost[],
-    socialAnomalies: [] as SocialAnomaly[],
+    dashboardWidgets: [] as { id: number; title: string; content: string; change: string }[],
+    projects:          [] as Project[],
+    boards:            [] as Board[],
+    stages:            [] as Stage[],
+    tasks:             [] as Task[],
+    tags:              [] as Tag[],
+    comments:          [] as Comment[],
+    activities:        [] as Activity[],
+    roadmapItems:      [] as RoadmapItem[],
+    custom_fields:     [] as unknown[],
+    board_notification_settings: [] as unknown[],
+    users:             [] as User[],
+    board_members:     [] as User[],
+    brands:            [] as Brand[],
+    clients:           [] as Client[],
+    invoices:          [] as Invoice[],
+    estimates:         [] as Estimate[],
+    userSettings:      [] as UserSettings[],
+    feedbackWebsites:  [] as FeedbackWebsite[],
+    feedbackMockups:   [] as FeedbackMockup[],
+    feedbackVideos:    [] as FeedbackVideo[],
+    feedbackComments:  [] as FeedbackComment[],
+    moodboards:        [] as Moodboard[],
+    moodboardItems:    [] as MoodboardItem[],
+    calendar_events:   [] as CalendarEvent[],
+    calendarEvents:    [] as CalendarEvent[],
+    time_logs:         [] as TimeLog[],
+    emailTemplates:    [] as EmailTemplate[],
+    socialAccounts:    [] as SocialAccount[],
+    socialPosts:       [] as SocialPost[],
+    scheduledPosts:    [] as ScheduledPost[],
+    socialAnomalies:   [] as SocialAnomaly[],
+    docs:              [] as Doc[],
 };
 
 type DataStoreKey = keyof typeof dataStore;
@@ -71,20 +62,21 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [version, setVersion] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
-    const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [version, setVersion]   = useState(0);
+    const [loading, setLoading]   = useState(true);
+    const [error]                 = useState<Error | null>(null);
+    const [user, setUser]         = useState<FirebaseUser | null>(null);
 
+    // ── Auth listener ──────────────────────────────────────────────────────────
     useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+        const unsub = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
         });
-        return () => unsubscribeAuth();
+        return () => unsub();
     }, []);
 
+    // ── Firestore listeners (only after auth) ──────────────────────────────────
     useEffect(() => {
-        // Don't query Firestore until user is authenticated
         if (!user) {
             setLoading(false);
             return;
@@ -95,269 +87,235 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const startListeners = async () => {
             try {
-                // Force token refresh to ensure Firestore has valid credentials
                 await user.getIdToken(true);
             } catch (err) {
-                console.error("[DataContext] Failed to get auth token:", err);
+                console.error('[DataContext] Failed to refresh auth token:', err);
                 return;
             }
 
             if (!isMounted) return;
-
             setLoading(true);
-            const qBrands = query(collection(db, 'brands'), orderBy('name'));
-            const qUsers = query(collection(db, 'users'));
-            const qProjects = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
 
-            // Use root-level collections instead of collectionGroup
-            // collectionGroup requires special index configuration
-            const qBoards = query(collection(db, 'boards'));
-            const qStages = query(collection(db, 'stages'));
-            const qTasks = query(collection(db, 'tasks'));
-            const qTags = query(collection(db, 'tags'));
-            const qTimeLogs = query(collection(db, 'time_logs'));
-            const qRoadmapItems = query(collection(db, 'roadmap'));
-            const qComments = query(collection(db, 'comments'));
-            const qActivities = query(collection(db, 'activities'));
-            const qMoodboards = query(collection(db, 'moodboards'));
-            const qMoodboardItems = query(collection(db, 'moodboard_items'));
-            const qFeedbackItems = query(collection(db, 'feedbackItems'));
-            const qFeedbackComments = query(collection(db, 'feedbackComments'));
-            const qEmailTemplates = query(collection(db, 'emailTemplates'));
+            const bump = () => setVersion(v => v + 1);
+            const errHandler = (label: string) => (err: Error) => {
+                console.error(`[DataContext] ${label}:`, err);
+                toast.error(`Error syncing ${label}`, { description: 'Please refresh the page' });
+            };
 
             unsubscribers = [
-            onSnapshot(qBrands, (snapshot) => {
-                dataStore.brands = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand));
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching brands: ", err);
-                toast.error('Error syncing brands data', { description: 'Please refresh the page' });
-            }),
+                // ── Core entities ──────────────────────────────────────────────
+                onSnapshot(
+                    query(collection(db, 'brands'), orderBy('name')),
+                    snap => { dataStore.brands = snap.docs.map(d => ({ id: d.id, ...d.data() } as Brand)); bump(); },
+                    errHandler('brands')
+                ),
 
-            onSnapshot(qUsers, (snapshot) => {
-                const fetchedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-                dataStore.users = [...initialUsers, ...fetchedUsers];
-                dataStore.board_members = dataStore.users; // Sync alias
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching users: ", err);
-                toast.error('Error syncing users data', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'users')),
+                    snap => {
+                        dataStore.users        = snap.docs.map(d => ({ id: d.id, ...d.data() } as User));
+                        dataStore.board_members = dataStore.users;
+                        bump();
+                    },
+                    errHandler('users')
+                ),
 
-            onSnapshot(qProjects, (snapshot) => {
-                const fetchedProjects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-                dataStore.projects = [...initialProjects, ...fetchedProjects];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching projects: ", err);
-                toast.error('Error syncing projects data', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'projects'), orderBy('createdAt', 'desc')),
+                    snap => { dataStore.projects = snap.docs.map(d => ({ id: d.id, ...d.data() } as Project)); bump(); },
+                    errHandler('projects')
+                ),
 
-            onSnapshot(qBoards, (snapshot) => {
-                const fetchedBoards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Board));
-                dataStore.boards = [...initialBoards, ...fetchedBoards];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching boards: ", err);
-                toast.error('Error syncing boards data', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'boards')),
+                    snap => { dataStore.boards = snap.docs.map(d => ({ id: d.id, ...d.data() } as Board)); bump(); },
+                    errHandler('boards')
+                ),
 
-            onSnapshot(qStages, (snapshot) => {
-                const fetchedStages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Stage));
-                fetchedStages.sort((a, b) => a.order - b.order);
-                dataStore.stages = [...initialStages, ...fetchedStages];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching stages: ", err);
-                toast.error('Error syncing stages data', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'stages')),
+                    snap => {
+                        const stages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Stage));
+                        stages.sort((a, b) => a.order - b.order);
+                        dataStore.stages = stages;
+                        bump();
+                    },
+                    errHandler('stages')
+                ),
 
-            onSnapshot(qTasks, (snapshot) => {
-                const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-                dataStore.tasks = [...initialTasks, ...fetchedTasks];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching tasks: ", err);
-                toast.error('Error syncing tasks data', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'tasks')),
+                    snap => { dataStore.tasks = snap.docs.map(d => ({ id: d.id, ...d.data() } as Task)); bump(); },
+                    errHandler('tasks')
+                ),
 
-            onSnapshot(qTags, (snapshot) => {
-                const fetchedTags = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tag));
-                dataStore.tags = [...initialTags, ...fetchedTags];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching tags: ", err);
-                toast.error('Error syncing tags data', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'tags')),
+                    snap => { dataStore.tags = snap.docs.map(d => ({ id: d.id, ...d.data() } as Tag)); bump(); },
+                    errHandler('tags')
+                ),
 
-            onSnapshot(qTimeLogs, (snapshot) => {
-                const fetchedLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeLog));
-                dataStore.time_logs = [...initialTimeLogs, ...fetchedLogs];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching time logs: ", err);
-                toast.error('Error syncing time logs', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'time_logs')),
+                    snap => { dataStore.time_logs = snap.docs.map(d => ({ id: d.id, ...d.data() } as TimeLog)); bump(); },
+                    errHandler('time_logs')
+                ),
 
-            onSnapshot(qRoadmapItems, (snapshot) => {
-                const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RoadmapItem));
-                dataStore.roadmapItems = [...initialRoadmapItems, ...fetchedItems];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching roadmap items: ", err);
-                toast.error('Error syncing roadmap items', { description: 'Please refresh the page' });
-            }),
-            
-            onSnapshot(qComments, (snapshot) => {
-                const fetchedComments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
-                dataStore.comments = [...initialComments, ...fetchedComments];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching comments: ", err);
-                toast.error('Error syncing comments', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'roadmap')),
+                    snap => { dataStore.roadmapItems = snap.docs.map(d => ({ id: d.id, ...d.data() } as RoadmapItem)); bump(); },
+                    errHandler('roadmap')
+                ),
 
-            onSnapshot(qActivities, (snapshot) => {
-                const fetchedActivities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Activity));
-                dataStore.activities = [...initialActivities, ...fetchedActivities];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching activities: ", err);
-                toast.error('Error syncing activities', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'comments')),
+                    snap => { dataStore.comments = snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment)); bump(); },
+                    errHandler('comments')
+                ),
 
-            onSnapshot(qMoodboards, (snapshot) => {
-                const fetchedMoodboards = snapshot.docs.map(doc => {
-                    // Extract projectId from path projects/{projectId}/moodboards/{moodboardId}
-                    const pathSegments = doc.ref.path.split('/');
-                    const projectId = pathSegments[1];
-                    return { id: doc.id, projectId, ...doc.data() } as Moodboard;
-                });
-                dataStore.moodboards = [...initialMoodboards, ...fetchedMoodboards];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching moodboards: ", err);
-                toast.error('Error syncing moodboards', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'activities')),
+                    snap => { dataStore.activities = snap.docs.map(d => ({ id: d.id, ...d.data() } as Activity)); bump(); },
+                    errHandler('activities')
+                ),
 
-            onSnapshot(qMoodboardItems, (snapshot) => {
-                const fetchedItems = snapshot.docs.map(doc => {
-                    // Extract moodboardId from path projects/{pid}/moodboards/{mid}/moodboard_items/{iid}
-                    const pathSegments = doc.ref.path.split('/');
-                    const moodboardId = pathSegments[3];
-                    return { id: doc.id, moodboardId, ...doc.data() } as MoodboardItem;
-                });
-                dataStore.moodboardItems = [...initialMoodboardItems, ...fetchedItems];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching moodboard items: ", err);
-                toast.error('Error syncing moodboard items', { description: 'Please refresh the page' });
-            }),
+                // ── Moodboards ─────────────────────────────────────────────────
+                onSnapshot(
+                    query(collection(db, 'moodboards')),
+                    snap => {
+                        dataStore.moodboards = snap.docs.map(d => ({ id: d.id, ...d.data() } as Moodboard));
+                        bump();
+                    },
+                    errHandler('moodboards')
+                ),
 
-            // Corrected: Listen to the single 'feedbackItems' collectionGroup
-            onSnapshot(query(collectionGroup(db, 'feedbackItems')), (snapshot) => {
-                const fetchedItems = snapshot.docs.map(doc => {
-                     const pathSegments = doc.ref.path.split('/');
-                     const projectId = pathSegments[1];
-                     const data = doc.data();
-                     return { id: doc.id, projectId, ...data };
-                });
+                onSnapshot(
+                    query(collection(db, 'moodboard_items')),
+                    snap => {
+                        dataStore.moodboardItems = snap.docs.map(d => ({ id: d.id, ...d.data() } as MoodboardItem));
+                        bump();
+                    },
+                    errHandler('moodboard_items')
+                ),
 
-                // Distribute to specific arrays based on type
-                dataStore.feedbackWebsites = [...initialFeedbackWebsites, ...fetchedItems.filter((i): i is FeedbackWebsite => (i as {type?: string}).type === 'website')] as FeedbackWebsite[];
-                dataStore.feedbackMockups = [...initialFeedbackMockups, ...fetchedItems.filter((i): i is FeedbackMockup => (i as {type?: string}).type === 'mockup')] as FeedbackMockup[];
-                dataStore.feedbackVideos = [...initialFeedbackVideos, ...fetchedItems.filter((i): i is FeedbackVideo => (i as {type?: string}).type === 'video')] as FeedbackVideo[];
+                // ── Feedback (collectionGroup — flat-root collections) ──────────
+                onSnapshot(
+                    query(collectionGroup(db, 'feedbackItems')),
+                    snap => {
+                        const items = snap.docs.map(d => {
+                            const segs = d.ref.path.split('/');
+                            return { id: d.id, projectId: segs[1], ...d.data() };
+                        });
+                        dataStore.feedbackWebsites = items.filter(
+                            (i): i is FeedbackWebsite => (i as { type?: string }).type === 'website'
+                        );
+                        dataStore.feedbackMockups = items.filter(
+                            (i): i is FeedbackMockup => (i as { type?: string }).type === 'mockup'
+                        );
+                        dataStore.feedbackVideos = items.filter(
+                            (i): i is FeedbackVideo => (i as { type?: string }).type === 'video'
+                        );
+                        bump();
+                    },
+                    errHandler('feedbackItems')
+                ),
 
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching feedback items: ", err);
-                toast.error('Error syncing feedback items', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'feedbackComments')),
+                    snap => {
+                        dataStore.feedbackComments = snap.docs.map(d => ({ id: d.id, ...d.data() } as FeedbackComment));
+                        bump();
+                    },
+                    errHandler('feedbackComments')
+                ),
 
-            // Listen to comments (feedback items subcollection)
-            onSnapshot(query(collectionGroup(db, 'comments')), (snapshot) => {
-                 const fetchedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FeedbackComment));
-                 // Filter to ensure we only get feedback comments if 'comments' is reused elsewhere?
-                 // For now, assume global comments are feedback comments or compatible.
-                 dataStore.feedbackComments = [...initialFeedbackComments, ...fetchedItems];
-                 setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching feedback comments: ", err);
-                toast.error('Error syncing feedback comments', { description: 'Please refresh the page' });
-            }),
+                // ── Email Templates ────────────────────────────────────────────
+                onSnapshot(
+                    query(collection(db, 'emailTemplates')),
+                    snap => { dataStore.emailTemplates = snap.docs.map(d => ({ id: d.id, ...d.data() } as EmailTemplate)); bump(); },
+                    errHandler('emailTemplates')
+                ),
 
-            // Email Templates listener
-            onSnapshot(qEmailTemplates, (snapshot) => {
-                const fetchedTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
-                dataStore.emailTemplates = fetchedTemplates;
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching email templates: ", err);
-                toast.error('Error syncing email templates', { description: 'Please refresh the page' });
-            }),
+                // ── Calendar Events ────────────────────────────────────────────
+                onSnapshot(
+                    query(collection(db, 'calendar_events')),
+                    snap => {
+                        const events = snap.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent));
+                        dataStore.calendar_events = events;
+                        dataStore.calendarEvents  = events;
+                        bump();
+                    },
+                    errHandler('calendar_events')
+                ),
 
-            // Calendar Events listener
-            onSnapshot(query(collection(db, 'calendar_events')), (snapshot) => {
-                const fetchedEvents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CalendarEvent));
-                dataStore.calendar_events = [...initialCalendarEvents, ...fetchedEvents];
-                dataStore.calendarEvents = [...initialCalendarEvents, ...fetchedEvents];
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching calendar events: ", err);
-                toast.error('Error syncing calendar events', { description: 'Please refresh the page' });
-            }),
+                // ── Social ─────────────────────────────────────────────────────
+                onSnapshot(
+                    query(collection(db, 'social_accounts')),
+                    snap => { dataStore.socialAccounts = snap.docs.map(d => ({ id: d.id, ...d.data() } as SocialAccount)); bump(); },
+                    errHandler('social_accounts')
+                ),
 
-            // Social Accounts listener
-            onSnapshot(query(collection(db, 'social_accounts')), (snapshot) => {
-                const fetchedAccounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SocialAccount));
-                dataStore.socialAccounts = fetchedAccounts;
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching social accounts: ", err);
-                toast.error('Error syncing social accounts', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'social_posts')),
+                    snap => { dataStore.socialPosts = snap.docs.map(d => ({ id: d.id, ...d.data() } as SocialPost)); bump(); },
+                    errHandler('social_posts')
+                ),
 
-            // Social Posts listener
-            onSnapshot(query(collection(db, 'social_posts')), (snapshot) => {
-                const fetchedPosts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SocialPost));
-                dataStore.socialPosts = fetchedPosts;
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching social posts: ", err);
-                toast.error('Error syncing social posts', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'scheduled_posts')),
+                    snap => { dataStore.scheduledPosts = snap.docs.map(d => ({ id: d.id, ...d.data() } as ScheduledPost)); bump(); },
+                    errHandler('scheduled_posts')
+                ),
 
-            // Scheduled Posts listener
-            onSnapshot(query(collection(db, 'scheduled_posts')), (snapshot) => {
-                const fetchedScheduled = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ScheduledPost));
-                dataStore.scheduledPosts = fetchedScheduled;
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching scheduled posts: ", err);
-                toast.error('Error syncing scheduled posts', { description: 'Please refresh the page' });
-            }),
+                onSnapshot(
+                    query(collection(db, 'social_anomalies')),
+                    snap => { dataStore.socialAnomalies = snap.docs.map(d => ({ id: d.id, ...d.data() } as SocialAnomaly)); bump(); },
+                    errHandler('social_anomalies')
+                ),
 
-            // Social Anomalies listener
-            onSnapshot(query(collection(db, 'social_anomalies')), (snapshot) => {
-                const fetchedAnomalies = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SocialAnomaly));
-                dataStore.socialAnomalies = fetchedAnomalies;
-                setVersion(v => v + 1);
-            }, (err) => {
-                console.error("Error fetching social anomalies: ", err);
-                toast.error('Error syncing social anomalies', { description: 'Please refresh the page' });
-            }),
-        ];
+                // ── Payments — clients / invoices / estimates / userSettings ───
+                onSnapshot(
+                    query(collection(db, 'clients')),
+                    snap => { dataStore.clients = snap.docs.map(d => ({ id: d.id, ...d.data() } as Client)); bump(); },
+                    errHandler('clients')
+                ),
 
-            Promise.all(unsubscribers.map(() => new Promise(res => setTimeout(res, 200)))).finally(() => {
-                if (isMounted) setLoading(false);
-            });
+                onSnapshot(
+                    query(collection(db, 'invoices'), orderBy('date', 'desc')),
+                    snap => { dataStore.invoices = snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)); bump(); },
+                    errHandler('invoices')
+                ),
+
+                onSnapshot(
+                    query(collection(db, 'estimates'), orderBy('date', 'desc')),
+                    snap => { dataStore.estimates = snap.docs.map(d => ({ id: d.id, ...d.data() } as Estimate)); bump(); },
+                    errHandler('estimates')
+                ),
+
+                // userSettings is a single document per user, not a collection
+                onSnapshot(
+                    doc(db, 'userSettings', user.uid),
+                    snap => {
+                        if (snap.exists()) {
+                            dataStore.userSettings = [{ userId: snap.id, ...snap.data() } as UserSettings];
+                        } else {
+                            dataStore.userSettings = [];
+                        }
+                        bump();
+                    },
+                    errHandler('userSettings')
+                ),
+            ];
+
+            // Give listeners a moment to fire their first snapshots, then clear loading
+            setTimeout(() => { if (isMounted) setLoading(false); }, 300);
         };
 
         startListeners();
 
         return () => {
             isMounted = false;
-            unsubscribers.forEach(unsub => unsub());
+            unsubscribers.forEach(u => u());
         };
     }, [user]);
 
@@ -366,10 +324,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     const updateData = useCallback((key: DataStoreKey, newData: unknown[]) => {
-        const dataArray = dataStore[key];
-        if (Array.isArray(dataArray)) {
-            dataArray.length = 0;
-            Array.prototype.push.apply(dataArray, newData);
+        const current = dataStore[key];
+        if (Array.isArray(current)) {
+            current.length = 0;
+            Array.prototype.push.apply(current, newData);
         } else {
             (dataStore as Record<string, unknown>)[key] = newData[0];
         }
@@ -385,16 +343,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useData = (): DataContextType => {
     const context = useContext(DataContext);
-    // Modified to return a mock context if used outside of provider (e.g., in Feedback Tool)
     if (!context) {
-        // Return a minimal safe context
+        // Safe fallback for components rendered outside the provider (e.g. Feedback widget)
         return {
-            data: dataStore, // Return the static dataStore which might have some mock data
+            data: dataStore,
             loading: false,
             error: null,
             user: null,
             updateData: () => {},
-            forceUpdate: () => {}
+            forceUpdate: () => {},
         };
     }
     return context;

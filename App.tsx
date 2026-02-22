@@ -14,6 +14,7 @@ import { Agentation } from 'agentation';
 // --- Other Page Imports ---
 import DashboardPage from './pages/DashboardPage';
 import PaymentsPage from './pages/PaymentsPage';
+import SubscriptionsPage from './pages/SubscriptionsPage';
 import CreateInvoicePage from './pages/CreateInvoicePage';
 import EditInvoicePage from './pages/EditInvoicePage';
 import CreateEstimatePage from './pages/CreateEstimatePage';
@@ -82,7 +83,13 @@ import { CalendarProvider } from './contexts/CalendarContext';
 import { UserProvider } from './contexts/UserContext';
 import { NotificationHistoryProvider } from './contexts/NotificationHistoryContext';
 import { ActiveProjectProvider } from './contexts/ActiveProjectContext';
+import { DocsProvider } from './contexts/DocsContext';
 import ToolsPage from './pages/ToolsPage';
+import DocsListPage from './pages/DocsListPage';
+import DocEditorPage from './pages/DocEditorPage';
+import AdminDocsPage from './pages/admin/AdminDocsPage';
+import FilesPage from './pages/FilesPage';
+import SearchPage from './pages/SearchPage';
 import { toast } from 'sonner';
 
 function App() {
@@ -228,6 +235,7 @@ function App() {
           <AdminProvider>
             <DataProvider>
               <ActiveProjectProvider>
+              <DocsProvider>
               <TimerProvider>
                 <CalendarProvider>
                   <SearchProvider>
@@ -250,6 +258,7 @@ function App() {
                       <Route path="calendar-events" element={<AdminCalendarEventsPage />} />
                       <Route path="roadmap" element={<AdminRoadmapPage />} />
                       <Route path="social-media" element={<AdminSocialMediaPage />} />
+                      <Route path="docs" element={<AdminDocsPage />} />
                   </Route>
 
                   {/* Main Application Routes - Wrapped in MainLayout */}
@@ -310,6 +319,11 @@ function App() {
                    <Route path="/payments/estimates/edit/:id" element={
                       <MainLayout onLogout={handleLogout}>
                          <EditEstimatePage />
+                      </MainLayout>
+                   } />
+                   <Route path="/subscriptions" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <SubscriptionsPage />
                       </MainLayout>
                    } />
                    <Route path="/calendar" element={
@@ -447,6 +461,11 @@ function App() {
                          <ProfilePage />
                       </MainLayout>
                    } />
+                   <Route path="/files" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <FilesPage />
+                      </MainLayout>
+                   } />
                    <Route path="/settings" element={
                       <MainLayout onLogout={handleLogout}>
                          <SettingsPage />
@@ -474,6 +493,35 @@ function App() {
                       </MainLayout>
                    } />
 
+                   {/* ── AFFiNE Docs & Whiteboards ─────────────────────────────── */}
+                   <Route path="/docs/:projectId" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <DocsListPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/docs/:projectId/new" element={
+                      <MainLayout onLogout={handleLogout} fullBleed>
+                         <DocEditorPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/docs/:projectId/:docId" element={
+                      <MainLayout onLogout={handleLogout} fullBleed>
+                         <DocEditorPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/whiteboard/:projectId/:docId" element={
+                      <MainLayout onLogout={handleLogout} fullBleed>
+                         <DocEditorPage defaultMode="edgeless" />
+                      </MainLayout>
+                   } />
+
+                   {/* Global search page */}
+                   <Route path="/search" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <SearchPage />
+                      </MainLayout>
+                   } />
+
                    {/* Fallback */}
                    <Route path="*" element={<Navigate to="/" />} />
 
@@ -481,6 +529,7 @@ function App() {
                 </SearchProvider>
                 </CalendarProvider>
               </TimerProvider>
+              </DocsProvider>
               </ActiveProjectProvider>
             </DataProvider>
           </AdminProvider>

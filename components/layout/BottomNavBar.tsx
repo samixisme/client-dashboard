@@ -9,13 +9,15 @@ import { BrandIcon } from '../icons/BrandIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
 import { MoreIcon } from '../icons/MoreIcon';
 import { EmailIcon } from '../icons/EmailIcon';
+import { FileIcon } from '../icons/FileIcon';
 import MoreMenu from './MoreMenu';
 
 const mainNavItems = [
     { to: "/dashboard", Icon: DashboardIcon, label: "Dashboard" },
-    { to: "/projects", Icon: ProjectsIcon, label: "Projects" },
-    { to: "/calendar", Icon: CalendarIcon, label: "Calendar" },
-    { to: "/payments", Icon: PaymentsIcon, label: "Payments" },
+    { to: "/files",     Icon: FileIcon,       label: "Files"     },
+    { to: "/projects",  Icon: ProjectsIcon,  label: "Projects"  },
+    { to: "/calendar",  Icon: CalendarIcon,  label: "Calendar"  },
+    { to: "/payments",  Icon: PaymentsIcon,  label: "Payments"  },
 ];
 
 const moreNavItems = [

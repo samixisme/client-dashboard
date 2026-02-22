@@ -142,6 +142,22 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    // ── AFFiNE Docs & Whiteboards ─────────────────────────────────────────────
+    // Authenticated users can create and edit docs (CRDT collaborative editing)
+    match /docs/{docId} {
+      allow read, write: if isAuthenticated();
+
+      // Incremental Yjs update ops — written on every keystroke
+      match /updates/{updateId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      // Compacted Yjs state snapshots — written on unmount compaction
+      match /snapshots/{snapshotId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
     // Catch-all for any other collections - read only for authenticated users
     match /{document=**} {
       allow read: if isAuthenticated();

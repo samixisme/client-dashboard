@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { useActiveProject, getBrandLogoUrl, getBrandColor } from '../contexts/ActiveProjectContext';
+import { useDocs } from '../contexts/DocsContext';
 import { BoardIcon } from '../components/icons/BoardIcon';
 import { FeedbackIcon } from '../components/icons/FeedbackIcon';
 import { MoodboardIcon } from '../components/icons/MoodboardIcon';
@@ -10,6 +11,8 @@ import { SocialMediaIcon } from '../components/icons/SocialMediaIcon';
 import { EmailIcon } from '../components/icons/EmailIcon';
 import { BrandIcon } from '../components/icons/BrandIcon';
 import { AiSparkleIcon } from '../components/icons/AiSparkleIcon';
+import { DocIcon } from '../components/icons/DocIcon';
+import { WhiteboardIcon } from '../components/icons/WhiteboardIcon';
 import { Project, Brand, Board } from '../types';
 
 const GREEN = '#a3e635';
@@ -118,6 +121,7 @@ const ToolsPage: React.FC = () => {
     const { data } = useData();
     const navigate = useNavigate();
     const { setActiveProjectId, activeBrand } = useActiveProject();
+    const { docs } = useDocs();
 
     useEffect(() => {
         if (projectId) setActiveProjectId(projectId);
@@ -246,6 +250,26 @@ const ToolsPage: React.FC = () => {
             { label: 'Fonts', value: fonts },
         ];
     }, [brand]);
+
+    // ── AFFiNE Docs stats ──────────────────────────────────────────────────────
+    const docStats = useMemo(() => {
+        if (!project) return [];
+        const projectDocs = docs.filter(d => d.projectId === project.id && d.mode === 'page');
+        const sorted = [...projectDocs].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        const lastUpdated = sorted[0]
+            ? new Date(sorted[0].updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            : '—';
+        return [
+            { label: 'Documents', value: projectDocs.length },
+            { label: 'Last Updated', value: lastUpdated },
+        ];
+    }, [project, docs]);
+
+    const whiteboardStats = useMemo(() => {
+        if (!project) return [];
+        const boards = docs.filter(d => d.projectId === project.id && d.mode === 'edgeless');
+        return [{ label: 'Whiteboards', value: boards.length }];
+    }, [project, docs]);
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -403,6 +427,24 @@ const ToolsPage: React.FC = () => {
                     Icon={AiSparkleIcon}
                     href="/brand-asset-creator"
                     stats={[]}
+                />
+
+                <ToolCard
+                    index={8}
+                    label="Docs"
+                    description="Block-based documents, meeting notes, project briefs, and wikis for this project."
+                    Icon={DocIcon}
+                    href={`/docs/${project.id}`}
+                    stats={docStats}
+                />
+
+                <ToolCard
+                    index={9}
+                    label="Whiteboard"
+                    description="Infinite canvas for visual planning, diagrams, and collaborative sketching."
+                    Icon={WhiteboardIcon}
+                    href={`/docs/${project.id}?mode=edgeless`}
+                    stats={whiteboardStats}
                 />
 
             </div>

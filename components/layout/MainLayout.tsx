@@ -15,9 +15,12 @@ import { useGlobalSmoothScroll } from '../../src/hooks/useGlobalSmoothScroll';
 interface MainLayoutProps {
   children: React.ReactNode;
   onLogout: () => void;
+  /** Remove padding/overflow from <main> so full-bleed pages (e.g. doc editor)
+   *  can own their own scroll container. */
+  fullBleed?: boolean;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout, fullBleed }) => {
   const navigate = useNavigate();
   const { isAdminMode } = useAdmin();
   const { view, setView, headerTitle, navigateDate, today, isCalendarPage } = useCalendar();
@@ -83,7 +86,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout }) => {
           </div>
         </div>
 
-        <main ref={mainRef} className={`flex-1 overflow-x-hidden overflow-y-auto bg-background px-4 md:px-10 pt-4 pb-24 md:pb-10 transition-all duration-300`}>
+        <main
+          ref={fullBleed ? undefined : mainRef}
+          className={fullBleed
+            ? 'flex-1 overflow-hidden flex flex-col min-h-0'
+            : 'flex-1 overflow-x-hidden overflow-y-auto bg-background px-4 md:px-10 pt-4 pb-24 md:pb-10 transition-all duration-300'}
+        >
           {children}
         </main>
       </div>

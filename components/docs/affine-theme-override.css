@@ -1,0 +1,104 @@
+/*
+ * AFFiNE theme overrides — maps AFFiNE's CSS custom properties to the
+ * client dashboard's dark glass design system.
+ *
+ * Loaded once in BlockSuiteEditor.tsx via import.
+ */
+
+.affine-editor-container,
+.affine-editor-container *,
+editor-host {
+  /* Backgrounds — transparent so LiquidEther WebGL shows through */
+  --affine-background-primary-color: transparent;
+  --affine-background-secondary-color: rgba(255, 255, 255, 0.03);
+  --affine-background-tertiary-color: rgba(255, 255, 255, 0.05);
+  --affine-background-overlay-panel-color: rgba(5, 7, 9, 0.90);
+  --affine-background-code-block: rgba(255, 255, 255, 0.04);
+  --affine-background-processing-block-color: rgba(163, 230, 53, 0.06);
+
+  /* Text */
+  --affine-text-primary-color: #F4F4F5;
+  --affine-text-secondary-color: rgba(244, 244, 245, 0.55);
+  --affine-text-disable-color: rgba(244, 244, 245, 0.28);
+  --affine-text-emphasis-color: #a3e635;
+  --affine-text-highlight-foreground-yellow: #F4F4F5;
+
+  /* Brand */
+  --affine-brand-color: #a3e635;
+  --affine-primary-color: #a3e635;
+  --affine-hover-color: rgba(163, 230, 53, 0.08);
+  --affine-hover-color-filled: rgba(163, 230, 53, 0.12);
+
+  /* Borders */
+  --affine-border-color: rgba(255, 255, 255, 0.08);
+  --affine-divider-color: rgba(255, 255, 255, 0.06);
+
+  /* Selection */
+  --affine-selection-color: rgba(163, 230, 53, 0.20);
+  --affine-text-cursor-color: #a3e635;
+
+  /* Placeholders */
+  --affine-placeholder-color: rgba(244, 244, 245, 0.22);
+
+  /* Shadows */
+  --affine-shadow-1: 0 4px 20px rgba(0, 0, 0, 0.60);
+  --affine-shadow-2: 0 8px 40px rgba(0, 0, 0, 0.80);
+
+  /* Code block */
+  --affine-code-background: rgba(255, 255, 255, 0.04);
+  --affine-code-foreground: #a3e635;
+
+  /* Inline code */
+  --affine-code-color: #a3e635;
+
+  /* Scrollbars */
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
+  scrollbar-width: thin;
+}
+
+/* Toolbar / format bar match glass style */
+affine-format-bar-widget,
+.affine-toolbar-widget-tray {
+  background: rgba(5, 7, 9, 0.88) !important;
+  backdrop-filter: blur(24px) saturate(1.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.70) !important;
+}
+
+/* Slash command menu */
+affine-slash-menu,
+.affine-slash-menu {
+  background: rgba(5, 7, 9, 0.92) !important;
+  backdrop-filter: blur(32px) saturate(1.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Page title input */
+.affine-doc-page-block-title {
+  color: #F4F4F5 !important;
+  font-weight: 700 !important;
+}
+
+.affine-doc-page-block-title::placeholder {
+  color: rgba(244, 244, 245, 0.20) !important;
+}
+
+/* Edgeless canvas background — let LiquidEther show through */
+.affine-edgeless-page-block-container,
+affine-edgeless-root {
+  background: transparent !important;
+}
+
+/* Toolbar icons tint */
+.affine-toolbar-widget-tray svg,
+affine-format-bar-widget svg {
+  color: rgba(244, 244, 245, 0.75);
+}
+
+.affine-toolbar-widget-tray svg:hover,
+affine-format-bar-widget button:hover svg {
+  color: #a3e635;
+}
