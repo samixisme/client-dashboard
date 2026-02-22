@@ -143,18 +143,31 @@ service cloud.firestore {
     }
 
     // ── AFFiNE Docs & Whiteboards ─────────────────────────────────────────────
-    // Authenticated users can create and edit docs (CRDT collaborative editing)
+    // Owners can read/write their own docs. Admins can read/write any doc.
+    // createdBy is set at creation time and must match the requesting user's UID.
     match /docs/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.createdBy
+                    && request.resource.data.mode in ['page', 'edgeless'];
+      allow update: if isAuthenticated()
+                    && (request.auth.uid == resource.data.createdBy || isAdmin());
+      allow delete: if isAuthenticated()
+                    && (request.auth.uid == resource.data.createdBy || isAdmin());
 
-      // Incremental Yjs update ops — written on every keystroke
+      // Incremental Yjs update ops — written on every keystroke by doc owner or admin
       match /updates/{updateId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated()
+                      && (request.auth.uid == get(/databases/$(database)/documents/docs/$(docId)).data.createdBy || isAdmin());
+        allow delete: if isAuthenticated()
+                      && (request.auth.uid == get(/databases/$(database)/documents/docs/$(docId)).data.createdBy || isAdmin());
       }
 
       // Compacted Yjs state snapshots — written on unmount compaction
       match /snapshots/{snapshotId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated()
+                     && (request.auth.uid == get(/databases/$(database)/documents/docs/$(docId)).data.createdBy || isAdmin());
       }
     }
 

@@ -1,6 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { PageEditor, EdgelessEditor } from '@blocksuite/presets';
-import { PageEditorBlockSpecs, EdgelessEditorBlockSpecs } from '@blocksuite/blocks';
+// PageEditor/EdgelessEditor are NOT re-exported from @blocksuite/presets index —
+// they only exist as side-effect registrations in effects.js. Import from the
+// exact internal paths where the classes are actually defined.
+import { PageEditor } from '@blocksuite/presets/dist/editors/page-editor.js';
+import { EdgelessEditor } from '@blocksuite/presets/dist/editors/edgeless-editor.js';
+// Same issue with @blocksuite/blocks — specs are not in the main index export,
+// only under the internal _specs subpath.
+import { PageEditorBlockSpecs } from '@blocksuite/blocks/dist/_specs/preset/page-specs.js';
+import { EdgelessEditorBlockSpecs } from '@blocksuite/blocks/dist/_specs/preset/edgeless-specs.js';
 // ① Required: defines ALL --affine-* CSS variables (font families, colours,
 //    --affine-editor-width, shadows, etc.). Without this import the editor
 //    renders with zero font size and completely invisible content.

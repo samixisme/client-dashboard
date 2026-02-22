@@ -13,7 +13,22 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-const UPDATE_COMPACTION_THRESHOLD = 100;
+const UPDATE_COMPACTION_THRESHOLD = 500;
+
+const MAX_YJS_UPDATE_BYTES = 500_000; // 500 KB sanity cap per update
+
+function safeApplyUpdate(yDoc: Y.Doc, rawData: unknown, origin: string, context: string): void {
+    if (!Array.isArray(rawData) || rawData.length === 0) return;
+    if (rawData.length > MAX_YJS_UPDATE_BYTES) {
+        console.warn(`[FirebaseYjsProvider] ${context}: oversized update (${rawData.length} bytes) — skipped`);
+        return;
+    }
+    try {
+        Y.applyUpdate(yDoc, new Uint8Array(rawData as number[]), origin);
+    } catch (err) {
+        console.warn(`[FirebaseYjsProvider] ${context}: failed to apply update —`, err);
+    }
+}
 
 /**
  * Syncs a Yjs document to Firestore in real-time.
@@ -56,9 +71,7 @@ export class FirebaseYjsProvider {
             snapshot.docChanges().forEach(change => {
                 if (change.type === 'added') {
                     const data = change.doc.data();
-                    const update = new Uint8Array(data.data as number[]);
-                    // Prevent echo: only apply updates not originated locally
-                    Y.applyUpdate(this.yDoc, update, 'firebase-remote');
+                    safeApplyUpdate(this.yDoc, data.data, 'firebase-remote', `realtime/${change.doc.id}`);
                 }
             });
         });
@@ -135,8 +148,7 @@ export class FirebaseYjsProvider {
             const snap = await getDocs(snapshotsRef);
             if (!snap.empty) {
                 const latest = snap.docs[0].data();
-                const update = new Uint8Array(latest.data as number[]);
-                Y.applyUpdate(this.yDoc, update, 'firebase-remote');
+                safeApplyUpdate(this.yDoc, latest.data, 'firebase-remote', 'snapshot');
             }
         } catch {
             // No snapshot yet — that's fine for new docs
@@ -151,8 +163,7 @@ export class FirebaseYjsProvider {
             );
             const snap = await getDocs(updatesRef);
             snap.docs.forEach(d => {
-                const update = new Uint8Array(d.data().data as number[]);
-                Y.applyUpdate(this.yDoc, update, 'firebase-remote');
+                safeApplyUpdate(this.yDoc, d.data().data, 'firebase-remote', `update/${d.id}`);
             });
         } catch {
             // Empty subcollection is normal for brand-new docs

@@ -51,10 +51,10 @@ export default defineConfig(({ mode }) => {
           '@blocksuite/block-std',
           '@blocksuite/global',
           '@blocksuite/sync',
+          // affine-components defines Lit custom elements — must share the same
+          // LitElement base and @blocksuite/store instance or "Illegal constructor" fires.
+          '@blocksuite/affine-components',
           // Lit — all BlockSuite elements extend LitElement from this one copy.
-          // Without deduplication each sub-package resolves its own lit copy,
-          // making customElements.define use a different LitElement base class
-          // than the one used at new-time → "Illegal constructor" on first render.
           'lit',
           'lit-html',
           'lit-element',
@@ -87,6 +87,11 @@ export default defineConfig(({ mode }) => {
           '@blocksuite/affine-widget-scroll-anchoring',
           '@blocksuite/data-view',
           '@blocksuite/icons',
+          // Deep internal paths used directly (not in package exports map)
+          '@blocksuite/presets/dist/editors/page-editor.js',
+          '@blocksuite/presets/dist/editors/edgeless-editor.js',
+          '@blocksuite/blocks/dist/_specs/preset/page-specs.js',
+          '@blocksuite/blocks/dist/_specs/preset/edgeless-specs.js',
         ],
         // Complete list of CJS-only packages transitively imported by @blocksuite/*.
         // Determined by scanning all @blocksuite/*/dist/*.js files for bare imports

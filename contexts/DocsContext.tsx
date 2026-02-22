@@ -8,6 +8,8 @@ import {
     updateDoc as firestoreUpdateDoc,
     deleteDoc as firestoreDeleteDoc,
     doc,
+    getDocs,
+    writeBatch,
 } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -113,6 +115,17 @@ export const DocsProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const deleteDoc = useCallback(async (docId: string): Promise<void> => {
         try {
+            // Clean up Yjs subcollections before deleting the parent doc.
+            // Firestore does not cascade-delete subcollections automatically —
+            // orphaned /updates and /snapshots would accumulate forever otherwise.
+            const batch = writeBatch(db);
+            const subcollections = ['updates', 'snapshots'];
+            for (const sub of subcollections) {
+                const snap = await getDocs(collection(db, 'docs', docId, sub));
+                snap.docs.forEach(d => batch.delete(d.ref));
+            }
+            await batch.commit();
+
             await firestoreDeleteDoc(doc(db, 'docs', docId));
             toast.success('Document deleted');
         } catch {

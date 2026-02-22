@@ -45,17 +45,10 @@ const DocEditorPage: React.FC<DocEditorPageProps> = ({ defaultMode }) => {
                 ? collection.docs.get(docId) as unknown as BlockSuiteDoc
                 : collection.createDoc({ id: docId });
 
-            // doc.load() MUST be called before acquireProvider.
-            // The provider calls Y.applyUpdate() which populates the Yjs map.
-            // BlockSuiteDoc only wires its reactive _blocks map to the Yjs doc
-            // after load() — without this, applyUpdate() fills the Yjs state but
-            // doc.root stays null because the signal subscriptions aren't set up yet.
             if (!bs.loaded) {
                 bs.load();
             }
 
-            // acquireProvider connects to Firestore, loads the snapshot, and
-            // applies all incremental updates onto the now-ready block tree.
             await acquireProvider(bs.spaceDoc, docId);
 
             if (!isMounted) {
@@ -69,17 +62,10 @@ const DocEditorPage: React.FC<DocEditorPageProps> = ({ defaultMode }) => {
 
         boot();
 
-        saveTimerRef.current = setInterval(() => {
-            if (docMetaRef.current) updateDoc(docId, {});
-        }, 30_000);
-
         return () => {
             isMounted = false;
             if (saveTimerRef.current) clearInterval(saveTimerRef.current);
-            // releaseProvider triggers compact() + disconnect() and tracks the
-            // teardown promise so the next acquireProvider call waits for it.
             releaseProvider(docId);
-            // Do NOT reset bsDoc/editorReady — avoids blank flash on re-renders
         };
     }, [docId]);
 
