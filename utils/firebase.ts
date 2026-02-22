@@ -13,7 +13,7 @@ const isLocalhost = typeof window !== 'undefined' &&
   (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1');
 
 if (isLocalhost) {
-  (self as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN =
+  (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN =
     import.meta.env.VITE_APPCHECK_DEBUG_TOKEN ?? true;
 }
 
