@@ -92,6 +92,7 @@ jobs:
           # Bakes the production API URL into the frontend bundle at build time.
           # Without this, socialAuth.ts falls back to localhost:3001 → ERR_CONNECTION_REFUSED in prod.
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
 
       - name: Build API server (TypeScript compilation)
         run: npx tsc -p tsconfig.server.json
