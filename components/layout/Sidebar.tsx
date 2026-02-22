@@ -9,11 +9,13 @@ import { CalendarIcon } from '../icons/CalendarIcon';
 import { GridViewIcon } from '../icons/GridViewIcon';
 import { useActiveProject } from '../../contexts/ActiveProjectContext';
 import { FileIcon } from '../icons/FileIcon';
+import { LinkIcon } from '../icons/LinkIcon';
 import { useSearch } from '../../contexts/SearchContext';
 
 // Main nav — Social Media and Brands moved to Tools page
 const mainNavItems = [
     { to: '/dashboard',     Icon: DashboardIcon, label: 'Dashboard'     },
+    { to: '/links',         Icon: LinkIcon,       label: 'Links'         },
     { to: '/files',         Icon: FileIcon,       label: 'Files'         },
     { to: '/calendar',      Icon: CalendarIcon,  label: 'Calendar'      },
     { to: '/payments',      Icon: PaymentsIcon,  label: 'Payments'      },

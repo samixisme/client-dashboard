@@ -90,6 +90,7 @@ import DocEditorPage from './pages/DocEditorPage';
 import AdminDocsPage from './pages/admin/AdminDocsPage';
 import FilesPage from './pages/FilesPage';
 import SearchPage from './pages/SearchPage';
+import LinksPage from './pages/LinksPage';
 import { toast } from 'sonner';
 
 function App() {
@@ -464,6 +465,11 @@ function App() {
                    <Route path="/files" element={
                       <MainLayout onLogout={handleLogout}>
                          <FilesPage />
+                      </MainLayout>
+                   } />
+                   <Route path="/links" element={
+                      <MainLayout onLogout={handleLogout}>
+                         <LinksPage />
                       </MainLayout>
                    } />
                    <Route path="/settings" element={
