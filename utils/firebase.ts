@@ -5,16 +5,12 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
-// Debug token only on localhost — NEVER on production domains.
-// The token below is registered in Firebase Console > App Check > Debug tokens.
-// It is intentionally not secret (it only works when registered), but must not
-// be set on production where reCAPTCHA enforcement applies.
-const isLocalhost = typeof window !== 'undefined' &&
-  (window.location?.hostname === 'localhost' || window.location?.hostname === '127.0.0.1');
-
-if (isLocalhost) {
-  (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN =
-    import.meta.env.VITE_APPCHECK_DEBUG_TOKEN ?? true;
+// App Check debug token — set VITE_APPCHECK_DEBUG_TOKEN in .env (local) or
+// GitHub Secrets (CI/production) and register the same value in Firebase Console
+// under App Check > Debug tokens. Must be set before initializeApp().
+const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+if (debugToken) {
+  (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
 }
 
 // Your web app's Firebase configuration (secure via environment variables)
@@ -32,16 +28,16 @@ const firebaseConfig = {
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// Initialize App Check with reCAPTCHA v3.
-// Requires VITE_FIREBASE_APP_CHECK_SITE_KEY to be set in production.
-// On localhost the debug token above is used automatically by the SDK.
+// Initialize App Check.
+// Production: set VITE_FIREBASE_APP_CHECK_SITE_KEY to your reCAPTCHA v3 site key.
+// Stopgap: set VITE_APPCHECK_DEBUG_TOKEN to a UUID registered in Firebase Console.
 const initAppCheck = () => {
   const siteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY;
-  if (!siteKey) return null;
+  if (!siteKey && !debugToken) return null;
 
   try {
     return initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(siteKey),
+      provider: new ReCaptchaV3Provider(siteKey || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'),
       isTokenAutoRefreshEnabled: true
     });
   } catch {
