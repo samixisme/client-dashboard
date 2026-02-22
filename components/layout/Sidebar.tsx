@@ -172,8 +172,8 @@ const SearchBar: React.FC = () => {
                                                     clearSearch();
                                                     return;
                                                 }
-                                                const route = TYPE_ROUTES[type]?.(h);
-                                                if (route) {
+                                                const route = TYPE_ROUTES[type]?.(h) ?? null;
+                                                if (route != null) {
                                                     navigate(route);
                                                     clearSearch();
                                                 }
@@ -183,10 +183,10 @@ const SearchBar: React.FC = () => {
                                                 <button
                                                     key={String(h.id)}
                                                     onClick={handleHitClick}
-                                                    className="w-full text-left px-4 py-2 hover:bg-glass-light transition-colors"
+                                                    className="w-full text-left px-4 py-2.5 hover:bg-glass-light transition-colors duration-150 cursor-pointer flex items-center gap-2 group"
                                                 >
                                                     <span
-                                                        className="text-xs text-text-primary truncate block"
+                                                        className="text-xs text-text-primary truncate flex-1 group-hover:text-primary transition-colors duration-150"
                                                         dangerouslySetInnerHTML={{ __html: title }}
                                                     />
                                                 </button>
