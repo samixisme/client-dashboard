@@ -25,7 +25,30 @@ export default defineConfig(({ mode }) => {
           }
         }
       },
-      plugins: [react()],
+      plugins: [
+        react(),
+        // Rollup (production) enforces package exports maps strictly — these
+        // BlockSuite deep paths exist on disk but are NOT listed in the exports
+        // map, so Rollup rejects them with "Missing specifier" at build time.
+        // Returning an absolute path from resolveId() bypasses the exports map
+        // check entirely (Rollup only validates exports for bare specifiers).
+        {
+          name: 'blocksuite-deep-imports',
+          resolveId(id: string) {
+            const map: Record<string, string> = {
+              '@blocksuite/presets/dist/editors/page-editor.js':
+                path.resolve('./node_modules/@blocksuite/presets/dist/editors/page-editor.js'),
+              '@blocksuite/presets/dist/editors/edgeless-editor.js':
+                path.resolve('./node_modules/@blocksuite/presets/dist/editors/edgeless-editor.js'),
+              '@blocksuite/blocks/dist/_specs/preset/page-specs.js':
+                path.resolve('./node_modules/@blocksuite/blocks/dist/_specs/preset/page-specs.js'),
+              '@blocksuite/blocks/dist/_specs/preset/edgeless-specs.js':
+                path.resolve('./node_modules/@blocksuite/blocks/dist/_specs/preset/edgeless-specs.js'),
+            };
+            return map[id] ?? null;
+          },
+        },
+      ],
       define: {
         // Always inject all VITE_ vars so both CI (process.env) and server (.env file) work
         'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY),
