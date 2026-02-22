@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import { SearchBar } from './Sidebar';
 import Header from './Header';
 import BottomNavBar from './BottomNavBar';
 import { ArrowLeftIcon } from '../icons/ArrowLeftIcon';
@@ -39,7 +40,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout, fullBleed }
     <div className="flex h-screen bg-background">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar — back/forward + calendar controls + header */}
+        {/* Top bar — back/forward + search (center) + header */}
         <div className="flex items-center justify-between px-4 md:px-10 py-5 flex-shrink-0 no-print">
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-2">
@@ -51,6 +52,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout, fullBleed }
                 </button>
             </div>
           </div>
+
+          {/* Search bar — centered in topbar */}
+          {!isCalendarPage && (
+            <div className="hidden md:block w-64 lg:w-80">
+              <SearchBar />
+            </div>
+          )}
 
           {/* Calendar Controls - Only show on calendar page */}
           {isCalendarPage && (

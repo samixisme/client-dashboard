@@ -220,11 +220,6 @@ const Sidebar = () => {
                 <BrandProjectSwitcher />
             </div>
 
-            {/* Search bar */}
-            <div className="w-full mb-3">
-                <SearchBar />
-            </div>
-
             {/* Main Navigation */}
             <div className="flex-1 flex flex-col justify-center pt-4">
                 <nav className="flex flex-col gap-1 w-11">
@@ -245,4 +240,5 @@ const Sidebar = () => {
     );
 };
 
+export { SearchBar };
 export default Sidebar;
