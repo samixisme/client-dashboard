@@ -42,7 +42,7 @@ const DocEditorPage: React.FC<DocEditorPageProps> = ({ defaultMode }) => {
             const collection = getDocCollection();
 
             const bs: BlockSuiteDoc = collection.docs.has(docId)
-                ? collection.docs.get(docId) as BlockSuiteDoc
+                ? collection.docs.get(docId) as unknown as BlockSuiteDoc
                 : collection.createDoc({ id: docId });
 
             // doc.load() MUST be called before acquireProvider.
