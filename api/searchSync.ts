@@ -10,7 +10,6 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import * as admin from 'firebase-admin';
 import { meili } from './meiliClient';
-import { listFiles } from '../utils/googleDrive';
 
 // ── Firebase Admin init ──────────────────────────────────────────────────────
 if (!admin.apps.length) {
@@ -88,8 +87,9 @@ async function syncCollection(
 
 // ── Drive files sync ──────────────────────────────────────────────────────────
 async function syncDriveFiles() {
-  let files: ReturnType<typeof listFiles> extends Promise<infer T> ? T : never;
+  let files: Record<string, unknown>[];
   try {
+    const { listFiles } = await import('../utils/googleDrive');
     files = await listFiles('');
   } catch (err) {
     console.warn('  [drive_files] Could not list Drive files — skipping:', err);
