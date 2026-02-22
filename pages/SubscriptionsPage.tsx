@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function safeJson(res: globalThis.Response): Promise<Record<string, unknown>> {
+async function safeJson(res: globalThis.Response): Promise<any> {
   const ct = res.headers.get('content-type') ?? '';
   if (!ct.includes('application/json')) {
     throw new Error(`Expected JSON but got ${ct || 'unknown content-type'} (status ${res.status})`);
