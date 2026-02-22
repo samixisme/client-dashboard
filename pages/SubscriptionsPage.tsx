@@ -26,7 +26,7 @@ function mapPaymenterService(svc: Record<string, unknown>): Subscription {
     id: String(svc.id),
     clientId: '',
     paymenterClientId: Number(svc.user_id ?? 0),
-    planName: String(svc.product?.name ?? svc.name ?? 'Hosting Service'),
+    planName: String((svc.product as Record<string, unknown>)?.name ?? svc.name ?? 'Hosting Service'),
     price: Number(svc.price ?? 0),
     billingCycle: cycleMap[String(svc.billing_cycle ?? 'monthly')] ?? 'monthly',
     status: statusMap[String(svc.status ?? 'active')] ?? 'active',
