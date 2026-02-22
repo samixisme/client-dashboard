@@ -159,7 +159,9 @@ jobs:
             if [ -d "${{ env.DEPLOY_PATH }}/current" ]; then
               BACKUP_DIR="${{ env.DEPLOY_PATH }}/backups/$(date +%Y%m%d_%H%M%S)_${{ github.sha }}"
               mkdir -p "$BACKUP_DIR"
-              cp -r ${{ env.DEPLOY_PATH }}/current/* "$BACKUP_DIR/" || true
+              # Exclude node_modules — the release dir it was copied from still has them.
+              # Backups are only used for symlink rollback, not direct execution.
+              rsync -a --exclude='node_modules' ${{ env.DEPLOY_PATH }}/current/ "$BACKUP_DIR/" || true
               echo "Backup created at $BACKUP_DIR"
 
               # Keep only last 5 backups
@@ -213,6 +215,8 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           SOCIAL_OAUTH_REDIRECT_URI: ${{ secrets.SOCIAL_OAUTH_REDIRECT_URI }}
           NOVU_API_KEY: ${{ secrets.NOVU_API_KEY }}
+          PAYMENTER_URL: ${{ secrets.PAYMENTER_URL }}
+          PAYMENTER_API_KEY: ${{ secrets.PAYMENTER_API_KEY }}
         run: |
           # Build .env on the runner then scp it — avoids heredoc-in-quoted-SSH YAML issues.
           # Secrets are expanded by the GitHub Actions runner (never stored in YAML).
@@ -243,6 +247,8 @@ jobs:
             "YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET}" \
             "SOCIAL_OAUTH_REDIRECT_URI=${SOCIAL_OAUTH_REDIRECT_URI}" \
             "NOVU_API_KEY=${NOVU_API_KEY}" \
+            "PAYMENTER_URL=${PAYMENTER_URL}" \
+            "PAYMENTER_API_KEY=${PAYMENTER_API_KEY}" \
             > /tmp/deploy.env
           scp -i ~/.ssh/deploy_key /tmp/deploy.env \
             ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env
