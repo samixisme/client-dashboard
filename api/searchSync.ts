@@ -9,11 +9,21 @@ import dotenv from 'dotenv';
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import * as admin from 'firebase-admin';
+import * as fs from 'fs';
 import { meili } from './meiliClient';
 
-// ── Firebase Admin init ──────────────────────────────────────────────────────
+// ── Firebase Admin init (mirrors api/firebaseAdmin.ts pattern) ────────────────
 if (!admin.apps.length) {
-  admin.initializeApp();
+  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '/home/clientdash/.firebase-admin.json';
+  if (!fs.existsSync(serviceAccountPath)) {
+    console.error('Firebase service account not found at:', serviceAccountPath);
+    process.exit(1);
+  }
+  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: 'https://client-dashboard-v2-default-rtdb.europe-west1.firebasedatabase.app',
+  });
 }
 const db = admin.firestore();
 
