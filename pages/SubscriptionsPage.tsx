@@ -8,6 +8,14 @@ import { toast } from 'sonner';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+async function safeJson(res: globalThis.Response): Promise<Record<string, unknown>> {
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('application/json')) {
+    throw new Error(`Expected JSON but got ${ct || 'unknown content-type'} (status ${res.status})`);
+  }
+  return res.json();
+}
+
 function mapPaymenterService(svc: Record<string, unknown>): Subscription {
   const cycleMap: Record<string, Subscription['billingCycle']> = {
     monthly: 'monthly',
@@ -152,12 +160,13 @@ const SubscriptionsPage: React.FC = () => {
 
   // ── Check connectivity ───────────────────────────────────────────────────
 
-  const checkStatus = useCallback(async () => {
+  const checkStatus = useCallback(async (): Promise<boolean> => {
     try {
       const res = await fetch('/api/paymenter/status');
-      const data = await res.json();
+      const data = await safeJson(res);
       if (data.success) {
         setPaymenterStatus('ok');
+        return true;
       } else if (!data.configured) {
         setPaymenterStatus('unconfigured');
       } else {
@@ -166,6 +175,7 @@ const SubscriptionsPage: React.FC = () => {
     } catch {
       setPaymenterStatus('error');
     }
+    return false;
   }, []);
 
   // ── Load data ────────────────────────────────────────────────────────────
@@ -177,7 +187,7 @@ const SubscriptionsPage: React.FC = () => {
         fetch('/api/paymenter/subscriptions'),
         fetch('/api/paymenter/invoices'),
       ]);
-      const [subJson, invJson] = await Promise.all([subRes.json(), invRes.json()]);
+      const [subJson, invJson] = await Promise.all([safeJson(subRes), safeJson(invRes)]);
 
       if (subJson.success) {
         const raw = Array.isArray(subJson.data?.data) ? subJson.data.data : (Array.isArray(subJson.data) ? subJson.data : []);
@@ -195,8 +205,10 @@ const SubscriptionsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    checkStatus();
-    loadData();
+    checkStatus().then((ok) => {
+      if (ok) loadData();
+      else setIsLoading(false);
+    });
   }, [checkStatus, loadData]);
 
   // ── Actions ──────────────────────────────────────────────────────────────
