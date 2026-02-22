@@ -9,15 +9,12 @@ import { FirebaseYjsProvider } from './FirebaseYjsProvider';
 // any element is constructed. Two calls required:
 //   presetsEffects()  → affine-editor-container, page-editor, + 165 block elements
 //   blockStdEffects() → editor-host, gfx-viewport (NOT covered by presetsEffects)
-let _effectsRegistered = false;
-if (!_effectsRegistered) {
+// Guard with customElements.get() rather than a module-level boolean so that
+// HMR module re-evaluation (which resets the boolean) doesn't double-register
+// custom elements — double registration throws "NotSupportedError: already defined".
+if (!customElements.get('affine-editor-container')) {
     presetsEffects();
     blockStdEffects();
-    _effectsRegistered = true;
-}
-
-export function afterEffectsReady(): Promise<void> {
-    return new Promise(resolve => queueMicrotask(resolve));
 }
 
 // ── Singleton DocCollection ───────────────────────────────────────────────────
@@ -91,39 +88,21 @@ export function releaseProvider(docId: string): void {
     const entry = _providerRegistry.get(docId);
     if (!entry || entry.teardownPromise) return; // already releasing
 
+    // Disconnect FIRST so no new local updates are sent to Firestore while
+    // compact() is running — otherwise compact overwrites a snapshot that is
+    // already ahead of the local state being encoded, creating a data-loss window.
+    entry.provider.disconnect();
+
     const teardown = entry.provider
         .compact()
         .catch(() => { /* compaction is best-effort */ })
         .finally(() => {
-            entry.provider.disconnect();
             // Remove from registry only after teardown completes so that
             // any concurrent acquireProvider call waits on teardownPromise.
             _providerRegistry.delete(docId);
         });
 
     entry.teardownPromise = teardown;
-}
-
-// ── Block initialisation ──────────────────────────────────────────────────────
-
-/**
- * Official BlockSuite pattern (mirrors @blocksuite/presets/dist/helpers/index.js):
- *
- *   doc.load()                              ← must come first
- *   doc.addBlock('affine:page', {})         ← root
- *   doc.addBlock('affine:surface', {}, rootId)
- *   doc.addBlock('affine:note', {}, rootId)
- *   doc.addBlock('affine:paragraph', {}, noteId)
- *
- * Only called for brand-new docs with no existing Yjs/Firestore content.
- */
-export function initDocBlocks(doc: BSDoc): void {
-    if (doc.root) return; // already has content — Yjs restored it
-    doc.load();
-    const rootId = doc.addBlock('affine:page' as never, {});
-    doc.addBlock('affine:surface' as never, {}, rootId);
-    const noteId = doc.addBlock('affine:note' as never, {}, rootId);
-    doc.addBlock('affine:paragraph' as never, {}, noteId);
 }
 
 export function resetDocCollection(): void {

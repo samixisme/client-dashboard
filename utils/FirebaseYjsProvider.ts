@@ -5,6 +5,7 @@ import {
     onSnapshot,
     query,
     orderBy,
+    limit,
     getDocs,
     writeBatch,
     doc,
@@ -128,9 +129,19 @@ export class FirebaseYjsProvider {
                 }
             );
 
-            // Delete all old incremental updates in a batch
+            // Delete all old incremental updates and stale snapshots in a batch.
+            // Old snapshots accumulate on every compaction without this cleanup.
             const batch = writeBatch(db);
             snapshot.docs.forEach(d => batch.delete(d.ref));
+
+            const oldSnaps = await getDocs(
+                query(collection(db, 'docs', this.docId, 'snapshots'), orderBy('ts', 'asc'))
+            );
+            // Delete all but the one we just wrote (it has the latest ts).
+            oldSnaps.docs
+                .filter(d => d.id !== snapId)
+                .forEach(d => batch.delete(d.ref));
+
             await batch.commit();
         } catch {
             // Compaction is best-effort — original updates remain if it fails
@@ -143,7 +154,8 @@ export class FirebaseYjsProvider {
         try {
             const snapshotsRef = query(
                 collection(db, 'docs', this.docId, 'snapshots'),
-                orderBy('ts', 'desc')
+                orderBy('ts', 'desc'),
+                limit(1)
             );
             const snap = await getDocs(snapshotsRef);
             if (!snap.empty) {
