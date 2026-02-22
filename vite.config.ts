@@ -34,6 +34,7 @@ export default defineConfig(({ mode }) => {
         // check entirely (Rollup only validates exports for bare specifiers).
         {
           name: 'blocksuite-deep-imports',
+          enforce: 'pre' as const,
           resolveId(id: string) {
             const map: Record<string, string> = {
               '@blocksuite/presets/dist/editors/page-editor.js':
