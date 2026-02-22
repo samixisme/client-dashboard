@@ -1,7 +1,35 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useSearch } from '../contexts/SearchContext';
+import { useData } from '../contexts/DataContext';
+import { useDocs } from '../contexts/DocsContext';
 import { SearchHit } from '../utils/search';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface ResultGroup {
+  hits: SearchHit[];
+  estimatedTotalHits: number;
+}
+
+interface LocalResults {
+  query: string;
+  processingTimeMs: number;
+  results: Record<string, ResultGroup>;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function match(value: unknown, q: string): boolean {
+  if (typeof value === 'string') return value.toLowerCase().includes(q);
+  if (typeof value === 'number') return String(value).includes(q);
+  return false;
+}
+
+function matchesAny(obj: Record<string, unknown>, q: string, fields: string[]): boolean {
+  return fields.some((f) => match(obj[f], q));
+}
+
+// ── Config ────────────────────────────────────────────────────────────────────
 
 const TYPE_LABELS: Record<string, string> = {
   projects: 'Projects',
@@ -45,14 +73,17 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
+// Returns null (not empty string) when there's no valid route
 const TYPE_ROUTES: Record<string, (hit: SearchHit) => string | null> = {
   projects: () => '/projects',
-  tasks: (h) => `/board/${h.boardId ?? ''}`,
+  tasks: (h) => (h.boardId ? `/board/${h.boardId}` : '/projects'),
   brands: (h) => `/brands/${h.id}`,
   invoices: () => '/payments',
   clients: () => '/payments',
-  docs: (h) => `/docs/${h.projectId ?? ''}/${h.id}`,
+  docs: (h) => (h.projectId ? `/docs/${h.projectId}/${h.id}` : null),
 };
+
+// ── HitCard ───────────────────────────────────────────────────────────────────
 
 function HitCard({ type, hit }: { type: string; hit: SearchHit }) {
   const navigate = useNavigate();
@@ -60,19 +91,16 @@ function HitCard({ type, hit }: { type: string; hit: SearchHit }) {
   const sub = String(hit.status ?? hit.industry ?? hit.mode ?? '');
   const route = TYPE_ROUTES[type]?.(hit) ?? null;
 
-  const handleClick = () => {
-    if (route) navigate(route);
-  };
-
   return (
     <button
-      onClick={handleClick}
-      disabled={!route}
-      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-150 group flex items-start gap-3
-        ${route
+      type="button"
+      onClick={() => { if (route != null) navigate(route); }}
+      disabled={route == null}
+      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-150 group flex items-start gap-3 ${
+        route != null
           ? 'bg-glass hover:bg-glass-light border-border-color hover:border-primary/30 cursor-pointer hover:shadow-[0_0_12px_rgba(163,230,53,0.08)]'
-          : 'bg-glass border-border-color opacity-50 cursor-default'
-        }`}
+          : 'bg-glass border-border-color opacity-40 cursor-default'
+      }`}
     >
       <span className="mt-0.5 text-text-secondary group-hover:text-primary transition-colors duration-150 flex-shrink-0">
         {TYPE_ICONS[type]}
@@ -85,8 +113,11 @@ function HitCard({ type, hit }: { type: string; hit: SearchHit }) {
           <p className="text-xs text-text-secondary mt-0.5 truncate capitalize">{sub}</p>
         )}
       </div>
-      {route && (
-        <svg className="w-4 h-4 text-text-secondary group-hover:text-primary transition-colors duration-150 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      {route != null && (
+        <svg
+          className="w-4 h-4 text-text-secondary group-hover:text-primary transition-all duration-150 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
       )}
@@ -94,27 +125,103 @@ function HitCard({ type, hit }: { type: string; hit: SearchHit }) {
   );
 }
 
+// ── SearchPage ────────────────────────────────────────────────────────────────
+
 const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { searchQuery, setSearchQuery, searchResults, isSearching } = useSearch();
+  const { data } = useData();
+  const { docs } = useDocs();
 
-  // Sync ?q= param into the shared search context on mount
+  // Local state — isolated from the topbar SearchBar's shared context so the
+  // topbar's "click outside → clearSearch()" handler never resets this page.
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [results, setResults] = useState<LocalResults | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Keep ?q= URL param in sync
   useEffect(() => {
-    const q = searchParams.get('q') ?? '';
-    if (q && q !== searchQuery) setSearchQuery(q);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setSearchParams(query ? { q: query } : {}, { replace: true });
+  }, [query, setSearchParams]);
 
-  // Keep URL in sync with query
+  const runSearch = useCallback((q: string) => {
+    if (q.length < 2) {
+      setResults(null);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const lq = q.toLowerCase();
+    const start = Date.now();
+
+    const r = <T extends { id: string }>(
+      arr: T[],
+      fields: string[],
+      mapper: (item: T) => SearchHit,
+    ): ResultGroup => {
+      const matches = arr.filter((item) =>
+        matchesAny(item as unknown as Record<string, unknown>, lq, fields),
+      );
+      return {
+        hits: matches.slice(0, 8).map(mapper),
+        estimatedTotalHits: matches.length,
+      };
+    };
+
+    const built: Record<string, ResultGroup> = {
+      projects: r(data.projects, ['name', 'description', 'status'], (p) => ({
+        id: p.id,
+        name: p.name,
+        status: (p as unknown as Record<string, unknown>).status as string,
+      })),
+      tasks: r(data.tasks, ['title', 'description', 'priority', 'status'], (t) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        boardId: t.boardId,
+      })),
+      brands: r(data.brands, ['name', 'industry', 'brandVoice'], (b) => ({
+        id: b.id,
+        name: b.name,
+        industry: (b as unknown as Record<string, unknown>).industry as string,
+      })),
+      invoices: r(data.invoices, ['invoiceNumber', 'status'], (i) => ({
+        id: i.id,
+        invoiceNumber: (i as unknown as Record<string, unknown>).invoiceNumber as string,
+        status: (i as unknown as Record<string, unknown>).status as string,
+      })),
+      clients: r(data.clients, ['name', 'adresse', 'ice'], (c) => ({
+        id: c.id,
+        name: c.name,
+      })),
+      docs: r(docs, ['title', 'mode'], (d) => ({
+        id: d.id,
+        title: d.title,
+        mode: d.mode,
+        projectId: d.projectId,
+      })),
+    };
+
+    setResults({ query: q, results: built, processingTimeMs: Date.now() - start });
+    setIsSearching(false);
+  }, [data.projects, data.tasks, data.brands, data.invoices, data.clients, docs]);
+
   useEffect(() => {
-    setSearchParams(searchQuery ? { q: searchQuery } : {}, { replace: true });
-  }, [searchQuery, setSearchParams]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => runSearch(query), 150);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, runSearch]);
 
-  const totalHits = searchResults
-    ? Object.values(searchResults.results).reduce((s, r) => s + r.estimatedTotalHits, 0)
+  // Auto-focus on mount
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const totalHits = results
+    ? Object.values(results.results).reduce((s, r) => s + r.estimatedTotalHits, 0)
     : 0;
 
-  const hasResults = searchResults && Object.values(searchResults.results).some(r => r.hits.length > 0);
+  const hasResults = results && Object.values(results.results).some((r) => r.hits.length > 0);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -132,16 +239,17 @@ const SearchPage: React.FC = () => {
           </svg>
         </div>
         <input
-          autoFocus
-          type="search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Search projects, tasks, brands, docs…"
-          className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-glass border border-border-color text-text-primary placeholder-text-secondary focus:outline-none focus:border-primary/50 focus:shadow-[0_0_0_3px_rgba(163,230,53,0.08)] text-sm transition-all duration-200"
+          className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-glass border border-border-color text-text-primary placeholder-text-secondary focus:outline-none focus:border-primary/50 focus:shadow-[0_0_0_3px_rgba(163,230,53,0.08)] text-sm transition-all duration-200"
         />
-        {searchQuery && (
+        {query && (
           <button
-            onClick={() => setSearchQuery('')}
+            type="button"
+            onClick={() => { setQuery(''); inputRef.current?.focus(); }}
             className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-md text-text-secondary hover:text-text-primary hover:bg-glass-light transition-colors duration-150 cursor-pointer"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -151,24 +259,23 @@ const SearchPage: React.FC = () => {
         )}
       </div>
 
-      {/* Status bar */}
+      {/* Status */}
       {isSearching && (
         <div className="flex items-center gap-2 text-sm text-text-secondary mb-6">
           <div className="w-3.5 h-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           Searching…
         </div>
       )}
-
-      {!isSearching && searchResults && searchQuery.length >= 2 && (
+      {!isSearching && results && query.length >= 2 && (
         <p className="text-xs text-text-secondary mb-6">
-          {totalHits} result{totalHits !== 1 ? 's' : ''} · {searchResults.processingTimeMs}ms
+          {totalHits} result{totalHits !== 1 ? 's' : ''} · {results.processingTimeMs}ms
         </p>
       )}
 
       {/* Results */}
       {hasResults && (
         <div className="space-y-6">
-          {Object.entries(searchResults!.results).map(([type, { hits, estimatedTotalHits }]) => {
+          {Object.entries(results!.results).map(([type, { hits, estimatedTotalHits }]) => {
             if (hits.length === 0) return null;
             return (
               <section key={type}>
@@ -177,9 +284,7 @@ const SearchPage: React.FC = () => {
                   <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
                     {TYPE_LABELS[type] ?? type}
                   </h2>
-                  <span className="text-xs text-text-secondary/50 font-normal ml-auto">
-                    {estimatedTotalHits}
-                  </span>
+                  <span className="text-xs text-text-secondary/50 ml-auto">{estimatedTotalHits}</span>
                 </div>
                 <div className="space-y-1.5">
                   {hits.map((hit) => (
@@ -193,20 +298,20 @@ const SearchPage: React.FC = () => {
       )}
 
       {/* Empty state */}
-      {!isSearching && searchResults && totalHits === 0 && searchQuery.length >= 2 && (
+      {!isSearching && results && totalHits === 0 && query.length >= 2 && (
         <div className="text-center py-16">
           <div className="w-14 h-14 rounded-2xl bg-glass border border-border-color flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <p className="text-text-primary font-medium mb-1">No results for "{searchQuery}"</p>
+          <p className="text-text-primary font-medium mb-1">No results for "{query}"</p>
           <p className="text-sm text-text-secondary">Try different keywords or check the spelling.</p>
         </div>
       )}
 
       {/* Idle state */}
-      {!searchQuery && (
+      {!query && (
         <div className="text-center py-16">
           <div className="w-14 h-14 rounded-2xl bg-glass border border-border-color flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
