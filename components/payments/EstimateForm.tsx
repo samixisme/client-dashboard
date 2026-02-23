@@ -221,7 +221,9 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                 estimateNumber: existingEstimate.estimateNumber,
             };
 
-            await updateDoc(doc(db, 'estimates', existingEstimate.id), { ...updatedEstimate });
+            await updateDoc(doc(db, 'estimates', existingEstimate.id), Object.fromEntries(
+                Object.entries({ ...updatedEstimate }).filter(([, v]) => v !== undefined)
+            ));
 
             // Update in data context
             const updatedEstimates = data.estimates.map(est =>
@@ -262,8 +264,13 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                 ...estimate as Omit<Estimate, 'id' | 'estimateNumber'>
             };
 
+            // Strip undefined fields before saving to Firestore
+            const firestoreEstimate = Object.fromEntries(
+                Object.entries(finalEstimate).filter(([, v]) => v !== undefined)
+            );
+
             // Save to Firestore
-            const docRef = await addDoc(collection(db, 'estimates'), finalEstimate);
+            const docRef = await addDoc(collection(db, 'estimates'), firestoreEstimate);
             const savedEstimate: Estimate = { ...finalEstimate, id: docRef.id };
 
             // Add to data context

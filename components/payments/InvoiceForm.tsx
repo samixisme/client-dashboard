@@ -222,7 +222,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
                 invoiceNumber: existingInvoice.invoiceNumber,
             };
 
-            await updateDoc(doc(db, 'invoices', existingInvoice.id), { ...updatedInvoice });
+            await updateDoc(doc(db, 'invoices', existingInvoice.id), Object.fromEntries(
+                Object.entries({ ...updatedInvoice }).filter(([, v]) => v !== undefined)
+            ));
 
             // Update in data context
             const updatedInvoices = data.invoices.map(inv =>
@@ -263,8 +265,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
                 ...invoice as Omit<Invoice, 'id' | 'invoiceNumber'>
             };
 
+            // Strip undefined fields before saving to Firestore
+            const firestoreInvoice = Object.fromEntries(
+                Object.entries(finalInvoice).filter(([, v]) => v !== undefined)
+            );
+
             // Save to Firestore
-            const docRef = await addDoc(collection(db, 'invoices'), finalInvoice);
+            const docRef = await addDoc(collection(db, 'invoices'), firestoreInvoice);
             const savedInvoice: Invoice = { ...finalInvoice, id: docRef.id };
 
             // Add to data context
