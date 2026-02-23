@@ -92,12 +92,27 @@ import FilesPage from './pages/FilesPage';
 import SearchPage from './pages/SearchPage';
 import LinksPage from './pages/LinksPage';
 import { toast } from 'sonner';
+import CustomContextMenu, { ContextMenuState } from './src/components/ui/CustomContextMenu';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userStatus, setUserStatus] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    visible: false, x: 0, y: 0, target: null,
+  });
+
+  // --- START: CUSTOM CONTEXT MENU LOGIC ---
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      setContextMenu({ visible: true, x: e.clientX, y: e.clientY, target: e.target as HTMLElement });
+    };
+    window.addEventListener('contextmenu', handleContextMenu);
+    return () => window.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+  // --- END: CUSTOM CONTEXT MENU LOGIC ---
 
   // --- START: CUSTOM CURSOR LOGIC ---
   const cursorRef = useRef<HTMLDivElement>(null);
@@ -598,6 +613,10 @@ function App() {
         }}
       />
       <Agentation />
+      <CustomContextMenu
+        menuState={contextMenu}
+        onClose={() => setContextMenu(prev => ({ ...prev, visible: false }))}
+      />
     </>
   );
 }
