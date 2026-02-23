@@ -4,7 +4,7 @@ import { Client } from '../../types';
 
 interface AddClientModalProps {
     onClose: () => void;
-    onAddClient: (client: Client) => void;
+    onAddClient: (client: Omit<Client, 'id'>) => void;
 }
 
 const AddClientModal: React.FC<AddClientModalProps> = ({ onClose, onAddClient }) => {
@@ -23,9 +23,8 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ onClose, onAddClient })
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const newClient: Client = {
-            id: `client-${Date.now()}`,
-            userId: 'user-1', // Hardcoded for now
+        const newClient: Omit<Client, 'id'> = {
+            userId: 'user-1',
             ...client
         };
         onAddClient(newClient);

@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clients as initialClients, invoices } from '../../data/paymentsData';
+import { invoices } from '../../data/paymentsData';
 import { Invoice, Client, ItemCategory, LineItem, User } from '../../types';
+import { addDoc, collection } from 'firebase/firestore';
+import { db } from '../../utils/firebase';
 import AddClientModal from './AddClientModal';
 import { Textarea } from '../ui/textarea';
 import { createCalendarEvent } from '../../utils/calendarSync';
@@ -17,7 +19,7 @@ interface InvoiceFormProps {
 const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
     const navigate = useNavigate();
     const { data, updateData } = useData();
-    const [clients, setClients] = useState<Client[]>(data.clients || initialClients);
+    const [clients, setClients] = useState<Client[]>(data.clients || []);
     const [isClientModalOpen, setIsClientModalOpen] = useState(false);
     const [invoice, setInvoice] = useState<Omit<Invoice, 'id' | 'invoiceNumber'> & { id?: string; invoiceNumber?: string }>(
         existingInvoice || {
@@ -137,11 +139,16 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
         setInvoice({ ...invoice, clientId });
     };
     
-    const handleAddClient = (client: Client) => {
-        const newClients = [...clients, client];
-        setClients(newClients);
-        initialClients.push(client); // Persist to mock data
-        handleClientChange(client.id);
+    const handleAddClient = async (client: Omit<Client, 'id'>) => {
+        try {
+            const docRef = await addDoc(collection(db, 'clients'), client);
+            const newClient = { ...client, id: docRef.id };
+            setClients(prev => [...prev, newClient]);
+            updateData('clients', [...data.clients, newClient]);
+            handleClientChange(docRef.id);
+        } catch {
+            toast.error('Failed to add client');
+        }
     };
 
     const handleCategoryChange = (catId: string, name: string) => {
