@@ -165,6 +165,7 @@ export interface Client {
     ice: string;
     rc: string;
     if: string;
+    paymenterUserId?: number; // Numeric user ID in Paymenter — links Firestore client to Paymenter account
 }
 
 export interface LineItem {

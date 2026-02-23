@@ -23,7 +23,15 @@ const StatusBadge: React.FC<{ status: 'Active' | 'Completed' | 'Archived' }> = (
 // Custom hook for dashboard metrics
 const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
   return useMemo(() => {
-    const { projects, tasks, boards, users, brands, activities, feedbackMockups, feedbackVideos, feedbackWebsites, time_logs, invoices, estimates, calendar_events } = data;
+    const { projects, tasks, boards, users, brands, activities, feedbackMockups, feedbackVideos, feedbackWebsites, time_logs, invoices, estimates, calendar_events, stages } = data;
+
+    // Dynamically detect "completed" stage IDs — prefer stages with status 'Closed' or names matching done/complete
+    const completedStageIds = stages
+      .filter(s => s.status === 'Closed' || /done|complet/i.test(s.name))
+      .map(s => s.id);
+    // Fallback to legacy hardcoded ID if no dynamic stages found
+    const isCompleted = (stageId: string) =>
+      completedStageIds.length > 0 ? completedStageIds.includes(stageId) : stageId === 'stage-3';
 
     // 1. Project Health
     const activeProjects = projects.filter((p: Project) => p.status === 'Active').slice(0, 6);
@@ -31,7 +39,7 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
       const projectBoards = boards.filter((b: Board) => b.projectId === project.id);
       const projectBoardIds = projectBoards.map((b: Board) => b.id);
       const projectTasks = tasks.filter((t: Task) => projectBoardIds.includes(t.boardId));
-      const completed = projectTasks.filter((t: Task) => t.stageId === 'stage-3').length;
+      const completed = projectTasks.filter((t: Task) => isCompleted(t.stageId)).length;
       const progress = projectTasks.length > 0 ? (completed / projectTasks.length) * 100 : 0;
       const mainBoard = projectBoards[0];
       return { project, progress, totalTasks: projectTasks.length, mainBoard };
@@ -40,21 +48,21 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
     // 2. Task Velocity
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-    const thisWeekCompleted = tasks.filter((t: Task) => t.stageId === 'stage-3' && new Date(t.createdAt) >= weekAgo).length;
-    const lastWeekCompleted = tasks.filter((t: Task) => t.stageId === 'stage-3' && new Date(t.createdAt) >= twoWeeksAgo && new Date(t.createdAt) < weekAgo).length;
+    const thisWeekCompleted = tasks.filter((t: Task) => isCompleted(t.stageId) && new Date(t.createdAt) >= weekAgo).length;
+    const lastWeekCompleted = tasks.filter((t: Task) => isCompleted(t.stageId) && new Date(t.createdAt) >= twoWeeksAgo && new Date(t.createdAt) < weekAgo).length;
     const velocityTrend = lastWeekCompleted > 0 ? ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100 : 0;
     const activeProjectCount = projects.filter((p: Project) => p.status === 'Active').length;
 
     // 3. Overdue Tasks
     const now = new Date();
     const overdueTasks = tasks.filter((t: Task) =>
-      t.dueDate && new Date(t.dueDate) < now && t.stageId !== 'stage-3'
+      t.dueDate && new Date(t.dueDate) < now && !isCompleted(t.stageId)
     ).sort((a: Task, b: Task) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
     // 4. Team Workload
     const teamWorkload = users.map((user: User) => ({
       user,
-      taskCount: tasks.filter((t: Task) => t.assignees?.includes(user.id) && t.stageId !== 'stage-3').length
+      taskCount: tasks.filter((t: Task) => t.assignees?.includes(user.id) && !isCompleted(t.stageId)).length
     })).sort((a, b) => b.taskCount - a.taskCount);
 
     // 5. Recent Activities

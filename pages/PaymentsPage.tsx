@@ -8,9 +8,18 @@ import { useData } from '../contexts/DataContext';
 import AdminPanel from '../components/admin/AdminPanel';
 import { InvoiceDownloadButton } from '../src/components/payments/InvoiceDownloadButton';
 import { EstimateDownloadButton } from '../src/components/payments/EstimateDownloadButton';
-import { userSettings } from '../data/paymentsData';
 import { toast } from 'sonner';
-import { Invoice, Estimate, Client } from '../types';
+import { Invoice, Estimate, Client, UserSettings } from '../types';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+
+const DEFAULT_USER_SETTINGS: UserSettings = {
+    userId: '',
+    ae: '', cnie: '', ice: '', if: '', tp: '', adresse_ae: '',
+    bankDetails: { codeBanque: '', codeVille: '', nDeCompte: '', cleRib: '', codeSwift: '' },
+    footerDetails: { adresseMail: '', telephone: '', site: '' },
+    legalNote: '', signatureBoxClient: '', signatureBoxAutoEntrepreneur: '',
+};
 
 // Modern StatusSelect Component with custom styled dropdown
 const StatusSelect = ({
@@ -128,7 +137,8 @@ const PaymentsPage = () => {
     const [searchParams] = useSearchParams();
     const { isAdminMode } = useAdmin();
     const { data, updateData } = useData();
-    const { invoices: allInvoices, estimates: allEstimates, clients, brands } = data;
+    const { invoices: allInvoices, estimates: allEstimates, clients, brands, userSettings: userSettingsList } = data;
+    const userSettings = userSettingsList[0] ?? DEFAULT_USER_SETTINGS;
 
     const tabFromUrl = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState<'invoices' | 'estimates'>(tabFromUrl === 'estimates' ? 'estimates' : 'invoices');
@@ -153,21 +163,32 @@ const PaymentsPage = () => {
     const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || 'Unknown Client';
 
     // Handle status change for invoices
-    const handleInvoiceStatusChange = (invoiceId: string, newStatus: string) => {
-        const updatedInvoices = allInvoices.map(inv =>
-            inv.id === invoiceId ? { ...inv, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : inv
-        );
-        updateData('invoices', updatedInvoices);
-        toast.success(`Invoice status updated to ${newStatus}`);
+    const handleInvoiceStatusChange = async (invoiceId: string, newStatus: string) => {
+        try {
+            await updateDoc(doc(db, 'invoices', invoiceId), { status: newStatus });
+            const updatedInvoices = allInvoices.map(inv =>
+                inv.id === invoiceId ? { ...inv, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : inv
+            );
+            updateData('invoices', updatedInvoices);
+            toast.success(`Invoice status updated to ${newStatus}`);
+            fetch(`/api/search/sync/invoices/${invoiceId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: invoiceId, status: newStatus }) });
+        } catch {
+            toast.error('Failed to update invoice status');
+        }
     };
 
     // Handle status change for estimates
-    const handleEstimateStatusChange = (estimateId: string, newStatus: string) => {
-        const updatedEstimates = allEstimates.map(est =>
-            est.id === estimateId ? { ...est, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : est
-        );
-        updateData('estimates', updatedEstimates);
-        toast.success(`Estimate status updated to ${newStatus}`);
+    const handleEstimateStatusChange = async (estimateId: string, newStatus: string) => {
+        try {
+            await updateDoc(doc(db, 'estimates', estimateId), { status: newStatus });
+            const updatedEstimates = allEstimates.map(est =>
+                est.id === estimateId ? { ...est, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : est
+            );
+            updateData('estimates', updatedEstimates);
+            toast.success(`Estimate status updated to ${newStatus}`);
+        } catch {
+            toast.error('Failed to update estimate status');
+        }
     };
     
     const brandClientIds = useMemo(() => {
@@ -487,11 +508,16 @@ const PaymentsPage = () => {
                                                 </svg>
                                             </Link>
                                             <button
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     if (window.confirm('Are you sure you want to delete this invoice?')) {
-                                                        const updatedInvoices = allInvoices.filter(inv => inv.id !== invoice.id);
-                                                        updateData('invoices', updatedInvoices);
-                                                        toast.success('Invoice deleted successfully');
+                                                        try {
+                                                            await deleteDoc(doc(db, 'invoices', invoice.id));
+                                                            const updatedInvoices = allInvoices.filter(inv => inv.id !== invoice.id);
+                                                            updateData('invoices', updatedInvoices);
+                                                            toast.success('Invoice deleted successfully');
+                                                        } catch {
+                                                            toast.error('Failed to delete invoice');
+                                                        }
                                                     }
                                                 }}
                                                 className="p-2 text-text-secondary hover:text-red-400 bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"
@@ -599,11 +625,16 @@ const PaymentsPage = () => {
                                                 </svg>
                                             </Link>
                                             <button
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     if (window.confirm('Are you sure you want to delete this estimate?')) {
-                                                        const updatedEstimates = allEstimates.filter(est => est.id !== estimate.id);
-                                                        updateData('estimates', updatedEstimates);
-                                                        toast.success('Estimate deleted successfully');
+                                                        try {
+                                                            await deleteDoc(doc(db, 'estimates', estimate.id));
+                                                            const updatedEstimates = allEstimates.filter(est => est.id !== estimate.id);
+                                                            updateData('estimates', updatedEstimates);
+                                                            toast.success('Estimate deleted successfully');
+                                                        } catch {
+                                                            toast.error('Failed to delete estimate');
+                                                        }
                                                     }
                                                 }}
                                                 className="p-2 text-text-secondary hover:text-red-400 bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"

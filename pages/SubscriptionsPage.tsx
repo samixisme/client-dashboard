@@ -380,7 +380,7 @@ const SubscriptionsPage: React.FC = () => {
                 <SubscriptionCard
                   key={sub.id}
                   subscription={sub}
-                  client={clients.find(c => String(c.id) === String(sub.paymenterClientId))}
+                  client={clients.find(c => c.paymenterUserId != null && c.paymenterUserId === sub.paymenterClientId)}
                   onStatusChange={handleStatusChange}
                   onMarkPaid={handleMarkPaid}
                   animationDelay={i * 50}
@@ -421,7 +421,7 @@ const SubscriptionsPage: React.FC = () => {
                 ) : (
                   billingRecords.map((record, i) => {
                     const scfg = billingStatusConfig[record.status];
-                    const client = clients.find(c => c.id === record.clientId);
+                    const client = clients.find(c => c.paymenterUserId != null && String(c.paymenterUserId) === record.clientId);
                     return (
                       <tr
                         key={record.id}
