@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { Client } from '../../types';
 import { toast } from 'sonner';
 
+async function safeJson(res: globalThis.Response): Promise<any> {
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('application/json')) {
+    throw new Error(`Expected JSON but got ${ct || 'unknown content-type'} (status ${res.status})`);
+  }
+  return res.json();
+}
+
 interface AddSubscriptionModalProps {
   clients: Client[];
   onClose: () => void;
@@ -67,7 +75,7 @@ export const AddSubscriptionModal: React.FC<AddSubscriptionModalProps> = ({
           address: selectedClient!.adresse ?? '',
         }),
       });
-      const clientData = await clientRes.json();
+      const clientData = await safeJson(clientRes);
 
       if (!clientData.success) {
         throw new Error(clientData.error ?? 'Failed to sync client to Paymenter');
@@ -88,7 +96,7 @@ export const AddSubscriptionModal: React.FC<AddSubscriptionModalProps> = ({
           notes: form.notes.trim(),
         }),
       });
-      const subData = await subRes.json();
+      const subData = await safeJson(subRes);
 
       if (!subData.success) {
         throw new Error(subData.error ?? 'Failed to create subscription');
