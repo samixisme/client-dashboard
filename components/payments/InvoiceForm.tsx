@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { invoices } from '../../data/paymentsData';
 import { Invoice, Client, ItemCategory, LineItem, User } from '../../types';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import AddClientModal from './AddClientModal';
 import { Textarea } from '../ui/textarea';
@@ -206,7 +206,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
         setInvoice({ ...invoice, itemCategories: newCategories });
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!invoice.clientId) {
             toast.error('Please select a client');
             return;
@@ -221,6 +221,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
                 id: existingInvoice.id,
                 invoiceNumber: existingInvoice.invoiceNumber,
             };
+
+            await updateDoc(doc(db, 'invoices', existingInvoice.id), { ...updatedInvoice });
 
             // Update in data context
             const updatedInvoices = data.invoices.map(inv =>
@@ -256,18 +258,21 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ existingInvoice }) => {
             const sequenceNum = String(clientInvoicesToday.length + 1).padStart(3, '0');
             const newInvoiceNumber = `${clientPrefix}-${yy}${mm}${dd}${sequenceNum}`;
 
-            const finalInvoice: Invoice = {
-                id: `inv-${Date.now()}`,
+            const finalInvoice: Omit<Invoice, 'id'> = {
                 invoiceNumber: newInvoiceNumber,
                 ...invoice as Omit<Invoice, 'id' | 'invoiceNumber'>
             };
 
+            // Save to Firestore
+            const docRef = await addDoc(collection(db, 'invoices'), finalInvoice);
+            const savedInvoice: Invoice = { ...finalInvoice, id: docRef.id };
+
             // Add to data context
-            const updatedInvoices = [...(data.invoices || []), finalInvoice];
+            const updatedInvoices = [...(data.invoices || []), savedInvoice];
             updateData('invoices', updatedInvoices);
 
             // Sync to calendar
-            createCalendarEvent(finalInvoice, 'invoice');
+            createCalendarEvent(savedInvoice, 'invoice');
 
             toast.success(`Invoice ${newInvoiceNumber} created successfully!`);
         }

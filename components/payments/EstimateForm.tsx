@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Estimate, Client, ItemCategory, LineItem, User } from '../../types';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import AddClientModal from './AddClientModal';
 import { Textarea } from '../ui/textarea';
@@ -205,7 +205,7 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
         setEstimate({ ...estimate, itemCategories: newCategories });
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!estimate.clientId) {
             toast.error('Please select a client');
             return;
@@ -220,6 +220,8 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
                 id: existingEstimate.id,
                 estimateNumber: existingEstimate.estimateNumber,
             };
+
+            await updateDoc(doc(db, 'estimates', existingEstimate.id), { ...updatedEstimate });
 
             // Update in data context
             const updatedEstimates = data.estimates.map(est =>
@@ -255,18 +257,21 @@ const EstimateForm: React.FC<EstimateFormProps> = ({ existingEstimate }) => {
             const sequenceNum = String(clientEstimatesToday.length + 1).padStart(3, '0');
             const newEstimateNumber = `${clientPrefix}-${yy}${mm}${dd}${sequenceNum}`;
 
-            const finalEstimate: Estimate = {
-                id: `est-${Date.now()}`,
+            const finalEstimate: Omit<Estimate, 'id'> = {
                 estimateNumber: newEstimateNumber,
                 ...estimate as Omit<Estimate, 'id' | 'estimateNumber'>
             };
 
+            // Save to Firestore
+            const docRef = await addDoc(collection(db, 'estimates'), finalEstimate);
+            const savedEstimate: Estimate = { ...finalEstimate, id: docRef.id };
+
             // Add to data context
-            const updatedEstimates = [...(data.estimates || []), finalEstimate];
+            const updatedEstimates = [...(data.estimates || []), savedEstimate];
             updateData('estimates', updatedEstimates);
 
             // Sync to calendar
-            createCalendarEvent(finalEstimate, 'estimate');
+            createCalendarEvent(savedEstimate, 'estimate');
 
             toast.success(`Estimate ${newEstimateNumber} created successfully!`);
         }
