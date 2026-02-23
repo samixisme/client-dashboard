@@ -89,12 +89,14 @@ service cloud.firestore {
 
     match /invoices/{invoiceId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAuthenticated();
     }
 
     match /estimates/{estimateId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAuthenticated();
     }
 
     // Collaborative collections - all authenticated users can write
