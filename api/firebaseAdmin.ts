@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import * as fs from 'fs';
 import * as path from 'path';
+import logger from './logger';
 
 /**
  * Firebase Admin SDK initialization module
@@ -28,15 +29,22 @@ export function initializeFirebaseAdmin(): admin.app.App | null {
   }
 
   try {
+    // If in test environment, initialize with a dummy project ID
+    if (process.env.NODE_ENV === 'test') {
+      adminApp = admin.initializeApp({ projectId: 'demo-test' });
+      isInitialized = true;
+      logger.info('Firebase Admin SDK initialized in TEST mode');
+      return adminApp;
+    }
+
     // Determine service account path
     const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
       '/home/clientdash/.firebase-admin.json';
 
     // Check if service account file exists
     if (!fs.existsSync(serviceAccountPath)) {
-      console.warn('⚠️  Firebase Admin SDK: Service account not found at:', serviceAccountPath);
-      console.warn('⚠️  Admin API endpoints will return 503 Service Unavailable');
-      console.warn('⚠️  To enable admin features, create the service account file');
+      logger.warn({ serviceAccountPath }, 'Firebase Admin SDK: service account not found');
+      logger.warn('Admin API endpoints will return 503 Service Unavailable');
       return null;
     }
 
@@ -50,14 +58,11 @@ export function initializeFirebaseAdmin(): admin.app.App | null {
     });
 
     isInitialized = true;
-    console.log('✅ Firebase Admin SDK initialized successfully');
-    console.log('   Project ID:', serviceAccount.project_id);
-    console.log('   Service Account:', serviceAccount.client_email);
+    logger.info({ projectId: serviceAccount.project_id, serviceAccount: serviceAccount.client_email }, 'Firebase Admin SDK initialized');
 
     return adminApp;
   } catch (error) {
-    console.error('❌ Firebase Admin SDK initialization failed:', error);
-    console.error('   Admin API endpoints will return 503 Service Unavailable');
+    logger.error({ err: error }, 'Firebase Admin SDK initialization failed — admin endpoints will return 503');
     return null;
   }
 }
