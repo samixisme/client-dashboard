@@ -1,0 +1,49 @@
+{
+  "models": {
+    "main": {
+      "provider": "openrouter",
+      "modelId": "google/gemini-3.1-pro-preview"
+    },
+    "research": {
+      "provider": "perplexity",
+      "modelId": "sonar"
+    },
+    "fallback": {
+      "provider": "openrouter",
+      "modelId": "google/gemini-2.5-pro"
+    }
+  },
+  "global": {
+    "logLevel": "info",
+    "debug": false,
+    "defaultNumTasks": 10,
+    "defaultSubtasks": 5,
+    "PERPLEXITY_API_KEY": "",
+    "OPENROUTER_API_KEY": "",
+    "defaultPriority": "medium",
+    "projectName": "Task Master",
+    "ollamaBaseURL": "http://127.0.0.1:8045/api",
+    "bedrockBaseURL": "https://bedrock.us-east-1.amazonaws.com",
+    "responseLanguage": "English",
+    "enableCodebaseAnalysis": true,
+    "enableProxy": false,
+    "anonymousTelemetry": true,
+    "userId": "1234567890",
+    "defaultTag": "master"
+  },
+  "claudeCode": {
+    "env": {
+      "ANTHROPIC_BASE_URL": "http://127.0.0.1:8045",
+      "ANTHROPIC_API_KEY": ""
+    }
+  },
+  "codexCli": {
+    "OPENAI_API_KEY": "",
+    "OPENAI_BASE_URL": "http://127.0.0.1:8045/v1"
+  },
+  "grokCli": {
+    "timeout": 120000,
+    "workingDirectory": null,
+    "defaultModel": "grok-4-latest"
+  }
+}

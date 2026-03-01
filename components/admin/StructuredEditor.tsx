@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import EditableItem from './EditableItem';
 import { toast } from 'sonner';
 
-export interface DataSource<T = Record<string, unknown>> {
+export interface DataSource<T = unknown> {
     name: string;
     data: T[];
     onSave: (newData: T[]) => void;
@@ -85,8 +85,8 @@ const StructuredEditor: React.FC<{ source: DataSource }> = ({ source }) => {
             <div className="space-y-4">
                 {items.map((item, index) => (
                     <EditableItem
-                        key={(item.id as string) || String(index)}
-                        itemData={item}
+                        key={((item as Record<string, unknown>).id as string) || String(index)}
+                        itemData={item as Record<string, unknown>}
                         onUpdate={(updatedItem) => handleUpdateItem(index, updatedItem)}
                         onDelete={() => handleDeleteItem(index)}
                     />

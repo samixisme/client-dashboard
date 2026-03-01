@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getFeedbackItem, subscribeToComments, subscribeToActivities, deleteComment, toggleCommentResolved, updateComment, updateFeedbackItemStatus } from '../utils/feedbackUtils';
-import { auth } from '../utils/firebase';
+import { db, auth } from '../utils/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { FeedbackItem, FeedbackItemComment, FeedbackComment, User } from '../types';
 import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
 import { ArrowRightIcon } from '../components/icons/ArrowRightIcon';
 import { FullscreenIcon } from '../components/icons/FullscreenIcon';
 import { ExitFullscreenIcon } from '../components/icons/ExitFullscreenIcon';
 import FeedbackSidebar from '../components/feedback/FeedbackSidebar';
+import VersionDropdown from '../components/feedback/VersionDropdown';
 import { SidebarView } from '../components/feedback/FeedbackItemPage';
 import { useData } from '../contexts/DataContext';
 
@@ -40,6 +42,10 @@ const FeedbackWebsiteDetailPage = () => {
   const { data } = useData();
   const [scale, setScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Version filtering state
+  const [selectedVersion, setSelectedVersion] = useState<string>('');
+  const [availableVersions, setAvailableVersions] = useState<string[]>([]);
 
   useEffect(() => {
       const calculateScale = () => {
@@ -119,6 +125,25 @@ const FeedbackWebsiteDetailPage = () => {
 
     fetchItem();
   }, [projectId, feedbackItemId, path]);
+
+  // Fetch available versions for this project's feedback items
+  useEffect(() => {
+    if (!projectId) return;
+    const fetchVersions = async () => {
+      try {
+        const versionsSnap = await getDocs(
+          query(collection(db, 'feedbackItems'), where('projectId', '==', projectId))
+        );
+        const versions = [...new Set(
+          versionsSnap.docs.map(d => d.data().version as string).filter(Boolean)
+        )];
+        if (versions.length) setAvailableVersions(versions);
+      } catch {
+        // Version fetching is non-critical
+      }
+    };
+    fetchVersions();
+  }, [projectId]);
 
   // Subscriptions
   useEffect(() => {
@@ -284,9 +309,14 @@ const FeedbackWebsiteDetailPage = () => {
           // If comment URL isn't set, maybe show it everywhere? Or nowhere? Usually assume it belongs to root if empty.
           if (!normComment) return deviceMatch;
 
-          return deviceMatch && normComment === normCurrent;
+          const urlMatch = normComment === normCurrent;
+
+          // Version filter: if a version is selected, only show comments matching that version
+          const versionMatch = !selectedVersion || !c.version || String(c.version) === selectedVersion;
+
+          return deviceMatch && urlMatch && versionMatch;
       });
-  }, [comments, device, path, item]);
+  }, [comments, device, path, item, selectedVersion]);
 
   // Styles based on device
   const getContainerStyle = (): React.CSSProperties => {
@@ -372,9 +402,20 @@ const FeedbackWebsiteDetailPage = () => {
                  <div>
                      <h1 className="text-sm font-bold text-text-primary leading-tight">{item?.name || 'Website Feedback'}</h1>
                      <p className="text-[10px] text-text-secondary">
-                        {item ? `V1 • ${new Date(item.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString()}` : 'Live Preview'}
+                        {item ? `V${selectedVersion || '1'} • ${new Date(item.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString()}` : 'Live Preview'}
                      </p>
                  </div>
+                 {availableVersions.length > 0 && (
+                   <VersionDropdown
+                     projectId={projectId || ''}
+                     feedbackItemId={feedbackItemId || ''}
+                     currentVersion={Number(selectedVersion) || 1}
+                     versions={availableVersions.map((v, i) => ({ versionNumber: Number(v) || i + 1, createdAt: { seconds: 0, nanoseconds: 0 }, assetUrl: '', createdBy: '' }))}
+                     onVersionChange={(vn) => setSelectedVersion(String(vn))}
+                     onCreateVersion={() => { /* future: create new version */ }}
+                     type="mockup"
+                   />
+                 )}
              </div>
 
              {/* Right: Actions */}

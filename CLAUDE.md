@@ -122,6 +122,21 @@ Two completely separate layouts:
 - [tsconfig.json](tsconfig.json) → Frontend (ESNext, bundler resolution, react-jsx)
 - [tsconfig.server.json](tsconfig.server.json) → Backend API (CommonJS, Node resolution)
 
+### Data Access Patterns
+
+Three conventions govern how pages fetch and mutate data:
+
+| Layer | Pattern | Example |
+|-------|---------|---------|
+| **Client pages** | `DataContext` or a dedicated `use*` hook with `onSnapshot` for real-time data | `useProposals()` in [hooks/useProposals.ts](hooks/useProposals.ts) — returns `proposals`, `loading`, CRUD methods |
+| **Admin pages** | `useAdminApi()` hook for REST calls to the Express API (`/admin/api/*`) | `get<User[]>('/users')` in [pages/admin/AdminUsersPage.tsx](pages/admin/AdminUsersPage.tsx) |
+| **Prohibited** | Raw Firestore SDK calls (`addDoc`, `updateDoc`, `deleteDoc`) directly in page components | Refactored out of `ProposalsPage` in Task 95 |
+
+**Rules:**
+- Client-facing pages **must** use `DataContext` or a dedicated hook wrapping `onSnapshot`
+- Admin CMS pages **must** use `useAdminApi` for all server communication
+- Page components **must not** import `addDoc`, `updateDoc`, `deleteDoc`, or `onSnapshot` directly
+
 ---
 
 ## Key Features & Non-Obvious Patterns
@@ -399,3 +414,106 @@ If VS Code becomes unresponsive or corrupted:
 ```
 
 **Warning:** Closes VS Code forcefully and resets workspace state
+
+---
+
+## VPS Infrastructure (49.13.129.43)
+
+### Services
+
+| Service | URL | Port | Stack |
+|---------|-----|------|-------|
+| Client Dashboard | client.samixism.com | 3000 (PM2) | Node/Vite |
+| Dashboard API | — | 3001 (PM2) | Express |
+| Linkwarden | links.samixism.com | 3010→3000 | Docker |
+| Paymenter | billing.samixism.com | 8090→80 | Docker |
+
+### Adding a New Subdomain (Engintron)
+
+**Critical rule: never touch nginx config files directly** — Engintron manages them and will overwrite changes, or worse, break other sites.
+
+The correct workflow:
+
+1. **Create the subdomain** in WHM/cPanel under the `clientdash` account
+2. **Delete the stub folder** cPanel creates — it will serve a directory listing otherwise:
+   ```bash
+   rm -rf /home/clientdash/public_html/<subdomain>
+   ```
+3. **Add an SSL cert** via WHM → SSL/TLS → Manage SSL for `<subdomain>.samixism.com`
+4. **Add a proxy block** in `/etc/nginx/conf.d/custom_rules.conf` — this file is loaded by Engintron and survives updates:
+   ```nginx
+   server {
+       listen 443 ssl;
+       listen [::]:443 ssl;
+       http2 on;
+       server_name <subdomain>.samixism.com;
+       ssl_certificate /etc/letsencrypt/live/<subdomain>.samixism.com/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/<subdomain>.samixism.com/privkey.pem;
+       location / {
+           proxy_pass http://127.0.0.1:<PORT>;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection "upgrade";
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+           proxy_read_timeout 90;
+       }
+   }
+   ```
+5. **Reload nginx** (test first):
+   ```bash
+   nginx -t && nginx -s reload
+   ```
+6. **If the app runs in Docker**, also update `/etc/csf/csfpost.sh` (see below)
+
+### Docker + CSF Firewall
+
+CSF wipes Docker iptables rules on every restart. `/etc/csf/csfpost.sh` re-adds them automatically.
+
+**Current state of `/etc/csf/csfpost.sh`:**
+```bash
+#!/bin/bash
+# Paymenter bridge (clientdash_paymenter_nw)
+iptables -I FORWARD -i br-a57334a8c326 -j ACCEPT
+iptables -I FORWARD -o br-a57334a8c326 -j ACCEPT
+iptables -I OUTPUT -d 172.18.0.0/16 -j ACCEPT
+
+# Linkwarden bridge (linkwarden_default)
+iptables -I FORWARD -i br-c92adab77623 -j ACCEPT
+iptables -I FORWARD -o br-c92adab77623 -j ACCEPT
+iptables -I OUTPUT -d 172.21.0.0/16 -j ACCEPT
+```
+
+**When adding a new Docker app:**
+1. Start the container and get its bridge ID: `docker network ls`
+2. Get the subnet: `docker network inspect <network> --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'`
+3. Add both FORWARD and OUTPUT rules to `csfpost.sh` for the new bridge
+4. Run `csf -r` to restart CSF and test — the `csfpost.sh` script runs automatically
+
+**Warning:** Bridge IDs (`br-XXXX`) change if you do `docker compose down && up`. After a full stack restart, re-check bridge IDs and update `csfpost.sh`.
+
+### Linkwarden (`~/linkwarden/`)
+
+Bookmark manager at https://links.samixism.com. Register your account at https://links.samixism.com/register.
+
+**Key files:**
+- `~/linkwarden/docker-compose.yml` — uses `build: .` pointing to local Dockerfile
+- `~/linkwarden/Dockerfile` — extends official image, patches `next start --hostname 0.0.0.0`
+- `~/linkwarden/.env` — secrets and config
+
+**Why the Dockerfile exists:** Next.js 14 binds to `127.0.0.1` by default inside Docker, which blocks docker-proxy from forwarding external traffic. The Dockerfile patches the start script to bind on `0.0.0.0`. Without this, Linkwarden returns 502.
+
+**To update Linkwarden:**
+```bash
+cd ~/linkwarden
+docker compose build --pull   # pulls new upstream + re-applies patch
+docker compose up -d
+```
+
+**Do NOT** change the image back to `ghcr.io/linkwarden/linkwarden:latest` directly in docker-compose.yml — it will break the hostname fix.
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

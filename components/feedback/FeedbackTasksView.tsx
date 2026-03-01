@@ -127,7 +127,7 @@ const FeedbackTasksView = ({ projectId }: { projectId: string }) => {
                             </thead>
                             <tbody className="divide-y divide-border-color">
                                 {filteredTasks.map(task => {
-                                    const creator = getUser((task as any).creatorId || task.assigneeId);
+                                    const creator = getUser(task.creatorId || task.assigneeId);
 
                                     // Dynamically determine source type if not present or default
                                     let sourceType = task.sourceType;

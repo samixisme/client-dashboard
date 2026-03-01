@@ -10,6 +10,7 @@ import './src/components/background/global-background.css';
 import './cursor.css';
 import { Toaster } from 'sonner';
 import { Agentation } from 'agentation';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // --- Other Page Imports ---
 import DashboardPage from './pages/DashboardPage';
@@ -58,7 +59,7 @@ import PendingApprovalPage from './pages/PendingApprovalPage';
 
 // --- Admin CMS Imports ---
 import AdminLayout from './components/layout/AdminLayout';
-import AdminDashboardPage from './pages/AdminDashboardPage';
+const AdminDashboardPage = React.lazy(() => import('./pages/AdminDashboardPage'));
 import AdminBrandsPage from './pages/admin/AdminBrandsPage';
 import AdminProjectsPage from './pages/admin/AdminProjectsPage';
 import AdminBoardsPage from './pages/admin/AdminBoardsPage';
@@ -258,7 +259,7 @@ function App() {
                 <Routes>
                   {/* Admin CMS Routes - Completely separate layout */}
                   <Route path="/admin/*" element={<AdminLayout />}>
-                      <Route index element={<AdminDashboardPage />} />
+                      <Route index element={<React.Suspense fallback={<div className="p-8 text-center text-text-secondary">Loading dashboard...</div>}><AdminDashboardPage /></React.Suspense>} />
                       <Route path="brands" element={<AdminBrandsPage />} />
                       <Route path="projects" element={<AdminProjectsPage />} />
                       <Route path="boards" element={<AdminBoardsPage />} />
@@ -404,7 +405,9 @@ function App() {
                    {/* Website Proxy View */}
                    <Route path="/feedback/:projectId/website/:feedbackItemId/view" element={
                       <MainLayout onLogout={handleLogout}>
-                         <FeedbackWebsiteDetailPage />
+                         <ErrorBoundary>
+                           <FeedbackWebsiteDetailPage />
+                         </ErrorBoundary>
                       </MainLayout>
                    } />
                    <Route path="/feedback/:projectId/video/:feedbackItemId" element={
@@ -414,7 +417,9 @@ function App() {
                    } />
                    <Route path="/feedback/:projectId/video/:feedbackItemId/view" element={
                       <MainLayout onLogout={handleLogout}>
-                         <FeedbackVideoDetailPage />
+                         <ErrorBoundary>
+                           <FeedbackVideoDetailPage />
+                         </ErrorBoundary>
                       </MainLayout>
                    } />
                    <Route path="/feedback/:projectId/:itemType/:itemId" element={
@@ -434,7 +439,9 @@ function App() {
                    } />
                    <Route path="/moodboard/:moodboardId" element={
                       <MainLayout onLogout={handleLogout}>
-                         <MoodboardCanvasPage />
+                         <ErrorBoundary>
+                           <MoodboardCanvasPage />
+                         </ErrorBoundary>
                       </MainLayout>
                    } />
                    <Route path="/email-templates" element={
@@ -522,17 +529,23 @@ function App() {
                    } />
                    <Route path="/docs/:projectId/new" element={
                       <MainLayout onLogout={handleLogout} fullBleed>
-                         <DocEditorPage />
+                         <ErrorBoundary>
+                           <DocEditorPage />
+                         </ErrorBoundary>
                       </MainLayout>
                    } />
                    <Route path="/docs/:projectId/:docId" element={
                       <MainLayout onLogout={handleLogout} fullBleed>
-                         <DocEditorPage />
+                         <ErrorBoundary>
+                           <DocEditorPage />
+                         </ErrorBoundary>
                       </MainLayout>
                    } />
                    <Route path="/whiteboard/:projectId/:docId" element={
                       <MainLayout onLogout={handleLogout} fullBleed>
-                         <DocEditorPage defaultMode="edgeless" />
+                         <ErrorBoundary>
+                           <DocEditorPage defaultMode="edgeless" />
+                         </ErrorBoundary>
                       </MainLayout>
                    } />
 
@@ -575,6 +588,7 @@ function App() {
           height: '100vh',
           zIndex: -1
         }}>
+        <ErrorBoundary fallback={null}>
           <LiquidEther
             colors={['#A3E635', '#84CC16', '#65A30D']}
             mouseForce={43}
@@ -592,10 +606,13 @@ function App() {
             autoResumeDelay={3000}
             autoRampDuration={0.6}
           />
+        </ErrorBoundary>
         </div>
       )}
 
-      {renderContent()}
+      <ErrorBoundary>
+        {renderContent()}
+      </ErrorBoundary>
 
       <Toaster
         position="top-right"

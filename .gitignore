@@ -71,7 +71,25 @@ paymenter/extensions/
 paymenter/var/
 paymenter/.env.paymenter
 
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
 # Temporary/invalid files
 $null
 -
 nul
+
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+.env
+.vscode
+# OS specific
+
+# Task files
+# tasks.json
+# tasks/ 

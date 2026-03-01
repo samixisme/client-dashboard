@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { Textarea } from '../components/ui/textarea';
-import { RoadmapItem, Task } from '../types';
+import { RoadmapItem, Task, getTimestampSeconds } from '../types';
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '../utils/calendarSync';
 import { KanbanViewIcon } from '../components/icons/KanbanViewIcon';
 import { TimelineIcon } from '../components/icons/TimelineIcon';
@@ -82,8 +82,8 @@ const RoadmapPage = () => {
                         valA = priorityMap[a.priority];
                         valB = priorityMap[b.priority];
                     } else if (key === 'dueDate' || key === 'createdAt') {
-                         valA = a[key] ? new Date(a[key]!).getTime() : 0;
-                         valB = b[key] ? new Date(b[key]!).getTime() : 0;
+                         valA = a[key] ? (getTimestampSeconds(a[key] as import("../types").FirebaseTimestamp) * 1000) : 0;
+                         valB = b[key] ? (getTimestampSeconds(b[key] as import("../types").FirebaseTimestamp) * 1000) : 0;
                     } else { // title
                         valA = a.title.toLowerCase();
                         valB = b.title.toLowerCase();

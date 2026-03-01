@@ -151,7 +151,7 @@ const BrandDetailPage = () => {
             setIsSaving(true);
             try {
                 const brandRef = doc(db, 'brands', brandId);
-                await updateDoc(brandRef, { ...editedBrand } as any);
+                await updateDoc(brandRef, { ...editedBrand });
 
                 setBrand(JSON.parse(JSON.stringify(editedBrand)));
                 setIsEditMode(false);

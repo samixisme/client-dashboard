@@ -1,0 +1,269 @@
+{
+	"meta": {
+		"generatedAt": "2026-02-25T19:50:56.270Z",
+		"tasksAnalyzed": 32,
+		"totalTasks": 32,
+		"analysisCount": 32,
+		"thresholdScore": 6,
+		"projectName": "Task Master",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 54,
+			"taskTitle": "Enhance AdminContext with role checking and admin gating",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down into: 1) Implement Firestore role listener and loading state in AdminContext, 2) Add route protection logic with useEffect and useRouter redirects, 3) Add localStorage persistence for isAdminMode toggle and error handling with toasts.",
+			"reasoning": "Moderate complexity due to Firebase Auth/Firestore integration, React Context with useEffect side effects, route protection logic, and localStorage persistence. Standard pattern but requires careful loading state and error handling to prevent redirect loops or stale data."
+		},
+		{
+			"taskId": 55,
+			"taskTitle": "Implement Admin Auth Middleware for all /admin/api routes",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Split into: 1) Create middleware with Firebase ID token verification, Firestore role check, and req.adminUser attachment, 2) Add rate limiting, audit logging, and Express route mounting with error responses.",
+			"reasoning": "Involves Firebase Admin SDK security patterns (checkRevoked), Firestore queries, Express middleware patterns, rate limiting integration, and audit logging. Security-critical code requires thorough testing."
+		},
+		{
+			"taskId": 56,
+			"taskTitle": "Create useAdminApi custom hook for consistent API calls",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Divide into: 1) Implement core CRUD methods with useSWR/useMutation and token injection, 2) Add optimistic updates, error handling, and Sonner toasts, 3) Implement auto token refresh, debounced refetch, and TypeScript generics.",
+			"reasoning": "Complex React hook combining SWR mutations, Firebase auth token management, optimistic updates, error boundaries, and TypeScript generics. High risk of race conditions and stale data if not implemented correctly."
+		},
+		{
+			"taskId": 57,
+			"taskTitle": "Build shared AdminDataTable component with full features",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down into: 1) Core TanStack table setup with shadcn/ui primitives, 2) Implement search/filter/sort/pagination with debouncing, 3) Add bulk select, column visibility, and floating action bar, 4) CSV export, accessibility, and glass morphism styling.",
+			"reasoning": "Advanced data table with TanStack React Table v8, multiple interactive features (search, filter, sort, pagination, bulk ops), custom styling, CSV export, and ARIA accessibility. High complexity due to state coordination and performance optimization."
+		},
+		{
+			"taskId": 58,
+			"taskTitle": "Create AdminPageHeader, AdminStatsCard, AdminEmptyState, AdminLoadingSkeleton components",
+			"complexityScore": 4,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "Multiple small UI components following design system tokens. Straightforward implementation with Framer Motion animations and responsive layouts. Low complexity, can be done atomically."
+		},
+		{
+			"taskId": 59,
+			"taskTitle": "Update AdminSidebar with all missing navigation links",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "",
+			"reasoning": "Simple UI update adding navigation items with icons and badges. Uses existing patterns and Lenis scroll. Minimal logic changes required."
+		},
+		{
+			"taskId": 60,
+			"taskTitle": "Implement Users API routes with full CRUD + bulk operations using Zod validation",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Split into: 1) Enhance existing user routes with Zod validation and Firebase Auth sync, 2) Implement bulk approve/disable/delete endpoints with batch writes, 3) Add server-side search/filter/pagination and audit logging.",
+			"reasoning": "Complex backend API with Firebase Auth + Firestore sync, Zod validation, bulk operations using batch writes, pagination, search, and audit logging. High complexity due to dual data source coordination."
+		},
+		{
+			"taskId": 61,
+			"taskTitle": "Build full Admin Users page with table, modals, filters, bulk actions",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Divide into: 1) Implement AdminDataTable with user-specific columns, filters, and expandable rows, 2) Connect EditUserModal, bulk actions, and optimistic updates with useAdminApi.",
+			"reasoning": "Full page implementation coordinating table, modals, filters, bulk actions, and optimistic updates. Depends on shared components but requires entity-specific logic."
+		},
+		{
+			"taskId": 62,
+			"taskTitle": "Create Clients API routes + Zod schemas with Paymenter sync",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break into: 1) Create Zod schemas and standard CRUD routes with unique constraint validation, 2) Implement Paymenter user linking, CSV export, pagination, and audit logging.",
+			"reasoning": "Standard CRUD API with external system sync (Paymenter), Zod validation, CSV export, and pagination. Moderate complexity with business logic for linking."
+		},
+		{
+			"taskId": 63,
+			"taskTitle": "Build Admin Clients page with data table and AddEditClientModal",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Split into: 1) AdminDataTable with client columns and filters, 2) AddEditClientModal with Paymenter integration and related invoices sub-table.",
+			"reasoning": "Standard admin page using shared components. Modal complexity due to Paymenter dropdown and sub-table for invoices."
+		},
+		{
+			"taskId": 64,
+			"taskTitle": "Enhance Brands API routes + existing AddEditBrandModal integration",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Divide into: 1) Zod schemas for nested brand data (logos/colors/fonts), 2) Firebase Storage upload and member management endpoints, 3) Cascade delete warnings and aggregation queries.",
+			"reasoning": "Complex nested data structures, file uploads to Firebase Storage, member management, cascade delete logic, and Firestore aggregation queries. High complexity."
+		},
+		{
+			"taskId": 65,
+			"taskTitle": "Build Admin Brands page with card grid/table toggle and enhanced modals",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Split into: 1) Dual view (card grid vs DataTable) with toggle, 2) Enhanced AddEditBrandModal with color pickers, multi-file upload, and member multi-select.",
+			"reasoning": "Dual layout implementation plus complex modal with color pickers, file uploads, and multi-select. UI complexity with preview features."
+		},
+		{
+			"taskId": 66,
+			"taskTitle": "Implement Projects API routes with member management and duplicate endpoint",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down into: 1) Standard CRUD with member validation and aggregation queries, 2) Complex duplicate endpoint with recursive Firestore batch writes for nested boards/stages.",
+			"reasoning": "Standard CRUD plus complex recursive duplication with nested Firestore batch writes. High complexity in duplication logic."
+		},
+		{
+			"taskId": 67,
+			"taskTitle": "Build Admin Projects page with filters, duplicate action, linked entities view",
+			"complexityScore": 6,
+			"recommendedSubtasks": 1,
+			"expansionPrompt": "Implement AdminDataTable with project columns, filters, duplicate button, expandable rows for linked entities, and archive toggle.",
+			"reasoning": "Standard admin page with entity-specific features like duplicate action and relationship display."
+		},
+		{
+			"taskId": 68,
+			"taskTitle": "Implement Boards API routes with stage management",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Split into: 1) Board CRUD routes with project filtering and Zod schemas, 2) Stage CRUD endpoints under /boards/:id/stages, 3) Stage reordering and bulk task operations using Firestore batch writes.",
+			"reasoning": "Complex nested resource API with Firestore batch writes for atomic stage reordering and bulk task operations. High coordination complexity."
+		},
+		{
+			"taskId": 69,
+			"taskTitle": "Build Admin Boards page with stage management panel",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Divide into: 1) AdminDataTable with board columns and project filter, 2) AddEditBoardModal implementation, 3) Inline stage management panel with drag-drop reordering and bulk task buttons.",
+			"reasoning": "Full page with complex inline stage management requiring drag-drop, optimistic updates, and bulk operations coordination."
+		},
+		{
+			"taskId": 70,
+			"taskTitle": "Implement Tasks API routes with bulk operations and filtering",
+			"complexityScore": 9,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break into: 1) Zod schemas for nested tasks, 2) Complex GET filtering/sorting/search across nested boards, 3) Bulk operation endpoints with atomic batch writes, 4) Time log retrieval logic.",
+			"reasoning": "Very complex due to nested Firestore structure (boards/{boardId}/tasks), advanced cross-board filtering/sorting/search, bulk atomic updates, and time log aggregation."
+		},
+		{
+			"taskId": 71,
+			"taskTitle": "Implement Feedback API routes with status and version management",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Split into: 1) Feedback CRUD with advanced filtering and Zod schemas, 2) Bulk approve/reject with batch writes, 3) Version management and Firebase Storage asset uploads.",
+			"reasoning": "Complex with version history, asset uploads, bulk status updates, and aggregation queries. Multiple data sources coordination."
+		},
+		{
+			"taskId": 72,
+			"taskTitle": "Implement Moodboards, Email Templates, and Docs API routes",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide by entity: 1) Moodboards CRUD with cascade delete, 2) Email Templates with duplicate/status transitions, 3) Docs with pin toggle and bulk delete, 4) Shared Zod schemas and middleware integration.",
+			"reasoning": "Three separate entity APIs with unique business logic (cascade delete, status transitions, bulk ops). High complexity due to multiple implementations."
+		},
+		{
+			"taskId": 73,
+			"taskTitle": "Build Admin Tasks page with cross-board management and AddEditTaskModal",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Split into: 1) AdminDataTable with cross-board filters/sorting/search, 2) Inline editing and bulk actions, 3) Complex AddEditTaskModal with recurring settings and time log view.",
+			"reasoning": "Complex page with cross-board task management, inline edits, bulk actions, and comprehensive modal with recurring task logic."
+		},
+		{
+			"taskId": 74,
+			"taskTitle": "Build Admin Feedback page with status and version management",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Implement: 1) AdminDataTable with inline status updates and version UI, 2) AddEditFeedbackModal with asset upload and bulk approve/reject actions.",
+			"reasoning": "Standard admin page with version management UI and asset upload complexity."
+		},
+		{
+			"taskId": 75,
+			"taskTitle": "Build Admin Moodboards, Email Templates, and Docs Pages",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Divide by page: 1) AdminMoodboardsPage with cascade delete confirmation, 2) AdminEmailTemplatesPage with card grid and status actions, 3) AdminDocsPage with multi-filters and bulk delete.",
+			"reasoning": "Three full admin pages with entity-specific UIs (grid vs table, cascade warnings, optimistic toggles). High implementation volume."
+		},
+		{
+			"taskId": 76,
+			"taskTitle": "Implement Payments API routes for invoices and estimates",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Split into: 1) Zod schemas with line item/total validation, 2) CRUD with status transitions and date filtering, 3) Revenue aggregation endpoint and bulk operations.",
+			"reasoning": "Complex financial data with line items, status transitions, date range filtering, revenue aggregation, and bulk operations."
+		},
+		{
+			"taskId": 77,
+			"taskTitle": "Implement Calendar Events and Roadmap API routes",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Divide into: 1) Calendar Events CRUD with date filtering, 2) Roadmap Items CRUD with nested project structure, 3) Reordering batch writes and bulk delete endpoints.",
+			"reasoning": "Two entity APIs with date complexity, nested Firestore structure, and atomic reordering batch writes."
+		},
+		{
+			"taskId": 78,
+			"taskTitle": "Implement Social Media and Proposals API routes",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Split into: 1) Social Media CRUD with platform filtering and scheduling actions, 2) Proposals CRUD with status transitions.",
+			"reasoning": "Three collections (social accounts, scheduled posts, proposals) with platform-specific logic and status workflows."
+		},
+		{
+			"taskId": 79,
+			"taskTitle": "Build Admin Payments page with invoices and estimates tabs",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Implement: 1) Tabbed interface with revenue stats cards, 2) AdminDataTable per tab with financial filters and status transitions.",
+			"reasoning": "Tabbed page with financial-specific filtering (date ranges, status) and stats aggregation."
+		},
+		{
+			"taskId": 80,
+			"taskTitle": "Build Admin Calendar Events and Roadmap pages",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Divide into: 1) AdminCalendarEventsPage with inline date editing, 2) AdminRoadmapPage with drag-drop reordering, 3) Shared filters and bulk actions.",
+			"reasoning": "Two complex pages with inline editing, drag-drop reordering, and date range filtering."
+		},
+		{
+			"taskId": 81,
+			"taskTitle": "Build Admin Social Media and Proposals Pages",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Split into: 1) Social Media page with Accounts/Posts tabs and scheduling actions, 2) Proposals page with status transitions.",
+			"reasoning": "Tabbed social media page plus standard proposals page with business-specific actions."
+		},
+		{
+			"taskId": 82,
+			"taskTitle": "Build Admin Dashboard Page with Analytics and Activity Feed",
+			"complexityScore": 8,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Divide into: 1) Stats cards and quick actions, 2) Recharts implementation for 4 chart types, 3) Recent activity feed with routing.",
+			"reasoning": "Complex dashboard with charts (Recharts), stats aggregation, activity feed, and responsive design."
+		},
+		{
+			"taskId": 83,
+			"taskTitle": "Build Admin Settings page with system configuration",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Implement: 1) 7 configuration sections with forms and status indicators, 2) Backup/restore actions with confirmation dialogs.",
+			"reasoning": "Multi-section settings page with system integration (Firebase, Novu) and dangerous actions requiring confirmation."
+		},
+		{
+			"taskId": 84,
+			"taskTitle": "Build Admin AI Creator page with Gemini integration",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Split into: 1) Tabbed AI generation interfaces (brand/social/email), 2) Configuration panel with API key management and model parameters.",
+			"reasoning": "Novel AI integration with multiple generation UIs and secure API key handling."
+		},
+		{
+			"taskId": 85,
+			"taskTitle": "Implement Audit Log API and Frontend Viewer",
+			"complexityScore": 7,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Divide into: 1) Read-only API with pagination and multi-filter support, 2) Frontend page with AdminDataTable, expandable JSON details, and CSV export.",
+			"reasoning": "Complex filtering/pagination on audit logs plus read-only UI with JSON expansion and export."
+		}
+	]
+}

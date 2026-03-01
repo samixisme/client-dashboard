@@ -105,15 +105,11 @@ const AccountsList: React.FC<AccountsListProps> = ({
             Connect your social media accounts to start tracking your performance and engagement across all platforms.
           </p>
           <button
-            onClick={() => {
-              console.log('🟡 Empty state - Connect First Account clicked');
-              alert('Please refresh the page. Social media accounts are being loaded from the database.');
-              window.location.reload();
-            }}
+            onClick={() => onConnect?.('instagram')}
             className="px-6 py-3 rounded-lg bg-lime-500/20 text-lime-400 border border-lime-500/30 hover:bg-lime-500/30 transition-all duration-300 font-semibold flex items-center gap-2"
           >
             <Plus className="h-5 w-5" />
-            Refresh Page
+            Connect First Account
           </button>
         </div>
       )}

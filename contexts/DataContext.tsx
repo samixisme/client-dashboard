@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, collectionGroup, doc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, collectionGroup, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import {
@@ -88,8 +88,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const startListeners = async () => {
             try {
                 await user.getIdToken(true);
-            } catch (err) {
-                console.error('[DataContext] Failed to refresh auth token:', err);
+            } catch {
                 return;
             }
 
@@ -98,7 +97,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             const bump = () => setVersion(v => v + 1);
             const errHandler = (label: string) => (err: Error) => {
-                console.error(`[DataContext] ${label}:`, err);
                 toast.error(`Error syncing ${label}`, { description: 'Please refresh the page' });
             };
 
@@ -274,8 +272,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ),
 
                 // ── Payments — clients / invoices / estimates / userSettings ───
+                // Scope clients to current user (or all if admin — Firestore rules enforce access)
                 onSnapshot(
-                    query(collection(db, 'clients')),
+                    query(collection(db, 'clients'), where('managedBy', 'array-contains', user.uid)),
                     snap => { dataStore.clients = snap.docs.map(d => ({ id: d.id, ...d.data() } as Client)); bump(); },
                     errHandler('clients')
                 ),

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvided } from '@hello-pangea/dnd';
 import { RoadmapItem, User, Task, Stage } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { ChevronDownIcon } from '../icons/ChevronDownIcon';
@@ -311,7 +311,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
 
 
     // --- Render Components ---
-    const SidebarItem = ({item, displayOrder, provided}: {item: DraggableItem, displayOrder: string, provided?: { innerRef: (element: HTMLElement | null) => void; draggableProps: Record<string, unknown>; dragHandleProps?: Record<string, unknown> | null }}) => {
+    const SidebarItem = ({item, displayOrder, provided}: {item: DraggableItem, displayOrder: string, provided?: DraggableProvided}) => {
         const hasChildren = item._type === 'roadmap' && tasksByRoadmapItem.has(item.id);
         const itemLevel = item._type === 'task' ? 1 : 0;
 
@@ -378,8 +378,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                 return (
                                                     <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isEditMode}>
                                                         {(provided) => (
-                                                            <div ref={provided.innerRef} {...(provided.draggableProps as any)}>
-                                                                <SidebarItem item={{...item, _type: 'roadmap'}} displayOrder={`${roadmapItemOrder}`} provided={{...provided, draggableProps: provided.draggableProps as any, dragHandleProps: provided.dragHandleProps as any}} />
+                                                            <div ref={provided.innerRef} {...provided.draggableProps}>
+                                                                <SidebarItem item={{...item, _type: 'roadmap'}} displayOrder={`${roadmapItemOrder}`} provided={provided} />
                                                                 {expandedItems.has(item.id) && (
                                                                     <Droppable droppableId={item.id} type="TASK">
                                                                         {(provided) => (
@@ -387,7 +387,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                                                 {itemTasks.map((task, taskIndex) => (
                                                                                     <Draggable key={task.id} draggableId={task.id} index={taskIndex} isDragDisabled={!isEditMode}>
                                                                                         {(provided) => (
-                                                                                            <SidebarItem item={{...task, _type: 'task'}} displayOrder={`${roadmapItemOrder}.${taskIndex + 1}`} provided={{...provided, draggableProps: provided.draggableProps as any, dragHandleProps: provided.dragHandleProps as any}} />
+                                                                                            <SidebarItem item={{...task, _type: 'task'}} displayOrder={`${roadmapItemOrder}.${taskIndex + 1}`} provided={provided} />
                                                                                         )}
                                                                                     </Draggable>
                                                                                 ))}

@@ -51,7 +51,7 @@ const FeedbackTool = () => {
     return () => unsubscribe();
   }, []);
 
-  // Read config from script tag
+  // Read config from script tag or body data attributes
   useEffect(() => {
     const script = document.querySelector('script[src*="feedback.js"]');
     if (script) {
@@ -66,6 +66,9 @@ const FeedbackTool = () => {
             const fid = scriptModule.getAttribute('data-feedback-id');
             setProjectId(pid);
             setFeedbackItemId(fid);
+        } else if (document.body.dataset.projectId) {
+            setProjectId(document.body.dataset.projectId);
+            setFeedbackItemId(document.body.dataset.feedbackId || null);
         } else {
             console.warn("FeedbackTool: Script tag not found or missing attributes");
         }
@@ -207,6 +210,41 @@ const FeedbackTool = () => {
   };
 
 
+  // Video annotation: capture currentTime and optional screenshot from active video
+  const captureVideoContext = async (): Promise<{
+    comment_timestamp_seconds?: number;
+    video_screenshot_url?: string;
+  }> => {
+    const videoEl = Array.from(
+      document.querySelectorAll<HTMLVideoElement>('video')
+    ).find(v => !v.closest('#client-dashboard-feedback-tool') && (!v.paused || v.currentTime > 0));
+
+    if (!videoEl) return {};
+
+    const timestamp = videoEl.currentTime;
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoEl.videoWidth || 640;
+      canvas.height = videoEl.videoHeight || 360;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return { comment_timestamp_seconds: timestamp };
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+      if (!blob) return { comment_timestamp_seconds: timestamp };
+
+      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      const { storage } = await import('../../utils/firebase');
+      const storageRef = ref(storage, `video-screenshots/${projectId}/${Date.now()}.jpg`);
+      await uploadBytes(storageRef, blob);
+      const video_screenshot_url = await getDownloadURL(storageRef);
+      return { comment_timestamp_seconds: timestamp, video_screenshot_url };
+    } catch {
+      return { comment_timestamp_seconds: timestamp };
+    }
+  };
+
   // Popover Actions
   const handlePopoverSubmit = async (text: string, details?: { dueDate?: string }) => {
       if (!projectId || !feedbackItemId) return;
@@ -222,22 +260,33 @@ const FeedbackTool = () => {
                );
                const maxPinNumber = existingPinsOnPageAndDevice.reduce((max, p) => Math.max(max, p.pin_number || 0), 0);
 
+               // Capture video context if a video is active
+               const videoCtx = await captureVideoContext();
+
                const commentId = await addComment(projectId, feedbackItemId, {
                    authorId: userId,
                    commentText: text,
                    x_coordinate: popover.x,
                    y_coordinate: popover.y,
-                   pin_number: maxPinNumber + 1, 
+                   pin_number: maxPinNumber + 1,
                    pageUrl: currentRealUrl,
                    device: device,
                    dueDate: details?.dueDate,
-                   status: 'Active', 
-                   replies: [] 
+                   status: 'Active',
+                   replies: [],
+                   ...videoCtx,
                });
                
                if (details?.dueDate) {
                    await syncCommentToCalendar(commentId, text, details.dueDate, userId, projectId);
                }
+
+               // Fire Novu notification for new feedback comment (best-effort, no await)
+               fetch('/api/notifications/trigger', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ workflowId: 'comment-added', subscriberId: userId, payload: { commentText: text, projectId, feedbackItemId } }),
+               }).catch(() => { /* non-blocking */ });
           } else if (popover.comment) {
               // Handle Reply (implemented in CommentPopover via onUpdate usually)
           }

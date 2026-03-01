@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Novu } from '@novu/api';
+import { getFirestore } from './firebaseAdmin';
 
 const router = Router();
 
@@ -19,6 +20,20 @@ router.post('/trigger', async (req: Request, res: Response) => {
 
     if (!workflowId || !subscriberId) {
       return res.status(400).json({ error: 'workflowId and subscriberId are required' });
+    }
+
+    // Check user notification preferences before triggering
+    try {
+      const db = getFirestore();
+      const userDoc = await db.collection('users').doc(subscriberId).get();
+      if (userDoc.exists) {
+        const prefs = userDoc.data()?.notificationPreferences;
+        if (prefs && prefs.emailNotifications === false && prefs.pushNotifications === false) {
+          return res.json({ success: true, data: null, skipped: true, reason: 'User has disabled all notifications' });
+        }
+      }
+    } catch (prefError) {
+      // If we cannot check preferences, proceed with the trigger
     }
 
     const result = await novu.trigger({

@@ -23,10 +23,7 @@ export const TimerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const [runningTimer, setRunningTimer] = useState<RunningTimer | null>(null);
 
     const startTimer = useCallback((taskId: string) => {
-        if (runningTimer) {
-            console.warn("Another timer is already running.");
-            return;
-        }
+        if (runningTimer) return;
         setRunningTimer({ taskId, startTime: Date.now() });
     }, [runningTimer]);
 
@@ -63,8 +60,7 @@ export const TimerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                     try {
                         await addDoc(collection(db, 'projects', project.id, 'boards', board.id, 'tasks', taskId, 'time_logs'), newLogData);
                         toast.success('Time logged successfully!');
-                    } catch (e) {
-                        console.error("Error logging timer time to Firestore", e);
+                    } catch {
                         toast.error('Failed to log time');
                     }
                 }

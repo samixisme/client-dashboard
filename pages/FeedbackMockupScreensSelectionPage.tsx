@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FeedbackItem } from '../types';
+import { FeedbackItem, MockupImage } from '../types';
 import { getFeedbackItem, updateFeedbackItemImages, updateFeedbackItem } from '../utils/feedbackUtils';
 import { AddIcon } from '../components/icons/AddIcon';
 import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
@@ -68,30 +68,22 @@ const FeedbackMockupScreensSelectionPage = () => {
     };
 
     const handleEditMainItem = async (itemId: string, newName: string) => {
-        if (!item || !projectId || !feedbackItemId) {
-            console.error('Missing required data:', { item, projectId, feedbackItemId });
-            return;
-        }
+        if (!item || !projectId || !feedbackItemId) return;
 
         try {
-            console.log('Updating main item name:', newName);
             await updateFeedbackItem(projectId, feedbackItemId, {
                 name: newName
             });
             // Refresh data
             const updatedItem = await getFeedbackItem(projectId, feedbackItemId);
             setItem(updatedItem);
-            console.log('Successfully updated main item name');
-        } catch (error) {
-            console.error('Error updating main item name:', error);
+        } catch {
+            // update failed — UI remains unchanged
         }
     };
 
     const handleEdit = async (imageId: string, newName: string) => {
-        if (!item || !projectId || !feedbackItemId) {
-            console.error('Missing required data:', { item, projectId, feedbackItemId });
-            return;
-        }
+        if (!item || !projectId || !feedbackItemId) return;
 
         try {
             const updatedImages = (item.images || []).map(img =>
@@ -102,9 +94,7 @@ const FeedbackMockupScreensSelectionPage = () => {
             setItem({ ...item, images: updatedImages });
 
             await updateFeedbackItemImages(projectId, feedbackItemId, updatedImages);
-            console.log('Successfully updated image name:', newName);
-        } catch (error) {
-            console.error('Error updating image name:', error);
+        } catch {
             // Revert optimistic update on error
             const items = await getFeedbackItem(projectId, feedbackItemId);
             setItem(items);
@@ -313,8 +303,8 @@ const FeedbackMockupScreensSelectionPage = () => {
                         id={image.id}
                         name={image.name}
                         assetUrl={image.url}
-                        version={typeof (image as any).version === 'number' ? `v${(image as any).version}` : ((image as any).version || 'v1')}
-                        createdAt={(image as any).createdAt}
+                        version={typeof (image as MockupImage).version === 'number' ? `v${(image as MockupImage).version}` : String((image as MockupImage).version || 'v1')}
+                        createdAt={(image as MockupImage).createdAt}
                         commentCount={0}
                         approved={image.approved}
                         projectId={projectId!}

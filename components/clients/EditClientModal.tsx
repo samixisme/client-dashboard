@@ -1,15 +1,31 @@
 
 import React, { useState } from 'react';
+import { addDoc, updateDoc, doc, collection, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../../utils/firebase';
 import { Client } from '../../types';
+import { stripUndefined } from '../../utils/firestore';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
+const clientSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+    adresse: z.string().optional(),
+    adresse2: z.string().optional(),
+    ice: z.string().optional(),
+    rc: z.string().optional(),
+    if: z.string().optional(),
+    brandId: z.string().optional(),
+});
+
+type ClientFormData = z.infer<typeof clientSchema>;
 
 interface EditClientModalProps {
     client?: Client;
     onClose: () => void;
-    onSave: (client: Client) => void;
 }
 
-const EditClientModal: React.FC<EditClientModalProps> = ({ client, onClose, onSave }) => {
-    const [formData, setFormData] = useState<Omit<Client, 'id' | 'userId'>>({
+const EditClientModal: React.FC<EditClientModalProps> = ({ client, onClose }) => {
+    const [formData, setFormData] = useState<ClientFormData>({
         name: client?.name || '',
         adresse: client?.adresse || '',
         adresse2: client?.adresse2 || '',
@@ -18,27 +34,52 @@ const EditClientModal: React.FC<EditClientModalProps> = ({ client, onClose, onSa
         if: client?.if || '',
         brandId: client?.brandId || undefined,
     });
+    const [isSaving, setIsSaving] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        setValidationError(null);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validate required field
-        if (!formData.name.trim()) {
-            alert('Client name is required.');
+        const parsed = clientSchema.safeParse(formData);
+        if (!parsed.success) {
+            setValidationError(parsed.error.errors[0].message);
             return;
         }
 
-        const savedClient: Client = {
-            id: client?.id || `client-${Date.now()}`,
-            userId: client?.userId || 'user-1', // Hardcoded for now
-            ...formData
-        };
+        setIsSaving(true);
+        try {
+            const uid = auth.currentUser?.uid;
+            if (!uid) throw new Error('Not authenticated');
 
-        onSave(savedClient);
+            if (client?.id) {
+                // Update existing client
+                await updateDoc(doc(db, 'clients', client.id), stripUndefined({
+                    ...parsed.data,
+                    updatedAt: serverTimestamp(),
+                }));
+                toast.success('Client updated');
+            } else {
+                // Create new client
+                await addDoc(collection(db, 'clients'), stripUndefined({
+                    ...parsed.data,
+                    userId: uid,
+                    managedBy: [uid],
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                }));
+                toast.success('Client added');
+            }
+            onClose();
+        } catch (err) {
+            toast.error('Failed to save client');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -58,7 +99,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({ client, onClose, onSa
                     <InputField
                         label="Address Line 1 (Optional)"
                         name="adresse"
-                        value={formData.adresse}
+                        value={formData.adresse || ''}
                         onChange={handleChange}
                     />
                     <InputField
@@ -70,21 +111,24 @@ const EditClientModal: React.FC<EditClientModalProps> = ({ client, onClose, onSa
                     <InputField
                         label="ICE (Optional)"
                         name="ice"
-                        value={formData.ice}
+                        value={formData.ice || ''}
                         onChange={handleChange}
                     />
                     <InputField
                         label="RC (Optional)"
                         name="rc"
-                        value={formData.rc}
+                        value={formData.rc || ''}
                         onChange={handleChange}
                     />
                     <InputField
                         label="IF (Optional)"
                         name="if"
-                        value={formData.if}
+                        value={formData.if || ''}
                         onChange={handleChange}
                     />
+                    {validationError && (
+                        <p className="text-red-400 text-sm">{validationError}</p>
+                    )}
                     <div className="flex justify-end gap-4 mt-8">
                         <button
                             type="button"
@@ -95,9 +139,10 @@ const EditClientModal: React.FC<EditClientModalProps> = ({ client, onClose, onSa
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover"
+                            disabled={isSaving}
+                            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {client ? 'Save Changes' : 'Add Client'}
+                            {isSaving ? 'Saving...' : client ? 'Save Changes' : 'Add Client'}
                         </button>
                     </div>
                 </form>

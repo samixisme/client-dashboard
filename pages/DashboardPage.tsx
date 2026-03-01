@@ -4,7 +4,7 @@ import { useSearch } from '../contexts/SearchContext';
 import { useAdmin } from '../contexts/AdminContext';
 import { useData } from '../contexts/DataContext';
 import AdminPanel from '../components/admin/AdminPanel';
-import { Project, Task, User, Brand, Board, Activity, FeedbackMockup, FeedbackVideo, FeedbackWebsite, CalendarEvent, TimeLog, Invoice, Estimate } from '../types';
+import { Project, Task, User, Brand, Board, Activity, FeedbackMockup, FeedbackVideo, FeedbackWebsite, CalendarEvent, TimeLog, Invoice, Estimate, getTimestampSeconds } from '../types';
 
 // StatusBadge component (from ProjectsPage)
 const StatusBadge: React.FC<{ status: 'Active' | 'Completed' | 'Archived' }> = ({ status }) => {
@@ -48,8 +48,8 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
     // 2. Task Velocity
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-    const thisWeekCompleted = tasks.filter((t: Task) => isCompleted(t.stageId) && new Date(t.createdAt) >= weekAgo).length;
-    const lastWeekCompleted = tasks.filter((t: Task) => isCompleted(t.stageId) && new Date(t.createdAt) >= twoWeeksAgo && new Date(t.createdAt) < weekAgo).length;
+    const thisWeekCompleted = tasks.filter((t: Task) => isCompleted(t.stageId) && new Date(getTimestampSeconds(t.createdAt) * 1000) >= weekAgo).length;
+    const lastWeekCompleted = tasks.filter((t: Task) => isCompleted(t.stageId) && new Date(getTimestampSeconds(t.createdAt) * 1000) >= twoWeeksAgo && new Date(getTimestampSeconds(t.createdAt) * 1000) < weekAgo).length;
     const velocityTrend = lastWeekCompleted > 0 ? ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100 : 0;
     const activeProjectCount = projects.filter((p: Project) => p.status === 'Active').length;
 
@@ -67,7 +67,7 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
 
     // 5. Recent Activities
     const recentActivities = activities
-      .sort((a: Activity, b: Activity) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort((a: Activity, b: Activity) => new Date(getTimestampSeconds(b.timestamp) * 1000).getTime() - new Date(getTimestampSeconds(a.timestamp) * 1000).getTime())
       .slice(0, 15)
       .map((a: Activity) => ({ ...a, user: users.find((u: User) => u.id === (a as Activity & { author?: string }).author) }));
 
@@ -164,9 +164,9 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
 };
 
 // Utility function for relative time
-const getRelativeTime = (timestamp: string) => {
+const getRelativeTime = (timestamp: string | import('../types').FirebaseTimestamp) => {
   const now = new Date();
-  const date = new Date(timestamp);
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date((typeof timestamp === 'object' && 'seconds' in timestamp ? timestamp.seconds : 0) * 1000);
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);

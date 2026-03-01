@@ -85,7 +85,7 @@ const AdminFeedbackPage: React.FC = () => {
         <div className="flex gap-4 mb-4">
             <select 
                 value={statusFilter} 
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as FeedbackStatus | 'all')}
                 className="bg-glass border border-border-color rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
                 <option value="all">All Statuses</option>

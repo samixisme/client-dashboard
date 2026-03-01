@@ -13,6 +13,7 @@ import { PaymentsIcon } from '../icons/PaymentsIcon';
 import { BoardIcon } from '../icons/BoardIcon'; // Import BoardIcon
 import { EmailIcon } from '../icons/EmailIcon';
 import { DocIcon } from '../icons/DocIcon';
+import { Users, Calendar, Map, Share2, FileText } from 'lucide-react';
 
 const AdminSidebar: React.FC = () => {
   const navLinkClasses = ({ isActive }: { isActive: boolean }) => 
@@ -73,6 +74,26 @@ const AdminSidebar: React.FC = () => {
         <NavLink to="/admin/tasks" className={navLinkClasses}>
             <TasksIcon className="h-5 w-5" />
             Tasks
+        </NavLink>
+        <NavLink to="/admin/clients" className={navLinkClasses}>
+            <Users className="h-5 w-5" />
+            Clients
+        </NavLink>
+        <NavLink to="/admin/calendar-events" className={navLinkClasses}>
+            <Calendar className="h-5 w-5" />
+            Calendar Events
+        </NavLink>
+        <NavLink to="/admin/roadmap" className={navLinkClasses}>
+            <Map className="h-5 w-5" />
+            Roadmap
+        </NavLink>
+        <NavLink to="/admin/social-media" className={navLinkClasses}>
+            <Share2 className="h-5 w-5" />
+            Social Media
+        </NavLink>
+        <NavLink to="/admin/proposals" className={navLinkClasses}>
+            <FileText className="h-5 w-5" />
+            Proposals
         </NavLink>
         <NavLink to="/admin/users" className={navLinkClasses}>
             <ProfileIcon className="h-5 w-5" />

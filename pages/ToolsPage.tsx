@@ -241,9 +241,9 @@ const ToolsPage: React.FC = () => {
     // Brand stats
     const brandStats = useMemo(() => {
         if (!brand) return [];
-        const logos = (brand as any).logos?.length ?? 0;
-        const colors = (brand as any).colors?.length ?? 0;
-        const fonts = (brand as any).fonts?.length ?? 0;
+        const logos = brand.logos?.length ?? 0;
+        const colors = brand.colors?.length ?? 0;
+        const fonts = brand.fonts?.length ?? 0;
         return [
             { label: 'Logos', value: logos },
             { label: 'Colors', value: colors },

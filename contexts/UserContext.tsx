@@ -52,8 +52,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           status: data.status || 'pending',
         });
       }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
+    } catch {
+      // Auth state listener will handle re-authentication if needed
     } finally {
       setLoading(false);
     }

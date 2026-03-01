@@ -25,7 +25,8 @@ import VersionDropdown from '../components/feedback/VersionDropdown';
 import VersionUploadModal from '../components/feedback/VersionUploadModal';
 import { ArrowRightIcon } from '../components/icons/ArrowRightIcon';
 import { db, auth } from '../utils/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { toast } from 'sonner';
 
 const FeedbackVideoDetailPage = () => {
     const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
@@ -83,6 +84,7 @@ const FeedbackVideoDetailPage = () => {
     // Description Edit State
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const [editedDescription, setEditedDescription] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     // Version Management
     const [versions, setVersions] = useState<FeedbackItemVersion[]>([]);
@@ -488,13 +490,25 @@ const FeedbackVideoDetailPage = () => {
                                             Cancel
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                // TODO: Save description to Firebase
-                                                setIsEditingDescription(false);
+                                            onClick={async () => {
+                                                if (!projectId || !feedbackItemId) return;
+                                                setIsSaving(true);
+                                                try {
+                                                    const itemRef = doc(db, 'projects', projectId, 'feedbackItems', feedbackItemId);
+                                                    await updateDoc(itemRef, { description: editedDescription });
+                                                    setFeedbackItem((prev) => prev ? { ...prev, description: editedDescription } : prev);
+                                                    toast.success('Description saved');
+                                                    setIsEditingDescription(false);
+                                                } catch (error) {
+                                                    toast.error('Failed to save description');
+                                                } finally {
+                                                    setIsSaving(false);
+                                                }
                                             }}
-                                            className="px-3 py-1 text-xs bg-primary text-black font-bold rounded hover:bg-primary-hover"
+                                            disabled={isSaving}
+                                            className="px-3 py-1 text-xs bg-primary text-black font-bold rounded hover:bg-primary-hover disabled:opacity-50"
                                         >
-                                            Save
+                                            {isSaving ? 'Saving...' : 'Save'}
                                         </button>
                                     </div>
                                 </div>

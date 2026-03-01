@@ -12,6 +12,10 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
     // Users collection - own profile only OR admin can read all
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
@@ -33,7 +37,7 @@ service cloud.firestore {
       // Boards subcollection
       match /boards/{boardId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated(); // Allow members to edit boards
+        allow write: if isAuthenticated();
 
         // Stages subcollection
         match /stages/{stageId} {
@@ -44,7 +48,8 @@ service cloud.firestore {
 
     match /calendar_events/{eventId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
     match /roadmap/{itemId} {
@@ -82,24 +87,39 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Clients - admin full access; managedBy array controls team member read
     match /clients/{clientId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.uid in resource.data.managedBy);
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+
+      // Social OAuth tokens — server-side only, never client-accessible
+      match /socialTokens/{platform} {
+        allow read, write: if isAdmin();
+      }
     }
 
+    // Invoices - creator or admin can read/update; only admin can delete
     match /invoices/{invoiceId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isAuthenticated();
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.createdBy == request.auth.uid);
+      allow create: if isAuthenticated()
+                    && request.resource.data.keys().hasAll(['clientId', 'createdBy'])
+                    && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
 
+    // Estimates - same pattern as invoices
     match /estimates/{estimateId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isAuthenticated();
+      allow read: if isAuthenticated() && (isAdmin() || resource.data.createdBy == request.auth.uid);
+      allow create: if isAuthenticated()
+                    && request.resource.data.keys().hasAll(['clientId', 'createdBy'])
+                    && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
 
-    // Collaborative collections - all authenticated users can write
+    // Collaborative collections with ownership guards
     match /boards/{boardId} {
       allow read, write: if isAuthenticated();
     }
@@ -108,40 +128,79 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    // Tasks - require required fields on create; assignee or admin can update/delete
     match /tasks/{taskId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.keys().hasAll(['boardId', 'stageId', 'title']);
+      allow update, delete: if isAuthenticated()
+                    && (('assignees' in resource.data && resource.data.assignees.hasAny([request.auth.uid])) || isAdmin());
+
+      // Comments subcollection on tasks
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if isAuthenticated()
+                      && (resource.data.authorId == request.auth.uid || isAdmin());
+      }
     }
 
     match /tags/{tagId} {
       allow read, write: if isAuthenticated();
     }
 
+    // Comments (top-level) - owner or admin can update/delete
     match /comments/{commentId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                    && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
+    // Activities - owner or admin can update/delete
     match /activities/{activityId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                    && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
+    // Time logs - owner or admin can manage
     match /time_logs/{logId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                    && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
+    // Moodboards - creator or admin can update/delete
     match /moodboards/{moodboardId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                    && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
     match /moodboard_items/{itemId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                    && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
+    // Feedback - creator or admin can update/delete
     match /feedbackItems/{itemId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                    && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
     match /feedbackComments/{commentId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+                    && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
     // ── AFFiNE Docs & Whiteboards ─────────────────────────────────────────────
@@ -173,10 +232,37 @@ service cloud.firestore {
       }
     }
 
-    // Catch-all for any other collections - read only for authenticated users
-    match /{document=**} {
-      allow read: if isAuthenticated();
+    // Notification metrics cache — server-written only
+    match /socialMetrics/{clientId}/{platform} {
+      allow read: if isAuthenticated() && isAdmin();
       allow write: if isAdmin();
+    }
+
+    // Proposals - authenticated read, creator or admin can update/delete
+    match /proposals/{proposalId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.keys().hasAll(['title', 'submitterId'])
+                    && request.resource.data.submitterId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.submitterId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // CATCH-ALL: DENY BY DEFAULT
+    // ============================================================================
+    // IMPORTANT: This rule denies ALL reads and writes to any collection that
+    // does not have an explicit rule defined ABOVE this block.
+    //
+    // If you are adding a NEW Firestore collection, you MUST add a dedicated
+    // match rule for it ABOVE this catch-all. Otherwise, all access to that
+    // collection will be silently denied with a "permission-denied" error.
+    //
+    // See the existing rules above for patterns (authenticated read, admin write,
+    // owner-based access, etc.)
+    // ============================================================================
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

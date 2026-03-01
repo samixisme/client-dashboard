@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { FeedbackComment, FeedbackItemComment, User, SidebarView, Activity } from '../../types';
+import { FeedbackComment, FeedbackItemComment, User, SidebarView, Activity, getTimestampSeconds } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { CancelIcon } from '../icons/CancelIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
@@ -189,7 +189,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                 if (act.timestamp) {
                     // Handle both Firestore Timestamp and string formats
                     if (typeof act.timestamp === 'object' && act.timestamp && 'seconds' in act.timestamp) {
-                        date = new Date((act.timestamp as any).seconds * 1000);
+                        date = new Date(getTimestampSeconds(act.timestamp) * 1000);
                     } else if (typeof act.timestamp === 'string') {
                         date = new Date(act.timestamp);
                     }
@@ -290,7 +290,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                                 <div className={`p-3 ${position === 'bottom' ? 'flex-1 flex flex-col' : ''}`}>
                                     {/* Top Row: Number + Name + Device + Status */}
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 transition-all duration-300 ${comment.status === 'Resolved' || (comment as any).resolved ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]' : 'bg-primary shadow-[0_0_12px_rgba(var(--primary-rgb),0.4)]'}`}>
+                                        <span className={`h-6 w-6 rounded-full flex items-center justify-center text-background font-bold text-xs flex-shrink-0 transition-all duration-300 ${comment.status === 'Resolved' || (comment as FeedbackItemComment).resolved ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]' : 'bg-primary shadow-[0_0_12px_rgba(var(--primary-rgb),0.4)]'}`}>
                                             {comment.pin_number || '•'}
                                         </span>
                                         <span className="text-sm font-semibold text-text-primary">{getMember(getAuthorId(comment))?.name || 'User'}</span>

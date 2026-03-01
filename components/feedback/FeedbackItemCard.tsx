@@ -82,19 +82,14 @@ const FeedbackItemCard: React.FC<FeedbackItemCardProps> = ({
     const isApproved = type === 'mockup' ? approved : status === 'approved';
 
     const handleEdit = () => {
-        console.log('Edit button clicked for:', id, name);
         setEditingId(id);
         setEditName(name);
         setEditDescription(description || '');
     };
 
     const handleSaveEdit = () => {
-        console.log('Save button clicked:', { id, editName, editDescription });
         if (onEdit) {
-            console.log('Calling onEdit callback');
             onEdit(id, editName, editDescription);
-        } else {
-            console.error('onEdit callback is not defined!');
         }
         setEditingId(null);
     };

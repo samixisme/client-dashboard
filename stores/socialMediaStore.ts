@@ -50,6 +50,10 @@ interface SocialMediaState {
     addAccount: (account: Omit<SocialAccount, 'id'>) => Promise<string>;
     updateAccount: (id: string, data: Partial<SocialAccount>) => Promise<void>;
     removeAccount: (id: string) => Promise<void>;
+    deleteScheduledPost: (postId: string) => Promise<void>;
+    publishScheduledPost: (postId: string) => Promise<void>;
+    updateScheduledPost: (postId: string, data: Partial<ScheduledPost>) => Promise<void>;
+    dismissAnomaly: (anomalyId: string) => Promise<void>;
 
     // Firebase listeners
     initListeners: () => Unsubscribe[];
@@ -78,6 +82,7 @@ export const useSocialMediaStore = create<SocialMediaState>((set, get) => ({
     selectAccount: (accountId) => set({ selectedAccountId: accountId }),
 
     markAnomalyRead: async (anomalyId) => {
+        set({ error: null });
         try {
             await updateDoc(doc(db, SOCIAL_COLLECTIONS.anomalies, anomalyId), { isRead: true });
         } catch (error: any) {
@@ -86,6 +91,7 @@ export const useSocialMediaStore = create<SocialMediaState>((set, get) => ({
     },
 
     addScheduledPost: async (post) => {
+        set({ error: null });
         try {
             const id = `sp-${Date.now()}`;
             const fullPost: ScheduledPost = {
@@ -100,6 +106,7 @@ export const useSocialMediaStore = create<SocialMediaState>((set, get) => ({
     },
 
     cancelScheduledPost: async (postId) => {
+        set({ error: null });
         try {
             await updateDoc(doc(db, SOCIAL_COLLECTIONS.scheduledPosts, postId), {
                 status: 'cancelled',
@@ -110,6 +117,7 @@ export const useSocialMediaStore = create<SocialMediaState>((set, get) => ({
     },
 
     addAccount: async (account) => {
+        set({ error: null });
         const id = `${account.platform}-${Date.now()}`;
         const fullAccount: SocialAccount = { ...account, id };
         await setDoc(doc(db, SOCIAL_COLLECTIONS.accounts, id), fullAccount);
@@ -117,21 +125,63 @@ export const useSocialMediaStore = create<SocialMediaState>((set, get) => ({
     },
 
     updateAccount: async (id, data) => {
+        set({ error: null });
         await updateDoc(doc(db, SOCIAL_COLLECTIONS.accounts, id), data);
     },
 
     removeAccount: async (id) => {
+        set({ error: null });
         await deleteDoc(doc(db, SOCIAL_COLLECTIONS.accounts, id));
     },
 
+    deleteScheduledPost: async (postId) => {
+        set({ error: null });
+        try {
+            await deleteDoc(doc(db, SOCIAL_COLLECTIONS.scheduledPosts, postId));
+        } catch (error: any) {
+            set({ error: `Failed to delete scheduled post: ${error.message}` });
+        }
+    },
+
+    publishScheduledPost: async (postId) => {
+        set({ error: null });
+        try {
+            await updateDoc(doc(db, SOCIAL_COLLECTIONS.scheduledPosts, postId), {
+                status: 'published',
+            });
+        } catch (error: any) {
+            set({ error: `Failed to publish post: ${error.message}` });
+        }
+    },
+
+    updateScheduledPost: async (postId, data) => {
+        set({ error: null });
+        try {
+            await updateDoc(doc(db, SOCIAL_COLLECTIONS.scheduledPosts, postId), data);
+        } catch (error: any) {
+            set({ error: `Failed to update scheduled post: ${error.message}` });
+        }
+    },
+
+    dismissAnomaly: async (anomalyId) => {
+        set({ error: null });
+        try {
+            await updateDoc(doc(db, SOCIAL_COLLECTIONS.anomalies, anomalyId), {
+                isRead: true,
+                dismissed: true,
+            });
+        } catch (error: any) {
+            set({ error: `Failed to dismiss anomaly: ${error.message}` });
+        }
+    },
+
     initializeSeedData: async () => {
+        set({ error: null });
         try {
             // Check if socialAccounts collection is empty
             const accountsSnapshot = await getDocs(collection(db, SOCIAL_COLLECTIONS.accounts));
 
             if (accountsSnapshot.empty) {
-                console.log('🔵 Firestore socialAccounts collection is empty. Seeding with initial data...');
-
                 // Add each seed account to Firestore
                 for (const account of seedAccounts) {
                     await addDoc(collection(db, SOCIAL_COLLECTIONS.accounts), {
@@ -139,15 +189,10 @@ export const useSocialMediaStore = create<SocialMediaState>((set, get) => ({
                         createdAt: new Date().toISOString(),
                         lastSynced: '',
                     });
-                    console.log(`✅ Added ${account.platform} account to Firestore`);
                 }
-
-                console.log('✅ Firestore seeded with social media accounts');
-            } else {
-                console.log('ℹ️ Firestore already has social media accounts');
             }
-        } catch (error) {
-            console.error('❌ Error seeding Firestore:', error);
+        } catch {
+            // Seeding failed — listeners will still work with empty state
         }
     },
 

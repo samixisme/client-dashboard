@@ -37,7 +37,7 @@ const FeedbackItemPage = () => {
         const foundItem = items.find((i) => i.id === itemId);
         // Cast FeedbackItem to the union type based on its type property
         if (foundItem) {
-          setItem(foundItem as any as FeedbackMockup | FeedbackVideo | FeedbackWebsite);
+          setItem(foundItem as unknown as FeedbackMockup | FeedbackVideo | FeedbackWebsite);
         }
         setLoading(false);
       });

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Task, Tag, TimeLog, RecurringTaskSettings, Stage, Activity, Comment, User, Board, Project } from '../types';
+import { Task, Tag, TimeLog, RecurringTaskSettings, Stage, Activity, Comment, User, Board, Project , getTimestampSeconds } from '../types';
 import { useData } from '../contexts/DataContext';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -19,6 +19,7 @@ import RecurringTaskPopover from './tasks/RecurringTaskPopover';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '../utils/firebase';
 import { doc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useNovuTrigger } from '../src/hooks/useNovuTrigger';
 
 interface TaskModalProps {
     task: Task;
@@ -40,6 +41,7 @@ const tagColors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8
 
 const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDeleteTask }) => {
     const { data, updateData, forceUpdate } = useData();
+    const { trigger: novuTrigger } = useNovuTrigger();
     const [editedTask, setEditedTask] = useState<Task>(task);
     const [boardTags, setBoardTags] = useState<Tag[]>(() => JSON.parse(JSON.stringify(data.tags.filter(t => t.boardId === task.boardId))));
     
@@ -107,7 +109,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         
         let allItems: (Activity | Comment)[] = [...activities, ...comments];
 
-        allItems.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        allItems.sort((a,b) => new Date(getTimestampSeconds(b.timestamp) * 1000).getTime() - new Date(getTimestampSeconds(a.timestamp) * 1000).getTime());
         
         const filteredItems = activeTab === 'all' 
             ? allItems 
@@ -226,6 +228,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
 
     const handleAddAssignee = (memberId: string) => {
         setEditedTask(prev => ({ ...prev, assignees: [...prev.assignees, memberId] }));
+        novuTrigger({
+            workflowId: 'task-assigned',
+            targetSubscriberId: memberId,
+            payload: { taskTitle: editedTask.title, taskId: task.id },
+        });
     };
 
     const handleRemoveAssignee = (memberId: string) => {
@@ -282,6 +289,15 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
             data.comments.unshift(comment);
             forceUpdate();
             setNewComment('');
+
+            // Notify task assignees about the new comment
+            editedTask.assignees.forEach(assigneeId => {
+                novuTrigger({
+                    workflowId: 'comment-added',
+                    targetSubscriberId: assigneeId,
+                    payload: { taskTitle: editedTask.title, commentText: newComment, taskId: task.id },
+                });
+            });
 
             if (project && board && !task.id.startsWith('task-')) {
                  try {
@@ -459,7 +475,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                         <div>
                                             <p className="text-sm">
                                                 <span className="font-bold text-text-primary">admin</span>
-                                                <span className="text-text-secondary ml-2 text-xs">{new Date(item.timestamp).toLocaleString()}</span>
+                                                <span className="text-text-secondary ml-2 text-xs">{new Date(getTimestampSeconds(item.timestamp) * 1000).toLocaleString()}</span>
                                             </p>
                                             <div className="mt-1 text-sm bg-glass/40 backdrop-blur-sm p-3 rounded-lg text-text-primary border border-border-color">
                                                 {'text' in item ? item.text : item.description}

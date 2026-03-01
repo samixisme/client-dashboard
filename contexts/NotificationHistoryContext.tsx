@@ -39,8 +39,8 @@ export const NotificationHistoryProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
-    } catch (error) {
-      console.error('Failed to save notification history:', error);
+    } catch {
+      // localStorage write failed — notifications still work in-memory
     }
   }, [notifications]);
 

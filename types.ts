@@ -1,5 +1,8 @@
 import { Timestamp } from 'firebase/firestore';
 
+export type FirebaseTimestamp = Timestamp | Date | string | { seconds: number; nanoseconds: number };
+export const getTimestampSeconds = (ts: FirebaseTimestamp): number => ts instanceof Date ? Math.floor(ts.getTime() / 1000) : typeof ts === 'string' ? new Date(ts).getTime() / 1000 : typeof ts === 'object' && 'seconds' in ts ? ts.seconds : 0;
+
 export type ProjectStatus = 'Active' | 'Archived' | 'Completed';
 
 export interface Project {
@@ -52,12 +55,14 @@ export interface Task {
     priority: 'Low' | 'Medium' | 'High';
     dateAssigned: string;
     assignees: string[]; // array of user IDs
+    creatorId?: string;
     labelIds: string[];
     dueDate?: string; // ISO string
+    endDate?: string; // ISO string
     start_date?: string; // ISO string
     cover_image?: string;
     attachments: {id: string, name: string, url: string, type: string}[];
-    createdAt: string; // ISO string
+    createdAt: FirebaseTimestamp; // ISO string or Timestamp
     roadmapItemId?: string; // Link to roadmap item
     order?: number;
     timeEstimation?: number; // in minutes
@@ -89,7 +94,7 @@ export interface Comment {
     roadmapItemId?: string;
     author: string;
     text: string;
-    timestamp: string;
+    timestamp: FirebaseTimestamp;
 }
 
 export interface Activity {
@@ -97,7 +102,7 @@ export interface Activity {
     objectId: string;
     objectType: 'task' | 'comment' | 'roadmap_item' | 'feedback_item';
     description: string;
-    timestamp: string;
+    timestamp: FirebaseTimestamp;
     comment_timestamp_seconds?: number;
     video_screenshot_url?: string;
 }
@@ -149,6 +154,8 @@ export interface User {
     email?: string;
     avatarUrl: string;
     role?: 'admin' | 'client';
+    status?: 'approved' | 'pending' | 'disabled';
+    lastLogin?: string;
     clientId?: string; // Connected client for non-admin users
     groups?: string[]; // User groups for organization
 }
@@ -203,6 +210,7 @@ interface DocumentBase {
 export interface Invoice extends DocumentBase {
     invoiceNumber: string;
     brandId?: string;
+    paymenterInvoiceId?: number;
 }
 
 export interface Estimate extends DocumentBase {
@@ -300,6 +308,9 @@ export interface MockupImage {
     id: string;
     name: string;
     url: string;
+    version?: string | number;
+    createdAt?: FirebaseTimestamp;
+    approved?: boolean;
 }
 
 export interface FeedbackMockup {
@@ -334,6 +345,7 @@ export interface FeedbackComment {
     videoAssetId?: string; // for specific video in a collection
     deviceView?: DeviceView;
     pageUrl?: string; // For website feedback, the specific page URL path
+    version?: string | number;
     targetType: 'website' | 'mockup' | 'video';
     comment: string;
     reporterId: string; 
@@ -370,7 +382,7 @@ export interface FeedbackItem {
   createdAt: any; // Timestamp or Date or serializable object
   commentCount?: number;
   pages?: {id: string, name: string, url: string, approved?: boolean}[]; // For websites
-  images?: {id: string, name: string, url: string, approved?: boolean}[]; // For mockups
+  images?: MockupImage[]; // For mockups
   videos?: {id: string, name: string, url: string, approved?: boolean}[]; // For videos
   version?: number; // Current active version number (1, 2, 3...)
   versions?: FeedbackItemVersion[]; // Array of all version history
@@ -747,6 +759,20 @@ export interface SocialDashboardFilters {
     customEndDate?: string;
 }
 
+// ── Proposals ─────────────────────────────────────────────────────────────────
+export type ProposalStatus = 'Pending' | 'Approved' | 'Rejected';
+
+export interface Proposal {
+    id: string;
+    title: string;
+    description: string;
+    submitter: string;         // display name of the person who submitted
+    submitterId: string;       // Firebase Auth UID
+    status: ProposalStatus;
+    createdAt: string;         // ISO string
+    updatedAt: string;         // ISO string
+}
+
 // ── AFFiNE Docs & Whiteboards ─────────────────────────────────────────────────
 export type DocMode = 'page' | 'edgeless';
 
@@ -762,4 +788,33 @@ export interface Doc {
     createdBy: string;       // Firebase Auth UID
     isPinned?: boolean;
     linkedBoardId?: string;  // optional link to existing Board (for task extraction)
+}
+
+import { ActivityItem } from './components/admin/dashboard/ActivityFeed';
+
+export interface DashboardStats {
+  totalUsers: number;
+  usersTrend: number;
+  totalProjects: number;
+  activeProjects: number;
+  archivedProjects: number;
+  totalTasks: number;
+  completedTasks: number;
+  pendingTasks: number;
+  revenueThisMonth: number;
+  revenueTrend: number;
+}
+
+export interface ChartPoint {
+  label: string;
+  value: number;
+}
+
+export interface DashboardData {
+  stats: DashboardStats;
+  taskCompletionTrend: ChartPoint[];
+  revenueByMonth: ChartPoint[];
+  userRegistrations: ChartPoint[];
+  projectStatusDistribution: { name: string; value: number }[];
+  recentActivities: ActivityItem[];
 }

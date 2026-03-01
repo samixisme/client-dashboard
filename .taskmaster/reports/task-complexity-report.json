@@ -1,0 +1,157 @@
+{
+	"meta": {
+		"generatedAt": "2026-02-26T18:42:15.024Z",
+		"tasksAnalyzed": 18,
+		"totalTasks": 70,
+		"analysisCount": 18,
+		"thresholdScore": 5,
+		"projectName": "Task Master",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 86,
+			"taskTitle": "Fix Storage Rules isAdmin() Custom Claims Mismatch",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break this task into three subtasks: 1. Implement the chosen solution (either the Cloud Function to sync claims or the updated storage rules with Firestore lookups). 2. Write and execute security rule tests using the Firebase Emulator to verify admin-only access. 3. Deploy the changes and perform a manual end-to-end test with real admin and non-admin accounts.",
+			"reasoning": "The task involves backend Firebase services (Cloud Functions or complex Security Rules) which are inherently more complex to test and debug than frontend code. The security implications are high, requiring careful implementation and thorough testing. Two distinct implementation paths are suggested, requiring a decision to be made."
+		},
+		{
+			"taskId": 87,
+			"taskTitle": "Fix Firestore Tasks Rule Missing assignees Guard",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a single, atomic change and does not require further subtask breakdown.",
+			"reasoning": "This is a simple, one-line fix in a declarative rule file. The scope is extremely narrow, and the required change is explicitly provided. Testing is straightforward with the Firebase Emulator."
+		},
+		{
+			"taskId": 88,
+			"taskTitle": "Remove Misleading Mock Security Rules from AdminSettingsPage",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a focused refactor on a single component and does not require further subtask breakdown. The primary action is removing the mock data and associated UI elements.",
+			"reasoning": "The task involves removing a misleading and dangerous feature from a single frontend component. This is primarily code deletion and UI cleanup, which is a low-effort, low-risk activity. The complexity would increase if the read-only fetch option were chosen."
+		},
+		{
+			"taskId": 89,
+			"taskTitle": "Guard app.listen() Behind require.main === module",
+			"complexityScore": 1,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a single-line code change and does not require further subtask breakdown.",
+			"reasoning": "This is a canonical, one-line fix in Node.js to make a server file importable without side effects. The implementation is trivial and follows a well-known best practice."
+		},
+		{
+			"taskId": 90,
+			"taskTitle": "Verify New Admin Route Files Use Auth Middleware",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break this task down by endpoint. Create subtasks for: 1. Auditing all `admin*Routes.ts` files and creating a checklist. 2. Applying `adminAuthMiddleware` and Zod validation to all routes in the identified files. 3. Standardizing error responses to use the `ApiResponse` format. 4. Writing integration tests to verify auth, validation, and error handling for all audited routes.",
+			"reasoning": "This task is not a single fix but an audit and implementation across multiple critical API files. It involves security (auth), data integrity (Zod validation), and API consistency. The need to write comprehensive integration tests for each endpoint adds significant effort and complexity."
+		},
+		{
+			"taskId": 91,
+			"taskTitle": "Add useMemo / useCallback to AdminContext Value",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a focused performance optimization within a single React context and does not require further subtask breakdown.",
+			"reasoning": "The task involves applying standard React hooks (`useMemo`, `useCallback`) to prevent unnecessary re-renders. While the code change is minimal, verifying the optimization with the React Profiler requires specific tooling and knowledge."
+		},
+		{
+			"taskId": 92,
+			"taskTitle": "Replace console.error with Proper Error Handling in AdminContext",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a small refactor to improve user-facing error handling in a single location and does not require further subtask breakdown.",
+			"reasoning": "This task is a simple substitution of a `console.error` call with a user-facing toast notification. The effort is minimal, assuming a toast library is already integrated into the project."
+		},
+		{
+			"taskId": 93,
+			"taskTitle": "Add Re-entry Guard to Paymenter Sync Effect",
+			"complexityScore": 4,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a targeted fix for a re-entry issue in a single `useEffect` hook and does not require further subtask breakdown.",
+			"reasoning": "This task addresses a critical infinite loop bug. While the `useRef` guard is a standard solution, reasoning about effect dependencies and preventing race conditions requires a moderate level of React expertise to fix correctly without introducing new bugs."
+		},
+		{
+			"taskId": 94,
+			"taskTitle": "Verify onSave Prop Removal from EditClientModal",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break this task into two subtasks: 1. Audit all usages of `<EditClientModal>` to determine if the `onSave` prop is still required by any parent components. 2. Based on the audit, either restore the `onSave` call within the modal or remove the prop from its interface and all call sites.",
+			"reasoning": "The core of this task is an audit to understand the impact of a change across the codebase. The implementation itself is trivial, but the investigation requires careful analysis of component interactions to avoid introducing breaking changes."
+		},
+		{
+			"taskId": 95,
+			"taskTitle": "Extract Inline Firestore Logic from ProposalsPage",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break this refactoring task into logical steps: 1. Create the new `useProposals.ts` hook file with a defined API. 2. Migrate the `onSnapshot` listener and data state management from `ProposalsPage` into the hook. 3. Migrate the `addDoc`, `updateDoc`, and `deleteDoc` functions into the hook, exposing them as methods. 4. Refactor `ProposalsPage.tsx` to remove all raw Firestore calls and consume the new `useProposals` hook.",
+			"reasoning": "This is a substantial refactoring task that creates a new abstraction (a custom hook). It involves moving complex asynchronous logic (Firestore CRUD and real-time listeners) and rewiring a page component, which requires careful planning to avoid breaking existing functionality."
+		},
+		{
+			"taskId": 96,
+			"taskTitle": "Standardize Data Access Patterns",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a documentation and code-review task and does not require further subtask breakdown.",
+			"reasoning": "This task is about documenting architectural decisions. The primary effort is writing clear documentation in a markdown file. The technical complexity is low, though it requires a clear understanding of the project's architecture."
+		},
+		{
+			"taskId": 97,
+			"taskTitle": "Decompose Large Admin Pages into Sub-Components",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Decompose this large refactoring effort by creating one subtask for each page that needs to be broken down: 1. Refactor `AdminSettingsPage.tsx`. 2. Refactor `AdminAICreatorPage.tsx`. 3. Refactor `AdminDashboardPage.tsx`. 4. Refactor `AdminUsersPage.tsx`. 5. Refactor `AdminPaymentsPage.tsx`.",
+			"reasoning": "This task involves major structural changes to five large, complex files. Each refactor is a significant piece of work that involves creating new components, managing state and props correctly, and extensive testing to ensure no functionality is broken. The sheer volume and risk of regression make this highly complex."
+		},
+		{
+			"taskId": 98,
+			"taskTitle": "Fix AdminDashboardPage Mock Data Regeneration",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task involves simple changes to mock data and type definitions and does not require further subtask breakdown.",
+			"reasoning": "The task involves replacing random data with static data for a better development experience and moving some type definitions. These are simple, low-risk changes with no impact on production logic."
+		},
+		{
+			"taskId": 99,
+			"taskTitle": "Code-Split Heavy Dependencies for Admin Pages",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break this performance optimization task into distinct steps: 1. Implement `React.lazy` and a `<Suspense>` fallback for the `AdminDashboardPage` at the router level. 2. Analyze and lazy-load other admin pages with heavy dependencies. 3. Run a production build and use a bundle analyzer tool to verify that heavy libraries have been moved to separate, async chunks.",
+			"reasoning": "This task requires knowledge beyond typical application logic, delving into build tools (e.g., Vite/Webpack), bundle analysis, and React's advanced asynchronous features (`React.lazy`, `Suspense`). Debugging issues with code splitting or Suspense can be non-trivial."
+		},
+		{
+			"taskId": 100,
+			"taskTitle": "Clear Stale Errors in Social Media Store",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task involves adding a single line of code to multiple actions within one store file and does not require further subtask breakdown.",
+			"reasoning": "The task is to add a single, identical line of code at the beginning of several functions within a single state management store. This is a low-effort, low-risk bug fix to improve UX."
+		},
+		{
+			"taskId": 101,
+			"taskTitle": "Add Double-Submit Guard to Feedback Form",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a standard UI improvement for a single form and does not require further subtask breakdown.",
+			"reasoning": "Implementing a double-submit guard with a `isSubmitting` state is a fundamental and simple pattern in frontend development. The scope is limited to one component and is considered low complexity."
+		},
+		{
+			"taskId": 102,
+			"taskTitle": "Fix getTimestampSeconds to Handle Date Objects",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break this task into two subtasks: 1. Update the `getTimestampSeconds` function to correctly handle native `Date` objects. 2. Write a comprehensive unit test suite for the function, covering all supported input types (Date, Firebase Timestamp, object, string, null/undefined).",
+			"reasoning": "While the function modification is a single line, the task's emphasis on a robust test strategy covering multiple input formats elevates the complexity. Writing good unit tests for a polymorphic utility function requires more effort than the fix itself."
+		},
+		{
+			"taskId": 103,
+			"taskTitle": "Document the Deny-by-Default Firestore Catch-All",
+			"complexityScore": 1,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is purely for documentation and does not require further subtask breakdown.",
+			"reasoning": "This task involves only writing comments and documentation to improve developer awareness. There is no code to write, no logic to implement, and no testing required beyond proofreading. It is of minimal complexity."
+		}
+	]
+}

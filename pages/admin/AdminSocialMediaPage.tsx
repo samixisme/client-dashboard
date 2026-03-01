@@ -4,6 +4,8 @@ import { AddIcon } from '../../components/icons/AddIcon';
 import { EditIcon } from '../../components/icons/EditIcon';
 import { DeleteIcon } from '../../components/icons/DeleteIcon';
 import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal';
+import AddEditSocialAccountModal from '../../components/admin/AddEditSocialAccountModal';
+import SchedulePostModal from '../../components/admin/SchedulePostModal';
 import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebase';
 import { SocialAccount, SocialPost, ScheduledPost, SocialAnomaly, SocialPlatform } from '../../types';
@@ -50,6 +52,48 @@ const AdminSocialMediaPage: React.FC = () => {
   const handleDeleteItem = (item: any) => {
     setItemToDelete(item);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleSaveAccount = async (accountData: Omit<SocialAccount, 'id'>) => {
+    setIsProcessing(true);
+    try {
+      if (selectedItem?.id) {
+        const docRef = doc(db, 'social_accounts', selectedItem.id);
+        await updateDoc(docRef, accountData);
+        toast.success('Account updated successfully');
+      } else {
+        await addDoc(collection(db, 'social_accounts'), accountData);
+        toast.success('Account added successfully');
+      }
+      setIsAddEditModalOpen(false);
+      setSelectedItem(null);
+    } catch (err) {
+      console.error('Error saving account:', err);
+      toast.error('Failed to save account');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSaveScheduledPost = async (postData: Omit<ScheduledPost, 'id'>) => {
+    setIsProcessing(true);
+    try {
+      if (selectedItem?.id) {
+        const docRef = doc(db, 'scheduled_posts', selectedItem.id);
+        await updateDoc(docRef, postData);
+        toast.success('Scheduled post updated successfully');
+      } else {
+        await addDoc(collection(db, 'scheduled_posts'), postData);
+        toast.success('Scheduled post added successfully');
+      }
+      setIsScheduleModalOpen(false);
+      setSelectedItem(null);
+    } catch (err) {
+      console.error('Error saving scheduled post:', err);
+      toast.error('Failed to save scheduled post');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -418,7 +462,21 @@ const AdminSocialMediaPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modals - TODO: Create these components */}
+      {/* Modals */}
+      <AddEditSocialAccountModal
+        isOpen={isAddEditModalOpen}
+        onClose={() => { setIsAddEditModalOpen(false); setSelectedItem(null); }}
+        onSave={handleSaveAccount}
+        initialData={selectedItem}
+      />
+
+      <SchedulePostModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => { setIsScheduleModalOpen(false); setSelectedItem(null); }}
+        onSave={handleSaveScheduledPost}
+        initialData={selectedItem}
+      />
+
       <DeleteConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

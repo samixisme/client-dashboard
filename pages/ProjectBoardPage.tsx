@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Stage, Task } from '../types';
+import { Stage, Task, getTimestampSeconds } from '../types';
 import TaskModal from '../components/TaskModal';
 import { useData } from '../contexts/DataContext';
 
@@ -20,10 +20,13 @@ import { KanbanViewIcon } from '../components/icons/KanbanViewIcon';
 import { ListIcon } from '../components/icons/ListIcon';
 import { TableViewIcon } from '../components/icons/TableViewIcon';
 import { CalendarIcon } from '../components/icons/CalendarIcon';
-import { doc, addDoc, updateDoc, deleteDoc, collection, setDoc } from 'firebase/firestore';
+import { doc, addDoc, updateDoc, deleteDoc, collection, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { slugify } from '../utils/slugify';
 import { deleteStageDeep, deleteTaskDeep } from '../utils/dataCleanup';
+import { stripUndefined } from '../utils/firestore';
+import { maybeCreateRecurringTask } from '../utils/recurringTasks';
+import { taskCreationSchema } from '../utils/taskSchema';
 import { toast } from 'sonner';
 
 export type ViewMode = 'kanban' | 'list' | 'table' | 'calendar';
@@ -184,8 +187,8 @@ const ProjectBoardPage = () => {
                         valA = priorityMap[a.priority];
                         valB = priorityMap[b.priority];
                     } else if (key === 'dueDate' || key === 'createdAt') {
-                         valA = a[key] ? new Date(a[key]!).getTime() : 0;
-                         valB = b[key] ? new Date(b[key]!).getTime() : 0;
+                         valA = a[key] ? (getTimestampSeconds(a[key] as import("../types").FirebaseTimestamp) * 1000) : 0;
+                         valB = b[key] ? (getTimestampSeconds(b[key] as import("../types").FirebaseTimestamp) * 1000) : 0;
                     } else { // title
                         valA = a.title.toLowerCase();
                         valB = b.title.toLowerCase();
@@ -213,8 +216,9 @@ const ProjectBoardPage = () => {
 
         const taskToMove = data.tasks.find(t => t.id === draggableId);
         if (taskToMove && source.droppableId !== destination.droppableId) {
+            // Optimistic local update
             taskToMove.stageId = destination.droppableId;
-            
+
             const sourceStage = data.stages.find(s => s.id === source.droppableId);
             const destStage = data.stages.find(s => s.id === destination.droppableId);
 
@@ -226,19 +230,16 @@ const ProjectBoardPage = () => {
                 timestamp: new Date().toISOString()
             };
             activities.push(newActivity);
-            
-            // Update Firestore
-            if (project && boardId && !taskToMove.id.startsWith('task-')) {
-                try {
-                    // Assuming path: projects/{projectId}/boards/{boardId}/tasks/{taskId}
-                    // Note: We are moving to a new stage, but stageId is just a field in the task document.
-                    // We do NOT move the document to a different collection.
-                    await updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'tasks', taskToMove.id), {
-                        stageId: destination.droppableId
-                    });
-                } catch (e) {
-                    console.error("Error updating task stage in Firestore", e);
-                }
+
+            // Persist to flat tasks collection
+            try {
+                await updateDoc(doc(db, 'tasks', taskToMove.id), {
+                    stageId: destination.droppableId,
+                    updatedAt: serverTimestamp(),
+                });
+            } catch (e) {
+                console.error('Error updating task stage in Firestore', e);
+                toast.error('Failed to move task');
             }
 
             forceUpdate();
@@ -273,53 +274,60 @@ const ProjectBoardPage = () => {
             forceUpdate();
         }
 
-        if (project && boardId && !updatedTask.id.startsWith('task-')) {
-            try {
-                // We need to strip out fields that might not be in Firestore or are handled differently if needed
-                // But generally dumping the object is fine if it matches schema.
-                // Removing undefined values is good practice as Firestore doesn't like them.
-                const taskData = JSON.parse(JSON.stringify(updatedTask)); 
-                await updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'tasks', updatedTask.id), taskData);
-            } catch (e) {
-                console.error("Error updating task in Firestore", e);
+        try {
+            const taskData = stripUndefined({ ...updatedTask, updatedAt: serverTimestamp() });
+            await updateDoc(doc(db, 'tasks', updatedTask.id), taskData);
+
+            // Trigger recurring task engine on completion
+            if (updatedTask.status === 'done' || updatedTask.status === 'completed') {
+                await maybeCreateRecurringTask(updatedTask);
             }
+        } catch (e) {
+            console.error('Error updating task in Firestore', e);
+            toast.error('Failed to update task');
         }
     };
 
     const handleAddTask = async (stageId: string, title: string) => {
-        if (title.trim() === '' || !boardId || !project) return;
-        
+        if (!boardId || !project) return;
+
+        try {
+            taskCreationSchema.parse({ title, stageId, boardId });
+        } catch (err: any) {
+            toast.error(err.errors?.[0]?.message ?? 'Invalid task data');
+            return;
+        }
+
         const newTaskData: Omit<Task, 'id'> = {
-            boardId, 
-            stageId, 
-            title,
-            description: '', 
-            priority: 'Medium', 
+            boardId,
+            stageId,
+            title: title.trim(),
+            description: '',
+            priority: 'Medium',
             dateAssigned: new Date().toISOString(),
-            assignees: [], 
-            labelIds: [], 
-            attachments: [], 
+            assignees: [],
+            labelIds: [],
+            attachments: [],
             createdAt: new Date().toISOString(),
         };
 
-        // Use slugified title + timestamp for ID
         const taskSlug = slugify(title);
         const taskId = `${taskSlug}-${Date.now()}`;
 
         try {
-            await setDoc(doc(db, 'projects', project.id, 'boards', boardId, 'tasks', taskId), newTaskData);
-            // No need to manually push to data.tasks as DataContext listener will pick it up
+            await setDoc(doc(db, 'tasks', taskId), stripUndefined({
+                ...newTaskData,
+                createdAt: serverTimestamp(),
+            }));
         } catch (e) {
-            console.error("Error adding task to Firestore", e);
-            // Fallback
-            const newTask: Task = {
-                id: `task-${Date.now()}`,
-                ...newTaskData
-            };
+            console.error('Error adding task to Firestore', e);
+            toast.error('Failed to add task');
+            // Fallback optimistic insert
+            const newTask: Task = { id: `task-${Date.now()}`, ...newTaskData };
             data.tasks.push(newTask);
             forceUpdate();
         }
-        
+
         setAddingTaskToStage(null);
     };
 
@@ -349,28 +357,55 @@ const ProjectBoardPage = () => {
         setIsAddStageModalOpen(false);
     };
     
-    const handleCopyStage = (stageId: string) => {
+    const handleCopyStage = async (stageId: string) => {
         const stageToCopy = data.stages.find(s => s.id === stageId);
-        if (!stageToCopy) return;
+        if (!stageToCopy || !project || !boardId) return;
 
         const newStageId = `stage-${Date.now()}`;
-        const newStage: Stage = {
-            ...stageToCopy,
-            id: newStageId,
+        const newStageData = {
+            boardId,
             name: `${stageToCopy.name} (Copy)`,
             order: data.stages.filter(s => s.boardId === boardId).length + 1,
+            status: stageToCopy.status ?? 'Open',
+            color: '#A3E635',
         };
-        data.stages.push(newStage);
 
         const tasksToCopy = data.tasks.filter(t => t.stageId === stageId);
-        const newTasks: Task[] = tasksToCopy.map(task => ({
-            ...task,
-            id: `task-${Date.now()}-${Math.random()}`,
-            stageId: newStageId,
-        }));
-        data.tasks.push(...newTasks);
 
-        forceUpdate();
+        try {
+            // Write new stage
+            await setDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', newStageId), newStageData);
+
+            // Batch-write copied tasks to flat collection
+            if (tasksToCopy.length > 0) {
+                const batch = writeBatch(db);
+                tasksToCopy.forEach(task => {
+                    const newTaskId = `task-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                    batch.set(doc(db, 'tasks', newTaskId), stripUndefined({
+                        ...task,
+                        id: undefined,
+                        stageId: newStageId,
+                        createdAt: serverTimestamp(),
+                    }));
+                });
+                await batch.commit();
+            }
+            toast.success('Stage copied');
+        } catch (e) {
+            console.error('Error copying stage:', e);
+            toast.error('Failed to copy stage');
+            // Fallback optimistic
+            const newStage: Stage = { ...stageToCopy, id: newStageId, ...newStageData };
+            data.stages.push(newStage);
+            const newTasks: Task[] = tasksToCopy.map(task => ({
+                ...task,
+                id: `task-${Date.now()}-${Math.random()}`,
+                stageId: newStageId,
+            }));
+            data.tasks.push(...newTasks);
+            forceUpdate();
+        }
+
         setStageActionState({ anchorEl: null, stage: null });
     };
     
@@ -389,14 +424,33 @@ const ProjectBoardPage = () => {
         setStageActionState({ anchorEl: null, stage: null });
     };
 
-    const handleMoveAllTasks = (sourceStageId: string, destinationStageId: string) => {
-        data.tasks.forEach(task => {
-            if (task.stageId === sourceStageId) {
-                task.stageId = destinationStageId;
-            }
-        });
+    const handleMoveAllTasks = async (sourceStageId: string, destinationStageId: string) => {
+        const tasksToMove = data.tasks.filter(t => t.stageId === sourceStageId);
+
+        // Optimistic local update
+        tasksToMove.forEach(task => { task.stageId = destinationStageId; });
         forceUpdate();
-        toast.success('Tasks moved successfully');
+
+        // Atomic batch write to flat tasks collection
+        if (tasksToMove.length > 0) {
+            try {
+                const batch = writeBatch(db);
+                tasksToMove.forEach(task => {
+                    batch.update(doc(db, 'tasks', task.id), {
+                        stageId: destinationStageId,
+                        updatedAt: serverTimestamp(),
+                    });
+                });
+                await batch.commit();
+                toast.success('Tasks moved successfully');
+            } catch (e) {
+                console.error('Error moving tasks:', e);
+                toast.error('Failed to move tasks');
+            }
+        } else {
+            toast.success('Tasks moved successfully');
+        }
+
         setMoveTasksModalState({ isOpen: false, sourceStage: null });
     };
 
@@ -456,23 +510,32 @@ const ProjectBoardPage = () => {
         setStageActionState({ anchorEl: null, stage: null });
     };
 
-    const handleReorderStages = (reorderedStages: Stage[]) => {
-        reorderedStages.forEach(async (stage, index) => {
-            const originalStage = data.stages.find(s => s.id === stage.id);
-            if (originalStage) {
-                originalStage.order = index;
-                if (project && boardId) {
-                    try {
-                         await updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stage.id), { order: index });
-                    } catch(e) {
-                        console.error('Error updating stage order:', e);
-                        toast.error('Failed to update stage order');
-                    }
-                }
-            }
+    const handleReorderStages = async (reorderedStages: Stage[]) => {
+        if (!project || !boardId) return;
+
+        // Optimistic local update
+        reorderedStages.forEach((stage, index) => {
+            const original = data.stages.find(s => s.id === stage.id);
+            if (original) original.order = index;
         });
         forceUpdate();
-        toast.success('Stage order updated');
+
+        // Atomic batch write
+        try {
+            const batch = writeBatch(db);
+            reorderedStages.forEach((stage, index) => {
+                batch.update(
+                    doc(db, 'projects', project.id, 'boards', boardId, 'stages', stage.id),
+                    { order: index }
+                );
+            });
+            await batch.commit();
+            toast.success('Stage order updated');
+        } catch (e) {
+            console.error('Error updating stage order:', e);
+            toast.error('Failed to update stage order');
+        }
+
         setIsReorderModalOpen(false);
     };
 

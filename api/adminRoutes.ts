@@ -1,7 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { adminAuthMiddleware } from './adminAuthMiddleware';
+import { z } from 'zod';
+import logger from './logger';
 import { getAuth, getFirestore, isAdminInitialized } from './firebaseAdmin';
 
 const router = Router();
+router.use(adminAuthMiddleware);
 
 /**
  * Middleware to check if Firebase Admin is initialized
@@ -20,6 +24,48 @@ function requireAdminSDK(req: Request, res: Response, next: NextFunction) {
 // Apply middleware to all admin routes
 router.use(requireAdminSDK);
 
+const createUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  displayName: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  disabled: z.boolean().optional(),
+});
+
+const updateUserSchema = z.object({
+  email: z.string().email().optional(),
+  displayName: z.string().optional(),
+  phoneNumber: z.string().optional(),
+  photoURL: z.string().url().optional(),
+  disabled: z.boolean().optional(),
+  password: z.string().min(6).optional(),
+});
+
+const claimsSchema = z.object({
+  claims: z.record(z.unknown()),
+});
+
+const bulkImportSchema = z.object({
+  users: z.array(z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    displayName: z.string().optional(),
+    phoneNumber: z.string().optional(),
+  })).min(1),
+});
+
+const backupSchema = z.object({
+  collection: z.string().min(1),
+});
+
+const restoreSchema = z.object({
+  collection: z.string().min(1),
+  documents: z.array(z.object({
+    id: z.string(),
+    data: z.record(z.unknown()),
+  })).min(1),
+});
+
 // ============================================================================
 // USER MANAGEMENT ENDPOINTS
 // ============================================================================
@@ -31,15 +77,11 @@ router.use(requireAdminSDK);
  */
 router.post('/users', async (req: Request, res: Response) => {
   try {
-    const { email, password, displayName, phoneNumber, disabled } = req.body;
-
-    // Validate required fields
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email and password are required'
-      });
+    const parsed = createUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, error: parsed.error.errors[0].message });
     }
+    const { email, password, displayName, phoneNumber, disabled } = parsed.data;
 
     // Create user with Firebase Auth
     const userRecord = await getAuth().createUser({
@@ -62,7 +104,7 @@ router.post('/users', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error creating user:', error);
+    logger.error({ err: error }, 'Error creating user');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create user'
@@ -96,7 +138,7 @@ router.get('/users/:uid', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error getting user:', error);
+    logger.error({ err: error }, 'Error getting user');
     res.status(404).json({
       success: false,
       error: error instanceof Error ? error.message : 'User not found'
@@ -134,7 +176,7 @@ router.get('/users', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error listing users:', error);
+    logger.error({ err: error }, 'Error listing users');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to list users'
@@ -150,7 +192,11 @@ router.get('/users', async (req: Request, res: Response) => {
 router.put('/users/:uid', async (req: Request, res: Response) => {
   try {
     const uid = req.params.uid as string;
-    const { email, displayName, phoneNumber, photoURL, disabled, password } = req.body;
+    const parsed = updateUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, error: parsed.error.errors[0].message });
+    }
+    const { email, displayName, phoneNumber, photoURL, disabled, password } = parsed.data;
 
     const updateData: any = {};
     if (email !== undefined) updateData.email = email;
@@ -174,7 +220,7 @@ router.put('/users/:uid', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error updating user:', error);
+    logger.error({ err: error }, 'Error updating user');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update user'
@@ -197,7 +243,7 @@ router.delete('/users/:uid', async (req: Request, res: Response) => {
       data: { uid, deleted: true }
     });
   } catch (error) {
-    console.error('Error deleting user:', error);
+    logger.error({ err: error }, 'Error deleting user');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete user'
@@ -223,7 +269,7 @@ router.post('/users/:uid/disable', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error disabling user:', error);
+    logger.error({ err: error }, 'Error disabling user');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to disable user'
@@ -249,7 +295,7 @@ router.post('/users/:uid/enable', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error enabling user:', error);
+    logger.error({ err: error }, 'Error enabling user');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to enable user'
@@ -269,14 +315,11 @@ router.post('/users/:uid/enable', async (req: Request, res: Response) => {
 router.post('/users/:uid/claims', async (req: Request, res: Response) => {
   try {
     const uid = req.params.uid as string;
-    const { claims } = req.body;
-
-    if (!claims || typeof claims !== 'object') {
-      return res.status(400).json({
-        success: false,
-        error: 'Claims object is required'
-      });
+    const parsed = claimsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, error: parsed.error.errors[0].message });
     }
+    const { claims } = parsed.data;
 
     await getAuth().setCustomUserClaims(uid, claims);
 
@@ -288,7 +331,7 @@ router.post('/users/:uid/claims', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error setting custom claims:', error);
+    logger.error({ err: error }, 'Error setting custom claims');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to set custom claims'
@@ -314,7 +357,7 @@ router.get('/users/:uid/claims', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error getting custom claims:', error);
+    logger.error({ err: error }, 'Error getting custom claims');
     res.status(404).json({
       success: false,
       error: error instanceof Error ? error.message : 'User not found'
@@ -333,21 +376,18 @@ router.get('/users/:uid/claims', async (req: Request, res: Response) => {
  */
 router.post('/bulk/users/import', async (req: Request, res: Response) => {
   try {
-    const { users } = req.body;
-
-    if (!Array.isArray(users) || users.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Users array is required'
-      });
+    const parsed = bulkImportSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, error: parsed.error.errors[0].message });
     }
+    const { users } = parsed.data;
 
     const results = await Promise.allSettled(
-      users.map(userData => getAuth().createUser(userData))
+      users.map((userData: any) => getAuth().createUser(userData))
     );
 
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    const successful = results.filter((r: any) => r.status === 'fulfilled').length;
+    const failed = results.filter((r: any) => r.status === 'rejected').length;
 
     res.json({
       success: true,
@@ -355,7 +395,7 @@ router.post('/bulk/users/import', async (req: Request, res: Response) => {
         total: users.length,
         successful,
         failed,
-        results: results.map((r, idx) => ({
+        results: results.map((r: any, idx: number) => ({
           index: idx,
           status: r.status,
           uid: r.status === 'fulfilled' ? r.value.uid : null,
@@ -364,7 +404,7 @@ router.post('/bulk/users/import', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error importing users:', error);
+    logger.error({ err: error }, 'Error importing users');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to import users'
@@ -410,7 +450,7 @@ router.get('/bulk/users/export', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error exporting users:', error);
+    logger.error({ err: error }, 'Error exporting users');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to export users'
@@ -425,14 +465,11 @@ router.get('/bulk/users/export', async (req: Request, res: Response) => {
  */
 router.post('/bulk/firestore/backup', async (req: Request, res: Response) => {
   try {
-    const { collection } = req.body;
-
-    if (!collection) {
-      return res.status(400).json({
-        success: false,
-        error: 'Collection name is required'
-      });
+    const parsed = backupSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, error: parsed.error.errors[0].message });
     }
+    const { collection } = parsed.data;
 
     const snapshot = await getFirestore().collection(collection).get();
     const documents = snapshot.docs.map(doc => ({
@@ -450,7 +487,7 @@ router.post('/bulk/firestore/backup', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error backing up collection:', error);
+    logger.error({ err: error }, 'Error backing up collection');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to backup collection'
@@ -465,14 +502,11 @@ router.post('/bulk/firestore/backup', async (req: Request, res: Response) => {
  */
 router.post('/bulk/firestore/restore', async (req: Request, res: Response) => {
   try {
-    const { collection, documents } = req.body;
-
-    if (!collection || !Array.isArray(documents)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Collection name and documents array are required'
-      });
+    const parsed = restoreSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, error: parsed.error.errors[0].message });
     }
+    const { collection, documents } = parsed.data;
 
     const batch = getFirestore().batch();
     documents.forEach(doc => {
@@ -491,7 +525,7 @@ router.post('/bulk/firestore/restore', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error restoring collection:', error);
+    logger.error({ err: error }, 'Error restoring collection');
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to restore collection'

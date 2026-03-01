@@ -16,7 +16,7 @@ import driveRouter from './driveRoutes';
 import searchRouter from './searchRoutes';
 
 
-const app = express();
+export const app = express();
 const port = 3001;
 
 // Trust proxy - Single nginx reverse proxy
@@ -167,12 +167,14 @@ app.use('/api/drive', driveRouter);
 // Meilisearch search proxy (keeps master key server-side)
 app.use('/api/search', optionalApiKeyAuth, searchRouter);
 
-app.listen(port, () => {
-  console.log(`API server listening at http://localhost:${port}`);
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`API server listening at http://localhost:${port}`);
 
-  // PM2 ready signal — MUST be sent AFTER listen() confirms port is bound
-  // Sending it before listen() causes PM2 cluster reload race conditions
-  if (process.send) {
-    process.send('ready');
-  }
-});
+    // PM2 ready signal — MUST be sent AFTER listen() confirms port is bound
+    // Sending it before listen() causes PM2 cluster reload race conditions
+    if (process.send) {
+      process.send('ready');
+    }
+  });
+}

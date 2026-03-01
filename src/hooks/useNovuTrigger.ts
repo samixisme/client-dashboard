@@ -5,7 +5,11 @@ export type NovuWorkflowId =
   | 'task-due-reminder'
   | 'comment-added'
   | 'feedback-request'
+  | 'feedback-comment'
   | 'payment-reminder'
+  | 'invoice-status-changed'
+  | 'estimate-status-changed'
+  | 'calendar-reminder'
   | 'user-approved'
   | 'onboarding-demo-workflow';
 

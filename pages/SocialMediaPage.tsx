@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSocialMediaStore } from '../stores/socialMediaStore';
 import OverviewSection from '../components/social-media/OverviewSection';
-import EngagementChart from '../components/social-media/EngagementChart';
+const EngagementChart = React.lazy(() => import('../components/social-media/EngagementChart'));
 import PostAnalyticsSection from '../components/social-media/PostAnalyticsSection';
 import PostScheduler from '../components/social-media/PostScheduler';
 import AnomalyAlertsBanner from '../components/social-media/AnomalyAlertsBanner';
@@ -25,11 +25,16 @@ const SocialMediaPage: React.FC = () => {
         scheduledPosts,
         loading,
         markAnomalyRead,
-        addScheduledPost
+        addScheduledPost,
+        deleteScheduledPost,
+        publishScheduledPost,
+        updateScheduledPost,
+        dismissAnomaly
     } = useSocialMediaStore();
 
     const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>(['instagram', 'twitter', 'facebook', 'linkedin', 'tiktok', 'youtube']);
     const [showScheduler, setShowScheduler] = useState(false);
+    const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
     useEffect(() => {
         const unsubscribes = initListeners();
@@ -262,7 +267,7 @@ const SocialMediaPage: React.FC = () => {
                 {activeTab === 'overview' && (
                     <div className="space-y-8">
                         <OverviewSection overview={aggregatedOverview} loading={loading} />
-                        <EngagementChart data={engagementChartData} loading={loading} />
+                        <React.Suspense fallback={<div className="h-64 flex items-center justify-center text-text-secondary">Loading chart...</div>}><EngagementChart data={engagementChartData} loading={loading} /></React.Suspense>
                     </div>
                 )}
 
@@ -295,9 +300,20 @@ const SocialMediaPage: React.FC = () => {
                                         >
                                             <ScheduledPostCard
                                                 post={post}
-                                                onEdit={(id) => console.log('Edit post:', id)}
-                                                onDelete={(id) => console.log('Delete post:', id)}
-                                                onPublishNow={(id) => console.log('Publish now:', id)}
+                                                onEdit={(id) => {
+                                                    setEditingPostId(id);
+                                                    setShowScheduler(true);
+                                                }}
+                                                onDelete={async (id) => {
+                                                    if (window.confirm("Are you sure you want to delete this scheduled post?")) {
+                                                        await deleteScheduledPost(id);
+                                                    }
+                                                }}
+                                                onPublishNow={async (id) => {
+                                                    if (window.confirm("Publish this post immediately?")) {
+                                                        await publishScheduledPost(id);
+                                                    }
+                                                }}
                                             />
                                         </div>
                                     ))}
@@ -328,7 +344,9 @@ const SocialMediaPage: React.FC = () => {
                     <AnomalyAlertsBanner
                         anomalies={filteredAnomalies}
                         onMarkRead={markAnomalyRead}
-                        onDismiss={(id) => console.log('Dismiss anomaly:', id)}
+                        onDismiss={async (id) => {
+                        await dismissAnomaly(id);
+                    }}
                     />
                 )}
 

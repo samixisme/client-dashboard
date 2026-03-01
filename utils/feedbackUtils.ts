@@ -661,7 +661,7 @@ export const createFeedbackItemVersion = async (
   const newVersionEntry: FeedbackItemVersion = {
     versionNumber: newVersion,
     assetUrl: newAssetUrl,
-    createdAt: Timestamp.now() as any,
+    createdAt: Timestamp.now(),
     createdBy: userId,
     notes: notes || ''
   };

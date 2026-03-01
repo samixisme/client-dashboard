@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSearch } from '../contexts/SearchContext';
@@ -10,8 +10,8 @@ import { InvoiceDownloadButton } from '../src/components/payments/InvoiceDownloa
 import { EstimateDownloadButton } from '../src/components/payments/EstimateDownloadButton';
 import { toast } from 'sonner';
 import { Invoice, Estimate, Client, UserSettings } from '../types';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../utils/firebase';
+import { updateInvoiceStatus, updateEstimateStatus, convertEstimateToInvoice, deleteInvoice, deleteEstimate } from '../utils/invoiceService';
+import { useNovuTrigger } from '../src/hooks/useNovuTrigger';
 
 const DEFAULT_USER_SETTINGS: UserSettings = {
     userId: '',
@@ -136,9 +136,11 @@ const StatusSelect = ({
 const PaymentsPage = () => {
     const [searchParams] = useSearchParams();
     const { isAdminMode } = useAdmin();
-    const { data, updateData } = useData();
+    const { data } = useData();
     const { invoices: allInvoices, estimates: allEstimates, clients, brands, userSettings: userSettingsList } = data;
     const userSettings = userSettingsList[0] ?? DEFAULT_USER_SETTINGS;
+    const { trigger: novuTrigger } = useNovuTrigger();
+    const hasSyncedPaymenterRef = useRef(false);
 
     const tabFromUrl = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState<'invoices' | 'estimates'>(tabFromUrl === 'estimates' ? 'estimates' : 'invoices');
@@ -160,34 +162,83 @@ const PaymentsPage = () => {
         }
     }, [searchParams]);
 
+    // Sync Paymenter invoice statuses in the background
+    useEffect(() => {
+        if (hasSyncedPaymenterRef.current) return;
+        const syncPaymenterStatuses = async () => {
+            const linked = allInvoices.filter(inv => inv.paymenterInvoiceId);
+            if (linked.length === 0) return;
+            hasSyncedPaymenterRef.current = true;
+
+            const statusMap: Record<string, string> = { paid: 'Paid', unpaid: 'Sent', overdue: 'Overdue', cancelled: 'Draft' };
+
+            await Promise.allSettled(
+                linked.map(async (inv) => {
+                    try {
+                        const res = await fetch(`/api/paymenter/invoices/${inv.paymenterInvoiceId}`);
+                        if (!res.ok) return;
+                        const json = await res.json();
+                        const remoteStatus = json?.data?.status;
+                        const mapped = statusMap[remoteStatus?.toLowerCase?.()] ?? null;
+                        if (mapped && mapped !== inv.status) {
+                            await updateInvoiceStatus(inv.id, mapped as import('../utils/invoiceSchemas').InvoiceStatus);
+                        }
+                    } catch {
+                        // Silently skip — don't block UI for billing sync failures
+                    }
+                })
+            );
+        };
+        syncPaymenterStatuses();
+    }, [allInvoices]);
+
     const getClientName = (clientId: string) => clients.find(c => c.id === clientId)?.name || 'Unknown Client';
 
     // Handle status change for invoices
     const handleInvoiceStatusChange = async (invoiceId: string, newStatus: string) => {
         try {
-            await updateDoc(doc(db, 'invoices', invoiceId), { status: newStatus });
-            const updatedInvoices = allInvoices.map(inv =>
-                inv.id === invoiceId ? { ...inv, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : inv
-            );
-            updateData('invoices', updatedInvoices);
+            await updateInvoiceStatus(invoiceId, newStatus as import('../utils/invoiceSchemas').InvoiceStatus);
             toast.success(`Invoice status updated to ${newStatus}`);
-            fetch(`/api/search/sync/invoices/${invoiceId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: invoiceId, status: newStatus }) });
+
+            if (newStatus === 'Paid') {
+                const invoice = allInvoices.find(i => i.id === invoiceId);
+                if (invoice) {
+                    novuTrigger({
+                        workflowId: 'payment-reminder',
+                        payload: { invoiceNumber: invoice.invoiceNumber, amount: invoice.totals?.totalNet ?? 0, clientName: getClientName(invoice.clientId) },
+                    });
+                }
+            }
         } catch {
-            toast.error('Failed to update invoice status');
+            // toast is already shown by updateInvoiceStatus
         }
     };
 
     // Handle status change for estimates
     const handleEstimateStatusChange = async (estimateId: string, newStatus: string) => {
         try {
-            await updateDoc(doc(db, 'estimates', estimateId), { status: newStatus });
-            const updatedEstimates = allEstimates.map(est =>
-                est.id === estimateId ? { ...est, status: newStatus as 'Draft' | 'Sent' | 'Paid' | 'Overdue' } : est
-            );
-            updateData('estimates', updatedEstimates);
+            await updateEstimateStatus(estimateId, newStatus as import('../utils/invoiceSchemas').EstimateStatus);
             toast.success(`Estimate status updated to ${newStatus}`);
+
+            const estimate = allEstimates.find(e => e.id === estimateId);
+            if (estimate) {
+                novuTrigger({
+                    workflowId: 'estimate-status-changed',
+                    payload: { estimateNumber: estimate.estimateNumber, newStatus, clientName: getClientName(estimate.clientId) },
+                });
+            }
         } catch {
-            toast.error('Failed to update estimate status');
+            // toast is already shown by updateEstimateStatus
+        }
+    };
+
+    // Convert estimate to invoice
+    const handleConvertEstimateToInvoice = async (estimateId: string) => {
+        try {
+            const newId = await convertEstimateToInvoice(estimateId);
+            toast.success(`Invoice created (${newId.slice(0, 8)}…)`);
+        } catch (err) {
+            toast.error('Failed to convert estimate to invoice');
         }
     };
     
@@ -219,10 +270,10 @@ const PaymentsPage = () => {
     }, [brandClientIds, allEstimates, searchQuery, getClientName]);
 
     const dataSources = [
-        { name: 'Invoices', data: allInvoices, onSave: (newData: Invoice[]) => updateData('invoices', newData) },
-        { name: 'Estimates', data: allEstimates, onSave: (newData: Estimate[]) => updateData('estimates', newData) },
-        { name: 'Clients', data: clients, onSave: (newData: Client[]) => updateData('clients', newData) },
-    ] as any[];
+        { name: 'Invoices', data: allInvoices, onSave: () => {} },
+        { name: 'Estimates', data: allEstimates, onSave: () => {} },
+        { name: 'Clients', data: clients, onSave: () => {} },
+    ];
 
     return (
         <div>
@@ -498,6 +549,29 @@ const PaymentsPage = () => {
                                                     variant="secondary"
                                                 />
                                             )}
+                                            {invoice.paymenterInvoiceId && invoice.status !== 'Paid' && (
+                                                <button
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        try {
+                                                            const res = await fetch(`/api/paymenter/invoices/${invoice.paymenterInvoiceId}/pay-link`);
+                                                            if (!res.ok) throw new Error();
+                                                            const json = await res.json();
+                                                            if (json.payUrl) {
+                                                                window.open(json.payUrl, '_blank', 'noopener');
+                                                            }
+                                                        } catch {
+                                                            toast.error('Payment service unavailable');
+                                                        }
+                                                    }}
+                                                    className="p-2 text-text-secondary hover:text-green-400 bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"
+                                                    title="Pay Now"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                    </svg>
+                                                </button>
+                                            )}
                                             <Link
                                                 to={`/payments/invoices/edit/${invoice.id}`}
                                                 className="p-2 text-text-secondary hover:text-primary bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"
@@ -511,9 +585,7 @@ const PaymentsPage = () => {
                                                 onClick={async () => {
                                                     if (window.confirm('Are you sure you want to delete this invoice?')) {
                                                         try {
-                                                            await deleteDoc(doc(db, 'invoices', invoice.id));
-                                                            const updatedInvoices = allInvoices.filter(inv => inv.id !== invoice.id);
-                                                            updateData('invoices', updatedInvoices);
+                                                            await deleteInvoice(invoice.id);
                                                             toast.success('Invoice deleted successfully');
                                                         } catch {
                                                             toast.error('Failed to delete invoice');
@@ -625,12 +697,19 @@ const PaymentsPage = () => {
                                                 </svg>
                                             </Link>
                                             <button
+                                                onClick={() => handleConvertEstimateToInvoice(estimate.id)}
+                                                className="p-2 text-text-secondary hover:text-primary bg-glass/40 hover:bg-glass/60 rounded-lg transition-all duration-300 border border-border-color cursor-pointer hover:scale-110 backdrop-blur-sm"
+                                                title="Convert to Invoice"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                            </button>
+                                            <button
                                                 onClick={async () => {
                                                     if (window.confirm('Are you sure you want to delete this estimate?')) {
                                                         try {
-                                                            await deleteDoc(doc(db, 'estimates', estimate.id));
-                                                            const updatedEstimates = allEstimates.filter(est => est.id !== estimate.id);
-                                                            updateData('estimates', updatedEstimates);
+                                                            await deleteEstimate(estimate.id);
                                                             toast.success('Estimate deleted successfully');
                                                         } catch {
                                                             toast.error('Failed to delete estimate');

@@ -149,7 +149,7 @@ export const useCalendarEvents = (userId: string) => {
             // Relaxed visibility: If project is visible to user
             if (userBoardIds.includes(task.boardId)) {
                 const start = ensureDateString(task.dueDate);
-                const end = ensureDateString((task as any).endDate || task.dueDate || start);
+                const end = ensureDateString(task.endDate || task.dueDate || start);
                 
                 normalizedEvents.push({
                     id: `task-${task.id}`,

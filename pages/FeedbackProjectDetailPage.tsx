@@ -12,7 +12,7 @@ import AddFeedbackRequestModal from '../components/feedback/AddFeedbackRequestMo
 import { getFeedbackItems, cleanupOrphanedData } from '../utils/feedbackUtils';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../utils/firebase';
-import { Task } from '../types';
+import { Task, getTimestampSeconds } from '../types';
 
 interface TaskStats {
     pending: number;
@@ -149,8 +149,8 @@ const FeedbackProjectDetailPage = () => {
 
             // Sort by createdAt descending (most recent first)
             tasks.sort((a, b) => {
-                const aTime = (a.createdAt as any)?.seconds || 0;
-                const bTime = (b.createdAt as any)?.seconds || 0;
+                const aTime = getTimestampSeconds(a.createdAt) || 0;
+                const bTime = getTimestampSeconds(b.createdAt) || 0;
                 return bTime - aTime;
             });
 

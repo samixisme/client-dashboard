@@ -76,7 +76,7 @@ async function runDiagnostics() {
       });
 
       const authClient = await auth.getClient();
-      const drive = google.drive({ version: 'v3', auth: authClient as any });
+      const drive = google.drive({ version: 'v3', auth: authClient as import("googleapis").Auth.OAuth2Client });
 
       // Try to get Drive info (this will fail if API not enabled)
       try {
@@ -122,7 +122,7 @@ async function runDiagnostics() {
       });
 
       const authClient = await auth.getClient();
-      const drive = google.drive({ version: 'v3', auth: authClient as any });
+      const drive = google.drive({ version: 'v3', auth: authClient as import("googleapis").Auth.OAuth2Client });
 
       try {
         const response = await drive.files.get({

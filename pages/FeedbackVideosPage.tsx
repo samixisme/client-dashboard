@@ -33,13 +33,9 @@ const FeedbackVideosPage = () => {
         : videos.filter(v => v.status !== 'approved');
 
     const handleEdit = async (videoId: string, newName: string, newDescription?: string) => {
-        if (!projectId) {
-            console.error('Missing projectId');
-            return;
-        }
+        if (!projectId) return;
 
         try {
-            console.log('Updating video:', { videoId, newName, newDescription });
             await updateFeedbackItem(projectId, videoId, {
                 name: newName,
                 description: newDescription
@@ -48,9 +44,8 @@ const FeedbackVideosPage = () => {
             const items = await getFeedbackItems(projectId);
             const videoItems = items.filter(item => item.type === 'video');
             setVideos(videoItems);
-            console.log('Successfully updated video');
-        } catch (error) {
-            console.error('Error updating video:', error);
+        } catch {
+            // update failed silently — UI remains unchanged
         }
     };
 

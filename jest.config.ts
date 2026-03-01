@@ -12,7 +12,7 @@ const config: Config = {
 
   // Module name mapper for CSS, assets, and Firebase mocks
   moduleNameMapper: {
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/fileMock.js',
     '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
     '^firebase/app$': '<rootDir>/__mocks__/firebase/app.ts',
     '^firebase/app-check$': '<rootDir>/__mocks__/firebase/app-check.ts',
@@ -91,3 +91,4 @@ const config: Config = {
 };
 
 export default config;
+
