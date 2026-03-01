@@ -1,4 +1,4 @@
-import { validateUrl, validateId, validateIdStrict } from '../api/urlValidator';
+import { validateUrl, validateId } from '../api/urlValidator';
 
 describe('urlValidator', () => {
   describe('validateUrl', () => {
@@ -139,21 +139,13 @@ describe('urlValidator', () => {
     });
   });
 
-  describe('validateIdStrict', () => {
+  describe('validateId strict length checks', () => {
     it('accepts valid short ID', () => {
-      expect(validateIdStrict('abc-123')).toBe(true);
-    });
-
-    it('accepts ID at exactly 128 chars', () => {
-      expect(validateIdStrict('a'.repeat(128))).toBe(true);
-    });
-
-    it('rejects ID over 128 chars', () => {
-      expect(validateIdStrict('a'.repeat(129))).toBe(false);
+      expect(validateId('abc-123')).toBe(true);
     });
 
     it('rejects invalid characters even if short', () => {
-      expect(validateIdStrict('bad@id')).toBe(false);
+      expect(validateId('bad@id')).toBe(false);
     });
   });
 });

@@ -31,13 +31,19 @@ const mockInvoice: Invoice = {
   date: '2025-01-01',
   dueDate: '2025-02-01',
   itemCategories: [],
-  totals: { totalHT: 100, totalTVA: 20, totalNet: 120 },
+  note: '',
+  terms: '',
+  totals: { subtotal: 100, totalNet: 120 },
 };
 
 const mockClient: Client = {
   id: 'client-1',
+  userId: 'user-1',
   name: 'Test Client',
-  email: 'client@test.com',
+  adresse: '123 Test St',
+  ice: '000000000000000',
+  rc: '12345',
+  if: '12345678',
   brandId: 'brand-1',
 };
 

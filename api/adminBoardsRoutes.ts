@@ -263,7 +263,7 @@ router.put('/:id/stages/reorder', async (req: Request, res: Response) => {
     await batch.commit();
 
     const adminUid = req.adminUser?.uid ?? 'system';
-    await auditLog(adminUid, 'reorder-stages', req.params.id, { count: stages.length });
+    await auditLog(adminUid, 'reorder-stages', req.params.id as string, { count: stages.length });
 
     res.json({ success: true, data: { reordered: stages.length } });
   } catch (error) {
@@ -312,7 +312,7 @@ router.delete('/:id/stages/:stageId', async (req: Request, res: Response) => {
     await db.collection('stages').doc(stageId as string).delete();
 
     const adminUid = req.adminUser?.uid ?? 'system';
-    await auditLog(adminUid, 'delete-stage', stageId, { boardId: id });
+    await auditLog(adminUid, 'delete-stage', stageId as string, { boardId: id });
 
     res.json({ success: true, data: { id: stageId, deleted: true } });
   } catch (error) {
@@ -344,7 +344,7 @@ router.post('/:id/tasks/move-all', async (req: Request, res: Response) => {
     await batch.commit();
 
     const adminUid = req.adminUser?.uid ?? 'system';
-    await auditLog(adminUid, 'move-all-tasks', req.params.id, { fromStageId, toStageId, count: tasksSnap.size });
+    await auditLog(adminUid, 'move-all-tasks', req.params.id as string, { fromStageId, toStageId, count: tasksSnap.size });
 
     res.json({ success: true, data: { moved: tasksSnap.size } });
   } catch (error) {

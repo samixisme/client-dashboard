@@ -238,6 +238,7 @@ describe('Social Routes — DELETE /api/social/:platform/disconnect', () => {
     const mockDelete = jest.fn().mockResolvedValue(undefined);
     mockDocRef.mockImplementation(() => ({
       get: jest.fn().mockResolvedValue({ exists: true, data: () => ({ accessToken: 'tok' }) }),
+      set: mockDocSet,
       delete: mockDelete
     }));
 

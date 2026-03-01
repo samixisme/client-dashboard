@@ -91,7 +91,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.get('/:uid', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
     const [authUser, firestoreDoc] = await Promise.all([
       getAuth().getUser(uid),
       getFirestore().collection('users').doc(uid).get(),
@@ -128,7 +128,7 @@ router.post('/', async (req: Request, res: Response) => {
     const userRecord = await getAuth().createUser({
       email,
       password,
-      displayName: displayName ?? `${firstName ?? ''} ${lastName ?? ''}`.trim() || undefined,
+      displayName: displayName ?? (`${firstName ?? ''} ${lastName ?? ''}`.trim() || undefined),
       phoneNumber,
     });
 
@@ -160,7 +160,7 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.put('/:uid', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
     const parsed = updateUserSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ success: false, error: parsed.error.errors[0].message });
@@ -203,7 +203,7 @@ router.put('/:uid', async (req: Request, res: Response) => {
 
 router.delete('/:uid', async (req: Request, res: Response) => {
   try {
-    const { uid } = req.params;
+    const uid = req.params.uid as string;
     await Promise.all([
       getAuth().deleteUser(uid),
       getFirestore().collection('users').doc(uid).delete(),

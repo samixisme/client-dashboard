@@ -306,7 +306,7 @@ router.post('/:id/versions', async (req: Request, res: Response) => {
     const existing = await docRef.get();
     if (!existing.exists) return res.status(404).json({ success: false, error: 'Feedback item not found' });
 
-    const currentData = existing.data() as FirebaseFirestore.Query;
+    const currentData = existing.data() as Record<string, any>;
     const currentVersion = currentData.version ?? 1;
     const newVersionNumber = currentVersion + 1;
 
@@ -344,7 +344,7 @@ router.get('/:id/versions', async (req: Request, res: Response) => {
     const doc = await getFirestore().collection('feedbackItems').doc(req.params.id as string).get();
     if (!doc.exists) return res.status(404).json({ success: false, error: 'Feedback item not found' });
 
-    const data = doc.data() as FirebaseFirestore.Query;
+    const data = doc.data() as Record<string, any>;
     const versions = data.versions ?? [];
 
     res.json({ success: true, data: versions });

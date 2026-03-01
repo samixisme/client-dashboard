@@ -304,7 +304,7 @@ const FeedbackMockupScreensSelectionPage = () => {
                         name={image.name}
                         assetUrl={image.url}
                         version={typeof (image as MockupImage).version === 'number' ? `v${(image as MockupImage).version}` : String((image as MockupImage).version || 'v1')}
-                        createdAt={(image as MockupImage).createdAt}
+                        createdAt={String((image as MockupImage).createdAt ?? '')}
                         commentCount={0}
                         approved={image.approved}
                         projectId={projectId!}

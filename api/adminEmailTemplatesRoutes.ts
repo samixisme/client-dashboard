@@ -187,9 +187,9 @@ router.post('/:id/duplicate', async (req: Request, res: Response) => {
     
     if (!existing.exists) return res.status(404).json({ success: false, error: 'Email template not found' });
     
-    const existingData = existing.data() as FirebaseFirestore.Query;
+    const existingData = existing.data() as Record<string, any>;
     const adminUid = req.adminUser?.uid ?? 'system';
-    
+
     const duplicateData = {
       ...existingData,
       name: `Copy of ${existingData.name}`,
@@ -230,7 +230,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
     const existing = await db.collection('emailTemplates').doc(id as string).get();
     if (!existing.exists) return res.status(404).json({ success: false, error: 'Email template not found' });
     
-    const existingData = existing.data() as FirebaseFirestore.Query;
+    const existingData = existing.data() as Record<string, any>;
     const currentStatus = existingData.status || 'draft';
     
     // Validate transitions: draft->published, published->archived, archived->draft
