@@ -62,7 +62,8 @@ describe('CalendarContext', () => {
       screen.getByTestId('navigateForward').click();
     });
     
-    expect(screen.getByTestId('currentDate').textContent).toBe('2026-03-26T12:00:00.000Z');
+    // Date portion must be 2026-03-26; hour may shift ±1 due to DST
+    expect(screen.getByTestId('currentDate').textContent).toMatch(/^2026-03-26T1[12]:00:00\.000Z$/);
   });
 
   it('moves the date back by one period when navigating backward', () => {
@@ -71,13 +72,14 @@ describe('CalendarContext', () => {
         <TestConsumer />
       </CalendarProvider>
     );
-    
+
     // currently month view
     act(() => {
       screen.getByTestId('navigateBackward').click();
     });
-    
-    expect(screen.getByTestId('currentDate').textContent).toBe('2026-01-26T12:00:00.000Z');
+
+    // Date portion must be 2026-01-26; hour may shift ±1 due to DST
+    expect(screen.getByTestId('currentDate').textContent).toMatch(/^2026-01-26T1[12]:00:00\.000Z$/);
   });
 
   it('resets to current date when goToToday() is called', () => {

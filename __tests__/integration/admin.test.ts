@@ -2,6 +2,15 @@
  * @jest-environment node
  */
 import request from 'supertest';
+
+jest.mock('../../api/adminAuthMiddleware', () => ({
+  adminAuthMiddleware: (req: any, res: any, next: any) => {
+    req.adminUser = { uid: 'test-admin', email: 'admin@test.com', role: 'admin' };
+    next();
+  },
+  adminRateLimiter: (req: any, res: any, next: any) => next(),
+}));
+
 import { app } from '../../api/server';
 
 // ─── Mock Firebase Admin SDK ────────────────────────────────────────────────

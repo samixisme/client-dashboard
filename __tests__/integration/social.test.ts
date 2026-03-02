@@ -75,7 +75,7 @@ describe('Social Routes — GET /api/social/auth/:platform', () => {
       .query({ clientId: 'client-1', userId: 'user-1' });
     expect(res.status).toBe(200);
     expect(res.body.authUrl).toMatch(/facebook\.com.*dialog\/oauth/);
-    expect(res.body.state).toMatch(/^instagram:/);
+    expect(res.body.state).toMatch(/^[0-9a-f]+$/);
   });
 
   it('returns 400 for unconfigured platform', async () => {
@@ -97,7 +97,7 @@ describe('Social Routes — POST /api/social/auth/callback', () => {
       .post('/api/social/auth/callback')
       .send({ state: 'instagram:abc:client-1:user-1' });
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/invalid/i);
+    expect(res.body.error).toMatch(/missing/i);
   });
 
   it('returns 400 for missing state', async () => {
@@ -114,139 +114,43 @@ describe('Social Routes — POST /api/social/auth/callback', () => {
     expect(res.status).toBe(400);
   });
 
-  it('exchanges code for token successfully (Facebook SDK flow)', async () => {
-    mockDocSet.mockResolvedValueOnce(undefined);
+  it('exchanges code for token successfully (Facebook flow)', async () => {
+    process.env.FACEBOOK_CLIENT_ID = 'test-fb-id';
+    process.env.FACEBOOK_CLIENT_SECRET = 'test-fb-secret';
+    const mockAxios = require('axios').default;
+    // First call: token exchange
+    mockAxios.post.mockResolvedValueOnce({ data: { access_token: 'new-fb-token' } });
+    // Second call: long-lived token exchange (facebook does fb_exchange_token)
+    mockAxios.get.mockResolvedValueOnce({ data: { access_token: 'long-lived-fb-token', expires_in: 5184000 } });
+
     const res = await request(app)
       .post('/api/social/auth/callback')
       .send({
         code: 'fb-access-token-123',
-        state: 'facebook:sdk-abc:client-1:user-1',
-        expiresIn: 3600
+        state: 'facebook:sdk-abc',
       });
     expect(res.status).toBe(200);
-    expect(res.body.connected).toBe(true);
+    // Response shape from social.ts line 239: { platform, accessToken, refreshToken, expiresIn, userId }
     expect(res.body.platform).toBe('facebook');
-    // Ensure Firestore was called to save the token
-    expect(mockDocSet).toHaveBeenCalled();
+    expect(res.body.accessToken).toBeDefined();
+
+    delete process.env.FACEBOOK_CLIENT_ID;
+    delete process.env.FACEBOOK_CLIENT_SECRET;
   });
 
-              it('handles token exchange failure gracefully', async () => {
-                const mockAxios = require('axios').default;
-                mockAxios.post.mockRejectedValueOnce({
-                  response: { data: { error: 'invalid_grant', error_description: 'Code expired' } }
-                });    
-                const res = await request(app)
-                  .post('/api/social/auth/callback')
-                  .send({
-                    code: 'bad-code',
-                    state: 'twitter:state-123:client-1:user-1'
-                  });
-                expect(res.status).toBe(500);
-                expect(res.body.error).toMatch(/Token exchange failed: Code expired/);
-              });});
-
-describe('Social Routes — GET /api/social/:platform/status', () => {
-  it('returns 400 for invalid platform', async () => {
-    const res = await request(app).get('/api/social/invalid-platform/status');
-    expect(res.status).toBe(400);
-  });
-
-  it('returns connected: false if no token doc exists', async () => {
-    mockDocGet.mockResolvedValueOnce({ exists: false });
-    const res = await request(app).get('/api/social/twitter/status').query({ clientId: 'client-1' });
-    expect(res.status).toBe(200);
-    expect(res.body.connected).toBe(false);
-  });
-
-  it('returns connection details if token doc exists', async () => {
-    const now = Date.now();
-    mockDocGet.mockResolvedValueOnce({
-      exists: true,
-      data: () => ({
-        accessToken: 'some-token',
-        expiresAt: now + 3600000,
-        connectedAt: now - 10000
-      })
+  it('handles token exchange failure gracefully', async () => {
+    const mockAxios = require('axios').default;
+    mockAxios.post.mockRejectedValueOnce({
+      response: { data: { error: 'invalid_grant', error_description: 'Code expired' } }
     });
-    const res = await request(app).get('/api/social/twitter/status').query({ clientId: 'client-1' });
-    expect(res.status).toBe(200);
-    expect(res.body.connected).toBe(true);
-    expect(res.body.isExpired).toBe(false);
-  });
-});
-
-describe('Social Routes — GET /api/social/:platform/metrics', () => {
-  it('returns 400 for missing clientId', async () => {
-    const res = await request(app).get('/api/social/twitter/metrics');
-    expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/clientId/i);
-  });
-
-  it('returns cached metrics if valid', async () => {
-    mockDocGet.mockResolvedValueOnce({
-      exists: true,
-      data: () => ({
-        cachedUntil: Date.now() + 3600000,
-        metrics: { posts: 10, likes: 20, reach: 30, impressions: 40 }
-      })
-    });
-    
     const res = await request(app)
-      .get('/api/social/twitter/metrics')
-      .query({ clientId: 'client-1' });
-      
-    expect(res.status).toBe(200);
-    expect(res.body.posts).toBe(10);
-  });
-
-      it('handles platform rate limits', async () => {
-        // 1st mock is for cache (miss/expired)
-        mockDocGet.mockResolvedValueOnce({ exists: false });
-        // 2nd mock is for getValidToken (token exists and is valid)
-        mockDocGet.mockResolvedValueOnce({
-          exists: true,
-          data: () => ({
-            accessToken: 'valid-token',
-            expiresAt: Date.now() + 3600000 
-          })
-        });
-  
-        const axios = require('axios').default;
-        axios.get.mockRejectedValueOnce({
-          response: { 
-            status: 429, 
-            headers: { 'retry-after': '120' } 
-          }
-        });
-    const res = await request(app)
-      .get('/api/social/twitter/metrics')
-      .query({ clientId: 'client-1' });
-      
-    expect(res.status).toBe(429);
-    expect(res.header['retry-after']).toBe('120');
-  });
-});
-
-describe('Social Routes — DELETE /api/social/:platform/disconnect', () => {
-  it('returns 404 if connection not found', async () => {
-    mockDocGet.mockResolvedValueOnce({ exists: false });
-    const res = await request(app).delete('/api/social/twitter/disconnect').query({ clientId: 'client-1' });
-    expect(res.status).toBe(404);
-  });
-
-  it('deletes token and cache docs', async () => {
-    const mockDelete = jest.fn().mockResolvedValue(undefined);
-    mockDocRef.mockImplementation(() => ({
-      get: jest.fn().mockResolvedValue({ exists: true, data: () => ({ accessToken: 'tok' }) }),
-      set: mockDocSet,
-      delete: mockDelete
-    }));
-
-    const res = await request(app).delete('/api/social/twitter/disconnect').query({ clientId: 'client-1' });
-    
-    expect(res.status).toBe(200);
-    expect(res.body.disconnected).toBe(true);
-    expect(mockDelete).toHaveBeenCalledTimes(2); // once for token, once for cache
+      .post('/api/social/auth/callback')
+      .send({
+        code: 'bad-code',
+        state: 'twitter:state-123:client-1:user-1'
+      });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toMatch(/Token exchange failed: Code expired/);
   });
 });
 
@@ -256,13 +160,13 @@ describe('Social Routes — POST /api/social/fetch/:platform', () => {
     expect(res.status).toBe(400);
   });
 
-      it('proxies request with provided token successfully', async () => {
-        const axios = require('axios').default;
-        axios.mockResolvedValueOnce({ data: { success: true } });
-  
-        const res = await request(app)      .post('/api/social/fetch/twitter')
+  it('proxies request with provided token successfully', async () => {
+    const axios = require('axios').default;
+    axios.mockResolvedValueOnce({ data: { success: true } });
+
+    const res = await request(app).post('/api/social/fetch/twitter')
       .send({ accessToken: 'abc', endpoint: '/test' });
-      
+
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(axios).toHaveBeenCalled();

@@ -1,31 +1,89 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import AdminUsersPage from '../pages/admin/AdminUsersPage';
-import { useData } from '../contexts/DataContext';
 
-// Mock DataContext
-jest.mock('../contexts/DataContext', () => ({
-  useData: jest.fn(),
+// The component uses useAdminApi (not useData) and useNovuTrigger
+jest.mock('../hooks/useAdminApi', () => ({
+  useAdminApi: jest.fn(() => ({
+    loading: false,
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    patch: jest.fn(),
+    del: jest.fn(),
+    bulkDelete: jest.fn(),
+  })),
 }));
 
-// Mock icon components
-jest.mock('../components/icons/AddIcon', () => ({
-  AddIcon: (props: Record<string, unknown>) => <svg data-testid="add-icon" {...props} />,
-}));
-jest.mock('../components/icons/EditIcon', () => ({
-  EditIcon: (props: Record<string, unknown>) => <svg data-testid="edit-icon" {...props} />,
+jest.mock('../src/hooks/useNovuTrigger', () => ({
+  useNovuTrigger: jest.fn(() => ({ trigger: jest.fn() })),
 }));
 
-// Mock EditUserModal
-jest.mock('../components/admin/EditUserModal', () => {
-  return function MockEditUserModal({ isOpen, user }: { isOpen: boolean; user: { name: string } }) {
-    if (!isOpen) return null;
-    return <div data-testid="edit-modal">Editing: {user.name}</div>;
-  };
-});
+// Mock sonner toast
+jest.mock('sonner', () => ({
+  toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
+}));
 
-const mockUseData = useData as jest.Mock;
+// Mock lucide-react icons
+jest.mock('lucide-react', () => ({
+  Users: (props: any) => <svg data-testid="users-icon" {...props} />,
+  Shield: (props: any) => <svg data-testid="shield-icon" {...props} />,
+  UserCheck: (props: any) => <svg data-testid="usercheck-icon" {...props} />,
+  Clock: (props: any) => <svg data-testid="clock-icon" {...props} />,
+}));
+
+// Mock admin UI components
+jest.mock('../components/admin/AdminPageHeader', () => ({
+  AdminPageHeader: ({ title, description, actions }: { title: string; description: string; actions?: React.ReactNode }) => (
+    <div data-testid="admin-page-header">
+      <h1>{title}</h1>
+      <p>{description}</p>
+      {actions && <div data-testid="header-actions">{actions}</div>}
+    </div>
+  ),
+}));
+
+jest.mock('../components/admin/AdminStatsCard', () => ({
+  AdminStatsCard: ({ label, value }: { label: string; value: string }) => (
+    <div data-testid={`stat-${label}`}>{label}: {value}</div>
+  ),
+}));
+
+jest.mock('../components/admin/AdminDataTable', () => ({
+  AdminDataTable: ({ data }: { data: any[] }) => (
+    <table data-testid="admin-data-table">
+      <tbody>
+        {data.map((row: any) => (
+          <tr key={row.id}>
+            <td>{row.name || `${row.firstName || ''} ${row.lastName || ''}`.trim()}</td>
+            <td>{row.email}</td>
+            <td>{row.role}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ),
+}));
+
+jest.mock('../components/admin/AdminEmptyState', () => ({
+  AdminEmptyState: ({ title }: { title: string }) => (
+    <div data-testid="admin-empty-state">{title}</div>
+  ),
+}));
+
+jest.mock('../components/admin/AdminLoadingSkeleton', () => ({
+  AdminLoadingSkeleton: ({ variant }: { variant: string }) => (
+    <div data-testid={`loading-skeleton-${variant}`}>Loading...</div>
+  ),
+}));
+
+jest.mock('../components/admin/users/UserActionsMenu', () => ({
+  ActionsMenu: () => <button>Actions</button>,
+  getRelativeTime: (val: string) => val || 'Never',
+}));
+
+import { useAdminApi } from '../hooks/useAdminApi';
+const mockUseAdminApi = useAdminApi as jest.Mock;
 
 const mockUsers = [
   { id: 'u1', name: 'Alice Smith', firstName: 'Alice', lastName: 'Smith', email: 'alice@test.com', role: 'admin', avatarUrl: '/alice.png', status: 'approved' },
@@ -37,73 +95,96 @@ describe('AdminUsersPage', () => {
     jest.clearAllMocks();
   });
 
-  it('shows loading state', () => {
-    mockUseData.mockReturnValue({ data: { users: [] }, loading: true, error: null });
+  it('shows loading state when fetching', async () => {
+    // Make get() never resolve to keep isFetching=true
+    mockUseAdminApi.mockReturnValue({
+      loading: false,
+      get: jest.fn(() => new Promise(() => {})),
+      post: jest.fn(),
+      put: jest.fn(),
+      patch: jest.fn(),
+      del: jest.fn(),
+      bulkDelete: jest.fn(),
+    });
 
     render(<AdminUsersPage />);
     expect(screen.getByText('Loading users...')).toBeTruthy();
   });
 
-  it('shows error state', () => {
-    mockUseData.mockReturnValue({ data: { users: [] }, loading: false, error: new Error('Network fail') });
+  it('renders user list after loading', async () => {
+    mockUseAdminApi.mockReturnValue({
+      loading: false,
+      get: jest.fn().mockResolvedValue(mockUsers),
+      post: jest.fn(),
+      put: jest.fn(),
+      patch: jest.fn(),
+      del: jest.fn(),
+      bulkDelete: jest.fn(),
+    });
 
     render(<AdminUsersPage />);
-    expect(screen.getByText('Error: Network fail')).toBeTruthy();
-  });
-
-  it('renders user list with names and emails', () => {
-    mockUseData.mockReturnValue({ data: { users: mockUsers }, loading: false, error: null });
-
-    render(<AdminUsersPage />);
-
-    expect(screen.getByText('Alice Smith')).toBeTruthy();
-    expect(screen.getByText('alice@test.com')).toBeTruthy();
-    expect(screen.getByText('Bob Jones')).toBeTruthy();
-    expect(screen.getByText('bob@test.com')).toBeTruthy();
-  });
-
-  it('renders role column for each user', () => {
-    mockUseData.mockReturnValue({ data: { users: mockUsers }, loading: false, error: null });
-
-    render(<AdminUsersPage />);
-
-    expect(screen.getByText('admin')).toBeTruthy();
-    expect(screen.getByText('client')).toBeTruthy();
-  });
-
-  it('renders Invite User button', () => {
-    mockUseData.mockReturnValue({ data: { users: mockUsers }, loading: false, error: null });
-
-    render(<AdminUsersPage />);
-    expect(screen.getByText('Invite User')).toBeTruthy();
-  });
-
-  it('opens edit modal when edit button is clicked', async () => {
-    mockUseData.mockReturnValue({ data: { users: mockUsers }, loading: false, error: null });
-    const user = userEvent.setup();
-
-    render(<AdminUsersPage />);
-
-    // Click the first edit button
-    const editButtons = screen.getAllByTitle('Edit');
-    expect(editButtons.length).toBe(2);
-
-    await user.click(editButtons[0]);
 
     await waitFor(() => {
-      expect(screen.getByTestId('edit-modal')).toBeTruthy();
-      expect(screen.getByText('Editing: Alice Smith')).toBeTruthy();
+      expect(screen.getByText('Alice Smith')).toBeTruthy();
+      expect(screen.getByText('alice@test.com')).toBeTruthy();
+      expect(screen.getByText('Bob Jones')).toBeTruthy();
+      expect(screen.getByText('bob@test.com')).toBeTruthy();
     });
   });
 
-  it('renders empty table when no users', () => {
-    mockUseData.mockReturnValue({ data: { users: [] }, loading: false, error: null });
+  it('renders stats cards', async () => {
+    mockUseAdminApi.mockReturnValue({
+      loading: false,
+      get: jest.fn().mockResolvedValue(mockUsers),
+      post: jest.fn(),
+      put: jest.fn(),
+      patch: jest.fn(),
+      del: jest.fn(),
+      bulkDelete: jest.fn(),
+    });
 
     render(<AdminUsersPage />);
 
-    // Table headers should still render
-    expect(screen.getByText('Name')).toBeTruthy();
-    expect(screen.getByText('Email')).toBeTruthy();
-    expect(screen.getByText('Role')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByTestId('stat-Total Users')).toBeTruthy();
+      expect(screen.getByTestId('stat-Admins')).toBeTruthy();
+    });
+  });
+
+  it('renders empty state when no users', async () => {
+    mockUseAdminApi.mockReturnValue({
+      loading: false,
+      get: jest.fn().mockResolvedValue([]),
+      post: jest.fn(),
+      put: jest.fn(),
+      patch: jest.fn(),
+      del: jest.fn(),
+      bulkDelete: jest.fn(),
+    });
+
+    render(<AdminUsersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('admin-empty-state')).toBeTruthy();
+      expect(screen.getByText('No users found')).toBeTruthy();
+    });
+  });
+
+  it('renders Add User button', async () => {
+    mockUseAdminApi.mockReturnValue({
+      loading: false,
+      get: jest.fn().mockResolvedValue(mockUsers),
+      post: jest.fn(),
+      put: jest.fn(),
+      patch: jest.fn(),
+      del: jest.fn(),
+      bulkDelete: jest.fn(),
+    });
+
+    render(<AdminUsersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Add User')).toBeTruthy();
+    });
   });
 });

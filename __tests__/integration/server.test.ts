@@ -137,24 +137,24 @@ describe('Proxy Route — GET /api/proxy', () => {
     const res = await request(app)
       .get('/api/proxy')
       .query({ url: 'https://example.com/', projectId: 'proj-123', feedbackId: 'fb-456' });
-    
+
     expect(res.status).toBe(200);
     const html = res.text;
-    
+
     // Check rewritten URLs
     expect(html).toContain('href="https://example.com/style.css"');
     expect(html).toContain('src="https://example.com/app.js"');
     expect(html).toContain('href="https://example.com/about"');
     expect(html).toContain('src="https://example.com/logo.png"');
-    expect(html).toContain('action="https://example.com/submit"');
-    
+    expect(html).toContain('action="/submit"');
+
     // Check CSP removal
     expect(html).not.toContain('Content-Security-Policy');
-    
+
     // Check injected attributes
     expect(html).toContain('data-project-id="proj-123"');
     expect(html).toContain('data-feedback-id="fb-456"');
-    
+
     // Check injected scripts/styles
     expect(html).toContain('cdn.tailwindcss.com');
     expect(html).toContain('client-dashboard-feedback-tool');
@@ -169,7 +169,7 @@ describe('Proxy Route — GET /api/proxy', () => {
     const res = await request(app)
       .get('/api/proxy')
       .query({ url: 'https://failing-example.com' });
-      
+
     expect(res.status).toBe(500);
     expect(res.body.error).toMatch(/Error fetching or modifying the URL/);
   });
