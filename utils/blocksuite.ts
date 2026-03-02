@@ -1,20 +1,31 @@
 import { DocCollection, Schema } from '@blocksuite/store';
 import { AffineSchemas } from '@blocksuite/blocks/schemas';
 import { effects as presetsEffects } from '@blocksuite/presets/effects';
-import { effects as blockStdEffects } from '@blocksuite/block-std/effects';
+import { effects as blocksEffects } from '@blocksuite/blocks/effects';
 import type { Doc as BSDoc } from '@blocksuite/store';
 import { FirebaseYjsProvider } from './FirebaseYjsProvider';
 
 // Register all custom elements at module-load time — must happen before
 // any element is constructed. Two calls required:
-//   presetsEffects()  → affine-editor-container, page-editor, + 165 block elements
-//   blockStdEffects() → editor-host, gfx-viewport (NOT covered by presetsEffects)
+//   blocksEffects()   → ALL core block elements (paragraph, note, surface, code,
+//                        image, attachment, database, divider, frame, embed, list,
+//                        etc.) PLUS editor-host and gfx-viewport via internal
+//                        stdEffects() call. The presets/effects.js side-effect import
+//                        of @blocksuite/blocks/effects only loads the module — it does
+//                        NOT call the exported effects() function, so block custom
+//                        elements remain unregistered without this explicit call.
+//   presetsEffects()  → affine-editor-container, page-editor, edgeless-editor, panels
+//
+// DO NOT call blockStdEffects() separately — blocksEffects() already calls
+// stdEffects() internally (line 3 of its function body). Calling both causes
+// a fatal "NotSupportedError: already defined" on editor-host, which crashes
+// the entire init and prevents ALL block elements from registering.
+//
 // Guard with customElements.get() rather than a module-level boolean so that
-// HMR module re-evaluation (which resets the boolean) doesn't double-register
-// custom elements — double registration throws "NotSupportedError: already defined".
+// HMR module re-evaluation (which resets the boolean) doesn't double-register.
 if (!customElements.get('affine-editor-container')) {
+    blocksEffects();
     presetsEffects();
-    blockStdEffects();
 }
 
 // ── Singleton DocCollection ───────────────────────────────────────────────────
