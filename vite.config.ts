@@ -70,14 +70,28 @@ export default defineConfig(({ mode }) => {
         // @blocksuite/store and yjs, which breaks constructor identity checks
         // and causes "was already imported" errors at runtime.
         dedupe: [
-          // BlockSuite core — one instance shared across all sub-packages
+          // BlockSuite — EVERY @blocksuite/* package must resolve to a single
+          // instance. If any package resolves from a nested node_modules, the
+          // Doc prototype chain breaks (addBlock not a function), the surface
+          // renderer resolves to null, and constructor identity checks fail.
+          // This list must mirror optimizeDeps.exclude below.
           '@blocksuite/store',
           '@blocksuite/block-std',
           '@blocksuite/global',
           '@blocksuite/sync',
-          // affine-components defines Lit custom elements — must share the same
-          // LitElement base and @blocksuite/store instance or "Illegal constructor" fires.
+          '@blocksuite/presets',
+          '@blocksuite/blocks',
+          '@blocksuite/inline',
           '@blocksuite/affine-components',
+          '@blocksuite/affine-shared',
+          '@blocksuite/affine-model',
+          '@blocksuite/affine-block-surface',
+          '@blocksuite/affine-block-list',
+          '@blocksuite/affine-block-paragraph',
+          '@blocksuite/affine-block-embed',
+          '@blocksuite/affine-widget-scroll-anchoring',
+          '@blocksuite/data-view',
+          '@blocksuite/icons',
           // Lit — all BlockSuite elements extend LitElement from this one copy.
           'lit',
           'lit-html',
