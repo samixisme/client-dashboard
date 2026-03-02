@@ -181,7 +181,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 router.get('/export/csv', async (req: Request, res: Response) => {
   try {
     const snapshot = await getFirestore().collection('clients').orderBy('name').get();
-    const clients = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as unknown[];
+    const clients = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Record<string, unknown>[];
 
     const fields = ['id', 'name', 'ice', 'rc', 'if', 'adresse', 'adresse2', 'userId', 'brandId', 'paymenterUserId'];
     const header = fields.join(',');

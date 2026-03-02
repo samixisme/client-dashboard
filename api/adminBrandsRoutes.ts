@@ -39,7 +39,7 @@ async function auditLog(
 router.get('/export/csv', async (req: Request, res: Response) => {
   try {
     const snapshot = await getFirestore().collection('brands').orderBy('name').get();
-    const brands = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as unknown[];
+    const brands = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Record<string, unknown>[];
 
     const fields = ['id', 'name', 'industry', 'brandVoice', 'brandPositioning', 'logoUrl', 'createdAt'];
     const header = fields.join(',');
