@@ -22,9 +22,9 @@ const DocEditorPage: React.FC<DocEditorPageProps> = ({ defaultMode }) => {
     docMetaRef.current = docs.find(d => d.id === docId);
     const docMeta = docMetaRef.current;
 
-    const effectiveMode: DocMode = defaultMode
+    const effectiveMode: DocMode = docMeta?.mode
+        ?? defaultMode
         ?? (searchParams.get('mode') === 'edgeless' ? 'edgeless' : undefined)
-        ?? docMeta?.mode
         ?? 'page';
 
     const [bsDoc, setBsDoc] = useState<BlockSuiteDoc | null>(null);

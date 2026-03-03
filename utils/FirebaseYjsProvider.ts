@@ -46,6 +46,9 @@ export class FirebaseYjsProvider {
     private unsubscribeUpdates?: () => void;
     private updateHandler?: (update: Uint8Array, origin: unknown) => void;
     private connected = false;
+    /** IDs of updates already applied during initial loadUpdates() — used to
+     *  deduplicate the first onSnapshot callback which replays every document. */
+    private loadedUpdateIds = new Set<string>();
 
     constructor(yDoc: Y.Doc, docId: string) {
         this.yDoc = yDoc;
@@ -71,6 +74,12 @@ export class FirebaseYjsProvider {
         this.unsubscribeUpdates = onSnapshot(updatesRef, snapshot => {
             snapshot.docChanges().forEach(change => {
                 if (change.type === 'added') {
+                    // Skip updates already applied during initial loadUpdates() —
+                    // Firestore onSnapshot replays all existing docs on first call.
+                    if (this.loadedUpdateIds.has(change.doc.id)) {
+                        this.loadedUpdateIds.delete(change.doc.id);
+                        return;
+                    }
                     const data = change.doc.data();
                     safeApplyUpdate(this.yDoc, data.data, 'firebase-remote', `realtime/${change.doc.id}`);
                 }
@@ -175,6 +184,7 @@ export class FirebaseYjsProvider {
             );
             const snap = await getDocs(updatesRef);
             snap.docs.forEach(d => {
+                this.loadedUpdateIds.add(d.id);
                 safeApplyUpdate(this.yDoc, d.data().data, 'firebase-remote', `update/${d.id}`);
             });
         } catch {

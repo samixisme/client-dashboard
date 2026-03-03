@@ -46,6 +46,24 @@
   opacity: 0;
 }
 
+/* Exempt BlockSuite editor — it needs native cursor for resize handles,
+   tool activation, and hit-testing. Without this, cursor: none breaks
+   all edgeless interactions (drag, resize, shape click, text select). */
+.affine-editor-container,
+.affine-editor-container *,
+.affine-editor-container *::before,
+.affine-editor-container *::after,
+affine-editor-container,
+affine-editor-container *,
+affine-editor-container *::before,
+affine-editor-container *::after,
+editor-host,
+editor-host *,
+editor-host *::before,
+editor-host *::after {
+  cursor: auto !important;
+}
+
 /* Touch devices - disable custom cursor entirely */
 @media (hover: none) and (pointer: coarse) {
   .custom-cursor, .custom-cursor-dot {

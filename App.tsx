@@ -107,8 +107,13 @@ function App() {
   // --- START: CUSTOM CONTEXT MENU LOGIC ---
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
+      // Let BlockSuite editor handle its own context menus (format bar,
+      // block actions, edgeless element menus). Without this guard the
+      // global handler steals right-click events from the editor.
+      const target = e.target as HTMLElement;
+      if (target.closest('editor-host, .affine-editor-container, affine-editor-container')) return;
       e.preventDefault();
-      setContextMenu({ visible: true, x: e.clientX, y: e.clientY, target: e.target as HTMLElement });
+      setContextMenu({ visible: true, x: e.clientX, y: e.clientY, target });
     };
     window.addEventListener('contextmenu', handleContextMenu);
     return () => window.removeEventListener('contextmenu', handleContextMenu);
