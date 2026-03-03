@@ -93,3 +93,16 @@ node_modules/
 # Task files
 # tasks.json
 # tasks/ 
+
+# Test coverage
+coverage/
+
+# Build artifacts
+dist-server/
+
+# Temporary fix/session files
+fix*.js
+session-*.txt
+session-*.md
+job-logs.txt
+prompt-analyze.txt
