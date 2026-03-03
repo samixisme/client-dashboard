@@ -1,157 +1,133 @@
 {
 	"meta": {
-		"generatedAt": "2026-02-26T18:42:15.024Z",
-		"tasksAnalyzed": 18,
-		"totalTasks": 70,
-		"analysisCount": 18,
+		"generatedAt": "2026-03-03T16:46:30.366Z",
+		"tasksAnalyzed": 15,
+		"totalTasks": 85,
+		"analysisCount": 15,
 		"thresholdScore": 5,
 		"projectName": "Task Master",
 		"usedResearch": true
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 86,
-			"taskTitle": "Fix Storage Rules isAdmin() Custom Claims Mismatch",
+			"taskId": 104,
+			"taskTitle": "Backend: Enhance Drive API for Project-Scoped Access",
 			"complexityScore": 6,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break this task into three subtasks: 1. Implement the chosen solution (either the Cloud Function to sync claims or the updated storage rules with Firestore lookups). 2. Write and execute security rule tests using the Firebase Emulator to verify admin-only access. 3. Deploy the changes and perform a manual end-to-end test with real admin and non-admin accounts.",
-			"reasoning": "The task involves backend Firebase services (Cloud Functions or complex Security Rules) which are inherently more complex to test and debug than frontend code. The security implications are high, requiring careful implementation and thorough testing. Two distinct implementation paths are suggested, requiring a decision to be made."
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the task of enhancing the Drive API. Subtasks should cover: 1. Modifying the endpoint signature to accept `projectId`. 2. Implementing the logic to resolve a `projectId` to a Google Drive folder ID. 3. Handling the file listing for an existing folder. 4. Integrating the call to the new folder creation endpoint when a folder does not exist.",
+			"reasoning": "The task involves modifying an existing endpoint with significant new logic, including conditional branching, interaction with an external API (Google Drive), and a dependency on another new endpoint (Task 105). This introduces multiple points of failure and requires careful testing of both the new and existing code paths."
 		},
 		{
-			"taskId": 87,
-			"taskTitle": "Fix Firestore Tasks Rule Missing assignees Guard",
-			"complexityScore": 2,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a single, atomic change and does not require further subtask breakdown.",
-			"reasoning": "This is a simple, one-line fix in a declarative rule file. The scope is extremely narrow, and the required change is explicitly provided. Testing is straightforward with the Firebase Emulator."
-		},
-		{
-			"taskId": 88,
-			"taskTitle": "Remove Misleading Mock Security Rules from AdminSettingsPage",
-			"complexityScore": 3,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a focused refactor on a single component and does not require further subtask breakdown. The primary action is removing the mock data and associated UI elements.",
-			"reasoning": "The task involves removing a misleading and dangerous feature from a single frontend component. This is primarily code deletion and UI cleanup, which is a low-effort, low-risk activity. The complexity would increase if the read-only fetch option were chosen."
-		},
-		{
-			"taskId": 89,
-			"taskTitle": "Guard app.listen() Behind require.main === module",
-			"complexityScore": 1,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a single-line code change and does not require further subtask breakdown.",
-			"reasoning": "This is a canonical, one-line fix in Node.js to make a server file importable without side effects. The implementation is trivial and follows a well-known best practice."
-		},
-		{
-			"taskId": 90,
-			"taskTitle": "Verify New Admin Route Files Use Auth Middleware",
+			"taskId": 105,
+			"taskTitle": "Backend: Create Endpoint for Drive Folder Creation",
 			"complexityScore": 7,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break this task down by endpoint. Create subtasks for: 1. Auditing all `admin*Routes.ts` files and creating a checklist. 2. Applying `adminAuthMiddleware` and Zod validation to all routes in the identified files. 3. Standardizing error responses to use the `ApiResponse` format. 4. Writing integration tests to verify auth, validation, and error handling for all audited routes.",
-			"reasoning": "This task is not a single fix but an audit and implementation across multiple critical API files. It involves security (auth), data integrity (Zod validation), and API consistency. The need to write comprehensive integration tests for each endpoint adds significant effort and complexity."
-		},
-		{
-			"taskId": 91,
-			"taskTitle": "Add useMemo / useCallback to AdminContext Value",
-			"complexityScore": 3,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a focused performance optimization within a single React context and does not require further subtask breakdown.",
-			"reasoning": "The task involves applying standard React hooks (`useMemo`, `useCallback`) to prevent unnecessary re-renders. While the code change is minimal, verifying the optimization with the React Profiler requires specific tooling and knowledge."
-		},
-		{
-			"taskId": 92,
-			"taskTitle": "Replace console.error with Proper Error Handling in AdminContext",
-			"complexityScore": 2,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a small refactor to improve user-facing error handling in a single location and does not require further subtask breakdown.",
-			"reasoning": "This task is a simple substitution of a `console.error` call with a user-facing toast notification. The effort is minimal, assuming a toast library is already integrated into the project."
-		},
-		{
-			"taskId": 93,
-			"taskTitle": "Add Re-entry Guard to Paymenter Sync Effect",
-			"complexityScore": 4,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a targeted fix for a re-entry issue in a single `useEffect` hook and does not require further subtask breakdown.",
-			"reasoning": "This task addresses a critical infinite loop bug. While the `useRef` guard is a standard solution, reasoning about effect dependencies and preventing race conditions requires a moderate level of React expertise to fix correctly without introducing new bugs."
-		},
-		{
-			"taskId": 94,
-			"taskTitle": "Verify onSave Prop Removal from EditClientModal",
-			"complexityScore": 3,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Break this task into two subtasks: 1. Audit all usages of `<EditClientModal>` to determine if the `onSave` prop is still required by any parent components. 2. Based on the audit, either restore the `onSave` call within the modal or remove the prop from its interface and all call sites.",
-			"reasoning": "The core of this task is an audit to understand the impact of a change across the codebase. The implementation itself is trivial, but the investigation requires careful analysis of component interactions to avoid introducing breaking changes."
-		},
-		{
-			"taskId": 95,
-			"taskTitle": "Extract Inline Firestore Logic from ProposalsPage",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break this refactoring task into logical steps: 1. Create the new `useProposals.ts` hook file with a defined API. 2. Migrate the `onSnapshot` listener and data state management from `ProposalsPage` into the hook. 3. Migrate the `addDoc`, `updateDoc`, and `deleteDoc` functions into the hook, exposing them as methods. 4. Refactor `ProposalsPage.tsx` to remove all raw Firestore calls and consume the new `useProposals` hook.",
-			"reasoning": "This is a substantial refactoring task that creates a new abstraction (a custom hook). It involves moving complex asynchronous logic (Firestore CRUD and real-time listeners) and rewiring a page component, which requires careful planning to avoid breaking existing functionality."
-		},
-		{
-			"taskId": 96,
-			"taskTitle": "Standardize Data Access Patterns",
-			"complexityScore": 2,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a documentation and code-review task and does not require further subtask breakdown.",
-			"reasoning": "This task is about documenting architectural decisions. The primary effort is writing clear documentation in a markdown file. The technical complexity is low, though it requires a clear understanding of the project's architecture."
-		},
-		{
-			"taskId": 97,
-			"taskTitle": "Decompose Large Admin Pages into Sub-Components",
-			"complexityScore": 8,
-			"recommendedSubtasks": 5,
-			"expansionPrompt": "Decompose this large refactoring effort by creating one subtask for each page that needs to be broken down: 1. Refactor `AdminSettingsPage.tsx`. 2. Refactor `AdminAICreatorPage.tsx`. 3. Refactor `AdminDashboardPage.tsx`. 4. Refactor `AdminUsersPage.tsx`. 5. Refactor `AdminPaymentsPage.tsx`.",
-			"reasoning": "This task involves major structural changes to five large, complex files. Each refactor is a significant piece of work that involves creating new components, managing state and props correctly, and extensive testing to ensure no functionality is broken. The sheer volume and risk of regression make this highly complex."
-		},
-		{
-			"taskId": 98,
-			"taskTitle": "Fix AdminDashboardPage Mock Data Regeneration",
-			"complexityScore": 2,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task involves simple changes to mock data and type definitions and does not require further subtask breakdown.",
-			"reasoning": "The task involves replacing random data with static data for a better development experience and moving some type definitions. These are simple, low-risk changes with no impact on production logic."
-		},
-		{
-			"taskId": 99,
-			"taskTitle": "Code-Split Heavy Dependencies for Admin Pages",
-			"complexityScore": 6,
 			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break this performance optimization task into distinct steps: 1. Implement `React.lazy` and a `<Suspense>` fallback for the `AdminDashboardPage` at the router level. 2. Analyze and lazy-load other admin pages with heavy dependencies. 3. Run a production build and use a bundle analyzer tool to verify that heavy libraries have been moved to separate, async chunks.",
-			"reasoning": "This task requires knowledge beyond typical application logic, delving into build tools (e.g., Vite/Webpack), bundle analysis, and React's advanced asynchronous features (`React.lazy`, `Suspense`). Debugging issues with code splitting or Suspense can be non-trivial."
+			"expansionPrompt": "Generate subtasks for creating the Drive folder creation endpoint. Focus on: 1. Setting up the basic `POST /api/drive/folders` route. 2. Implementing the core logic to create a single folder given a parent ID. 3. Building the recursive or iterative helper function that processes a path (e.g., 'projects/xyz') to find or create each folder segment sequentially.",
+			"reasoning": "While it's a single endpoint, the requirement for handling nested folder creation (e.g., creating 'projects' if it doesn't exist before creating 'projectId' inside it) elevates the complexity significantly. This requires a non-trivial algorithm with multiple sequential API calls and robust error handling."
 		},
 		{
-			"taskId": 100,
-			"taskTitle": "Clear Stale Errors in Social Media Store",
+			"taskId": 106,
+			"taskTitle": "Backend: Implement Link Metadata Fetching API",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the implementation of the link metadata API. Subtasks should cover: 1. Setting up the basic `GET /api/link-meta` endpoint. 2. Integrating a metadata scraping library (e.g., `metascraper`) to fetch and parse the URL content. 3. Implementing comprehensive error handling (timeouts, invalid URLs) and security validations to prevent SSRF.",
+			"reasoning": "The complexity lies not in the core functionality, which is abstracted by a library, but in making it robust and secure. Handling arbitrary external URLs requires careful implementation of timeouts, error handling for various network and parsing failures, and security validation to prevent Server-Side Request Forgery (SSRF)."
+		},
+		{
+			"taskId": 107,
+			"taskTitle": "Data Model: Set Up `projectLinks` Firestore Collection",
 			"complexityScore": 2,
 			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task involves adding a single line of code to multiple actions within one store file and does not require further subtask breakdown.",
-			"reasoning": "The task is to add a single, identical line of code at the beginning of several functions within a single state management store. This is a low-effort, low-risk bug fix to improve UX."
+			"expansionPrompt": "This task is straightforward and does not require further expansion. It involves defining a TypeScript interface and writing a basic Firestore security rule.",
+			"reasoning": "This task is low complexity as it primarily involves configuration and definitions rather than complex logic. It consists of defining a type interface and writing a simple Firestore security rule, which are foundational but low-effort actions."
 		},
 		{
-			"taskId": 101,
-			"taskTitle": "Add Double-Submit Guard to Feedback Form",
-			"complexityScore": 2,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a standard UI improvement for a single form and does not require further subtask breakdown.",
-			"reasoning": "Implementing a double-submit guard with a `isSubmitting` state is a fundamental and simple pattern in frontend development. The scope is limited to one component and is considered low complexity."
-		},
-		{
-			"taskId": 102,
-			"taskTitle": "Fix getTimestampSeconds to Handle Date Objects",
-			"complexityScore": 3,
+			"taskId": 108,
+			"taskTitle": "Data Layer: Integrate `projectLinks` into DataContext",
+			"complexityScore": 4,
 			"recommendedSubtasks": 2,
-			"expansionPrompt": "Break this task into two subtasks: 1. Update the `getTimestampSeconds` function to correctly handle native `Date` objects. 2. Write a comprehensive unit test suite for the function, covering all supported input types (Date, Firebase Timestamp, object, string, null/undefined).",
-			"reasoning": "While the function modification is a single line, the task's emphasis on a robust test strategy covering multiple input formats elevates the complexity. Writing good unit tests for a polymorphic utility function requires more effort than the fix itself."
+			"expansionPrompt": "Generate subtasks for integrating `projectLinks` into the `DataContext`. The subtasks should be: 1. Add the `projectLinks` state and update the context's type definition. 2. Implement the `useEffect` hook to set up the Firestore `onSnapshot` listener for the `projectLinks` collection.",
+			"reasoning": "The task involves modifying a shared, global context, which requires careful implementation to avoid unintended side effects. While the pattern of adding a real-time listener is likely established, it still involves state management, effect cleanup, and potential performance considerations."
 		},
 		{
-			"taskId": 103,
-			"taskTitle": "Document the Deny-by-Default Firestore Catch-All",
-			"complexityScore": 1,
+			"taskId": 109,
+			"taskTitle": "Frontend Hook: Enhance `useDriveFiles` for Project Scoping",
+			"complexityScore": 3,
 			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is purely for documentation and does not require further subtask breakdown.",
-			"reasoning": "This task involves only writing comments and documentation to improve developer awareness. There is no code to write, no logic to implement, and no testing required beyond proofreading. It is of minimal complexity."
+			"expansionPrompt": "This task is a focused refactoring of a single hook and does not require further expansion. The work involves updating the hook's signature and modifying its internal fetch requests.",
+			"reasoning": "This is a low-complexity refactoring task. The logic is straightforward: accept an optional parameter and append it to API request URLs. The effort is contained within a single hook, and the change itself is minimal."
+		},
+		{
+			"taskId": 110,
+			"taskTitle": "Frontend Hook: Create `useProjectLinks` for Link Management",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the creation of the `useProjectLinks` hook into its core CRUD functions. Create subtasks for implementing: 1. The `addLink` function. 2. The `updateLink` function. 3. The `deleteLink` function.",
+			"reasoning": "This task involves creating a standard CRUD hook, which is a common and well-understood pattern. The complexity is low because it directly maps Firestore SDK functions to hook methods without complex state management, as it relies on `DataContext` for reads."
+		},
+		{
+			"taskId": 111,
+			"taskTitle": "Core Logic: Implement `useProjectFiles` Aggregation Hook",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Generate subtasks for the `useProjectFiles` aggregation hook. Focus on the data transformation for each source. Subtasks should cover: 1. Consuming data from `useDriveFiles` and mapping it to `ProjectFile[]`. 2. Consuming `projectLinks` from `DataContext` and mapping them. 3. Consuming other sources (e.g., task attachments) and mapping them. 4. Combining all mapped arrays and wrapping the entire logic in a `useMemo` for performance.",
+			"reasoning": "This hook is a central aggregation point with multiple data dependencies. The logic involves filtering, mapping, and merging diverse data structures into a single, consistent format. Performance is a major concern, requiring careful use of memoization (`useMemo`) to prevent unnecessary re-renders."
+		},
+		{
+			"taskId": 112,
+			"taskTitle": "Routing & Page Shell: Create `ProjectFilesPage`",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a standard setup for a new page and does not need to be broken down further. It involves adding a route and creating the main page component file.",
+			"reasoning": "This task has low complexity as it involves creating a new route and a container component, which are standard, boilerplate activities in a React application. The logic is minimal, primarily focused on wiring up routing and passing URL parameters to hooks."
+		},
+		{
+			"taskId": 113,
+			"taskTitle": "UI: Build `SourceFilterSidebar` Component",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the creation of the `SourceFilterSidebar`. Subtasks should be: 1. Implement the UI and the logic to dynamically compute and display the count for each file source from the props. 2. Add state management for the active filter, handle user clicks, and call the parent component's callback with the selected filter.",
+			"reasoning": "This is a moderately complex UI component. It's not just presentational; it contains logic to compute derived state (the counts for each source) from props and manages its own interactive state (the currently selected filter), which it communicates back to its parent."
+		},
+		{
+			"taskId": 114,
+			"taskTitle": "UI: Implement External Link Management Features",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Generate subtasks for the link management UI. The breakdown should cover: 1. Building the `AddLinkDialog` component with its form. 2. Implementing the real-time metadata fetching by calling the `/api/link-meta` endpoint from the dialog. 3. Creating the `LinkCard` component to display link information. 4. Integrating the `useProjectLinks` hook to handle adding, editing, and deleting links.",
+			"reasoning": "This task is complex because it encompasses a full user flow involving multiple UI components (dialog, card), asynchronous API calls with state updates (fetching metadata), and state management via a custom hook for CRUD operations. Coordinating these pieces requires significant effort."
+		},
+		{
+			"taskId": 115,
+			"taskTitle": "UI: Develop Main Content View and Filtering Logic",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the main content view implementation. Subtasks should cover: 1. Implementing the state management in the parent page for the search term and selected source filter. 2. Writing the client-side filtering logic that derives the displayed file list from the master list. 3. Building the component responsible for rendering the grid or list of `ProjectFileCard` components.",
+			"reasoning": "The complexity is in client-side state management and data derivation. The component must correctly combine multiple state inputs (the full data set, the selected filter, the search query) to render the final view, and do so performantly."
+		},
+		{
+			"taskId": 116,
+			"taskTitle": "Feature: Implement Direct File Upload to Project Drive",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a straightforward integration of an existing component and does not require further expansion. The work involves placing the component and passing the correct props.",
+			"reasoning": "This task has low complexity because it involves reusing an existing, functional component (`FileUpload`). The primary work is placing this component in the new page and passing the correct `projectId` prop, along with some simple conditional rendering logic."
+		},
+		{
+			"taskId": 117,
+			"taskTitle": "Integration: Add 'Files' Tool Card to ToolsPage",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down the task of adding the 'Files' tool card. Subtasks should be: 1. Add the static UI for the new card to the `ToolsPage` with correct routing. 2. Implement the data fetching and aggregation logic to calculate and display the live stats (file counts, link counts) on the card.",
+			"reasoning": "The complexity is moderate because this isn't just a static UI change. It requires fetching data from multiple sources (Drive, Firestore), performing calculations (counts), and displaying them, which introduces data-loading and performance considerations on the `ToolsPage`."
+		},
+		{
+			"taskId": 118,
+			"taskTitle": "Navigation: Update Main App Sidebar",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "This task is a small, targeted change to a single component and does not require further expansion. It involves adding a context hook and a ternary operator to a link's prop.",
+			"reasoning": "This is a low-complexity task involving a simple conditional change to a navigation link. It requires consuming an existing context and applying a ternary operator, which is a minimal and straightforward change."
 		}
 	]
 }

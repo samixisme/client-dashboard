@@ -3278,13 +3278,600 @@
         "recommendedSubtasks": 0,
         "expansionPrompt": "This task is purely for documentation and does not require further subtask breakdown.",
         "updatedAt": "2026-02-26T19:39:51.320Z"
+      },
+      {
+        "id": "104",
+        "title": "Backend: Enhance Drive API for Project-Scoped Access",
+        "description": "Modify the `/api/drive/files` endpoint to accept a `projectId` query parameter. This will scope file and folder listings to a specific project's folder in Google Drive, creating the folder if it doesn't exist.",
+        "details": "In `api/driveRoutes.ts`, modify the GET handler for `/files`. Check for a `req.query.projectId`. If present, use a helper function to resolve the project's folder path (e.g., `projects/{projectId}`). Use the Google Drive API v3 `files.list` method with a query like `q: \"'<folderId>' in parents and trashed = false\"`. If the folder doesn't exist, call a new folder creation endpoint. The response shape should remain `{ files, folders, currentPath }`.",
+        "testStrategy": "Use an API client like Postman or Insomnia. Test GET `/api/drive/files?projectId=...` for a project with an existing folder. Test again for a new project to verify folder auto-creation. Test without the `projectId` to ensure global functionality is unaffected. Verify the API response structure is correct in all cases.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update `/api/drive/files` Endpoint to Accept `projectId` Query Parameter",
+            "description": "Modify the GET handler for the `/api/drive/files` endpoint in `api/driveRoutes.ts` to correctly parse and handle an optional `projectId` from the request's query parameters.",
+            "dependencies": [],
+            "details": "In `api/driveRoutes.ts`, locate the GET handler for `/files`. Update its logic to check `req.query` for a `projectId` string. This will be the entry point for the new project-scoped logic.",
+            "status": "pending",
+            "testStrategy": "Use an API client to call `/api/drive/files?projectId=test-project`. Verify that the `projectId` value is correctly received within the handler by adding temporary logging. Also, test the endpoint without the parameter to ensure existing functionality is not broken.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Develop Logic to Find Google Drive Folder ID from `projectId`",
+            "description": "Create a helper function that takes a `projectId` and searches Google Drive for the corresponding project folder. It should return the folder's ID if found, or null otherwise.",
+            "dependencies": [
+              1
+            ],
+            "details": "This function will use the Google Drive API v3 `files.list` method. It will search for a folder with a name matching the `projectId` within a predefined parent 'projects' folder. The query will look something like `q: \"name='<projectId>' and mimeType='application/vnd.google-apps.folder' and '<projectsFolderId>' in parents and trashed=false\"`.",
+            "status": "pending",
+            "testStrategy": "Unit test the helper function by mocking the Google Drive API client. Provide a mock response for a found folder and a mock empty response for a non-existent folder. Verify the function returns the correct folder ID or null.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Scoped File Listing Using Project Folder ID",
+            "description": "If a project folder ID is successfully resolved, modify the existing file listing logic to query for files and folders only within that specific project folder.",
+            "dependencies": [
+              2
+            ],
+            "details": "Update the Google Drive API call within the `/files` handler. When a `projectId` is present and its folder ID is found, change the `files.list` query to `q: \"'<projectFolderId>' in parents and trashed = false\"`. Ensure the response shape `{ files, folders, currentPath }` is maintained.",
+            "status": "pending",
+            "testStrategy": "Using an API client and a pre-existing project folder in Google Drive, call `/api/drive/files?projectId=<existingProjectId>`. Verify the response contains only the files and folders from that specific project directory.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Handle Non-Existent Project Folders by Calling Creation Endpoint",
+            "description": "When the folder resolution logic fails to find a folder for a given `projectId`, integrate a call to the `POST /api/drive/folders` endpoint (from Task 105) to create it.",
+            "dependencies": [
+              2
+            ],
+            "details": "In the main handler, if the project folder ID is null, make an internal API call to `POST /api/drive/folders` with the required path (e.g., `projects/{projectId}`). After creation, the API should return an empty list of files and folders for the newly created directory.",
+            "status": "pending",
+            "testStrategy": "Call `/api/drive/files?projectId=<newProjectId>` where the project folder does not exist. Verify that a new folder is created in Google Drive and the API returns a successful response with empty `files` and `folders` arrays.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the task of enhancing the Drive API. Subtasks should cover: 1. Modifying the endpoint signature to accept `projectId`. 2. Implementing the logic to resolve a `projectId` to a Google Drive folder ID. 3. Handling the file listing for an existing folder. 4. Integrating the call to the new folder creation endpoint when a folder does not exist.",
+        "updatedAt": "2026-03-03T17:17:54.539Z"
+      },
+      {
+        "id": "105",
+        "title": "Backend: Create Endpoint for Drive Folder Creation",
+        "description": "Implement a new `POST /api/drive/folders` endpoint to programmatically create folders in Google Drive, which will be used for new project folders.",
+        "details": "In `api/driveRoutes.ts`, add a new route `POST /folders`. The handler should accept a `path` in the request body (e.g., `{ path: 'projects/My-Project-ID' }`). Use the Google Drive API v3 `files.create` method with `resource: { name: 'My-Project-ID', mimeType: 'application/vnd.google-apps.folder', parents: ['<parentFolderId>'] }`. The implementation should handle nested creation by finding/creating parent folders sequentially. Return the new folder's ID and path.",
+        "testStrategy": "Using an API client, send a POST request to `/api/drive/folders` with a valid path. Verify that the folder is created in Google Drive and that the API returns a success response with the new folder's ID. Test edge cases like creating an already existing folder.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Setup POST /api/drive/folders Route and Request Validation",
+            "description": "Create the initial Express route for `POST /api/drive/folders` in `api/driveRoutes.ts`. Implement request body validation to ensure a non-empty `path` string is provided.",
+            "dependencies": [],
+            "details": "In `api/driveRoutes.ts`, add a new router entry for `POST /folders`. Use a validation middleware like express-validator to check that `req.body.path` exists, is a string, and is not empty. The initial handler can be a placeholder that returns a success message.",
+            "status": "pending",
+            "testStrategy": "Send a POST request with a valid body (`{ \"path\": \"test\" }`) and verify a 200 OK or placeholder response. Send requests with a missing, null, or empty `path` to ensure a 400 Bad Request error is returned.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Core Google Drive Single Folder Creation Logic",
+            "description": "Create a reusable helper function that interacts directly with the Google Drive API v3 to create a single folder. This function will take a folder name and a parent folder ID as arguments and return the new folder's ID.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create an async function, e.g., `createDriveFolder(name, parentId)`. This function will use the authenticated Google Drive API client to call `drive.files.create` with `resource: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] }`. It should handle API errors and return the ID of the newly created folder upon success.",
+            "status": "pending",
+            "testStrategy": "Unit test the helper function by mocking the Google Drive API client. Verify it calls `drive.files.create` with the correct parameters. An integration test could call it with a real parent ID and check for folder creation in a test Drive account.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Develop Path Resolver for Nested Folder Creation",
+            "description": "Implement the main logic that processes a path string (e.g., 'projects/My-Project-ID'). This function will iterate through the path segments, finding or creating each folder sequentially to handle nested structures.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a function `findOrCreateFolderPath(path)`. It will split the path by '/'. Starting from a root folder ID, it will loop through each segment. For each segment, it will search for an existing folder with that name within the current parent. If not found, it will call the `createDriveFolder` function from the previous subtask. The ID of the found/created folder becomes the parent for the next segment. The final folder's ID and path should be returned.",
+            "status": "pending",
+            "testStrategy": "Test this function with various paths: a single-level path ('new-folder'), a multi-level path where parents exist ('existing/new-folder'), and a multi-level path where no folders exist ('new-parent/new-child'). Verify the correct folder structure is created in Google Drive and the correct final ID is returned.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Generate subtasks for creating the Drive folder creation endpoint. Focus on: 1. Setting up the basic `POST /api/drive/folders` route. 2. Implementing the core logic to create a single folder given a parent ID. 3. Building the recursive or iterative helper function that processes a path (e.g., 'projects/xyz') to find or create each folder segment sequentially.",
+        "updatedAt": "2026-03-03T17:17:54.559Z"
+      },
+      {
+        "id": "106",
+        "title": "Backend: Implement Link Metadata Fetching API",
+        "description": "Create a new endpoint `GET /api/link-meta` that accepts a URL and returns its title and favicon URL. This will be used when a user adds an external link to the Project Cloud.",
+        "details": "Create a new route in the Express server. Use a robust library like `open-graph-scraper@6.5.0` or `metascraper@5.45.0` for reliability. The handler will take a `url` query parameter, fetch the content, and parse it for metadata. Implement a timeout and error handling for invalid or unreachable URLs. The response should be `{ title: string, favicon: string }`. Reuse the existing proxy infrastructure if it simplifies handling external requests.",
+        "testStrategy": "Call the endpoint with various URLs (Figma, Notion, Google Docs, a standard blog post). Verify it correctly extracts the title and favicon. Test with a URL that doesn't exist or returns a 404 to ensure graceful error handling. Test for security against SSRF vulnerabilities by validating the input URL.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Basic GET /api/link-meta Endpoint Structure",
+            "description": "Set up the initial Express route and controller for the `GET /api/link-meta` endpoint. This includes defining the route, creating a placeholder handler, and validating the presence of the `url` query parameter.",
+            "dependencies": [],
+            "details": "In the Express router file, add a new route for `GET /api/link-meta`. Create a corresponding controller function that accepts `req` and `res`. The handler should initially parse the `url` from `req.query` and return a mocked success response or an error if the URL is missing.",
+            "status": "pending",
+            "testStrategy": "Use an API client like Postman to send a GET request to `/api/link-meta?url=https://example.com`. Verify it returns a 200 OK with a placeholder response. Send a request without the `url` query parameter and verify it returns a 400 Bad Request error.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Integrate Metadata Scraping Library to Fetch Title and Favicon",
+            "description": "Integrate a metadata scraping library like `metascraper` to fetch the content of the provided URL and extract the page title and favicon URL. The extracted data will be returned in the API response.",
+            "dependencies": [
+              1
+            ],
+            "details": "Install `metascraper` and its required rule sets (e.g., `metascraper-title`, `metascraper-logo-favicon`). In the endpoint handler, use the library to process the target URL. The handler will make an HTTP request to the URL, parse the HTML, and extract the `title` and `logo` (favicon). The final response should be in the format `{ title: string, favicon: string }`.",
+            "status": "pending",
+            "testStrategy": "Test the endpoint with several known URLs (e.g., figma.com, notion.so, github.com) and verify that the returned `title` and `favicon` are correct. Check that the favicon URL is a fully qualified URL.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Robust Error Handling and SSRF Security Validation",
+            "description": "Enhance the endpoint with comprehensive error handling for network issues, timeouts, and parsing failures. Implement security validation to prevent Server-Side Request Forgery (SSRF) attacks by reusing the existing `urlValidator.ts` utility.",
+            "dependencies": [
+              2
+            ],
+            "details": "Wrap the metadata fetching logic in a try-catch block. Implement a request timeout (e.g., 5 seconds) to prevent long-running requests. Before fetching, validate the input URL using the existing `urlValidator.ts` to ensure it's a public, valid HTTP/HTTPS URL and not an internal address. Return appropriate error responses (e.g., 400 for invalid URL, 504 for timeout, 502 for fetch failure).",
+            "status": "pending",
+            "testStrategy": "Test with an invalid URL format. Test with a URL that points to a non-existent domain. Test with a URL that will time out. Test with internal/localhost URLs (e.g., `http://127.0.0.1`, `http://localhost:3000`) to ensure the SSRF validation rejects them and returns a 400 error.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the implementation of the link metadata API. Subtasks should cover: 1. Setting up the basic `GET /api/link-meta` endpoint. 2. Integrating a metadata scraping library (e.g., `metascraper`) to fetch and parse the URL content. 3. Implementing comprehensive error handling (timeouts, invalid URLs) and security validations to prevent SSRF.",
+        "updatedAt": "2026-03-03T17:17:54.579Z"
+      },
+      {
+        "id": "107",
+        "title": "Data Model: Set Up `projectLinks` Firestore Collection",
+        "description": "Define and configure the new `projectLinks` Firestore collection, including setting up security rules to allow authenticated users to read and write.",
+        "details": "In your Firebase project, create the `projectLinks` collection. In `firestore.rules`, add rules for this collection. A simple starting point would be: `match /projectLinks/{linkId} { allow read, write: if request.auth != null; }`. Define the `ProjectLink` interface in `types.ts` as specified in the PRD, including all fields like `projectId`, `title`, `url`, `favicon`, `createdBy`, `createdAt`, and `pinned`.",
+        "testStrategy": "Use the Firestore emulator or directly in the Firebase console. Manually add, edit, and delete a document in the `projectLinks` collection to ensure the schema works. Write unit tests for the Firestore security rules to verify that authenticated users can perform CRUD operations while unauthenticated users are blocked.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "This task is straightforward and does not require further expansion. It involves defining a TypeScript interface and writing a basic Firestore security rule.",
+        "updatedAt": "2026-03-03T17:17:54.520Z"
+      },
+      {
+        "id": "108",
+        "title": "Data Layer: Integrate `projectLinks` into DataContext",
+        "description": "Update the global `DataContext` to include a real-time listener for the new `projectLinks` collection, making the data available throughout the application.",
+        "details": "In `contexts/DataContext.tsx`, add a new state variable for `projectLinks`. Create a new `useEffect` that sets up an `onSnapshot` listener on the `projectLinks` collection from Firestore. For performance, you might initially filter by projects the user is a member of, if that logic exists elsewhere. Store the results in `data.projectLinks`. Ensure the context provider is updated to expose this new data.",
+        "testStrategy": "Run the application and use React DevTools to inspect the `DataContext`. Verify that `data.projectLinks` is populated with data from Firestore. Add or modify a link in Firestore and confirm that the context value updates in real-time without a page refresh.",
+        "priority": "high",
+        "dependencies": [
+          "107"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add `projectLinks` State and Update DataContext Type Definition",
+            "description": "Modify the `DataContext` in `contexts/DataContext.tsx` to include a new state variable for `projectLinks` and update the context's TypeScript type definition to reflect this change.",
+            "dependencies": [],
+            "details": "In the file `contexts/DataContext.tsx`, introduce a new state variable using the `useState` hook for `projectLinks`, initializing it to null or an empty array. Update the `DataContextType` interface to include the `projectLinks` property with the appropriate type (e.g., `ProjectLink[]`).",
+            "status": "pending",
+            "testStrategy": "Verify through code review that the new state variable is correctly declared and the TypeScript interface for the context data is updated. Ensure the application compiles without type errors.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement `useEffect` for Firestore `onSnapshot` Listener",
+            "description": "Implement a `useEffect` hook within the `DataContext` provider to set up a real-time `onSnapshot` listener for the `projectLinks` collection in Firestore.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `contexts/DataContext.tsx`, create a new `useEffect` hook. Inside this hook, use the Firestore SDK to attach an `onSnapshot` listener to the `projectLinks` collection. When data is received, parse the documents and update the `projectLinks` state. Remember to return a cleanup function from the effect to unsubscribe from the listener when the component unmounts.",
+            "status": "pending",
+            "testStrategy": "Run the application and use React DevTools to inspect the `DataContext`. Confirm that the `data.projectLinks` property is populated with data from Firestore. Manually add, edit, or delete a document in the Firestore `projectLinks` collection and verify that the context value updates in real-time without a page refresh.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 4,
+        "recommendedSubtasks": 2,
+        "expansionPrompt": "Generate subtasks for integrating `projectLinks` into the `DataContext`. The subtasks should be: 1. Add the `projectLinks` state and update the context's type definition. 2. Implement the `useEffect` hook to set up the Firestore `onSnapshot` listener for the `projectLinks` collection."
+      },
+      {
+        "id": "109",
+        "title": "Frontend Hook: Enhance `useDriveFiles` for Project Scoping",
+        "description": "Modify the existing `useDriveFiles` hook to accept an optional `projectId`. When provided, all API calls made by the hook should be scoped to that project.",
+        "details": "In `hooks/useDriveFiles.ts`, update the hook's function signature to `useDriveFiles({ projectId?: string })`. When `projectId` is present, append `?projectId=${projectId}` to all fetch requests to `/api/drive/files`, `/api/drive/upload`, etc. This ensures that listing, uploading, and deleting files are all correctly scoped to the project's Drive folder via the enhanced backend.",
+        "testStrategy": "Create a test page that uses the hook with and without a `projectId`. Verify that when a `projectId` is passed, the network requests include the correct query parameter and the displayed files are from the project-specific folder. Confirm that uploads from this page land in the correct project folder.",
+        "priority": "high",
+        "dependencies": [
+          "104"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "This task is a focused refactoring of a single hook and does not require further expansion. The work involves updating the hook's signature and modifying its internal fetch requests."
+      },
+      {
+        "id": "110",
+        "title": "Frontend Hook: Create `useProjectLinks` for Link Management",
+        "description": "Create a new hook, `useProjectLinks`, to handle all CRUD operations (Create, Read, Update, Delete) for the `projectLinks` Firestore collection.",
+        "details": "Create `hooks/useProjectLinks.ts`. This hook will provide functions like `addLink(linkData)`, `updateLink(linkId, updates)`, and `deleteLink(linkId)`. These functions will use the Firebase SDK (`addDoc`, `updateDoc`, `deleteDoc`) to interact with the `projectLinks` collection. The hook should not fetch data itself; it should rely on `DataContext` for reading data, ensuring a single source of truth and real-time updates.",
+        "testStrategy": "Write unit tests for the hook using a mock Firebase SDK. Test that `addLink` calls `addDoc` with the correct data structure. Create a simple UI component that uses the hook to add, edit, and delete links, and verify the interactions with Firestore are successful.",
+        "priority": "medium",
+        "dependencies": [
+          "107"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement `addLink` Function in `useProjectLinks` Hook",
+            "description": "Create the `addLink` function within the `useProjectLinks.ts` hook. This function will be responsible for adding new link documents to the `projectLinks` Firestore collection using Firebase's `addDoc`.",
+            "dependencies": [],
+            "details": "In `hooks/useProjectLinks.ts`, define an async function `addLink(linkData)`. This function should call `addDoc` from the Firebase SDK, passing a reference to the `projectLinks` collection and the `linkData` object. Wrap the call in a try/catch block for error handling.",
+            "status": "pending",
+            "testStrategy": "Write a unit test that mocks the `addDoc` function and verifies it is called with the correct collection reference and data payload when `addLink` is invoked.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement `updateLink` Function in `useProjectLinks` Hook",
+            "description": "Add the `updateLink` function to the `useProjectLinks` hook to enable modification of existing link documents in the `projectLinks` collection via Firebase's `updateDoc`.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `hooks/useProjectLinks.ts`, define an async function `updateLink(linkId, updates)`. This function will use `doc()` to get a reference to the specific document and then call `updateDoc()` with the reference and the `updates` object. Implement error handling.",
+            "status": "pending",
+            "testStrategy": "Write a unit test that mocks the `updateDoc` function. Assert that it is called with the correct document ID and the partial data object intended for the update.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement `deleteLink` Function in `useProjectLinks` Hook",
+            "description": "Complete the CRUD functionality by adding the `deleteLink` function to the `useProjectLinks` hook, which will remove documents from the `projectLinks` collection using Firebase's `deleteDoc`.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `hooks/useProjectLinks.ts`, define an async function `deleteLink(linkId)`. This function will get a document reference using `doc(db, 'projectLinks', linkId)` and then pass this reference to the `deleteDoc` function. Ensure a try/catch block is used for error management.",
+            "status": "pending",
+            "testStrategy": "Write a unit test that mocks the `deleteDoc` function. Ensure that calling `deleteLink` with a specific ID results in `deleteDoc` being called with the correct document reference.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 3,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the creation of the `useProjectLinks` hook into its core CRUD functions. Create subtasks for implementing: 1. The `addLink` function. 2. The `updateLink` function. 3. The `deleteLink` function."
+      },
+      {
+        "id": "111",
+        "title": "Core Logic: Implement `useProjectFiles` Aggregation Hook",
+        "description": "Develop the core `useProjectFiles` hook that aggregates data from Google Drive, all in-app sources via DataContext, and the new `projectLinks` collection into a single, unified `ProjectFile[]` array.",
+        "details": "Create `hooks/useProjectFiles.ts`. The hook will accept a `projectId`. It will use `useContext(DataContext)` to access all necessary data arrays (`tasks`, `feedbackMockups`, `projectLinks`, etc.) and the modified `useDriveFiles({ projectId })` hook. Use `useMemo` to compute the final `ProjectFile[]` array. The memoization dependency array should include `projectId` and all relevant data collections. Inside the memo, iterate through each source, filter by `projectId`, map the items to the `ProjectFile` interface, and concatenate them into a single array. Ensure each item has a unique ID like `source:originalId`.",
+        "testStrategy": "Unit test the hook with mock `DataContext` and `useDriveFiles` data. Test scenarios: a project with no files, a project with files from only one source, and a project with files from all sources. Verify the output array structure is correct and that the hook memoizes correctly, not re-running on every render.",
+        "priority": "high",
+        "dependencies": [
+          "108",
+          "109"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Map Google Drive Files to ProjectFile Interface",
+            "description": "Consume the data from the `useDriveFiles` hook, filter by the project ID, and transform each file object into the standardized `ProjectFile` format.",
+            "dependencies": [],
+            "details": "Within the `hooks/useProjectFiles.ts` file, call the `useDriveFiles({ projectId })` hook. Iterate over the resulting array of Drive files and map each one to the `ProjectFile` interface. Ensure a unique ID is generated for each item, such as `drive:<fileId>`.",
+            "status": "pending",
+            "testStrategy": "Unit test the mapping logic with mock data returned from `useDriveFiles`. Verify that all fields of the `ProjectFile` interface are correctly populated from the source Drive file object and that the unique ID format is correct.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Map `projectLinks` from DataContext to ProjectFile Interface",
+            "description": "Access the `projectLinks` array from the `DataContext`, filter them by the current `projectId`, and map each link object to the `ProjectFile` format.",
+            "dependencies": [],
+            "details": "Inside the `useProjectFiles` hook, retrieve the `projectLinks` collection from the `DataContext`. Filter this array to include only links associated with the provided `projectId`. Map each filtered link to a `ProjectFile` object, setting the type to 'link' and generating a unique ID like `link:<linkId>`.",
+            "status": "pending",
+            "testStrategy": "Provide a mock `DataContext` containing a mix of `projectLinks` for different projects. Assert that the hook correctly filters and maps only the links relevant to the specified `projectId` into the `ProjectFile[]` array.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Map All Other In-App Data Sources to ProjectFile Interface",
+            "description": "Aggregate and map items from all other relevant in-app collections (e.g., `tasks`, `feedbackMockups`, `moodboardItems`) from `DataContext` into the `ProjectFile` format.",
+            "dependencies": [],
+            "details": "Access all other file-related collections from `DataContext`, including `tasks` (for attachments), `feedbackMockups`, `feedbackVideos`, `moodboardItems`, etc. For each collection, filter by `projectId` and map the relevant items to the `ProjectFile` interface, ensuring each has a unique source-prefixed ID (e.g., `taskAttachment:<attachmentId>`).",
+            "status": "pending",
+            "testStrategy": "Create a comprehensive mock `DataContext` with data from all in-app sources. Verify that the hook correctly filters items by `projectId` across all collections and transforms them into a unified `ProjectFile` structure.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Combine Mapped Arrays and Memoize with `useMemo`",
+            "description": "Combine the arrays of `ProjectFile` objects from all sources (Drive, links, in-app) into a single, final array and wrap the entire aggregation logic in a `useMemo` hook for performance optimization.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Concatenate the `ProjectFile` arrays generated from Drive, project links, and all other in-app sources. Wrap this entire computation logic inside a `useMemo` hook. The dependency array for `useMemo` must include `projectId` and all the data collections consumed to ensure the hook only re-calculates when its source data changes.",
+            "status": "pending",
+            "testStrategy": "Using `@testing-library/react-hooks`, test the complete hook with mock data for all sources. Verify that the final array is correctly combined. Trigger a re-render with unchanged props and assert that the aggregation logic does not re-run, confirming memoization is effective.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Generate subtasks for the `useProjectFiles` aggregation hook. Focus on the data transformation for each source. Subtasks should cover: 1. Consuming data from `useDriveFiles` and mapping it to `ProjectFile[]`. 2. Consuming `projectLinks` from `DataContext` and mapping them. 3. Consuming other sources (e.g., task attachments) and mapping them. 4. Combining all mapped arrays and wrapping the entire logic in a `useMemo` for performance."
+      },
+      {
+        "id": "112",
+        "title": "Routing & Page Shell: Create `ProjectFilesPage`",
+        "description": "Create the new page component for the Project Files Hub at `/projects/:projectId/files` and set up the necessary routing in the main application.",
+        "details": "In `App.tsx` or your routing configuration file, add the new route: `<Route path='/projects/:projectId/files' element={<ProjectFilesPage />} />`. Create the file `pages/ProjectFilesPage.tsx`. This component will be the main container for the hub. It should extract the `projectId` from the URL parameters, pass it to the `useProjectFiles` hook, and set up the basic page layout with a header, sidebar area, and content area.",
+        "testStrategy": "Navigate to `/projects/some-id/files` in the browser. Verify that the `ProjectFilesPage` component renders without errors. Check that the `projectId` is correctly parsed from the URL and passed to the data hooks.",
+        "priority": "high",
+        "dependencies": [
+          "111"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "This task is a standard setup for a new page and does not need to be broken down further. It involves adding a route and creating the main page component file."
+      },
+      {
+        "id": "113",
+        "title": "UI: Build `SourceFilterSidebar` Component",
+        "description": "Develop the dynamic sidebar for the Project Files Hub that allows users to filter the aggregated content by its source (Drive, Tasks, Feedback, etc.) and displays a count for each source.",
+        "details": "Create `components/files/SourceFilterSidebar.tsx`. This component will receive the full `ProjectFile[]` array as a prop. It will compute the counts for each source (`drive`, `task`, etc.) and render a list of filter buttons. It should also manage the currently selected filter state and pass it up to the parent `ProjectFilesPage` via a callback. Include an 'All' option, which is selected by default.",
+        "testStrategy": "In Storybook or a test page, render the sidebar with a sample `ProjectFile[]` array. Verify that the source list is displayed correctly with accurate counts. Click on different filters and ensure the callback is fired with the correct source key. Test responsiveness to ensure it collapses correctly on smaller screens.",
+        "priority": "medium",
+        "dependencies": [
+          "112"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement UI and Source Count Computation Logic",
+            "description": "Create the basic structure and layout for the `SourceFilterSidebar.tsx` component. This includes implementing the logic to dynamically process the `ProjectFile[]` prop, calculate the total count for each unique file source, and render the list of sources with their corresponding counts.",
+            "dependencies": [],
+            "details": "In `components/files/SourceFilterSidebar.tsx`, define the component to accept `files: ProjectFile[]` as a prop. Use `useMemo` to iterate through the `files` array and generate an object mapping each source key (e.g., 'drive', 'task') to its count. Render a styled list of filter items, including an 'All' option, displaying the source name and the calculated count next to it.",
+            "status": "pending",
+            "testStrategy": "Use Storybook to render the component with a static mock `ProjectFile[]` array containing items from various sources. Visually inspect the rendered list to verify that all sources are present and that their counts are calculated and displayed correctly.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Add Filter State Management, Interactivity, and Responsiveness",
+            "description": "Implement state management for the active filter, handle user interactions, and communicate the selected filter back to the parent component. Also, ensure the sidebar is responsive and collapses appropriately on mobile viewports.",
+            "dependencies": [
+              1
+            ],
+            "details": "Introduce a `useState` hook to manage the `activeFilter`, defaulting to 'all'. Add an `onFilterChange` callback function to the component's props. Attach `onClick` handlers to each filter item. On click, update the internal state to reflect the selected filter and invoke the `onFilterChange` callback with the new filter key. Use CSS media queries to implement a collapsed view for mobile screens.",
+            "status": "pending",
+            "testStrategy": "In Storybook, use the `actions` addon to create a mock for the `onFilterChange` prop. Trigger click events on different filter items and assert that the action is logged with the correct filter key. Use viewport controls to verify the component's layout changes correctly at different screen sizes.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 4,
+        "recommendedSubtasks": 2,
+        "expansionPrompt": "Break down the creation of the `SourceFilterSidebar`. Subtasks should be: 1. Implement the UI and the logic to dynamically compute and display the count for each file source from the props. 2. Add state management for the active filter, handle user clicks, and call the parent component's callback with the selected filter."
+      },
+      {
+        "id": "114",
+        "title": "UI: Implement External Link Management Features",
+        "description": "Build the UI components for adding, editing, and displaying external links, including the 'Add Link' dialog and the `LinkCard` component.",
+        "details": "Create `components/files/AddLinkDialog.tsx`. This will be a modal form with a URL input. On URL input blur or paste, it should call the `/api/link-meta` endpoint to pre-fill the title. It will use the `useProjectLinks` hook to save the new link. Create `components/files/LinkCard.tsx` to display a link, its title, favicon, and description, along with an edit/delete menu. Integrate these into `ProjectFilesPage`.",
+        "testStrategy": "Test the 'Add Link' dialog by entering a URL and verifying the title auto-fetches. Submit the form and confirm the new link appears in the UI. Use the `LinkCard` menu to edit and delete the link, and verify the changes are reflected immediately due to real-time updates from `DataContext`.",
+        "priority": "medium",
+        "dependencies": [
+          "106",
+          "110",
+          "112"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create AddLinkDialog Component with Form UI",
+            "description": "Develop the basic structure and UI for the `AddLinkDialog.tsx` component. This includes creating the modal layout and the form with a URL input field and a title field.",
+            "dependencies": [],
+            "details": "Create the file `components/files/AddLinkDialog.tsx`. Implement a modal dialog using a UI library. The form should contain an input for the URL and a disabled input for the title, which will be auto-filled later.",
+            "status": "pending",
+            "testStrategy": "Visually inspect the component in Storybook or a development page to ensure the modal opens correctly and the form elements are rendered as expected.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Integrate /api/link-meta Endpoint for Title Prefill",
+            "description": "Enhance the `AddLinkDialog` to automatically fetch link metadata. When a user pastes a URL or the URL input loses focus (onBlur), call the `/api/link-meta` endpoint to retrieve the page title and pre-fill the form.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `AddLinkDialog.tsx`, add `onBlur` and `onPaste` event handlers to the URL input field. Trigger an API call to `/api/link-meta` with the URL. On a successful response, update the component's state to populate the title input field.",
+            "status": "pending",
+            "testStrategy": "In the running application, open the dialog, paste a valid URL (e.g., https://www.google.com), and verify that the title input is automatically populated with 'Google' after a short delay.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Develop the LinkCard Component for Display",
+            "description": "Create the `components/files/LinkCard.tsx` component responsible for displaying a single external link's information, including its favicon, title, description, and the URL itself.",
+            "dependencies": [],
+            "details": "The `LinkCard` component should accept a link object as a prop. It will render the link's favicon, title, and a snippet of its description. Also, include a menu (e.g., a three-dot menu) with options for 'Edit' and 'Delete'.",
+            "status": "pending",
+            "testStrategy": "Create a Storybook story for the `LinkCard` component. Pass mock link data with different properties (e.g., with/without favicon, long titles) to ensure it renders correctly in all states.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Integrate useProjectLinks Hook for Link Management",
+            "description": "Wire up the UI components to the `useProjectLinks` hook to enable full CRUD (Create, Read, Update, Delete) functionality for external links. This involves handling form submission, editing, and deletion.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "In `AddLinkDialog.tsx`, use the `addLink` function from `useProjectLinks` on form submission. In `LinkCard.tsx`, connect the 'Edit' menu item to open a pre-filled `AddLinkDialog` and the 'Delete' item to call the `deleteLink` function from the hook.",
+            "status": "pending",
+            "testStrategy": "Perform an end-to-end test. Add a new link via the dialog and verify it appears. Edit the link's title and confirm the change. Delete the link and ensure it is removed from the list.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Generate subtasks for the link management UI. The breakdown should cover: 1. Building the `AddLinkDialog` component with its form. 2. Implementing the real-time metadata fetching by calling the `/api/link-meta` endpoint from the dialog. 3. Creating the `LinkCard` component to display link information. 4. Integrating the `useProjectLinks` hook to handle adding, editing, and deleting links."
+      },
+      {
+        "id": "115",
+        "title": "UI: Develop Main Content View and Filtering Logic",
+        "description": "Build the main content area of the hub, which displays the files in a grid or list view, and implement the client-side filtering based on the search term and selected source from the sidebar.",
+        "details": "In `ProjectFilesPage.tsx`, implement the filtering logic. Take the full array from `useProjectFiles` and filter it based on the active source from `SourceFilterSidebar` and the text from a search input. Pass the filtered array to a component that renders the items. Reuse the existing `FileCard` component, extending it as `ProjectFileCard` if needed to handle the unified `ProjectFile` interface. When a user clicks an item, use its `sourceRoute` property to navigate them to the source.",
+        "testStrategy": "On the `ProjectFilesPage`, test the filtering. Select 'Tasks' from the sidebar and verify only task attachments are shown. Type in the search bar and confirm the list filters correctly across all properties. Click on an item from each source type and verify it navigates to the correct location (e.g., a task detail page).",
+        "priority": "medium",
+        "dependencies": [
+          "113"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement State Management for Search and Source Filters",
+            "description": "In the `ProjectFilesPage.tsx` component, set up state management to track the current search term from an input field and the selected source filter from the sidebar. These state variables will be used to control the filtering logic.",
+            "dependencies": [],
+            "details": "In `ProjectFilesPage.tsx`, use the `useState` hook to create two state variables: `searchTerm` (string) and `selectedSource` (string | null). The `searchTerm` will be updated by a new search input component, and `selectedSource` will be updated by the `SourceFilterSidebar` via a callback prop.",
+            "status": "pending",
+            "testStrategy": "Manually test by adding a search input and logging the state changes on input. Similarly, log the selected source when a filter is clicked in the sidebar to ensure the state is updating correctly in the `ProjectFilesPage` component.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Write Client-Side Filtering Logic for Project Files",
+            "description": "Implement the logic that filters the master list of files from the `useProjectFiles` hook. This logic will use the `searchTerm` and `selectedSource` state variables to produce a derived list of files to be displayed.",
+            "dependencies": [
+              1
+            ],
+            "details": "Within `ProjectFilesPage.tsx`, use the `useMemo` hook to compute the filtered list of files. The memoization dependencies should be the master file list, `searchTerm`, and `selectedSource`. The logic should first filter by `selectedSource` (if not null) and then perform a case-insensitive search using `searchTerm` on file properties like `name` and `description`.",
+            "status": "pending",
+            "testStrategy": "Create a small unit test for the filtering function. Provide a mock array of `ProjectFile` objects and test various combinations of search terms and source filters to assert that the correct subset of files is returned.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Build the Component for Rendering the Grid of Project Files",
+            "description": "Develop a new component responsible for rendering the filtered array of `ProjectFile` objects. This component will display the files in a responsive grid or list view, using a `ProjectFileCard` for each item.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a new component, e.g., `ProjectFileDisplay.tsx`. This component will accept the filtered array of files as a prop. It will map over the array and render a `ProjectFileCard` for each file, passing the necessary props. The `ProjectFileCard` should be clickable and use the `sourceRoute` property for navigation. Implement a responsive CSS grid for the layout.",
+            "status": "pending",
+            "testStrategy": "Use Storybook to develop the `ProjectFileDisplay` component in isolation. Pass it mock data representing different scenarios (e.g., zero files, many files) to verify the layout, responsiveness, and correct rendering of `ProjectFileCard` components.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the main content view implementation. Subtasks should cover: 1. Implementing the state management in the parent page for the search term and selected source filter. 2. Writing the client-side filtering logic that derives the displayed file list from the master list. 3. Building the component responsible for rendering the grid or list of `ProjectFileCard` components."
+      },
+      {
+        "id": "116",
+        "title": "Feature: Implement Direct File Upload to Project Drive",
+        "description": "Integrate the existing `FileUpload` component into the Project Files Hub to allow users to drag-and-drop files for direct upload to the current project's Google Drive folder.",
+        "details": "In `ProjectFilesPage.tsx`, add the `FileUpload` component. Pass the current `projectId` to it, which will then be used by the underlying `useDriveFiles` hook to ensure uploads are sent to the correct, project-scoped API endpoint. The upload functionality should only be active when the 'Drive' or 'All' source is selected in the sidebar.",
+        "testStrategy": "Navigate to the project files hub. Drag a file onto the upload zone. Verify the upload progress appears and completes successfully. Check the project's folder in Google Drive to confirm the file is there. Test that attempting to upload while a non-Drive source is selected is disabled or handled gracefully.",
+        "priority": "medium",
+        "dependencies": [
+          "109",
+          "112"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "This task is a straightforward integration of an existing component and does not require further expansion. The work involves placing the component and passing the correct props."
+      },
+      {
+        "id": "117",
+        "title": "Integration: Add 'Files' Tool Card to ToolsPage",
+        "description": "Add a new tool card for 'Files' on the `ToolsPage`, displaying live stats such as the number of Drive files, in-app attachments, and external links for the project.",
+        "details": "In `pages/ToolsPage.tsx`, add a new entry to the tools array for 'Files'. The `href` should dynamically point to `/projects/${project.id}/files`. To get the stats, use the same data sources: `useDriveFiles({ projectId })` for a lightweight file count and filter the `DataContext` collections (`tasks`, `projectLinks`, etc.) by `projectId` to get the counts for attachments and links. Memoize these calculations for performance.",
+        "testStrategy": "Navigate to the `ToolsPage` for a project. Verify the 'Files' card is present. Check that the stats displayed are accurate. Click the card and confirm it navigates to the correct project files hub URL. Verify stats update when new files or links are added.",
+        "priority": "low",
+        "dependencies": [
+          "112"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "UI: Add Static 'Files' Tool Card to ToolsPage",
+            "description": "Create the static UI for the new 'Files' tool card on the `ToolsPage`. This includes adding the card with its icon, title, and a static description, ensuring it routes correctly to the project's files hub.",
+            "dependencies": [],
+            "details": "In `pages/ToolsPage.tsx`, add a new entry to the tools array for 'Files'. Set the title, icon, and a placeholder description. The `href` property must be dynamically constructed to point to `/projects/${project.id}/files`. The stats display can be hardcoded or show a loading state initially.",
+            "status": "pending",
+            "testStrategy": "Navigate to the `ToolsPage` for a project. Verify the 'Files' card is present and correctly styled. Click the card and confirm it navigates to the correct project files hub URL.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Data: Fetch and Display Live Stats on 'Files' Tool Card",
+            "description": "Implement the logic to fetch, calculate, and display the live statistics for the 'Files' tool card. This includes the count of Drive files, in-app attachments, and external links associated with the project.",
+            "dependencies": [
+              1
+            ],
+            "details": "In `pages/ToolsPage.tsx`, use the `useDriveFiles({ projectId })` hook for the Drive file count. Access the `DataContext` to filter and count `tasks` with attachments and `projectLinks` for the current project. Memoize these calculations for performance and pass the aggregated stats to the card component.",
+            "status": "pending",
+            "testStrategy": "On the `ToolsPage`, verify that the 'Files' card displays accurate counts for a project with known data. Add a new file, attachment, or link and confirm the stats update correctly on the card. Check for loading and zero-states.",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 4,
+        "recommendedSubtasks": 2,
+        "expansionPrompt": "Break down the task of adding the 'Files' tool card. Subtasks should be: 1. Add the static UI for the new card to the `ToolsPage` with correct routing. 2. Implement the data fetching and aggregation logic to calculate and display the live stats (file counts, link counts) on the card."
+      },
+      {
+        "id": "118",
+        "title": "Navigation: Update Main App Sidebar",
+        "description": "Modify the main application sidebar's 'Files' link to be context-aware. It should navigate to the active project's file hub if a project is selected, or to the global files page otherwise.",
+        "details": "In the main sidebar component, use the `ActiveProjectContext` to get the currently active project. The 'Files' navigation link's `to` or `href` prop should be determined conditionally: `activeProject ? \n`/projects/${activeProject.id}/files` : '/files'`. This ensures users are always taken to the most relevant files view.",
+        "testStrategy": "With no project selected, click the 'Files' link in the sidebar and verify it goes to `/files`. Select a project, then click the 'Files' link again and verify it now navigates to `/projects/{projectId}/files`. Switch projects and confirm the link updates accordingly.",
+        "priority": "low",
+        "dependencies": [
+          "112"
+        ],
+        "status": "pending",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "This task is a small, targeted change to a single component and does not require further expansion. It involves adding a context hook and a ternary operator to a link's prop."
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-01T22:27:17.551Z",
-      "taskCount": 70,
-      "completedCount": 70,
+      "lastModified": "2026-03-03T17:17:54.579Z",
+      "taskCount": 85,
+      "completedCount": 74,
       "tags": [
         "master"
       ]

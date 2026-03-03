@@ -14,6 +14,7 @@ import adminRouter from './adminRoutes';
 import paymenterRouter from './paymenterRoutes';
 import driveRouter from './driveRoutes';
 import searchRouter from './searchRoutes';
+import linkMetaRouter from './linkMetaRoutes';
 
 
 export const app = express();
@@ -166,6 +167,9 @@ app.use('/api/drive', driveRouter);
 
 // Meilisearch search proxy (keeps master key server-side)
 app.use('/api/search', optionalApiKeyAuth, searchRouter);
+
+// Link metadata fetcher (title + favicon extraction)
+app.use('/api/link-meta', linkMetaRouter);
 
 if (require.main === module) {
   app.listen(port, () => {

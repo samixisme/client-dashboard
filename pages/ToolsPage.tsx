@@ -1,5 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 import { useData } from '../contexts/DataContext';
 import { useActiveProject, getBrandLogoUrl, getBrandColor } from '../contexts/ActiveProjectContext';
 import { BoardIcon } from '../components/icons/BoardIcon';
@@ -34,9 +36,11 @@ interface ToolCardProps {
     index: number;
     stats: { label: string; value: string | number }[];
     external?: boolean;
+    onClick?: (e: React.MouseEvent) => void;
+    loading?: boolean;
 }
 
-const ToolCard: React.FC<ToolCardProps> = ({ label, description, Icon, href, index, stats, external }) => {
+const ToolCard: React.FC<ToolCardProps> = ({ label, description, Icon, href, index, stats, external, onClick, loading }) => {
     const content = (
         <div
             className="group bg-glass/40 backdrop-blur-xl p-6 rounded-2xl border border-border-color flex flex-col gap-4
@@ -93,21 +97,31 @@ const ToolCard: React.FC<ToolCardProps> = ({ label, description, Icon, href, ind
                     className="text-xs font-bold uppercase tracking-wider transition-colors duration-300"
                     style={{ color: GREEN }}
                 >
-                    Open {label}
+                    {loading ? 'Creating...' : `Open ${label}`}
                 </span>
-                <svg
-                    className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1"
-                    style={{ color: GREEN }}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
+                {loading ? (
+                    <div
+                        className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
+                        style={{ borderColor: `${GREEN}40`, borderTopColor: GREEN }}
+                    />
+                ) : (
+                    <svg
+                        className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1"
+                        style={{ color: GREEN }}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                )}
             </div>
         </div>
     );
 
     if (external) {
         return <a href={href} target="_blank" rel="noopener noreferrer">{content}</a>;
+    }
+    if (onClick) {
+        return <div onClick={onClick}>{content}</div>;
     }
     return <Link to={href}>{content}</Link>;
 };
@@ -149,12 +163,34 @@ const ToolsPage: React.FC = () => {
         ];
     }, [project, data.boards, data.tasks]);
 
-    // Board href
-    const boardHref = useMemo(() => {
-        if (!project) return '#';
-        const board = data.boards.find(b => b.projectId === project.id);
-        return board ? `/board/${board.id}` : '#';
+    // Board href + creation handler
+    const existingBoard = useMemo(() => {
+        if (!project) return null;
+        return data.boards.find(b => b.projectId === project.id) ?? null;
     }, [project, data.boards]);
+
+    const [creatingBoard, setCreatingBoard] = useState(false);
+
+    const handleBoardClick = useCallback(async () => {
+        if (!project || creatingBoard) return;
+        if (existingBoard) {
+            navigate(`/board/${existingBoard.id}`);
+            return;
+        }
+        try {
+            setCreatingBoard(true);
+            const docRef = await addDoc(collection(db, 'boards'), {
+                projectId: project.id,
+                name: `${project.name} Board`,
+                is_pinned: false,
+                background_image: '',
+                member_ids: project.memberIds ?? [],
+            });
+            navigate(`/board/${docRef.id}`);
+        } catch (err) {
+            setCreatingBoard(false);
+        }
+    }, [project, existingBoard, creatingBoard, navigate]);
 
     // Feedback stats
     const feedbackStats = useMemo(() => {
@@ -338,7 +374,9 @@ const ToolsPage: React.FC = () => {
                     label="Board"
                     description="Kanban-style task board. Manage stages, assign tasks, and track work in progress."
                     Icon={BoardIcon}
-                    href={boardHref}
+                    href={existingBoard ? `/board/${existingBoard.id}` : '#'}
+                    onClick={existingBoard ? undefined : handleBoardClick}
+                    loading={creatingBoard}
                     stats={boardStats}
                 />
 

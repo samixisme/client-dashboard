@@ -11,6 +11,7 @@ import {
 } from '../utils/googleDrive';
 import { getQuotaStats } from '../utils/driveQuota';
 import { optionalApiKeyAuth } from './authMiddleware';
+import { createFolderBodySchema } from './schemas/driveSchemas';
 
 const router = Router();
 
@@ -60,13 +61,31 @@ const upload = multer({
 router.get('/files', async (req: Request, res: Response) => {
   try {
     await initializeDrive();
-    const folderPath = (req.query.folder as string) || '';
+    
+    let safeFolderPath = '';
 
-    // Sanitize folder path: strip leading slashes and block traversal sequences
-    const safeFolderPath = folderPath
-      .replace(/\.\./g, '')
-      .replace(/^\/+/, '')
-      .trim();
+    if (req.query.projectId) {
+      const rawProjectId = String(req.query.projectId);
+      const safeProjectId = rawProjectId
+        .replace(/\.\./g, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '')
+        .trim();
+      
+      safeFolderPath = `projects/${safeProjectId}`;
+      
+      try {
+        await getFolderId(safeFolderPath);
+      } catch {
+        // Folder resolution failed — listFiles will return empty results
+      }
+    } else {
+      const folderPath = (req.query.folder as string) || '';
+      // Sanitize folder path: strip leading slashes and block traversal sequences
+      safeFolderPath = folderPath
+        .replace(/\.\./g, '')
+        .replace(/^\/+/, '')
+        .trim();
+    }
 
     const items = await listFiles(safeFolderPath);
 
@@ -163,6 +182,34 @@ router.get('/folders', async (req: Request, res: Response) => {
     return res.json({ folderId, path: safePath });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to resolve folder' });
+  }
+});
+
+// ─── POST /api/drive/folders ─────────────────────────────────────────────────
+// Create a folder at the given path (nested creation supported)
+router.post('/folders', async (req: Request, res: Response) => {
+  try {
+    const validation = createFolderBodySchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error.errors[0].message });
+    }
+
+    await initializeDrive();
+
+    const safePath = validation.data.path
+      .replace(/\.\./g, '')
+      .replace(/^\/+/, '')
+      .trim();
+
+    if (!safePath) {
+      return res.status(400).json({ error: 'Invalid folder path' });
+    }
+
+    // getFolderId already handles nested creation internally
+    const folderId = await getFolderId(safePath);
+    return res.status(201).json({ folderId, path: safePath });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to create folder' });
   }
 });
 

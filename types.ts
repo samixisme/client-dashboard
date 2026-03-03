@@ -640,6 +640,18 @@ export interface EmailSendLog {
     errorMessage?: string;
 }
 
+// Project Links (Project Cloud)
+export interface ProjectLink {
+    id: string;
+    projectId: string;
+    title: string;
+    url: string;
+    favicon?: string;
+    createdBy: string;
+    createdAt: string; // ISO string
+    pinned: boolean;
+}
+
 // Social Media Dashboard Types
 export type SocialPlatform = 'instagram' | 'twitter' | 'facebook' | 'linkedin' | 'tiktok' | 'youtube';
 export type PostStatus = 'published' | 'scheduled' | 'draft' | 'failed';
