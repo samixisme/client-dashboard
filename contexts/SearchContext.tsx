@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useRef, useCallback, useMemo, ReactNode } from 'react';
 import { useData } from './DataContext';
-import { useDocs } from './DocsContext';
 import { SearchResults, SearchHit } from '../utils/search';
 
 interface SearchContextType {
@@ -25,8 +24,6 @@ function matchesAny(obj: Record<string, unknown>, q: string, fields: string[]): 
 
 export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { data } = useData();
-  const { docs } = useDocs();
-
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -44,8 +41,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     brands: data.brands,
     clients: data.clients,
     invoices: data.invoices,
-    docs,
-  }), [data.projects, data.tasks, data.brands, data.clients, data.invoices, docs]);
+  }), [data.projects, data.tasks, data.brands, data.clients, data.invoices]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -78,7 +74,6 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           brands:   r(corpus.brands,   ['name', 'industry', 'brandVoice'], b => ({ name: b.name, industry: (b as unknown as Record<string, unknown>).industry })),
           clients:  r(corpus.clients,  ['name', 'adresse', 'ice'], c => ({ name: c.name })),
           invoices: r(corpus.invoices, ['invoiceNumber', 'status'], i => ({ invoiceNumber: (i as unknown as Record<string, unknown>).invoiceNumber, status: (i as unknown as Record<string, unknown>).status })),
-          docs:     r(corpus.docs,     ['title', 'mode'], d => ({ title: d.title, mode: d.mode })),
         };
       })();
 

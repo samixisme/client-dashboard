@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
-import { useDocs } from '../contexts/DocsContext';
 import { SearchHit } from '../utils/search';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -37,7 +36,6 @@ const TYPE_LABELS: Record<string, string> = {
   brands: 'Brands',
   invoices: 'Invoices',
   clients: 'Clients',
-  docs: 'Docs',
 };
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -66,11 +64,6 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   ),
-  docs: (
-    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  ),
 };
 
 // Returns null (not empty string) when there's no valid route
@@ -80,7 +73,6 @@ const TYPE_ROUTES: Record<string, (hit: SearchHit) => string | null> = {
   brands: (h) => `/brands/${h.id}`,
   invoices: () => '/payments',
   clients: () => '/payments',
-  docs: (h) => (h.projectId ? `/docs/${h.projectId}/${h.id}` : null),
 };
 
 // ── HitCard ───────────────────────────────────────────────────────────────────
@@ -130,7 +122,6 @@ function HitCard({ type, hit }: { type: string; hit: SearchHit }) {
 const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data } = useData();
-  const { docs } = useDocs();
 
   // Local state — isolated from the topbar SearchBar's shared context so the
   // topbar's "click outside → clearSearch()" handler never resets this page.
@@ -196,17 +187,11 @@ const SearchPage: React.FC = () => {
         id: c.id,
         name: c.name,
       })),
-      docs: r(docs, ['title', 'mode'], (d) => ({
-        id: d.id,
-        title: d.title,
-        mode: d.mode,
-        projectId: d.projectId,
-      })),
     };
 
     setResults({ query: q, results: built, processingTimeMs: Date.now() - start });
     setIsSearching(false);
-  }, [data.projects, data.tasks, data.brands, data.invoices, data.clients, docs]);
+  }, [data.projects, data.tasks, data.brands, data.invoices, data.clients]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -228,7 +213,7 @@ const SearchPage: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-text-primary mb-1">Search</h1>
-        <p className="text-sm text-text-secondary">Search across projects, tasks, brands, docs and more</p>
+        <p className="text-sm text-text-secondary">Search across projects, tasks, brands and more</p>
       </div>
 
       {/* Search input */}
@@ -243,7 +228,7 @@ const SearchPage: React.FC = () => {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search projects, tasks, brands, docs…"
+          placeholder="Search projects, tasks, brands…"
           className="w-full pl-11 pr-10 py-3.5 rounded-xl bg-glass border border-border-color text-text-primary placeholder-text-secondary focus:outline-none focus:border-primary/50 focus:shadow-[0_0_0_3px_rgba(163,230,53,0.08)] text-sm transition-all duration-200"
         />
         {query && (

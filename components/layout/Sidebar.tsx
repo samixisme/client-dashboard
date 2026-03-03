@@ -33,7 +33,6 @@ const TYPE_LABELS: Record<string, string> = {
     feedback_items: 'Feedback',
     invoices: 'Invoices',
     clients: 'Clients',
-    docs: 'Docs',
     drive_files: 'Drive Files',
 };
 
@@ -44,7 +43,6 @@ const TYPE_ROUTES: Record<string, (hit: Record<string, unknown>) => string> = {
     feedback_items: (h) => `/feedback/${h.projectId ?? ''}`,
     invoices: () => '/payments',
     clients: () => '/payments',
-    docs: (h) => `/docs/${h.projectId ?? ''}/${h.id}`,
     drive_files: () => '',
 };
 

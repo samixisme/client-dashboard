@@ -84,11 +84,7 @@ import { CalendarProvider } from './contexts/CalendarContext';
 import { UserProvider } from './contexts/UserContext';
 import { NotificationHistoryProvider } from './contexts/NotificationHistoryContext';
 import { ActiveProjectProvider } from './contexts/ActiveProjectContext';
-import { DocsProvider } from './contexts/DocsContext';
 import ToolsPage from './pages/ToolsPage';
-import DocsListPage from './pages/DocsListPage';
-import DocEditorPage from './pages/DocEditorPage';
-import AdminDocsPage from './pages/admin/AdminDocsPage';
 import FilesPage from './pages/FilesPage';
 import SearchPage from './pages/SearchPage';
 import LinksPage from './pages/LinksPage';
@@ -107,11 +103,7 @@ function App() {
   // --- START: CUSTOM CONTEXT MENU LOGIC ---
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
-      // Let BlockSuite editor handle its own context menus (format bar,
-      // block actions, edgeless element menus). Without this guard the
-      // global handler steals right-click events from the editor.
       const target = e.target as HTMLElement;
-      if (target.closest('editor-host, .affine-editor-container, affine-editor-container')) return;
       e.preventDefault();
       setContextMenu({ visible: true, x: e.clientX, y: e.clientY, target });
     };
@@ -257,7 +249,6 @@ function App() {
           <AdminProvider>
             <DataProvider>
               <ActiveProjectProvider>
-              <DocsProvider>
               <TimerProvider>
                 <CalendarProvider>
                   <SearchProvider>
@@ -280,7 +271,6 @@ function App() {
                       <Route path="calendar-events" element={<AdminCalendarEventsPage />} />
                       <Route path="roadmap" element={<AdminRoadmapPage />} />
                       <Route path="social-media" element={<AdminSocialMediaPage />} />
-                      <Route path="docs" element={<AdminDocsPage />} />
                   </Route>
 
                   {/* Main Application Routes - Wrapped in MainLayout */}
@@ -526,34 +516,6 @@ function App() {
                       </MainLayout>
                    } />
 
-                   {/* ── AFFiNE Docs & Whiteboards ─────────────────────────────── */}
-                   <Route path="/docs/:projectId" element={
-                      <MainLayout onLogout={handleLogout}>
-                         <DocsListPage />
-                      </MainLayout>
-                   } />
-                   <Route path="/docs/:projectId/new" element={
-                      <MainLayout onLogout={handleLogout} fullBleed>
-                         <ErrorBoundary>
-                           <DocEditorPage />
-                         </ErrorBoundary>
-                      </MainLayout>
-                   } />
-                   <Route path="/docs/:projectId/:docId" element={
-                      <MainLayout onLogout={handleLogout} fullBleed>
-                         <ErrorBoundary>
-                           <DocEditorPage />
-                         </ErrorBoundary>
-                      </MainLayout>
-                   } />
-                   <Route path="/whiteboard/:projectId/:docId" element={
-                      <MainLayout onLogout={handleLogout} fullBleed>
-                         <ErrorBoundary>
-                           <DocEditorPage defaultMode="edgeless" />
-                         </ErrorBoundary>
-                      </MainLayout>
-                   } />
-
                    {/* Global search page */}
                    <Route path="/search" element={
                       <MainLayout onLogout={handleLogout}>
@@ -568,7 +530,6 @@ function App() {
                 </SearchProvider>
                 </CalendarProvider>
               </TimerProvider>
-              </DocsProvider>
               </ActiveProjectProvider>
             </DataProvider>
           </AdminProvider>

@@ -10,7 +10,6 @@ const ALL_INDEXES = [
   'feedback_items',
   'invoices',
   'clients',
-  'docs',
   'drive_files',
 ] as const;
 

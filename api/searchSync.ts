@@ -63,11 +63,6 @@ const INDEX_SETTINGS: Record<string, {
     filterableAttributes: [],
     sortableAttributes: [],
   },
-  docs: {
-    searchableAttributes: ['title', 'mode'],
-    filterableAttributes: ['mode', 'projectId', 'brandId'],
-    sortableAttributes: [],
-  },
   drive_files: {
     searchableAttributes: ['name', 'folderPath', 'mimeType'],
     filterableAttributes: ['mimeType'],
@@ -179,14 +174,6 @@ export async function runFullSync() {
     name: d.name ?? '',
     adresse: d.adresse ?? '',
     ice: d.ice ?? '',
-  }));
-
-  await syncCollection('docs', 'docs', (id, d) => ({
-    id,
-    title: d.title ?? '',
-    mode: d.mode ?? '',
-    projectId: d.projectId ?? '',
-    brandId: d.brandId ?? '',
   }));
 
   await syncDriveFiles();

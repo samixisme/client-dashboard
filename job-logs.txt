@@ -1,0 +1,323 @@
+﻿2026-03-03T14:19:03.6568665Z Current runner version: '2.331.0'
+2026-03-03T14:19:03.6598109Z ##[group]Runner Image Provisioner
+2026-03-03T14:19:03.6599716Z Hosted Compute Agent
+2026-03-03T14:19:03.6601008Z Version: 20260213.493
+2026-03-03T14:19:03.6602510Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-03-03T14:19:03.6604019Z Build Date: 2026-02-13T00:28:41Z
+2026-03-03T14:19:03.6605369Z Worker ID: {e5bddc63-73ff-4994-8366-d1ce9a35c016}
+2026-03-03T14:19:03.6606816Z Azure Region: northcentralus
+2026-03-03T14:19:03.6608058Z ##[endgroup]
+2026-03-03T14:19:03.6610577Z ##[group]Operating System
+2026-03-03T14:19:03.6611878Z Ubuntu
+2026-03-03T14:19:03.6613480Z 24.04.3
+2026-03-03T14:19:03.6614725Z LTS
+2026-03-03T14:19:03.6615905Z ##[endgroup]
+2026-03-03T14:19:03.6617148Z ##[group]Runner Image
+2026-03-03T14:19:03.6618431Z Image: ubuntu-24.04
+2026-03-03T14:19:03.6619721Z Version: 20260224.36.1
+2026-03-03T14:19:03.6621723Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260224.36/images/ubuntu/Ubuntu2404-Readme.md
+2026-03-03T14:19:03.6624431Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260224.36
+2026-03-03T14:19:03.6626099Z ##[endgroup]
+2026-03-03T14:19:03.6628346Z ##[group]GITHUB_TOKEN Permissions
+2026-03-03T14:19:03.6631240Z Contents: read
+2026-03-03T14:19:03.6632834Z Metadata: read
+2026-03-03T14:19:03.6634111Z Packages: read
+2026-03-03T14:19:03.6635281Z ##[endgroup]
+2026-03-03T14:19:03.6638114Z Secret source: Actions
+2026-03-03T14:19:03.6639830Z Prepare workflow directory
+2026-03-03T14:19:03.7060162Z Prepare all required actions
+2026-03-03T14:19:03.7099155Z Getting action download info
+2026-03-03T14:19:04.1287356Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-03-03T14:19:04.7767954Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+2026-03-03T14:19:05.7755680Z Complete job name: Deploy to Production
+2026-03-03T14:19:05.9054413Z ##[group]Run actions/checkout@v4
+2026-03-03T14:19:05.9057914Z with:
+2026-03-03T14:19:05.9060548Z   repository: samixisme/client-dashboard
+2026-03-03T14:19:05.9063129Z   token: ***
+2026-03-03T14:19:05.9064774Z   ssh-strict: true
+2026-03-03T14:19:05.9066447Z   ssh-user: git
+2026-03-03T14:19:05.9068135Z   persist-credentials: true
+2026-03-03T14:19:05.9069897Z   clean: true
+2026-03-03T14:19:05.9071597Z   sparse-checkout-cone-mode: true
+2026-03-03T14:19:05.9073577Z   fetch-depth: 1
+2026-03-03T14:19:05.9075227Z   fetch-tags: false
+2026-03-03T14:19:05.9076892Z   show-progress: true
+2026-03-03T14:19:05.9078581Z   lfs: false
+2026-03-03T14:19:05.9080198Z   submodules: false
+2026-03-03T14:19:05.9081894Z   set-safe-directory: true
+2026-03-03T14:19:05.9084497Z env:
+2026-03-03T14:19:05.9086100Z   NODE_VERSION: 20
+2026-03-03T14:19:05.9087789Z   DEPLOY_USER: clientdash
+2026-03-03T14:19:05.9089552Z   DEPLOY_HOST: 49.13.129.43
+2026-03-03T14:19:05.9091522Z   DEPLOY_PATH: /home/clientdash/client-dashboard
+2026-03-03T14:19:05.9093905Z   PM2_APP_NAME: client-dashboard
+2026-03-03T14:19:05.9095741Z ##[endgroup]
+2026-03-03T14:19:06.0457431Z Syncing repository: samixisme/client-dashboard
+2026-03-03T14:19:06.0461536Z ##[group]Getting Git version info
+2026-03-03T14:19:06.0464438Z Working directory is '/home/runner/work/client-dashboard/client-dashboard'
+2026-03-03T14:19:06.0468055Z [command]/usr/bin/git version
+2026-03-03T14:19:06.0717915Z git version 2.53.0
+2026-03-03T14:19:06.0749948Z ##[endgroup]
+2026-03-03T14:19:06.0774196Z Temporarily overriding HOME='/home/runner/work/_temp/dd956c02-4344-4a4c-baf1-abf77b4bc5b7' before making global git config changes
+2026-03-03T14:19:06.0780872Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-03T14:19:06.0787005Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/client-dashboard/client-dashboard
+2026-03-03T14:19:06.0825907Z Deleting the contents of '/home/runner/work/client-dashboard/client-dashboard'
+2026-03-03T14:19:06.0832493Z ##[group]Initializing the repository
+2026-03-03T14:19:06.0837326Z [command]/usr/bin/git init /home/runner/work/client-dashboard/client-dashboard
+2026-03-03T14:19:06.0934331Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-03-03T14:19:06.0938924Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-03-03T14:19:06.0944092Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-03-03T14:19:06.0948127Z hint: call:
+2026-03-03T14:19:06.0950816Z hint:
+2026-03-03T14:19:06.0954143Z hint: 	git config --global init.defaultBranch <name>
+2026-03-03T14:19:06.0957543Z hint:
+2026-03-03T14:19:06.0960844Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-03-03T14:19:06.0964050Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-03-03T14:19:06.0966718Z hint:
+2026-03-03T14:19:06.0969471Z hint: 	git branch -m <name>
+2026-03-03T14:19:06.0972456Z hint:
+2026-03-03T14:19:06.0974643Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-03-03T14:19:06.0977924Z Initialized empty Git repository in /home/runner/work/client-dashboard/client-dashboard/.git/
+2026-03-03T14:19:06.0983907Z [command]/usr/bin/git remote add origin https://github.com/samixisme/client-dashboard
+2026-03-03T14:19:06.0997130Z ##[endgroup]
+2026-03-03T14:19:06.1001827Z ##[group]Disabling automatic garbage collection
+2026-03-03T14:19:06.1005720Z [command]/usr/bin/git config --local gc.auto 0
+2026-03-03T14:19:06.1035076Z ##[endgroup]
+2026-03-03T14:19:06.1039658Z ##[group]Setting up auth
+2026-03-03T14:19:06.1043842Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-03T14:19:06.1077576Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-03T14:19:06.1414363Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-03T14:19:06.1450002Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-03T14:19:06.1694970Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-03-03T14:19:06.1733787Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-03-03T14:19:06.1980617Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-03-03T14:19:06.2019361Z ##[endgroup]
+2026-03-03T14:19:06.2025940Z ##[group]Fetching the repository
+2026-03-03T14:19:06.2032676Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +dfefb0ad627f3390171261b5cb9b0ce66e6723e3:refs/remotes/origin/main
+2026-03-03T14:19:06.7942420Z From https://github.com/samixisme/client-dashboard
+2026-03-03T14:19:06.7943661Z  * [new ref]         dfefb0ad627f3390171261b5cb9b0ce66e6723e3 -> origin/main
+2026-03-03T14:19:06.7977819Z ##[endgroup]
+2026-03-03T14:19:06.7979282Z ##[group]Determining the checkout info
+2026-03-03T14:19:06.7980887Z ##[endgroup]
+2026-03-03T14:19:06.7986683Z [command]/usr/bin/git sparse-checkout disable
+2026-03-03T14:19:06.8028505Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-03-03T14:19:06.8060977Z ##[group]Checking out the ref
+2026-03-03T14:19:06.8061887Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-03-03T14:19:06.8792684Z Switched to a new branch 'main'
+2026-03-03T14:19:06.8793796Z branch 'main' set up to track 'origin/main'.
+2026-03-03T14:19:06.8805570Z ##[endgroup]
+2026-03-03T14:19:06.8851100Z [command]/usr/bin/git log -1 --format=%H
+2026-03-03T14:19:06.8876105Z dfefb0ad627f3390171261b5cb9b0ce66e6723e3
+2026-03-03T14:19:06.9090535Z ##[group]Run actions/download-artifact@v4
+2026-03-03T14:19:06.9091403Z with:
+2026-03-03T14:19:06.9091889Z   name: deploy-package
+2026-03-03T14:19:06.9092704Z   merge-multiple: false
+2026-03-03T14:19:06.9093255Z   repository: samixisme/client-dashboard
+2026-03-03T14:19:06.9093813Z   run-id: 22627005792
+2026-03-03T14:19:06.9094289Z env:
+2026-03-03T14:19:06.9094733Z   NODE_VERSION: 20
+2026-03-03T14:19:06.9095217Z   DEPLOY_USER: clientdash
+2026-03-03T14:19:06.9095713Z   DEPLOY_HOST: 49.13.129.43
+2026-03-03T14:19:06.9096266Z   DEPLOY_PATH: /home/clientdash/client-dashboard
+2026-03-03T14:19:06.9096870Z   PM2_APP_NAME: client-dashboard
+2026-03-03T14:19:06.9097392Z ##[endgroup]
+2026-03-03T14:19:07.1135624Z Downloading single artifact
+2026-03-03T14:19:07.2982864Z Preparing to download the following artifacts:
+2026-03-03T14:19:07.2984733Z - deploy-package (ID: 5742004624, Size: 7641422, Expected Digest: sha256:8ef6f794ac30f31567dc8e02b03ea34f53999eec6793f7a39c735a8c4dbf6759)
+2026-03-03T14:19:07.4040033Z Redirecting to blob download url: https://productionresultssa12.blob.core.windows.net/actions-results/fec76ad5-a808-4898-98af-00ca20399fe0/workflow-job-run-c8fce9bf-14fc-5aee-a1ba-6e72568343ec/artifacts/697c18490feae53dc2011b541b52cbc78ddbb3e75c0f318d72d9d9503f2fd641.zip
+2026-03-03T14:19:07.4043238Z Starting download of artifact to: /home/runner/work/client-dashboard/client-dashboard
+2026-03-03T14:19:07.5615697Z (node:2310) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-03-03T14:19:07.5618012Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-03-03T14:19:07.8964664Z SHA256 digest of downloaded artifact is 8ef6f794ac30f31567dc8e02b03ea34f53999eec6793f7a39c735a8c4dbf6759
+2026-03-03T14:19:07.8966479Z Artifact download completed successfully.
+2026-03-03T14:19:07.8967405Z Total of 1 artifact(s) downloaded
+2026-03-03T14:19:07.8972998Z Download artifact has finished successfully
+2026-03-03T14:19:07.9131908Z ##[group]Run mkdir -p ~/.ssh
+2026-03-03T14:19:07.9132713Z [36;1mmkdir -p ~/.ssh[0m
+2026-03-03T14:19:07.9133408Z [36;1mecho "***[0m
+2026-03-03T14:19:07.9134078Z [36;1m***[0m
+2026-03-03T14:19:07.9134732Z [36;1m***[0m
+2026-03-03T14:19:07.9135312Z [36;1m***[0m
+2026-03-03T14:19:07.9135909Z [36;1m***[0m
+2026-03-03T14:19:07.9136495Z [36;1m***[0m
+2026-03-03T14:19:07.9137088Z [36;1m***[0m
+2026-03-03T14:19:07.9137732Z [36;1m***[0m
+2026-03-03T14:19:07.9138314Z [36;1m***[0m
+2026-03-03T14:19:07.9138897Z [36;1m***[0m
+2026-03-03T14:19:07.9139490Z [36;1m***[0m
+2026-03-03T14:19:07.9140070Z [36;1m***[0m
+2026-03-03T14:19:07.9140674Z [36;1m***[0m
+2026-03-03T14:19:07.9141244Z [36;1m***[0m
+2026-03-03T14:19:07.9141836Z [36;1m***[0m
+2026-03-03T14:19:07.9142697Z [36;1m***[0m
+2026-03-03T14:19:07.9143283Z [36;1m***[0m
+2026-03-03T14:19:07.9143882Z [36;1m***[0m
+2026-03-03T14:19:07.9144470Z [36;1m***[0m
+2026-03-03T14:19:07.9145062Z [36;1m***[0m
+2026-03-03T14:19:07.9145687Z [36;1m***[0m
+2026-03-03T14:19:07.9146287Z [36;1m***[0m
+2026-03-03T14:19:07.9146915Z [36;1m***[0m
+2026-03-03T14:19:07.9147512Z [36;1m***[0m
+2026-03-03T14:19:07.9148079Z [36;1m***[0m
+2026-03-03T14:19:07.9148680Z [36;1m***[0m
+2026-03-03T14:19:07.9149288Z [36;1m***[0m
+2026-03-03T14:19:07.9149846Z [36;1m***[0m
+2026-03-03T14:19:07.9150425Z [36;1m***[0m
+2026-03-03T14:19:07.9151005Z [36;1m***[0m
+2026-03-03T14:19:07.9151576Z [36;1m***[0m
+2026-03-03T14:19:07.9152397Z [36;1m***[0m
+2026-03-03T14:19:07.9152991Z [36;1m***[0m
+2026-03-03T14:19:07.9153593Z [36;1m***[0m
+2026-03-03T14:19:07.9154188Z [36;1m***[0m
+2026-03-03T14:19:07.9154759Z [36;1m***[0m
+2026-03-03T14:19:07.9155326Z [36;1m***[0m
+2026-03-03T14:19:07.9155914Z [36;1m***[0m
+2026-03-03T14:19:07.9156497Z [36;1m***[0m
+2026-03-03T14:19:07.9157066Z [36;1m***[0m
+2026-03-03T14:19:07.9157671Z [36;1m***[0m
+2026-03-03T14:19:07.9158237Z [36;1m***[0m
+2026-03-03T14:19:07.9158830Z [36;1m***[0m
+2026-03-03T14:19:07.9159403Z [36;1m***[0m
+2026-03-03T14:19:07.9159999Z [36;1m***[0m
+2026-03-03T14:19:07.9160800Z [36;1m***[0m
+2026-03-03T14:19:07.9161387Z [36;1m***[0m
+2026-03-03T14:19:07.9161827Z [36;1m***[0m
+2026-03-03T14:19:07.9162442Z [36;1m***" > ~/.ssh/deploy_key[0m
+2026-03-03T14:19:07.9162918Z [36;1mchmod 600 ~/.ssh/deploy_key[0m
+2026-03-03T14:19:07.9163454Z [36;1mssh-keyscan -H 49.13.129.43 >> ~/.ssh/known_hosts[0m
+2026-03-03T14:19:07.9217573Z shell: /usr/bin/bash -e {0}
+2026-03-03T14:19:07.9218068Z env:
+2026-03-03T14:19:07.9218473Z   NODE_VERSION: 20
+2026-03-03T14:19:07.9218906Z   DEPLOY_USER: clientdash
+2026-03-03T14:19:07.9219363Z   DEPLOY_HOST: 49.13.129.43
+2026-03-03T14:19:07.9219863Z   DEPLOY_PATH: /home/clientdash/client-dashboard
+2026-03-03T14:19:07.9220404Z   PM2_APP_NAME: client-dashboard
+2026-03-03T14:19:07.9220875Z ##[endgroup]
+2026-03-03T14:19:08.2193871Z # 49.13.129.43:22 SSH-2.0-OpenSSH_8.0
+2026-03-03T14:19:08.3372493Z # 49.13.129.43:22 SSH-2.0-OpenSSH_8.0
+2026-03-03T14:19:08.7333906Z # 49.13.129.43:22 SSH-2.0-OpenSSH_8.0
+2026-03-03T14:19:09.1371818Z # 49.13.129.43:22 SSH-2.0-OpenSSH_8.0
+2026-03-03T14:19:09.5284642Z # 49.13.129.43:22 SSH-2.0-OpenSSH_8.0
+2026-03-03T14:19:09.6561381Z ##[group]Run ssh -i ~/.ssh/deploy_key clientdash@49.13.129.43 << 'EOF'
+2026-03-03T14:19:09.6562381Z [36;1mssh -i ~/.ssh/deploy_key clientdash@49.13.129.43 << 'EOF'[0m
+2026-03-03T14:19:09.6563131Z [36;1m  mkdir -p /home/clientdash/client-dashboard/{releases,backups,shared,logs}[0m
+2026-03-03T14:19:09.6563866Z [36;1m  echo "✅ Directory structure created/verified"[0m
+2026-03-03T14:19:09.6564394Z [36;1mEOF[0m
+2026-03-03T14:19:09.6614039Z shell: /usr/bin/bash -e {0}
+2026-03-03T14:19:09.6614549Z env:
+2026-03-03T14:19:09.6614957Z   NODE_VERSION: 20
+2026-03-03T14:19:09.6615400Z   DEPLOY_USER: clientdash
+2026-03-03T14:19:09.6615851Z   DEPLOY_HOST: 49.13.129.43
+2026-03-03T14:19:09.6616499Z   DEPLOY_PATH: /home/clientdash/client-dashboard
+2026-03-03T14:19:09.6617082Z   PM2_APP_NAME: client-dashboard
+2026-03-03T14:19:09.6617545Z ##[endgroup]
+2026-03-03T14:19:09.7078871Z Pseudo-terminal will not be allocated because stdin is not a terminal.
+2026-03-03T14:19:13.4680920Z ✅ Directory structure created/verified
+2026-03-03T14:19:13.4747735Z ##[group]Run ssh -i ~/.ssh/deploy_key clientdash@49.13.129.43 << 'EOF'
+2026-03-03T14:19:13.4748530Z [36;1mssh -i ~/.ssh/deploy_key clientdash@49.13.129.43 << 'EOF'[0m
+2026-03-03T14:19:13.4749213Z [36;1m  if [ -d "/home/clientdash/client-dashboard/current" ]; then[0m
+2026-03-03T14:19:13.4750111Z [36;1m    BACKUP_DIR="/home/clientdash/client-dashboard/backups/$(date +%Y%m%d_%H%M%S)_dfefb0ad627f3390171261b5cb9b0ce66e6723e3"[0m
+2026-03-03T14:19:13.4750952Z [36;1m    mkdir -p "$BACKUP_DIR"[0m
+2026-03-03T14:19:13.4751590Z [36;1m    # Exclude node_modules — the release dir it was copied from still has them.[0m
+2026-03-03T14:19:13.4752587Z [36;1m    # Backups are only used for symlink rollback, not direct execution.[0m
+2026-03-03T14:19:13.4753452Z [36;1m    rsync -a --exclude='node_modules' /home/clientdash/client-dashboard/current/ "$BACKUP_DIR/" || true[0m
+2026-03-03T14:19:13.4754234Z [36;1m    echo "Backup created at $BACKUP_DIR"[0m
+2026-03-03T14:19:13.4754780Z [36;1m[0m
+2026-03-03T14:19:13.4755203Z [36;1m    # Keep only last 5 backups[0m
+2026-03-03T14:19:13.4755754Z [36;1m    cd /home/clientdash/client-dashboard/backups[0m
+2026-03-03T14:19:13.4756369Z [36;1m    ls -t | tail -n +6 | xargs -r rm -rf[0m
+2026-03-03T14:19:13.4756862Z [36;1m  fi[0m
+2026-03-03T14:19:13.4757253Z [36;1mEOF[0m
+2026-03-03T14:19:13.4805716Z shell: /usr/bin/bash -e {0}
+2026-03-03T14:19:13.4806177Z env:
+2026-03-03T14:19:13.4806578Z   NODE_VERSION: 20
+2026-03-03T14:19:13.4807009Z   DEPLOY_USER: clientdash
+2026-03-03T14:19:13.4807461Z   DEPLOY_HOST: 49.13.129.43
+2026-03-03T14:19:13.4807961Z   DEPLOY_PATH: /home/clientdash/client-dashboard
+2026-03-03T14:19:13.4808509Z   PM2_APP_NAME: client-dashboard
+2026-03-03T14:19:13.4808972Z ##[endgroup]
+2026-03-03T14:19:13.4917042Z Pseudo-terminal will not be allocated because stdin is not a terminal.
+2026-03-03T14:19:16.3805378Z Backup created at /home/clientdash/client-dashboard/backups/20260303_141912_dfefb0ad627f3390171261b5cb9b0ce66e6723e3
+2026-03-03T14:19:16.4744052Z ##[group]Run scp -i ~/.ssh/deploy_key deploy-dfefb0ad627f3390171261b5cb9b0ce66e6723e3.tar.gz \
+2026-03-03T14:19:16.4745031Z [36;1mscp -i ~/.ssh/deploy_key deploy-dfefb0ad627f3390171261b5cb9b0ce66e6723e3.tar.gz \[0m
+2026-03-03T14:19:16.4745852Z [36;1m  clientdash@49.13.129.43:/home/clientdash/client-dashboard/releases/[0m
+2026-03-03T14:19:16.4746457Z [36;1m[0m
+2026-03-03T14:19:16.4746944Z [36;1mssh -i ~/.ssh/deploy_key clientdash@49.13.129.43 << 'EOF'[0m
+2026-03-03T14:19:16.4747586Z [36;1m  cd /home/clientdash/client-dashboard/releases[0m
+2026-03-03T14:19:16.4748199Z [36;1m  mkdir -p dfefb0ad627f3390171261b5cb9b0ce66e6723e3[0m
+2026-03-03T14:19:16.4749051Z [36;1m  tar -xzf deploy-dfefb0ad627f3390171261b5cb9b0ce66e6723e3.tar.gz -C dfefb0ad627f3390171261b5cb9b0ce66e6723e3[0m
+2026-03-03T14:19:16.4749942Z [36;1m  rm deploy-dfefb0ad627f3390171261b5cb9b0ce66e6723e3.tar.gz[0m
+2026-03-03T14:19:16.4750538Z [36;1mEOF[0m
+2026-03-03T14:19:16.4799015Z shell: /usr/bin/bash -e {0}
+2026-03-03T14:19:16.4799494Z env:
+2026-03-03T14:19:16.4799884Z   NODE_VERSION: 20
+2026-03-03T14:19:16.4800373Z   DEPLOY_USER: clientdash
+2026-03-03T14:19:16.4800814Z   DEPLOY_HOST: 49.13.129.43
+2026-03-03T14:19:16.4801294Z   DEPLOY_PATH: /home/clientdash/client-dashboard
+2026-03-03T14:19:16.4801836Z   PM2_APP_NAME: client-dashboard
+2026-03-03T14:19:16.4802614Z ##[endgroup]
+2026-03-03T14:19:20.5382460Z Pseudo-terminal will not be allocated because stdin is not a terminal.
+2026-03-03T14:19:23.1419388Z ##[group]Run ssh -i ~/.ssh/deploy_key clientdash@49.13.129.43 << 'EOF'
+2026-03-03T14:19:23.1420173Z [36;1mssh -i ~/.ssh/deploy_key clientdash@49.13.129.43 << 'EOF'[0m
+2026-03-03T14:19:23.1421028Z [36;1m  cd /home/clientdash/client-dashboard/releases/dfefb0ad627f3390171261b5cb9b0ce66e6723e3[0m
+2026-03-03T14:19:23.1421897Z [36;1m  # FIX: Use plain 'npm ci' (not --production) so ALL deps including[0m
+2026-03-03T14:19:23.1422841Z [36;1m  # transitive runtime deps resolve correctly. DevDeps add ~50MB but[0m
+2026-03-03T14:19:23.1423581Z [36;1m  # prevent silent runtime failures from missing packages.[0m
+2026-03-03T14:19:23.1424151Z [36;1m  npm ci[0m
+2026-03-03T14:19:23.1424558Z [36;1mEOF[0m
+2026-03-03T14:19:23.1472900Z shell: /usr/bin/bash -e {0}
+2026-03-03T14:19:23.1473366Z env:
+2026-03-03T14:19:23.1473769Z   NODE_VERSION: 20
+2026-03-03T14:19:23.1474189Z   DEPLOY_USER: clientdash
+2026-03-03T14:19:23.1474641Z   DEPLOY_HOST: 49.13.129.43
+2026-03-03T14:19:23.1475193Z   DEPLOY_PATH: /home/clientdash/client-dashboard
+2026-03-03T14:19:23.1475772Z   PM2_APP_NAME: client-dashboard
+2026-03-03T14:19:23.1476242Z ##[endgroup]
+2026-03-03T14:19:23.1605621Z Pseudo-terminal will not be allocated because stdin is not a terminal.
+2026-03-03T14:19:42.4251300Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-03-03T14:19:42.6424963Z npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+2026-03-03T14:19:42.6519738Z npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+2026-03-03T14:19:43.0140793Z npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2026-03-03T14:19:43.0142425Z npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2026-03-03T14:19:43.4905227Z npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
+2026-03-03T14:19:44.7502428Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+2026-03-03T14:20:30.7857764Z npm error code ENOMEM
+2026-03-03T14:20:30.7858792Z npm error syscall spawn
+2026-03-03T14:20:30.7859748Z npm error errno -12
+2026-03-03T14:20:30.7861265Z npm error spawn ENOMEM
+2026-03-03T14:20:30.7876533Z npm error A complete log of this run can be found in: /home/clientdash/.npm/_logs/2026-03-03T14_19_23_437Z-debug-0.log
+2026-03-03T14:20:30.9716605Z ##[error]Process completed with exit code 244.
+2026-03-03T14:20:30.9840339Z ##[group]Run echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+2026-03-03T14:20:30.9841079Z [36;1mecho "## Deployment Summary" >> $GITHUB_STEP_SUMMARY[0m
+2026-03-03T14:20:30.9841664Z [36;1mecho "" >> $GITHUB_STEP_SUMMARY[0m
+2026-03-03T14:20:30.9842536Z [36;1mecho "- **Commit:** dfefb0ad627f3390171261b5cb9b0ce66e6723e3" >> $GITHUB_STEP_SUMMARY[0m
+2026-03-03T14:20:30.9843294Z [36;1mecho "- **Branch:** main" >> $GITHUB_STEP_SUMMARY[0m
+2026-03-03T14:20:30.9843925Z [36;1mecho "- **Triggered by:** samixisme" >> $GITHUB_STEP_SUMMARY[0m
+2026-03-03T14:20:30.9844609Z [36;1mecho "- **Pre-deployment health:** N/A" >> $GITHUB_STEP_SUMMARY[0m
+2026-03-03T14:20:30.9845317Z [36;1mecho "- **Post-deployment health:** failed" >> $GITHUB_STEP_SUMMARY[0m
+2026-03-03T14:20:30.9845990Z [36;1mecho "- **Status:** failure" >> $GITHUB_STEP_SUMMARY[0m
+2026-03-03T14:20:30.9894851Z shell: /usr/bin/bash -e {0}
+2026-03-03T14:20:30.9895311Z env:
+2026-03-03T14:20:30.9895703Z   NODE_VERSION: 20
+2026-03-03T14:20:30.9896173Z   DEPLOY_USER: clientdash
+2026-03-03T14:20:30.9896617Z   DEPLOY_HOST: 49.13.129.43
+2026-03-03T14:20:30.9897105Z   DEPLOY_PATH: /home/clientdash/client-dashboard
+2026-03-03T14:20:30.9897652Z   PM2_APP_NAME: client-dashboard
+2026-03-03T14:20:30.9898104Z ##[endgroup]
+2026-03-03T14:20:31.0083576Z Post job cleanup.
+2026-03-03T14:20:31.1080873Z [command]/usr/bin/git version
+2026-03-03T14:20:31.1119805Z git version 2.53.0
+2026-03-03T14:20:31.1164595Z Temporarily overriding HOME='/home/runner/work/_temp/c12c9731-1d9f-48f0-a31e-c7794bd6fe6e' before making global git config changes
+2026-03-03T14:20:31.1165926Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-03T14:20:31.1179624Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/client-dashboard/client-dashboard
+2026-03-03T14:20:31.1221140Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-03T14:20:31.1259375Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-03T14:20:31.1517453Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-03T14:20:31.1541588Z http.https://github.com/.extraheader
+2026-03-03T14:20:31.1555245Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-03-03T14:20:31.1590345Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-03T14:20:31.1843380Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-03-03T14:20:31.1884283Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-03-03T14:20:31.2278895Z Evaluate and set environment url
+2026-03-03T14:20:31.2281595Z Evaluated environment url: https://client.samixism.com
+2026-03-03T14:20:31.2283032Z Cleaning up orphan processes

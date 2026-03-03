@@ -1,0 +1,28 @@
+IMPORTANT: Complete this task in AT MOST 3 tool calls (read, edit, done). Do NOT loop, grep, or explore.
+
+Analyze the codebase for the following tasks. For each task, identify:
+1. All files that need changes (exact paths)
+2. Existing patterns in those files (imports, types, test patterns)
+3. Exact line numbers for modifications
+4. Cross-file dependencies
+
+Tasks:
+
+- Task 90: Verify New Admin Route Files Use Auth Middleware
+  Audit all api/admin*Routes.ts files. Ensure adminAuthMiddleware is applied. Implement Zod validation for POST/PUT/PATCH payloads. Standardize error responses.
+
+- Task 98: Fix AdminDashboardPage Mock Data Regeneration
+  Replace Math.random() with deterministic values. Move inline admin types into types.ts.
+
+- Task 99: Code-Split Heavy Dependencies for Admin Pages
+  Wrap AdminDashboardPage in React.lazy() with Suspense. Evaluate AdminSettingsPage framer-motion usage. Ensure recharts only in admin chunk.
+
+Project context:
+- Stack: React 18 + TypeScript + Vite + Firebase + Express API
+- Router: react-router-dom v6 HashRouter
+- Zod: always .safeParse(), never .parse()
+- Admin auth middleware: api/adminAuthMiddleware.ts
+- Admin routes: api/admin*Routes.ts
+- Main router: App.tsx
+
+Return a structured summary with file paths, line numbers, and patterns for each task.

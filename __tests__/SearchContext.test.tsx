@@ -2,18 +2,12 @@ import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import { SearchProvider, useSearch } from '../contexts/SearchContext';
 import { useData } from '../contexts/DataContext';
-import { useDocs } from '../contexts/DocsContext';
 
 jest.mock('../contexts/DataContext', () => ({
   useData: jest.fn(),
 }));
 
-jest.mock('../contexts/DocsContext', () => ({
-  useDocs: jest.fn(),
-}));
-
 const mockUseData = useData as jest.Mock;
-const mockUseDocs = useDocs as jest.Mock;
 
 const TestConsumer = () => {
   const { searchQuery, setSearchQuery, searchResults, clearSearch } = useSearch();
@@ -55,10 +49,6 @@ describe('SearchContext', () => {
       }
     });
 
-    mockUseDocs.mockReturnValue({
-      docs: []
-    });
-    
     jest.useFakeTimers();
   });
 

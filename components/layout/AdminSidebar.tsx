@@ -12,7 +12,6 @@ import { AiSparkleIcon } from '../icons/AiSparkleIcon';
 import { PaymentsIcon } from '../icons/PaymentsIcon';
 import { BoardIcon } from '../icons/BoardIcon'; // Import BoardIcon
 import { EmailIcon } from '../icons/EmailIcon';
-import { DocIcon } from '../icons/DocIcon';
 import { Users, Calendar, Map, Share2, FileText } from 'lucide-react';
 
 const AdminSidebar: React.FC = () => {
@@ -64,11 +63,7 @@ const AdminSidebar: React.FC = () => {
             <EmailIcon className="h-5 w-5" />
             Email Templates
         </NavLink>
-        <NavLink to="/admin/docs" className={navLinkClasses}>
-            <DocIcon className="h-5 w-5" />
-            Docs
-        </NavLink>
-        
+
         <div className="pt-4 pb-2 px-4 text-xs font-semibold text-text-secondary uppercase tracking-wider">Management</div>
 
         <NavLink to="/admin/tasks" className={navLinkClasses}>

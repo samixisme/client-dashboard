@@ -6,7 +6,7 @@ import {
     Brand, User, Project, Board, Stage, Task, Tag, TimeLog, RoadmapItem,
     Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup,
     FeedbackVideo, FeedbackComment, EmailTemplate, CalendarEvent, SocialAccount,
-    SocialPost, ScheduledPost, SocialAnomaly, Doc,
+    SocialPost, ScheduledPost, SocialAnomaly,
     Client, Invoice, Estimate, UserSettings,
 } from '../types';
 import { toast } from 'sonner';
@@ -45,7 +45,6 @@ const dataStore = {
     socialPosts:       [] as SocialPost[],
     scheduledPosts:    [] as ScheduledPost[],
     socialAnomalies:   [] as SocialAnomaly[],
-    docs:              [] as Doc[],
 };
 
 type DataStoreKey = keyof typeof dataStore;

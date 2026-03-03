@@ -773,23 +773,6 @@ export interface Proposal {
     updatedAt: string;         // ISO string
 }
 
-// ── AFFiNE Docs & Whiteboards ─────────────────────────────────────────────────
-export type DocMode = 'page' | 'edgeless';
-
-export interface Doc {
-    id: string;
-    projectId: string;       // ties into existing Project hierarchy
-    brandId: string;         // denormalised for quick filtering
-    title: string;
-    mode: DocMode;           // 'page' = document editor, 'edgeless' = whiteboard
-    emoji?: string;          // optional title emoji (AFFiNE style)
-    createdAt: string;       // ISO string — consistent with all other types
-    updatedAt: string;
-    createdBy: string;       // Firebase Auth UID
-    isPinned?: boolean;
-    linkedBoardId?: string;  // optional link to existing Board (for task extraction)
-}
-
 import { ActivityItem } from './components/admin/dashboard/ActivityFeed';
 
 export interface DashboardStats {
