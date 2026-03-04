@@ -16,7 +16,7 @@ const ProjectFilesPage: React.FC = () => {
     const { data } = useData();
 
     const files = useProjectFiles(safeProjectId);
-    const { upload, isUploading, uploadProgress } = useDriveFiles({ projectId: safeProjectId });
+    const { upload, isUploading, uploadProgress, error: uploadError } = useDriveFiles({ projectId: safeProjectId });
 
     const [activeFilter, setActiveFilter] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -119,6 +119,15 @@ const ProjectFilesPage: React.FC = () => {
                     {/* Upload area */}
                     {canUpload && (
                         <div className="animate-fade-in-up">
+                            {uploadError && (
+                                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+                                    <span className="text-red-400 mt-0.5">⚠️</span>
+                                    <div className="flex-1">
+                                        <h4 className="text-sm font-bold text-red-400">Upload failed</h4>
+                                        <p className="text-sm text-red-400/80 mt-1">{uploadError}</p>
+                                    </div>
+                                </div>
+                            )}
                             <FileUpload
                                 isUploading={isUploading}
                                 uploadProgress={uploadProgress}

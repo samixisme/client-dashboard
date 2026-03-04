@@ -122,34 +122,13 @@ export function useDriveFiles(
       formData.append('file', file);
       if (currentPath) formData.append('folder', currentPath);
 
-      // Use XHR for real upload progress
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${API_BASE}/upload`);
-        xhr.withCredentials = true;
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            setUploadProgress(Math.round((e.loaded / e.total) * 100));
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            try {
-              const body = JSON.parse(xhr.responseText);
-              reject(new Error(body.error || `Upload failed: ${xhr.status}`));
-            } catch {
-              reject(new Error(`Upload failed: ${xhr.status}`));
-            }
-          }
-        };
-
-        xhr.onerror = () => reject(new Error('Network error during upload'));
-        xhr.send(formData);
-      });
+      const { uploadToDrive } = await import('../utils/driveUpload');
+      await uploadToDrive(
+        file,
+        currentPath || '',
+        file.name,
+        (progress) => setUploadProgress(progress)
+      );
 
       setRefreshTick(t => t + 1);
     } catch (err) {
