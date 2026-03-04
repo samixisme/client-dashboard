@@ -6,7 +6,6 @@ import { AttachmentIcon } from '../icons/AttachmentIcon';
 import { Textarea } from '../ui/textarea';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { FileIcon } from '../icons/FileIcon';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../utils/firebase';
 import { toast } from 'sonner';
 import { DatePicker } from '../../src/components/ui/date-picker';
@@ -56,9 +55,16 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
             const file = e.target.files[0];
             setUploadingAttachment(true);
             try {
-                const storageRef = ref(storage, `projects/${item.projectId}/roadmap/${item.id}/attachments/${file.name}`);
-                const snapshot = await uploadBytes(storageRef, file);
-                const url = await getDownloadURL(snapshot.ref);
+                const project = data.projects.find(p => p.id === item.projectId);
+                const brandName = data.brands.find(b => b.id === project?.brandId)?.name || 'Unknown Brand';
+                
+                const { getProjectSubfolderPath } = await import('../../utils/folderPaths');
+                const { uploadToDrive } = await import('../../utils/driveUpload');
+                
+                const folderPath = getProjectSubfolderPath(brandName, project?.name || 'Unknown Project', 'Roadmap');
+
+                const result = await uploadToDrive(file, folderPath, file.name);
+                const url = result.url;
 
                 const newAttachment = {
                     id: `att-${Date.now()}`,

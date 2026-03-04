@@ -3,7 +3,6 @@ import React, { useState, useRef } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { db, storage } from '../utils/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { User, Mail, Shield, Camera, Save, X, CheckCircle } from 'lucide-react';
 
 const ProfilePage = () => {
@@ -36,9 +35,10 @@ const ProfilePage = () => {
 
     try {
       setUploadingImage(true);
-      const storageRef = ref(storage, `avatars/${user.uid}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
+      const { uploadToDrive } = await import('../utils/driveUpload');
+      const { GLOBAL_FOLDERS } = await import('../utils/folderPaths');
+      const result = await uploadToDrive(file, GLOBAL_FOLDERS.PROFILES, `${Date.now()}_${file.name}`);
+      const downloadURL = result.url;
 
       setFormData(prev => ({ ...prev, avatarUrl: downloadURL }));
 

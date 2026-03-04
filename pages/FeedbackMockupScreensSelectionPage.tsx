@@ -7,8 +7,6 @@ import { AddIcon } from '../components/icons/AddIcon';
 import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
 import { MockupIcon } from '../components/icons/MockupIcon';
 import { useData } from '../contexts/DataContext';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../utils/firebase';
 import FeedbackItemCard from '../components/feedback/FeedbackItemCard';
 
 const FeedbackMockupScreensSelectionPage = () => {
@@ -153,57 +151,51 @@ const FeedbackMockupScreensSelectionPage = () => {
 
         try {
             const timestamp = Date.now();
-            const storagePath = `feedback/screens/${projectId}/${feedbackItemId}/${timestamp}_${selectedFile.name}`;
-            const storageRef = ref(storage, storagePath);
+            const { getProjectSubfolderPath } = await import('../utils/folderPaths');
+            const { uploadToDrive } = await import('../utils/driveUpload');
 
-            const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+            const brandName = data.brands.find(b => b.id === project?.brandId)?.name;
+            const folderPath = getProjectSubfolderPath(brandName, project?.name, 'Mockups');
 
-            uploadTask.on(
-                'state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setUploadProgress(progress);
-                },
-                (error) => {
-                    console.error('Upload error:', error);
-                    setUploadError('Upload failed: ' + error.message);
-                    setUploadingFile(false);
-                },
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-
-                    // Use functional update to get fresh state and prevent stale closure
-                    setItem(prevItem => {
-                        if (!prevItem) return prevItem;
-
-                        const newImage = {
-                            id: `img-${timestamp}`,
-                            name: newImageName,
-                            url: downloadURL,
-                            approved: false,
-                            createdAt: new Date().toISOString(),
-                            version: (prevItem.images || []).length + 1
-                        };
-
-                        const updatedImages = [...(prevItem.images || []), newImage];
-
-                        // Update Firestore (fire and forget, state already updated)
-                        updateFeedbackItemImages(projectId!, feedbackItemId!, updatedImages);
-
-                        return { ...prevItem, images: updatedImages };
-                    });
-
-                    setShowAddModal(false);
-                    setNewImageName('');
-                    setSelectedFile(null);
-                    setUploadingFile(false);
-                    setUploadProgress(0);
-                    setUploadMode('file');
-                }
+            const result = await uploadToDrive(
+                selectedFile, 
+                folderPath, 
+                `${timestamp}_${selectedFile.name}`,
+                (progress) => setUploadProgress(progress)
             );
-        } catch (error) {
+
+            const downloadURL = result.url;
+
+            // Use functional update to get fresh state and prevent stale closure
+            setItem(prevItem => {
+                if (!prevItem) return prevItem;
+
+                const newImage = {
+                    id: `img-${timestamp}`,
+                    name: newImageName,
+                    url: downloadURL,
+                    approved: false,
+                    createdAt: new Date().toISOString(),
+                    version: (prevItem.images || []).length + 1
+                };
+
+                const updatedImages = [...(prevItem.images || []), newImage];
+
+                // Update Firestore (fire and forget, state already updated)
+                updateFeedbackItemImages(projectId!, feedbackItemId!, updatedImages);
+
+                return { ...prevItem, images: updatedImages };
+            });
+
+            setShowAddModal(false);
+            setNewImageName('');
+            setSelectedFile(null);
+            setUploadingFile(false);
+            setUploadProgress(0);
+            setUploadMode('file');
+        } catch (error: any) {
             console.error('Upload failed:', error);
-            setUploadError('Failed to upload file');
+            setUploadError('Failed to upload file: ' + (error.message || 'unknown error'));
             setUploadingFile(false);
         }
     };

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Brand, BrandColor, BrandTypography, BrandLogo, BrandAsset, User } from '../../types';
 import { Timestamp }from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage, db } from '../../utils/firebase';
 import { slugify } from '../../utils/slugify';
 import { useData } from '../../contexts/DataContext';
@@ -90,11 +89,15 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
         setIsLoading(true);
         setUploadProgress(prev => ({ ...prev, [uniqueId]: 0 }));
 
-        const storageRef = ref(storage, `brands/${slugify(editedBrand.name || 'new-brand')}/${field}/${file.name}`);
-        
         try {
-            const snapshot = await uploadBytes(storageRef, file);
-            const downloadURL = await getDownloadURL(snapshot.ref);
+            const { getBrandFolderPath } = await import('../../utils/folderPaths');
+            const { uploadToDrive } = await import('../../utils/driveUpload');
+            
+            const folderPath = `${getBrandFolderPath(editedBrand.name || 'New Brand')}/${field}`;
+            const result = await uploadToDrive(file, folderPath, file.name, (progress) => {
+                setUploadProgress(prev => ({ ...prev, [uniqueId]: progress }));
+            });
+            const downloadURL = result.url;
 
             if (field === 'typography') {
                 const updatedTypography = [...(editedBrand.typography || [])];

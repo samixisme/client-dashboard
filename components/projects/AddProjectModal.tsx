@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { Project } from '../../types';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from '../../utils/firebase';
 import { Textarea } from '../ui/textarea';
 import { slugify } from '../../utils/slugify';
@@ -52,13 +51,15 @@ const AddEditProjectModal: React.FC<AddEditProjectModalProps> = ({ isOpen, onClo
         setError('');
         
         // Use a temporary name if project name isn't set yet
-        const projectNameSlug = slugify(name || 'new-project');
-        const storageRef = ref(storage, `projects/${projectNameSlug}/logo/${file.name}`);
-        
         try {
-            const snapshot = await uploadBytes(storageRef, file);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-            setLogoUrl(downloadURL);
+            const brandName = data.brands.find(b => b.id === brandId)?.name || 'Unknown Brand';
+            const { getProjectFolderPath } = await import('../../utils/folderPaths');
+            const { uploadToDrive } = await import('../../utils/driveUpload');
+            
+            const folderPath = getProjectFolderPath(brandName, name || 'New Project');
+            
+            const result = await uploadToDrive(file, folderPath, `logo_${file.name}`);
+            setLogoUrl(result.url);
             toast.success('Logo uploaded');
         } catch (err) {
             console.error(`Error uploading project logo:`, err);

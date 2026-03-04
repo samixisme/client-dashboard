@@ -13,8 +13,6 @@ import { CheckIcon } from '../components/icons/CheckIcon';
 import { CancelIcon } from '../components/icons/CancelIcon';
 import { DeleteIcon } from '../components/icons/DeleteIcon';
 import { useData } from '../contexts/DataContext';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../utils/firebase';
 
 const FeedbackVideoVersionsSelectionPage = () => {
     const { projectId, feedbackItemId } = useParams<{ projectId: string; feedbackItemId: string }>();
@@ -150,47 +148,41 @@ const FeedbackVideoVersionsSelectionPage = () => {
 
         try {
             const timestamp = Date.now();
-            const storagePath = `feedback/videos/${projectId}/${feedbackItemId}/${timestamp}_${selectedFile.name}`;
-            const storageRef = ref(storage, storagePath);
+            const { getProjectSubfolderPath } = await import('../utils/folderPaths');
+            const { uploadToDrive } = await import('../utils/driveUpload');
 
-            const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+            const brandName = data.brands.find(b => b.id === project?.brandId)?.name;
+            const folderPath = getProjectSubfolderPath(brandName, project?.name, 'Videos');
 
-            uploadTask.on(
-                'state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setUploadProgress(progress);
-                },
-                (error) => {
-                    console.error('Upload error:', error);
-                    setUploadError('Upload failed: ' + error.message);
-                    setUploadingFile(false);
-                },
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-
-                    const newVideo = {
-                        id: `vid-${timestamp}`,
-                        name: newVideoName,
-                        url: downloadURL,
-                        approved: false
-                    };
-
-                    const updatedVideos = [...(item.videos || []), newVideo];
-                    setItem({ ...item, videos: updatedVideos });
-                    await updateFeedbackItemVideos(projectId, feedbackItemId, updatedVideos);
-
-                    setShowAddModal(false);
-                    setNewVideoName('');
-                    setSelectedFile(null);
-                    setUploadingFile(false);
-                    setUploadProgress(0);
-                    setUploadMode('file');
-                }
+            const result = await uploadToDrive(
+                selectedFile, 
+                folderPath, 
+                `${timestamp}_${selectedFile.name}`,
+                (progress) => setUploadProgress(progress)
             );
-        } catch (error) {
+
+            const downloadURL = result.url;
+
+            const newVideo = {
+                id: `vid-${timestamp}`,
+                name: newVideoName,
+                url: downloadURL,
+                approved: false
+            };
+
+            const updatedVideos = [...(item.videos || []), newVideo];
+            setItem({ ...item, videos: updatedVideos });
+            await updateFeedbackItemVideos(projectId, feedbackItemId, updatedVideos);
+
+            setShowAddModal(false);
+            setNewVideoName('');
+            setSelectedFile(null);
+            setUploadingFile(false);
+            setUploadProgress(0);
+            setUploadMode('file');
+        } catch (error: any) {
             console.error('Upload failed:', error);
-            setUploadError('Failed to upload file');
+            setUploadError('Failed to upload file: ' + (error.message || 'unknown error'));
             setUploadingFile(false);
         }
     };

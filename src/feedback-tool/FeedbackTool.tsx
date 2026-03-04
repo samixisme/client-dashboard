@@ -3,7 +3,7 @@ import CommentPopover from '../../components/feedback/CommentPopover';
 import { subscribeToComments, addComment, deleteComment, updateComment, syncCommentToCalendar } from '../../utils/feedbackUtils';
 import { FeedbackItemComment, FeedbackComment, User } from '../../types';
 import { db, auth } from '../../utils/firebase';
-import { collection, getDocs } from 'firebase/firestore'; 
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 interface Pin {
   id: string;
@@ -234,11 +234,24 @@ const FeedbackTool = () => {
       const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
       if (!blob) return { comment_timestamp_seconds: timestamp };
 
-      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-      const { storage } = await import('../../utils/firebase');
-      const storageRef = ref(storage, `video-screenshots/${projectId}/${Date.now()}.jpg`);
-      await uploadBytes(storageRef, blob);
-      const video_screenshot_url = await getDownloadURL(storageRef);
+      let folderPath = 'Feedback';
+      try {
+          const projectDoc = await getDoc(doc(db, 'projects', projectId));
+          if (projectDoc.exists()) {
+              const projectData = projectDoc.data();
+              const brandDoc = projectData.brandId ? await getDoc(doc(db, 'brands', projectData.brandId)) : null;
+              const brandName = brandDoc?.exists() ? brandDoc.data().name : 'Unknown Brand';
+              const projectName = projectData.name || 'Unknown Project';
+              const { getProjectSubfolderPath } = await import('../../utils/folderPaths');
+              folderPath = getProjectSubfolderPath(brandName, projectName, 'Feedback');
+          }
+      } catch (e) {
+          console.warn('Failed to resolve project folder path for feedback screenshot', e);
+      }
+
+      const { uploadToDrive } = await import('../../utils/driveUpload');
+      const result = await uploadToDrive(blob as Blob, folderPath, `screenshot_${Date.now()}.jpg`);
+      const video_screenshot_url = result.url;
       return { comment_timestamp_seconds: timestamp, video_screenshot_url };
     } catch {
       return { comment_timestamp_seconds: timestamp };

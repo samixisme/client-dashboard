@@ -1,6 +1,6 @@
 import React, { useState, useRef, DragEvent } from 'react';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../utils/firebase';
+import { useData } from '../../contexts/DataContext';
 import { X, Upload, FileVideo, FileImage, AlertCircle } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 
@@ -21,6 +21,7 @@ const VersionUploadModal: React.FC<VersionUploadModalProps> = ({
     projectId,
     feedbackItemId
 }) => {
+    const { data } = useData();
     const [file, setFile] = useState<File | null>(null);
     const [notes, setNotes] = useState('');
     const [uploading, setUploading] = useState(false);
@@ -95,43 +96,32 @@ const VersionUploadModal: React.FC<VersionUploadModalProps> = ({
         try {
             const timestamp = Date.now();
             const versionNumber = timestamp;
-            const storagePath = `feedback/${type}s/${projectId}/${feedbackItemId}/v${versionNumber}_${file.name}`;
-            const storageRef = ref(storage, storagePath);
+            const project = data.projects.find(p => p.id === projectId);
+            const brandName = data.brands.find(b => b.id === project?.brandId)?.name || 'Unknown Brand';
+            
+            const { getProjectSubfolderPath } = await import('../../utils/folderPaths');
+            const { uploadToDrive } = await import('../../utils/driveUpload');
+            
+            const folderPath = getProjectSubfolderPath(brandName, project?.name || 'Unknown Project', type === 'video' ? 'Videos' : 'Mockups');
 
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            uploadTask.on(
-                'state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setUploadProgress(progress);
-                },
-                (uploadError) => {
-                    console.error('Upload error:', uploadError);
-                    setError('Upload failed: ' + uploadError.message);
-                    setUploading(false);
-                },
-                async () => {
-                    try {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        await onUpload(downloadURL, notes);
-
-                        // Reset state
-                        setFile(null);
-                        setNotes('');
-                        setUploadProgress(0);
-                        setUploading(false);
-                        onClose();
-                    } catch (err) {
-                        console.error('Error getting download URL or calling onUpload:', err);
-                        setError('Failed to complete upload');
-                        setUploading(false);
-                    }
-                }
+            const result = await uploadToDrive(
+                file,
+                folderPath,
+                `v${versionNumber}_${file.name}`,
+                (progress) => setUploadProgress(progress)
             );
-        } catch (err) {
+
+            await onUpload(result.url, notes);
+
+            // Reset state
+            setFile(null);
+            setNotes('');
+            setUploadProgress(0);
+            setUploading(false);
+            onClose();
+        } catch (err: any) {
             console.error('Upload initialization error:', err);
-            setError('Failed to start upload');
+            setError('Failed to complete upload: ' + (err.message || 'unknown error'));
             setUploading(false);
         }
     };

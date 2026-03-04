@@ -16,8 +16,7 @@ import { CalendarIcon } from './icons/CalendarIcon';
 import { Textarea } from './ui/textarea';
 import LogTimeModal from './tasks/LogTimeModal';
 import RecurringTaskPopover from './tasks/RecurringTaskPopover';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage, db } from '../utils/firebase';
+import { db } from '../utils/firebase';
 import { doc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useNovuTrigger } from '../src/hooks/useNovuTrigger';
 
@@ -244,10 +243,14 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
             const file = e.target.files[0];
             setUploadingAttachment(true);
             try {
-                // Strip task ID of timestamp if it's a Firestore ID for cleaner path, or just use ID
-                const storageRef = ref(storage, `projects/${project.id}/tasks/${task.id}/attachments/${file.name}`);
-                const snapshot = await uploadBytes(storageRef, file);
-                const url = await getDownloadURL(snapshot.ref);
+                const brandName = data.brands.find(b => b.id === project?.brandId)?.name || 'Unknown Brand';
+                const { getProjectSubfolderPath } = await import('../utils/folderPaths');
+                const { uploadToDrive } = await import('../utils/driveUpload');
+                
+                const folderPath = getProjectSubfolderPath(brandName, project.name, 'Tasks');
+
+                const result = await uploadToDrive(file, folderPath, file.name);
+                const url = result.url;
 
                 const newAttachment = {
                     id: `att-${Date.now()}`,
