@@ -147,29 +147,32 @@ app.post('/api/ai/generate-brand-asset', async (req, res) => {
   return res.json({ imageUrl: placeholder });
 });
 
+// Utility to handle environments where Nginx strips the /api prefix via proxy_pass
+const apiMountPaths = (path: string) => [path, path.replace(/^\/api/, '')];
+
 // Novu notifications API
-app.use('/api/notifications', notificationsRouter);
+app.use(apiMountPaths('/api/notifications'), notificationsRouter);
 
 // Social media API (OAuth + platform data proxy)
-app.use('/api/social', socialRouter);
+app.use(apiMountPaths('/api/social'), socialRouter);
 
 // Webhook handlers (Instagram, Facebook, Twitter, etc.)
-app.use('/api/webhooks', webhookRouter);
+app.use(apiMountPaths('/api/webhooks'), webhookRouter);
 
 // Admin API endpoints (Firebase Admin SDK - user management, custom claims, bulk operations)
-app.use('/admin/api', optionalApiKeyAuth, adminRouter);
+app.use(['/admin/api', '/admin'], optionalApiKeyAuth, adminRouter);
 
 // Paymenter billing & subscription proxy
-app.use('/api/paymenter', paymenterRouter);
+app.use(apiMountPaths('/api/paymenter'), paymenterRouter);
 
 // Google Drive file manager
-app.use('/api/drive', driveRouter);
+app.use(apiMountPaths('/api/drive'), driveRouter);
 
 // Meilisearch search proxy (keeps master key server-side)
-app.use('/api/search', optionalApiKeyAuth, searchRouter);
+app.use(apiMountPaths('/api/search'), optionalApiKeyAuth, searchRouter);
 
 // Link metadata fetcher (title + favicon extraction)
-app.use('/api/link-meta', linkMetaRouter);
+app.use(apiMountPaths('/api/link-meta'), linkMetaRouter);
 
 if (require.main === module) {
   app.listen(port, () => {
