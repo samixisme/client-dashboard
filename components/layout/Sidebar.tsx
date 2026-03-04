@@ -16,7 +16,6 @@ import { useSearch } from '../../contexts/SearchContext';
 const mainNavItems = [
     { to: '/dashboard',     Icon: DashboardIcon, label: 'Dashboard'     },
     { to: '/links',         Icon: LinkIcon,       label: 'Links'         },
-    { to: '/files',         Icon: FileIcon,       label: 'Files'         },
     { to: '/calendar',      Icon: CalendarIcon,  label: 'Calendar'      },
     { to: '/payments',      Icon: PaymentsIcon,  label: 'Payments'      },
     { to: '/subscriptions', Icon: RecurringIcon, label: 'Subscriptions' },
@@ -99,6 +98,35 @@ const ToolsNavItem: React.FC = () => {
             </div>
             <div className="whitespace-nowrap pr-4 pl-2">
                 <span className="font-medium text-sm">Tools</span>
+            </div>
+        </button>
+    );
+};
+
+// ─── Files Nav Item (dynamic route based on active project) ───────────────────
+const FilesNavItem: React.FC = () => {
+    const { activeProjectId } = useActiveProject();
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const isActive = location.pathname.includes('/files');
+    const href = activeProjectId ? `/projects/${activeProjectId}/files` : '/files';
+
+    return (
+        <button
+            onClick={() => navigate(href)}
+            title="Files"
+            className={`group flex items-center h-11 w-11 hover:w-44 rounded-xl transition-all duration-300 ease-in-out overflow-hidden cursor-pointer ${
+                isActive
+                    ? 'bg-primary text-background font-bold'
+                    : 'bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color'
+            }`}
+        >
+            <div className="h-11 w-11 flex-shrink-0 flex items-center justify-center">
+                <FileIcon className="h-6 w-6" />
+            </div>
+            <div className="whitespace-nowrap pr-4 pl-2">
+                <span className="font-medium text-sm">Files</span>
             </div>
         </button>
     );
@@ -224,6 +252,7 @@ const Sidebar = () => {
             <div className="flex-1 flex flex-col justify-center pt-4">
                 <nav className="flex flex-col gap-1 w-11">
                     <ToolsNavItem />
+                    <FilesNavItem />
                     {mainNavItems.map(({ to, Icon, label }) =>
                         <NavItem key={to} to={to} Icon={Icon} label={label} />
                     )}

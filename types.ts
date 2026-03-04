@@ -813,3 +813,20 @@ export interface DashboardData {
   projectStatusDistribution: { name: string; value: number }[];
   recentActivities: ActivityItem[];
 }
+
+// ── Project Files (Unified) ───────────────────────────────────────────────────
+
+export type ProjectFileSource = 'drive' | 'task' | 'mockup' | 'video' | 'link';
+
+export interface ProjectFile {
+    id: string; // Unified unique ID (e.g. "task:123:456")
+    projectId: string;
+    name: string;
+    url: string;
+    type: string;
+    source: ProjectFileSource;
+    sourceRoute?: string;
+    createdAt?: any; // Timestamp | Date | number | string
+    size?: number;
+    thumbnailUrl?: string;
+}

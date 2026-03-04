@@ -27,6 +27,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectBoardPage from './pages/ProjectBoardPage';
 import RoadmapPage from './pages/RoadmapPage';
+import ProjectFilesPage from './pages/ProjectFilesPage';
 import FeedbackProjectDetailPage from './pages/FeedbackProjectDetailPage';
 import FeedbackItemPage from './pages/FeedbackItemPage';
 import FeedbackMockupsPage from './pages/FeedbackMockupsPage';
@@ -507,6 +508,7 @@ function App() {
                    }>
                       <Route path="/board/:boardId" element={<ProjectBoardPage />} />
                       <Route path="/projects/:projectId/roadmap" element={<RoadmapPage />} />
+                      <Route path="/projects/:projectId/files" element={<ProjectFilesPage />} />
                    </Route>
 
                    {/* Project Tools Hub */}

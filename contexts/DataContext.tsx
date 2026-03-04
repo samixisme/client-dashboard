@@ -7,7 +7,7 @@ import {
     Comment, Activity, Moodboard, MoodboardItem, FeedbackWebsite, FeedbackMockup,
     FeedbackVideo, FeedbackComment, EmailTemplate, CalendarEvent, SocialAccount,
     SocialPost, ScheduledPost, SocialAnomaly,
-    Client, Invoice, Estimate, UserSettings,
+    Client, Invoice, Estimate, UserSettings, ProjectLink,
 } from '../types';
 import { toast } from 'sonner';
 
@@ -45,6 +45,7 @@ const dataStore = {
     socialPosts:       [] as SocialPost[],
     scheduledPosts:    [] as ScheduledPost[],
     socialAnomalies:   [] as SocialAnomaly[],
+    projectLinks:      [] as ProjectLink[],
 };
 
 type DataStoreKey = keyof typeof dataStore;
@@ -268,6 +269,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     query(collection(db, 'social_anomalies')),
                     snap => { dataStore.socialAnomalies = snap.docs.map(d => ({ id: d.id, ...d.data() } as SocialAnomaly)); bump(); },
                     errHandler('social_anomalies')
+                ),
+
+                // ── Project Links ──────────────────────────────────────────────
+                onSnapshot(
+                    query(collection(db, 'projectLinks')),
+                    snap => { dataStore.projectLinks = snap.docs.map(d => ({ id: d.id, ...d.data() } as ProjectLink)); bump(); },
+                    errHandler('projectLinks')
                 ),
 
                 // ── Payments — clients / invoices / estimates / userSettings ───

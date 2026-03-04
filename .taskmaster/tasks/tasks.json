@@ -3466,14 +3466,14 @@
         "dependencies": [
           "107"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "Add `projectLinks` State and Update DataContext Type Definition",
             "description": "Modify the `DataContext` in `contexts/DataContext.tsx` to include a new state variable for `projectLinks` and update the context's TypeScript type definition to reflect this change.",
             "dependencies": [],
-            "details": "In the file `contexts/DataContext.tsx`, introduce a new state variable using the `useState` hook for `projectLinks`, initializing it to null or an empty array. Update the `DataContextType` interface to include the `projectLinks` property with the appropriate type (e.g., `ProjectLink[]`).",
+            "details": "In the file `contexts/DataContext.tsx`, introduce a new state variable using the `useState` hook for `projectLinks`, initializing it to null or an empty array. Update the `DataContextType` interface to include the `projectLinks` property with the appropriate type (e.g., `ProjectLink[]`).\n<info added on 2026-03-04T13:34:10.865Z>\nImplemented: Added ProjectLink to the import from ../types in DataContext.tsx. Added projectLinks: [] as ProjectLink[] to the dataStore singleton object. Added a new onSnapshot listener for the projectLinks Firestore collection inside the startListeners() function, following the same mutable-array bump() pattern as all other listeners. The listener is automatically unsubscribed during cleanup via the unsubscribers array. TypeScript check passes.\n</info added on 2026-03-04T13:34:10.865Z>",
             "status": "pending",
             "testStrategy": "Verify through code review that the new state variable is correctly declared and the TypeScript interface for the context data is updated. Ensure the application compiles without type errors.",
             "parentId": "undefined"
@@ -3493,7 +3493,8 @@
         ],
         "complexity": 4,
         "recommendedSubtasks": 2,
-        "expansionPrompt": "Generate subtasks for integrating `projectLinks` into the `DataContext`. The subtasks should be: 1. Add the `projectLinks` state and update the context's type definition. 2. Implement the `useEffect` hook to set up the Firestore `onSnapshot` listener for the `projectLinks` collection."
+        "expansionPrompt": "Generate subtasks for integrating `projectLinks` into the `DataContext`. The subtasks should be: 1. Add the `projectLinks` state and update the context's type definition. 2. Implement the `useEffect` hook to set up the Firestore `onSnapshot` listener for the `projectLinks` collection.",
+        "updatedAt": "2026-03-04T13:33:39.424Z"
       },
       {
         "id": "109",
@@ -3505,11 +3506,12 @@
         "dependencies": [
           "104"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 3,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "This task is a focused refactoring of a single hook and does not require further expansion. The work involves updating the hook's signature and modifying its internal fetch requests."
+        "expansionPrompt": "This task is a focused refactoring of a single hook and does not require further expansion. The work involves updating the hook's signature and modifying its internal fetch requests.",
+        "updatedAt": "2026-03-04T13:33:39.478Z"
       },
       {
         "id": "110",
@@ -3521,7 +3523,7 @@
         "dependencies": [
           "107"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3560,7 +3562,8 @@
         ],
         "complexity": 3,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Break down the creation of the `useProjectLinks` hook into its core CRUD functions. Create subtasks for implementing: 1. The `addLink` function. 2. The `updateLink` function. 3. The `deleteLink` function."
+        "expansionPrompt": "Break down the creation of the `useProjectLinks` hook into its core CRUD functions. Create subtasks for implementing: 1. The `addLink` function. 2. The `updateLink` function. 3. The `deleteLink` function.",
+        "updatedAt": "2026-03-04T13:33:39.440Z"
       },
       {
         "id": "111",
@@ -3573,7 +3576,7 @@
           "108",
           "109"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3622,7 +3625,8 @@
         ],
         "complexity": 8,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Generate subtasks for the `useProjectFiles` aggregation hook. Focus on the data transformation for each source. Subtasks should cover: 1. Consuming data from `useDriveFiles` and mapping it to `ProjectFile[]`. 2. Consuming `projectLinks` from `DataContext` and mapping them. 3. Consuming other sources (e.g., task attachments) and mapping them. 4. Combining all mapped arrays and wrapping the entire logic in a `useMemo` for performance."
+        "expansionPrompt": "Generate subtasks for the `useProjectFiles` aggregation hook. Focus on the data transformation for each source. Subtasks should cover: 1. Consuming data from `useDriveFiles` and mapping it to `ProjectFile[]`. 2. Consuming `projectLinks` from `DataContext` and mapping them. 3. Consuming other sources (e.g., task attachments) and mapping them. 4. Combining all mapped arrays and wrapping the entire logic in a `useMemo` for performance.",
+        "updatedAt": "2026-03-04T13:47:01.265Z"
       },
       {
         "id": "112",
@@ -3634,11 +3638,12 @@
         "dependencies": [
           "111"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 2,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "This task is a standard setup for a new page and does not need to be broken down further. It involves adding a route and creating the main page component file."
+        "expansionPrompt": "This task is a standard setup for a new page and does not need to be broken down further. It involves adding a route and creating the main page component file.",
+        "updatedAt": "2026-03-04T15:52:00.415Z"
       },
       {
         "id": "113",
@@ -3650,7 +3655,7 @@
         "dependencies": [
           "112"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3677,7 +3682,8 @@
         ],
         "complexity": 4,
         "recommendedSubtasks": 2,
-        "expansionPrompt": "Break down the creation of the `SourceFilterSidebar`. Subtasks should be: 1. Implement the UI and the logic to dynamically compute and display the count for each file source from the props. 2. Add state management for the active filter, handle user clicks, and call the parent component's callback with the selected filter."
+        "expansionPrompt": "Break down the creation of the `SourceFilterSidebar`. Subtasks should be: 1. Implement the UI and the logic to dynamically compute and display the count for each file source from the props. 2. Add state management for the active filter, handle user clicks, and call the parent component's callback with the selected filter.",
+        "updatedAt": "2026-03-04T15:52:00.437Z"
       },
       {
         "id": "114",
@@ -3691,7 +3697,7 @@
           "110",
           "112"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3741,7 +3747,8 @@
         ],
         "complexity": 6,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Generate subtasks for the link management UI. The breakdown should cover: 1. Building the `AddLinkDialog` component with its form. 2. Implementing the real-time metadata fetching by calling the `/api/link-meta` endpoint from the dialog. 3. Creating the `LinkCard` component to display link information. 4. Integrating the `useProjectLinks` hook to handle adding, editing, and deleting links."
+        "expansionPrompt": "Generate subtasks for the link management UI. The breakdown should cover: 1. Building the `AddLinkDialog` component with its form. 2. Implementing the real-time metadata fetching by calling the `/api/link-meta` endpoint from the dialog. 3. Creating the `LinkCard` component to display link information. 4. Integrating the `useProjectLinks` hook to handle adding, editing, and deleting links.",
+        "updatedAt": "2026-03-04T16:13:48.680Z"
       },
       {
         "id": "115",
@@ -3753,7 +3760,7 @@
         "dependencies": [
           "113"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3792,7 +3799,8 @@
         ],
         "complexity": 5,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Break down the main content view implementation. Subtasks should cover: 1. Implementing the state management in the parent page for the search term and selected source filter. 2. Writing the client-side filtering logic that derives the displayed file list from the master list. 3. Building the component responsible for rendering the grid or list of `ProjectFileCard` components."
+        "expansionPrompt": "Break down the main content view implementation. Subtasks should cover: 1. Implementing the state management in the parent page for the search term and selected source filter. 2. Writing the client-side filtering logic that derives the displayed file list from the master list. 3. Building the component responsible for rendering the grid or list of `ProjectFileCard` components.",
+        "updatedAt": "2026-03-04T16:13:48.698Z"
       },
       {
         "id": "116",
@@ -3805,11 +3813,12 @@
           "109",
           "112"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 3,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "This task is a straightforward integration of an existing component and does not require further expansion. The work involves placing the component and passing the correct props."
+        "expansionPrompt": "This task is a straightforward integration of an existing component and does not require further expansion. The work involves placing the component and passing the correct props.",
+        "updatedAt": "2026-03-04T15:52:00.452Z"
       },
       {
         "id": "117",
@@ -3821,7 +3830,7 @@
         "dependencies": [
           "112"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3848,7 +3857,8 @@
         ],
         "complexity": 4,
         "recommendedSubtasks": 2,
-        "expansionPrompt": "Break down the task of adding the 'Files' tool card. Subtasks should be: 1. Add the static UI for the new card to the `ToolsPage` with correct routing. 2. Implement the data fetching and aggregation logic to calculate and display the live stats (file counts, link counts) on the card."
+        "expansionPrompt": "Break down the task of adding the 'Files' tool card. Subtasks should be: 1. Add the static UI for the new card to the `ToolsPage` with correct routing. 2. Implement the data fetching and aggregation logic to calculate and display the live stats (file counts, link counts) on the card.",
+        "updatedAt": "2026-03-04T16:13:48.712Z"
       },
       {
         "id": "118",
@@ -3860,18 +3870,19 @@
         "dependencies": [
           "112"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [],
         "complexity": 2,
         "recommendedSubtasks": 0,
-        "expansionPrompt": "This task is a small, targeted change to a single component and does not require further expansion. It involves adding a context hook and a ternary operator to a link's prop."
+        "expansionPrompt": "This task is a small, targeted change to a single component and does not require further expansion. It involves adding a context hook and a ternary operator to a link's prop.",
+        "updatedAt": "2026-03-04T15:52:00.466Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-03T17:17:54.579Z",
+      "lastModified": "2026-03-04T16:13:48.713Z",
       "taskCount": 85,
-      "completedCount": 74,
+      "completedCount": 85,
       "tags": [
         "master"
       ]

@@ -7,6 +7,7 @@ export interface DriveFile {
   size?: string; // Google returns size as string
   webViewLink?: string;
   webContentLink?: string;
+  thumbnailLink?: string;
   createdTime?: string;
   modifiedTime?: string;
   parents?: string[];

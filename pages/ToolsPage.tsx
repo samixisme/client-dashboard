@@ -13,6 +13,7 @@ import { EmailIcon } from '../components/icons/EmailIcon';
 import { BrandIcon } from '../components/icons/BrandIcon';
 import { AiSparkleIcon } from '../components/icons/AiSparkleIcon';
 import { Project, Brand, Board } from '../types';
+import { FileIcon } from '../components/icons/FileIcon';
 
 const GREEN = '#a3e635';
 
@@ -283,6 +284,23 @@ const ToolsPage: React.FC = () => {
         ];
     }, [brand]);
 
+    // Files hub stats
+    const filesStats = useMemo(() => {
+        if (!project) return [];
+        const projectBoards = data.boards.filter(b => b.projectId === project.id);
+        const boardIds = new Set(projectBoards.map(b => b.id));
+        const taskAttachments = data.tasks.filter(t => boardIds.has(t.boardId) && t.attachments && t.attachments.length > 0);
+        const links = data.projectLinks.filter(l => l.projectId === project.id);
+        const mockups = data.feedbackMockups.filter(m => m.projectId === project.id);
+        const videos = data.feedbackVideos.filter(v => v.projectId === project.id);
+        return [
+            { label: 'Links', value: links.length },
+            { label: 'Attachments', value: taskAttachments.length },
+            { label: 'Mockups', value: mockups.length },
+            { label: 'Videos', value: videos.length },
+        ];
+    }, [project, data.boards, data.tasks, data.projectLinks, data.feedbackMockups, data.feedbackVideos]);
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     if (!project) {
@@ -441,6 +459,15 @@ const ToolsPage: React.FC = () => {
                     Icon={AiSparkleIcon}
                     href="/brand-asset-creator"
                     stats={[]}
+                />
+
+                <ToolCard
+                    index={8}
+                    label="Files"
+                    description="Browse all project files, links, and attachments in one unified hub."
+                    Icon={FileIcon}
+                    href={`/projects/${project.id}/files`}
+                    stats={filesStats}
                 />
 
             </div>

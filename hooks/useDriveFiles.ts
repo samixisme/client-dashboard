@@ -10,6 +10,10 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     credentials: 'include',
     ...options,
   });
+  const contentType = res.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('API server is not reachable. Make sure both dev servers are running (npm run dev).');
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Request failed: ${res.status}`);
@@ -18,6 +22,11 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export interface UseDriveFilesOptions {
+  projectId?: string;
+  initialPath?: string;
+}
 
 export interface UseDriveFilesReturn {
   files: DriveFile[];
@@ -36,7 +45,16 @@ export interface UseDriveFilesReturn {
   remove: (fileId: string) => Promise<void>;
 }
 
-export function useDriveFiles(initialPath = ''): UseDriveFilesReturn {
+export function useDriveFiles(
+  optionsOrPath: UseDriveFilesOptions | string = ''
+): UseDriveFilesReturn {
+  // Normalise: accept legacy positional string or new options object
+  const options: UseDriveFilesOptions =
+    typeof optionsOrPath === 'string'
+      ? { initialPath: optionsOrPath }
+      : optionsOrPath;
+  const { projectId, initialPath = '' } = options;
+
   const [currentPath, setCurrentPath] = useState(initialPath);
   const [files, setFiles]       = useState<DriveFile[]>([]);
   const [folders, setFolders]   = useState<DriveFolder[]>([]);
@@ -53,7 +71,9 @@ export function useDriveFiles(initialPath = ''): UseDriveFilesReturn {
     setIsLoading(true);
     setError(null);
 
-    const query = currentPath ? `?folder=${encodeURIComponent(currentPath)}` : '';
+    const projectParam = projectId ? `&projectId=${encodeURIComponent(projectId)}` : '';
+    const query = currentPath ? `?folder=${encodeURIComponent(currentPath)}${projectParam}` : (projectParam ? `?projectId=${encodeURIComponent(projectId!)}` : '');
+
 
     Promise.all([
       apiFetch<{ files: DriveFile[]; folders: DriveFolder[] }>(`/files${query}`),
