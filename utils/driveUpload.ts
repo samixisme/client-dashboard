@@ -2,6 +2,7 @@
  * Utility for uploading files to Google Drive directly from the frontend.
  * Replaces Firebase Storage upload functionality.
  */
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : 'https://client.samixism.com');
 
 export const uploadToDrive = async (
   file: File | Blob,
@@ -17,7 +18,7 @@ export const uploadToDrive = async (
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/drive/upload');
+    xhr.open('POST', `${API_BASE}/api/drive/upload`);
     xhr.withCredentials = true;
 
     if (onProgress && xhr.upload) {
