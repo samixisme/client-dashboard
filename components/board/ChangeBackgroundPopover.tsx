@@ -66,7 +66,6 @@ const ChangeBackgroundPopover: React.FC<ChangeBackgroundPopoverProps> = ({ ancho
                     <button
                         key={color}
                         onClick={() => handleColorSelect(color)}
-                        // FIX: Property 'backgroundColor' does not exist on type 'Stage'. Use 'backgroundPattern' instead.
                         className={`w-full aspect-square rounded-lg border-2 transition-transform hover:scale-110 ${stage.backgroundPattern === color ? 'border-primary' : 'border-transparent'}`}
                         style={{ backgroundColor: color }}
                         aria-label={`Set color to ${color}`}
