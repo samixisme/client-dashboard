@@ -163,6 +163,52 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
   }, [data]);
 };
 
+// TaskRow component extracted from DashboardPage to prevent unmounting/remounting
+const TaskRow = React.memo<{
+  task: Task;
+  index: number;
+  stages: import('../types').Stage[];
+  users: User[];
+  onNavigate: (path: string) => void;
+}>(({ task, index, stages, users, onNavigate }) => {
+  const stage = stages.find((s) => s.id === task.stageId);
+  const assignees = users.filter((m: User) => task.assignees?.includes(m.id));
+
+  const priorityClasses = {
+    High: 'bg-red-500/15 text-red-400 border-red-500/50',
+    Medium: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/50',
+    Low: 'bg-green-500/15 text-green-400 border-green-500/50',
+  };
+
+  return (
+    <tr
+      className="border-b border-border-color/30 last:border-b-0 hover:bg-glass-light/60 hover:shadow-lg cursor-pointer transition-all duration-300 animate-fade-in-up group/task"
+      onClick={() => onNavigate(`/board/${task.boardId}`)}
+      style={{ animationDelay: `${index * 30}ms` }}
+    >
+      <td className="p-5 font-bold text-text-primary group-hover/task:text-primary transition-colors duration-300">{task.title}</td>
+      <td className="p-5">
+        <span className="px-3 py-1 rounded-lg bg-glass-light/60 text-text-secondary text-xs font-semibold border border-border-color/30">
+          {stage?.name || 'N/A'}
+        </span>
+      </td>
+      <td className="p-5">
+        <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border backdrop-blur-sm ${priorityClasses[task.priority]}`}>
+          {task.priority}
+        </span>
+      </td>
+      <td className="p-5">
+        <div className="flex -space-x-2.5">
+          {assignees.map(member => (
+            <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-9 h-9 rounded-full border-2 border-surface shadow-md transition-all duration-300 hover:scale-125 hover:z-10 hover:border-primary hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
+          ))}
+        </div>
+      </td>
+      <td className="p-5 text-text-secondary font-medium">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</td>
+    </tr>
+  );
+});
+
 // Utility function for relative time
 const getRelativeTime = (timestamp: string | import('../types').FirebaseTimestamp) => {
   const now = new Date();
@@ -192,46 +238,6 @@ const DashboardPage = () => {
   const dataSources = [
     { name: 'Dashboard Widgets', data: widgets, onSave: (newData: typeof widgets) => updateData('dashboardWidgets', newData) },
   ];
-
-  // TaskRow component (from ProjectsPage)
-  const TaskRow: React.FC<{task: Task; index: number}> = ({task, index}) => {
-    const stage = data.stages.find((s) => s.id === task.stageId);
-    const assignees = data.users.filter((m: User) => task.assignees?.includes(m.id));
-
-    const priorityClasses = {
-      High: 'bg-red-500/15 text-red-400 border-red-500/50',
-      Medium: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/50',
-      Low: 'bg-green-500/15 text-green-400 border-green-500/50',
-    };
-
-    return (
-      <tr
-        className="border-b border-border-color/30 last:border-b-0 hover:bg-glass-light/60 hover:shadow-lg cursor-pointer transition-all duration-300 animate-fade-in-up group/task"
-        onClick={() => navigate(`/board/${task.boardId}`)}
-        style={{ animationDelay: `${index * 30}ms` }}
-      >
-        <td className="p-5 font-bold text-text-primary group-hover/task:text-primary transition-colors duration-300">{task.title}</td>
-        <td className="p-5">
-          <span className="px-3 py-1 rounded-lg bg-glass-light/60 text-text-secondary text-xs font-semibold border border-border-color/30">
-            {stage?.name || 'N/A'}
-          </span>
-        </td>
-        <td className="p-5">
-          <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border backdrop-blur-sm ${priorityClasses[task.priority]}`}>
-            {task.priority}
-          </span>
-        </td>
-        <td className="p-5">
-          <div className="flex -space-x-2.5">
-            {assignees.map(member => (
-              <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-9 h-9 rounded-full border-2 border-surface shadow-md transition-all duration-300 hover:scale-125 hover:z-10 hover:border-primary hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
-            ))}
-          </div>
-        </td>
-        <td className="p-5 text-text-secondary font-medium">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</td>
-      </tr>
-    );
-  };
 
   const tasksToShow = activeTaskTab === 'high' ? metrics.highPriority :
                       activeTaskTab === 'week' ? metrics.dueThisWeek :
@@ -730,7 +736,16 @@ const DashboardPage = () => {
               </tr>
             </thead>
             <tbody>
-              {tasksToShow.map((task: Task, index: number) => <TaskRow key={task.id} task={task} index={index} />)}
+              {tasksToShow.map((task: Task, index: number) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  index={index}
+                  stages={data.stages}
+                  users={data.users}
+                  onNavigate={navigate}
+                />
+              ))}
             </tbody>
           </table>
           {tasksToShow.length === 0 && (
