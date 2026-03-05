@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import { getFirestore } from './firebaseAdmin';
+import * as admin from 'firebase-admin';
 
 const webhookRouter = Router();
 
@@ -122,15 +124,34 @@ function handleMessageEvent(value: any) {
 /**
  * Handle media events (new post created)
  */
-function handleMediaEvent(value: any) {
+async function handleMediaEvent(value: any) {
     console.log('Media event:', {
         mediaId: value.id,
         mediaType: value.media_type,
         caption: value.caption,
     });
 
-    // TODO: Sync new post to Firebase `socialPosts` collection
-    // Trigger data refresh in frontend
+    try {
+        const db = getFirestore();
+        const postRef = db.collection('socialPosts').doc(value.id);
+        const postDoc = await postRef.get();
+
+        if (!postDoc.exists) {
+            await postRef.set({
+                id: value.id,
+                platform: 'instagram',
+                mediaType: value.media_type,
+                caption: value.caption,
+                publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+                raw: value,
+            }, { merge: true });
+            console.log('Successfully synced new media to socialPosts');
+        } else {
+            console.log('Media already exists in socialPosts, skipping');
+        }
+    } catch (error) {
+        console.error('Error syncing media event to Firebase:', error);
+    }
 }
 
 /**
