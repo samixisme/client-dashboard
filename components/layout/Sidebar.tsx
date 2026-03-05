@@ -132,6 +132,26 @@ const FilesNavItem: React.FC = () => {
     );
 };
 
+// ─── Safe Text Highlighting Component ──────────────────────────────────────────
+const HighlightText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+    // Split the text by <mark>...</mark> to extract highlighted sections safely
+    const parts = text.split(/(<mark>.*?<\/mark>)/gi);
+
+    return (
+        <span className={className}>
+            {parts.map((part, i) => {
+                if (part.toLowerCase().startsWith('<mark>') && part.toLowerCase().endsWith('</mark>')) {
+                    // Render the marked part safely by stripping the tags
+                    const content = part.slice(6, -7);
+                    return <mark key={i}>{content}</mark>;
+                }
+                // Plain text rendering safely escapes any other HTML tags
+                return <React.Fragment key={i}>{part}</React.Fragment>;
+            })}
+        </span>
+    );
+};
+
 // ─── Search bar + live dropdown ───────────────────────────────────────────────
 const SearchBar: React.FC = () => {
     const { searchQuery, setSearchQuery, searchResults, isSearching, clearSearch } = useSearch();
@@ -213,9 +233,9 @@ const SearchBar: React.FC = () => {
                                                     onClick={handleHitClick}
                                                     className="w-full text-left px-4 py-2.5 hover:bg-glass-light transition-colors duration-150 cursor-pointer flex items-center gap-2 group"
                                                 >
-                                                    <span
+                                                    <HighlightText
+                                                        text={title}
                                                         className="text-xs text-text-primary truncate flex-1 group-hover:text-primary transition-colors duration-150"
-                                                        dangerouslySetInnerHTML={{ __html: title }}
                                                     />
                                                 </button>
                                             );
