@@ -464,59 +464,35 @@ export const instagramDataDeletionCallback = functions.https.onRequest(async (re
     const batch = db.batch();
     let deletionCount = 0;
 
-    // 1. Delete social account
-    const accountSnapshot = await db.collection('socialAccounts')
-      .where('platform', '==', 'instagram')
-      .where('platformUserId', '==', platformUserId)
-      .get();
+    // Fetch all related documents concurrently to improve performance
+    const snapshots = await Promise.all([
+      db.collection('socialAccounts')
+        .where('platform', '==', 'instagram')
+        .where('platformUserId', '==', platformUserId)
+        .get(),
+      db.collection('socialComments')
+        .where('platform', '==', 'instagram')
+        .where('from.id', '==', platformUserId)
+        .get(),
+      db.collection('socialMessages')
+        .where('platform', '==', 'instagram')
+        .where('from.id', '==', platformUserId)
+        .get(),
+      db.collection('socialPosts')
+        .where('platform', '==', 'instagram')
+        .where('platformUserId', '==', platformUserId)
+        .get(),
+      db.collection('socialMentions')
+        .where('platform', '==', 'instagram')
+        .where('from.id', '==', platformUserId)
+        .get()
+    ]);
 
-    accountSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
-    });
-
-    // 2. Delete comments from this user
-    const commentsSnapshot = await db.collection('socialComments')
-      .where('platform', '==', 'instagram')
-      .where('from.id', '==', platformUserId)
-      .get();
-
-    commentsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
-    });
-
-    // 3. Delete messages from this user
-    const messagesSnapshot = await db.collection('socialMessages')
-      .where('platform', '==', 'instagram')
-      .where('from.id', '==', platformUserId)
-      .get();
-
-    messagesSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
-    });
-
-    // 4. Delete posts from this user
-    const postsSnapshot = await db.collection('socialPosts')
-      .where('platform', '==', 'instagram')
-      .where('platformUserId', '==', platformUserId)
-      .get();
-
-    postsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
-    });
-
-    // 5. Delete mentions
-    const mentionsSnapshot = await db.collection('socialMentions')
-      .where('platform', '==', 'instagram')
-      .where('from.id', '==', platformUserId)
-      .get();
-
-    mentionsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
+    snapshots.forEach((snapshot) => {
+      snapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+        deletionCount++;
+      });
     });
 
     // Commit the batch deletion
@@ -767,59 +743,35 @@ export const facebookDataDeletionCallback = functions.https.onRequest(async (req
     const batch = db.batch();
     let deletionCount = 0;
 
-    // 1. Delete social account
-    const accountSnapshot = await db.collection('socialAccounts')
-      .where('platform', '==', 'facebook')
-      .where('platformUserId', '==', platformUserId)
-      .get();
+    // Fetch all related documents concurrently to improve performance
+    const snapshots = await Promise.all([
+      db.collection('socialAccounts')
+        .where('platform', '==', 'facebook')
+        .where('platformUserId', '==', platformUserId)
+        .get(),
+      db.collection('socialComments')
+        .where('platform', '==', 'facebook')
+        .where('from.id', '==', platformUserId)
+        .get(),
+      db.collection('socialMessages')
+        .where('platform', '==', 'facebook')
+        .where('from.id', '==', platformUserId)
+        .get(),
+      db.collection('socialPosts')
+        .where('platform', '==', 'facebook')
+        .where('platformUserId', '==', platformUserId)
+        .get(),
+      db.collection('socialMentions')
+        .where('platform', '==', 'facebook')
+        .where('from.id', '==', platformUserId)
+        .get()
+    ]);
 
-    accountSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
-    });
-
-    // 2. Delete comments from this user
-    const commentsSnapshot = await db.collection('socialComments')
-      .where('platform', '==', 'facebook')
-      .where('from.id', '==', platformUserId)
-      .get();
-
-    commentsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
-    });
-
-    // 3. Delete messages from this user
-    const messagesSnapshot = await db.collection('socialMessages')
-      .where('platform', '==', 'facebook')
-      .where('from.id', '==', platformUserId)
-      .get();
-
-    messagesSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
-    });
-
-    // 4. Delete posts from this user
-    const postsSnapshot = await db.collection('socialPosts')
-      .where('platform', '==', 'facebook')
-      .where('platformUserId', '==', platformUserId)
-      .get();
-
-    postsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
-    });
-
-    // 5. Delete mentions
-    const mentionsSnapshot = await db.collection('socialMentions')
-      .where('platform', '==', 'facebook')
-      .where('from.id', '==', platformUserId)
-      .get();
-
-    mentionsSnapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-      deletionCount++;
+    snapshots.forEach((snapshot) => {
+      snapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+        deletionCount++;
+      });
     });
 
     // Commit the batch deletion
