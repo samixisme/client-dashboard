@@ -283,14 +283,11 @@ const BrandAssetCreatorPage = () => {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {selectedBrand.logos.map((logo, index) => (
                                     <SelectionCard
-                                        // FIX: Spreading props to resolve a type error where 'key' was incorrectly treated as a prop.
-                                        {...{
-                                            key: `${logo.type}-${logo.variation}-${index}`,
-                                            title: `${logo.type} (${logo.variation})`,
-                                            imageUrl: logo.formats[0]?.url || '',
-                                            isSelected: selectedLogo === logo,
-                                            onClick: () => handleLogoSelect(logo),
-                                        }}
+                                        key={`${logo.type}-${logo.variation}-${index}`}
+                                        title={`${logo.type} (${logo.variation})`}
+                                        imageUrl={logo.formats[0]?.url || ''}
+                                        isSelected={selectedLogo === logo}
+                                        onClick={() => handleLogoSelect(logo)}
                                     />
                                 ))}
                            </div>
