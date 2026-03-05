@@ -43,7 +43,6 @@ const ListView: React.FC<ListViewProps> = ({
         <div className="w-full h-full overflow-auto bg-glass/60 backdrop-blur-xl p-6 rounded-xl border border-border-color shadow-xl">
             {stages.map(stage => {
                 const stageTasks = tasksByStage.get(stage.id) || [];
-                // FIX: Use backgroundPattern instead of non-existent backgroundColor property.
                 const pattern = stage.backgroundPattern ? backgroundPatterns.find(p => p.id === stage.backgroundPattern)?.style : {};
                 return (
                     <div key={stage.id} className="mb-6 last:mb-0">
