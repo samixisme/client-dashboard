@@ -37,7 +37,7 @@ export const instagramWebhook = functions.https.onRequest(async (req, res) => {
     const token = req.query['hub.verify_token'] as string;
     const challenge = req.query['hub.challenge'] as string;
 
-    console.log('Instagram webhook verification request:', { mode, token });
+    console.log('Instagram webhook verification request:', { mode });
 
     if (mode && token) {
       if (mode === 'subscribe' && token === WEBHOOK_VERIFY_TOKEN) {

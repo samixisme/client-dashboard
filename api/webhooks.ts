@@ -18,7 +18,7 @@ webhookRouter.get('/instagram', (req: Request, res: Response) => {
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
-    console.log('Instagram webhook verification request:', { mode, token });
+    console.log('Instagram webhook verification request:', { mode });
 
     // Check if a token and mode were sent
     if (mode && token) {
