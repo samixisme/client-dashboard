@@ -37,10 +37,6 @@ module.exports = {
       listen_timeout: 10000,
       shutdown_with_message: true,
 
-      // BUG FIX: removed cron_restart — a nightly hard restart at 3 AM was
-      // killing in-flight requests AND re-triggering the ALLOWED_ORIGINS crash
-      // loop whenever the env wasn't persisted correctly in PM2's dump.
-
       // Monitoring
       instance_var: 'INSTANCE_ID',
 
