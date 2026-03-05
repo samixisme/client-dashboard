@@ -38,7 +38,6 @@ const FeedbackVideoDetailPage = () => {
     // Core Data
     const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
     const [comments, setComments] = useState<FeedbackItemComment[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
 
     const path = searchParams.get('path');
@@ -130,20 +129,6 @@ const FeedbackVideoDetailPage = () => {
             return () => unsubscribe();
         }
     }, [projectId, feedbackItemId, feedbackItem?.version]);
-
-    // Fetch Users
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const usersSnapshot = await getDocs(collection(db, 'users'));
-                const fetchedUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-                setUsers(fetchedUsers);
-            } catch (error) {
-                console.error("Error fetching users:", error);
-            }
-        };
-        fetchUsers();
-    }, []);
 
     // Fetch Versions
     useEffect(() => {
@@ -742,7 +727,7 @@ const FeedbackVideoDetailPage = () => {
                         onResolve={handleResolveComment}
                         onUpdate={handleCommentUpdate}
                         position={sidebarPosition}
-                        users={users}
+                        users={data.users}
                         currentUserId={currentUserId}
                     />
                 </div>
@@ -764,7 +749,7 @@ const FeedbackVideoDetailPage = () => {
                             onDelete={handleDeleteComment}
                             targetType="video"
                             videoCurrentTime={currentTime}
-                            users={users}
+                            users={data.users}
                             currentUserId={currentUserId}
                         />
                     </div>

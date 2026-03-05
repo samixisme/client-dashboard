@@ -75,20 +75,57 @@ const FeedbackTool = () => {
     }
   }, []);
 
-  // Fetch Users
+  // Fetch Users based on comments
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchTargetedUsers = async () => {
+        if (!comments || comments.length === 0) return;
+
         try {
-            const usersSnapshot = await getDocs(collection(db, 'users'));
-            const fetchedUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            setUsers(fetchedUsers);
+            // Get unique user IDs from comments and their replies
+            const userIds = new Set<string>();
+            comments.forEach(c => {
+                if (c.authorId) userIds.add(c.authorId);
+                if (c.replies) {
+                    c.replies.forEach(r => {
+                        if (r.authorId) userIds.add(r.authorId);
+                    });
+                }
+            });
+
+            // Filter out users we already have
+            const existingUserIds = new Set(users.map(u => u.id));
+            const newIdsToFetch = Array.from(userIds).filter(id => !existingUserIds.has(id));
+
+            if (newIdsToFetch.length === 0) return;
+
+            // Fetch in chunks of 30 due to Firestore 'in' limit
+            const chunks = [];
+            for (let i = 0; i < newIdsToFetch.length; i += 30) {
+                chunks.push(newIdsToFetch.slice(i, i + 30));
+            }
+
+            const fetchedUsers: User[] = [];
+            for (const chunk of chunks) {
+                // For simplicity without 'in' query, use Promise.all with getDoc
+                // which is still much better than fetching the entire collection
+                const docs = await Promise.all(chunk.map(id => getDoc(doc(db, 'users', id))));
+                docs.forEach(d => {
+                    if (d.exists()) {
+                        fetchedUsers.push({ id: d.id, ...d.data() } as User);
+                    }
+                });
+            }
+
+            if (fetchedUsers.length > 0) {
+                setUsers(prev => [...prev, ...fetchedUsers]);
+            }
         } catch (error) {
-            console.error("FeedbackTool: Error fetching users:", error);
+            console.error("FeedbackTool: Error fetching targeted users:", error);
         }
     };
 
-    fetchUsers();
-  }, []);
+    fetchTargetedUsers();
+  }, [comments]); // Re-run when comments change
 
   // Subscribe to comments
   useEffect(() => {
