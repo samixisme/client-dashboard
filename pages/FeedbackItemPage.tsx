@@ -316,7 +316,6 @@ const FeedbackItemPage = () => {
                 startTime: details.startTime, endTime: details.endTime,
                 x_coordinate: newCommentCoords?.x,
                 y_coordinate: newCommentCoords?.y,
-                // FIX: Associate comment with the specific video asset.
                 videoAssetId: currentVideoAsset?.id,
                 dueDate: details.dueDate,
             };
