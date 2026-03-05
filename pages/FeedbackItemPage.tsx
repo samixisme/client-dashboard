@@ -182,7 +182,6 @@ const FeedbackItemPage = () => {
                 const commentPage = c.pageUrl || '/';
                 return commentPage === currentIframePage;
             }
-            // FIX: Filter video comments by the specific video asset being viewed.
             if (itemType === 'video') {
                 return c.videoAssetId === currentVideoAsset?.id;
             }
