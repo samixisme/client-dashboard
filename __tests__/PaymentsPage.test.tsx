@@ -24,12 +24,14 @@ jest.mock('../contexts/AdminContext', () => ({
 
 jest.mock('../components/admin/AdminPanel', () => () => <div data-testid='admin-panel'>Admin Panel</div>);
 
-jest.mock('../src/components/payments/InvoiceDownloadButton', () => ({
-  InvoiceDownloadButton: ({ invoice }: any) => <button data-testid="download-invoice">Download {invoice?.invoiceNumber}</button>,
-}));
-
-jest.mock('../src/components/payments/EstimateDownloadButton', () => ({
-  EstimateDownloadButton: ({ estimate }: any) => <button data-testid="download-estimate">Download {estimate?.estimateNumber}</button>,
+jest.mock('../src/components/payments/DocumentDownloadButton', () => ({
+  DocumentDownloadButton: ({ type, document }: any) => {
+    if (type === 'invoice') {
+      return <button data-testid="download-invoice">Download {document?.invoiceNumber}</button>;
+    } else {
+      return <button data-testid="download-estimate">Download {document?.estimateNumber}</button>;
+    }
+  },
 }));
 
 jest.mock('../utils/invoiceService', () => ({
