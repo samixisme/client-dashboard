@@ -598,23 +598,26 @@ export const facebookOAuthCallback = functions.https.onRequest(async (req, res) 
     const tokenData = await tokenResponse.json();
     console.log('Access token received');
 
-    // Exchange for long-lived token (60 days instead of 1 hour)
-    const longLivedTokenResponse = await fetch(
-      `https://graph.facebook.com/v22.0/oauth/access_token?` +
-      `grant_type=fb_exchange_token&` +
-      `client_id=${FACEBOOK_CLIENT_ID}&` +
-      `client_secret=${FACEBOOK_CLIENT_SECRET}&` +
-      `fb_exchange_token=${tokenData.access_token}`
-    );
+    // Run long-lived token exchange and profile fetch in parallel
+    // We can use the short-lived token to get profile data while simultaneously exchanging it for a long-lived token
+    const [longLivedTokenResponse, profileResponse] = await Promise.all([
+      fetch(
+        `https://graph.facebook.com/v22.0/oauth/access_token?` +
+        `grant_type=fb_exchange_token&` +
+        `client_id=${FACEBOOK_CLIENT_ID}&` +
+        `client_secret=${FACEBOOK_CLIENT_SECRET}&` +
+        `fb_exchange_token=${tokenData.access_token}`
+      ),
+      fetch(
+        `https://graph.facebook.com/v22.0/me?fields=id,name&access_token=${tokenData.access_token}`
+      )
+    ]);
 
-    const longLivedTokenData = await longLivedTokenResponse.json();
+    const [longLivedTokenData, profileData] = await Promise.all([
+      longLivedTokenResponse.json(),
+      profileResponse.json()
+    ]);
     console.log('Long-lived token received:', { expires_in: longLivedTokenData.expires_in });
-
-    // Get user profile information
-    const profileResponse = await fetch(
-      `https://graph.facebook.com/v22.0/me?fields=id,name&access_token=${longLivedTokenData.access_token}`
-    );
-    const profileData = await profileResponse.json();
 
     // Store account information in Firestore
     const accountData = {
