@@ -3,7 +3,8 @@ import CommentPopover from '../../components/feedback/CommentPopover';
 import { subscribeToComments, addComment, deleteComment, updateComment, syncCommentToCalendar } from '../../utils/feedbackUtils';
 import { FeedbackItemComment, FeedbackComment, User } from '../../types';
 import { db, auth } from '../../utils/firebase';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { useData } from '../../contexts/DataContext';
 
 interface Pin {
   id: string;
@@ -17,7 +18,10 @@ const FeedbackTool = () => {
   const [feedbackItemId, setFeedbackItemId] = useState<string | null>(null);
   const [comments, setComments] = useState<FeedbackItemComment[]>([]);
   const [isCommenting, setIsCommenting] = useState(false);
-  const [users, setUsers] = useState<User[]>([]); 
+
+  // Use global users state
+  const { data } = useData();
+  const users = data.users || [];
   
   // State from Host
   const [device, setDevice] = useState<string>('desktop');
@@ -73,21 +77,6 @@ const FeedbackTool = () => {
             console.warn("FeedbackTool: Script tag not found or missing attributes");
         }
     }
-  }, []);
-
-  // Fetch Users
-  useEffect(() => {
-    const fetchUsers = async () => {
-        try {
-            const usersSnapshot = await getDocs(collection(db, 'users'));
-            const fetchedUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            setUsers(fetchedUsers);
-        } catch (error) {
-            console.error("FeedbackTool: Error fetching users:", error);
-        }
-    };
-
-    fetchUsers();
   }, []);
 
   // Subscribe to comments

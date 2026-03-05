@@ -35,8 +35,10 @@ const FeedbackMockupDetailPage = () => {
   const [feedbackItem, setFeedbackItem] = useState<FeedbackItem | null>(null);
   const [comments, setComments] = useState<FeedbackItemComment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<User[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // Use users from global data store
+  const users = data.users || [];
 
   const path = searchParams.get('path');
   const activeImageUrl = (path && feedbackItem) ? path : feedbackItem?.assetUrl;
@@ -115,20 +117,6 @@ const FeedbackMockupDetailPage = () => {
       return () => unsubscribe();
     }
   }, [projectId, feedbackItemId, feedbackItem?.version]);
-
-  // Fetch Users
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const fetchedUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-        setUsers(fetchedUsers);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    fetchUsers();
-  }, []);
 
   // Set current user ID
   useEffect(() => {
