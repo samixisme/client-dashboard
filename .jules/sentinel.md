@@ -1,0 +1,4 @@
+## 2025-02-17 - [CRITICAL] Untrusted Formatted Search Output
+**Vulnerability:** XSS vulnerability in `components/layout/Sidebar.tsx` via `dangerouslySetInnerHTML`. The search result highlights from Meilisearch return HTML formatting (e.g., `<mark>`) in the `_formatted` field, which was being directly injected into the DOM without sanitization, leading to a Stored XSS vector if any stored data is unsanitized.
+**Learning:** Do not trust data returned from external search services, even if they simply add highlighting tags. Any user-generated string returned through `_formatted` fields should be sanitized before direct HTML injection.
+**Prevention:** Avoid `dangerouslySetInnerHTML` for displaying dynamically formatted strings or search results. Use standard React rendering logic with plain text values from the raw output (e.g., `h.name` instead of `_formatted.name`), or explicitly sanitize HTML strings with `DOMPurify` if HTML highlighting must be preserved.

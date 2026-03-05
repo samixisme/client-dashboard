@@ -190,8 +190,7 @@ const SearchBar: React.FC = () => {
                                         </p>
                                         {preview.map((hit) => {
                                             const h = hit as Record<string, unknown>;
-                                            const fmt = (h._formatted ?? {}) as Record<string, string>;
-                                            const title = fmt.name ?? fmt.title ?? fmt.invoiceNumber ?? String(h.name ?? h.title ?? h.id ?? '');
+                                            const title = String(h.name ?? h.title ?? h.invoiceNumber ?? h.id ?? '');
                                             const isDrive = type === 'drive_files';
 
                                             const handleHitClick = () => {
@@ -213,10 +212,9 @@ const SearchBar: React.FC = () => {
                                                     onClick={handleHitClick}
                                                     className="w-full text-left px-4 py-2.5 hover:bg-glass-light transition-colors duration-150 cursor-pointer flex items-center gap-2 group"
                                                 >
-                                                    <span
-                                                        className="text-xs text-text-primary truncate flex-1 group-hover:text-primary transition-colors duration-150"
-                                                        dangerouslySetInnerHTML={{ __html: title }}
-                                                    />
+                                                    <span className="text-xs text-text-primary truncate flex-1 group-hover:text-primary transition-colors duration-150">
+                                                        {title}
+                                                    </span>
                                                 </button>
                                             );
                                         })}
