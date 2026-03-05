@@ -42,6 +42,7 @@ export const EstimateDownloadButton: React.FC<EstimateDownloadButtonProps> = ({
             disabled={isGenerating}
             className={buttonClasses}
             title={isGenerating ? 'Generating...' : 'Download'}
+            aria-label={variant === 'secondary' ? 'Download Estimate PDF' : undefined}
         >
             {variant === 'secondary' ? (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
