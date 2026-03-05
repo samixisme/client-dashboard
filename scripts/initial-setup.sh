@@ -119,7 +119,7 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
       kill_timeout: 5000,
-      listen_timeout: 3000,
+      listen_timeout: 10000,
       wait_ready: true,
       cron_restart: '0 3 * * *',
     },
