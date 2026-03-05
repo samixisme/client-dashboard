@@ -69,7 +69,7 @@ module.exports = {
       script: 'serve',
       // BUG FIX: serve v14+ dropped the -l shorthand — must use --listen.
       // Also -s must come before the path for SPA mode to apply correctly.
-      args: '-s /home/clientdash/client-dashboard/dist --listen 3000',
+      args: '-s --listen 3000 /home/clientdash/client-dashboard/dist',
       instances: 1,
       exec_mode: 'fork',
 
