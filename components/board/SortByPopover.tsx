@@ -19,7 +19,6 @@ const sortOptions = [
 
 const SortByPopover: React.FC<SortByPopoverProps> = ({ anchorEl, stage, onClose, onApplySort }) => {
     const popoverRef = useRef<HTMLDivElement>(null);
-    // FIX: Add explicit type to useState to prevent type widening issues with the state object.
     const [sortConfig, setSortConfig] = useState<NonNullable<Stage['sortConfig']>>(stage.sortConfig || { key: 'createdAt', direction: 'asc' });
     
     useEffect(() => {
