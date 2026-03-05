@@ -47,7 +47,6 @@ const FeedbackItemPage = () => {
     const [item, setItem] = useState<FeedbackItem | undefined>();
     const [localComments, setLocalComments] = useState<FeedbackComment[]>([]);
     const [currentImage, setCurrentImage] = useState<MockupImage | undefined>();
-    // FIX: Add state to hold the currently active video asset.
     const [currentVideoAsset, setCurrentVideoAsset] = useState<VideoAsset | undefined>();
     const [activeComment, setActiveComment] = useState<FeedbackComment | null>(null);
     const [newCommentCoords, setNewCommentCoords] = useState<{ x: number, y: number } | null>(null);
