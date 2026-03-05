@@ -38,7 +38,6 @@ const FeedbackItemPage = () => {
     const [searchParams] = useSearchParams();
     const imageId = searchParams.get('imageId');
     const commentIdToOpen = searchParams.get('commentId');
-    // FIX: Get videoAssetId from URL search params to identify specific video in a collection.
     const videoAssetIdParam = searchParams.get('videoAssetId');
     const navigate = useNavigate();
     
