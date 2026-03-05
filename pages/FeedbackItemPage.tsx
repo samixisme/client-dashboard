@@ -300,7 +300,6 @@ const FeedbackItemPage = () => {
         const existingPins = localComments.filter(c => {
             if(itemType === 'website') return c.targetId === itemId && c.deviceView === deviceView && (c.pageUrl || '/') === currentIframePage;
             if(itemType === 'mockup') return c.imageId === currentImage?.id;
-            // FIX: Filter by video asset ID when determining pin number.
             if(itemType === 'video') return c.videoAssetId === currentVideoAsset?.id;
             return false;
         });
