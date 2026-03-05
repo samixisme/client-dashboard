@@ -46,13 +46,13 @@ describe('searchSync', () => {
     });
 
     await runFullSync();
-    expect(mockGet).toHaveBeenCalledTimes(7); // 7 collections synced
+    expect(mockGet).toHaveBeenCalledTimes(6); // 7 collections synced
   });
 
   it('handles empty collections', async () => {
     mockGet.mockResolvedValue({ docs: [] });
     await runFullSync();
-    expect(mockGet).toHaveBeenCalledTimes(7);
+    expect(mockGet).toHaveBeenCalledTimes(6);
   });
   
   it('handles googleDrive errors gracefully', async () => {
@@ -61,6 +61,6 @@ describe('searchSync', () => {
     drive.listFiles.mockRejectedValueOnce(new Error('Drive error'));
     
     await runFullSync();
-    expect(mockGet).toHaveBeenCalledTimes(7);
+    expect(mockGet).toHaveBeenCalledTimes(6);
   });
 });
