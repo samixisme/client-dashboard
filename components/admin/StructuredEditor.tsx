@@ -32,9 +32,6 @@ const StructuredEditor: React.FC<{ source: DataSource }> = ({ source }) => {
         }
     };
 
-    // FIX: The reduce function's initial value was an empty object which caused a type error.
-    // By providing an initial accumulator with an `id` property, we satisfy the type requirements
-    // and also fix a logic bug where a new item might not have an `id`.
     const handleAddItem = () => {
         const firstItem = items[0];
         let newItem: Record<string, unknown>;
