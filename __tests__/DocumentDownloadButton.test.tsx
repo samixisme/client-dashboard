@@ -1,13 +1,19 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { InvoiceDownloadButton } from '../src/components/payments/InvoiceDownloadButton';
-import { Invoice, Client, UserSettings } from '../types';
+import { DocumentDownloadButton } from '../src/components/payments/DocumentDownloadButton';
+import { Invoice, Estimate, Client, UserSettings } from '../types';
 
-// Mock the PDF generator
+// Mock the PDF generators
 jest.mock('../src/utils/pdf/invoicePdfGenerator', () => ({
   InvoicePdfGenerator: {
     generateInvoicePdf: jest.fn(() => Promise.resolve()),
+  },
+}));
+
+jest.mock('../src/utils/pdf/estimatePdfGenerator', () => ({
+  EstimatePdfGenerator: {
+    generateEstimatePdf: jest.fn(() => Promise.resolve()),
   },
 }));
 
@@ -20,6 +26,7 @@ jest.mock('sonner', () => ({
 }));
 
 import { InvoicePdfGenerator } from '../src/utils/pdf/invoicePdfGenerator';
+import { EstimatePdfGenerator } from '../src/utils/pdf/estimatePdfGenerator';
 import { toast } from 'sonner';
 
 const mockInvoice: Invoice = {
@@ -47,6 +54,19 @@ const mockClient: Client = {
   brandId: 'brand-1',
 };
 
+const mockEstimate: Estimate = {
+  id: 'est-1',
+  estimateNumber: 'EST-001',
+  clientId: 'client-1',
+  userId: 'user-1',
+  status: 'Draft',
+  date: '2025-01-01',
+  itemCategories: [],
+  note: '',
+  terms: '',
+  totals: { subtotal: 100, totalNet: 120 },
+};
+
 const mockUserSettings: UserSettings = {
   userId: 'user-1',
   ae: '', cnie: '', ice: '', if: '', tp: '', adresse_ae: '',
@@ -55,15 +75,16 @@ const mockUserSettings: UserSettings = {
   legalNote: '', signatureBoxClient: '', signatureBoxAutoEntrepreneur: '',
 };
 
-describe('InvoiceDownloadButton', () => {
+describe('DocumentDownloadButton', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('renders the download button', () => {
     render(
-      <InvoiceDownloadButton
-        invoice={mockInvoice}
+      <DocumentDownloadButton
+        type="invoice"
+        document={mockInvoice}
         client={mockClient}
         userSettings={mockUserSettings}
         variant="primary"
@@ -76,8 +97,9 @@ describe('InvoiceDownloadButton', () => {
 
   it('renders secondary variant with SVG icon instead of text', () => {
     render(
-      <InvoiceDownloadButton
-        invoice={mockInvoice}
+      <DocumentDownloadButton
+        type="invoice"
+        document={mockInvoice}
         client={mockClient}
         userSettings={mockUserSettings}
         variant="secondary"
@@ -88,12 +110,13 @@ describe('InvoiceDownloadButton', () => {
     expect(btn.querySelector('svg')).toBeTruthy();
   });
 
-  it('calls PDF generator on click and shows success toast', async () => {
+  it('calls invoice PDF generator on click and shows success toast', async () => {
     const user = userEvent.setup();
 
     render(
-      <InvoiceDownloadButton
-        invoice={mockInvoice}
+      <DocumentDownloadButton
+        type="invoice"
+        document={mockInvoice}
         client={mockClient}
         userSettings={mockUserSettings}
       />
@@ -111,13 +134,38 @@ describe('InvoiceDownloadButton', () => {
     });
   });
 
+  it('calls estimate PDF generator on click and shows success toast', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <DocumentDownloadButton
+        type="estimate"
+        document={mockEstimate}
+        client={mockClient}
+        userSettings={mockUserSettings}
+      />
+    );
+
+    await user.click(screen.getByTitle('Download'));
+
+    await waitFor(() => {
+      expect(EstimatePdfGenerator.generateEstimatePdf).toHaveBeenCalledWith(
+        mockEstimate,
+        mockClient,
+        mockUserSettings
+      );
+      expect(toast.success).toHaveBeenCalledWith('Estimate PDF downloaded');
+    });
+  });
+
   it('shows error toast when PDF generation fails', async () => {
     (InvoicePdfGenerator.generateInvoicePdf as jest.Mock).mockRejectedValueOnce(new Error('PDF error'));
     const user = userEvent.setup();
 
     render(
-      <InvoiceDownloadButton
-        invoice={mockInvoice}
+      <DocumentDownloadButton
+        type="invoice"
+        document={mockInvoice}
         client={mockClient}
         userSettings={mockUserSettings}
       />
@@ -140,8 +188,9 @@ describe('InvoiceDownloadButton', () => {
     const user = userEvent.setup();
 
     render(
-      <InvoiceDownloadButton
-        invoice={mockInvoice}
+      <DocumentDownloadButton
+        type="invoice"
+        document={mockInvoice}
         client={mockClient}
         userSettings={mockUserSettings}
         variant="primary"

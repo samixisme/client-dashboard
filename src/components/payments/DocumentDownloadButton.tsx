@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { Invoice, Client, UserSettings } from '../../../types';
+import { Invoice, Estimate, Client, UserSettings } from '../../../types';
 import { InvoicePdfGenerator } from '../../utils/pdf/invoicePdfGenerator';
+import { EstimatePdfGenerator } from '../../utils/pdf/estimatePdfGenerator';
 import { toast } from 'sonner';
 
-interface InvoiceDownloadButtonProps {
-    invoice: Invoice;
-    client: Client;
-    userSettings: UserSettings;
-    variant?: 'primary' | 'secondary';
-}
+export type DocumentDownloadButtonProps =
+    | {
+          type: 'invoice';
+          document: Invoice;
+          client: Client;
+          userSettings: UserSettings;
+          variant?: 'primary' | 'secondary';
+      }
+    | {
+          type: 'estimate';
+          document: Estimate;
+          client: Client;
+          userSettings: UserSettings;
+          variant?: 'primary' | 'secondary';
+      };
 
-export const InvoiceDownloadButton: React.FC<InvoiceDownloadButtonProps> = ({
-    invoice,
+export const DocumentDownloadButton: React.FC<DocumentDownloadButtonProps> = ({
+    type,
+    document,
     client,
     userSettings,
     variant = 'primary'
@@ -21,10 +32,15 @@ export const InvoiceDownloadButton: React.FC<InvoiceDownloadButtonProps> = ({
     const handleDownload = async () => {
         try {
             setIsGenerating(true);
-            await InvoicePdfGenerator.generateInvoicePdf(invoice, client, userSettings);
-            toast.success('Invoice PDF downloaded');
+            if (type === 'invoice') {
+                await InvoicePdfGenerator.generateInvoicePdf(document as Invoice, client, userSettings);
+                toast.success('Invoice PDF downloaded');
+            } else {
+                await EstimatePdfGenerator.generateEstimatePdf(document as Estimate, client, userSettings);
+                toast.success('Estimate PDF downloaded');
+            }
         } catch (error) {
-            console.error('Failed to generate invoice PDF:', error);
+            console.error(`Failed to generate ${type} PDF:`, error);
             toast.error('Failed to generate PDF');
         } finally {
             setIsGenerating(false);

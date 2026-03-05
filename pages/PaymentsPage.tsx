@@ -6,8 +6,7 @@ import { useSearch } from '../contexts/SearchContext';
 import { useAdmin } from '../contexts/AdminContext';
 import { useData } from '../contexts/DataContext';
 import AdminPanel from '../components/admin/AdminPanel';
-import { InvoiceDownloadButton } from '../src/components/payments/InvoiceDownloadButton';
-import { EstimateDownloadButton } from '../src/components/payments/EstimateDownloadButton';
+import { DocumentDownloadButton } from '../src/components/payments/DocumentDownloadButton';
 import { toast } from 'sonner';
 import { Invoice, Estimate, Client, UserSettings } from '../types';
 import { updateInvoiceStatus, updateEstimateStatus, convertEstimateToInvoice, deleteInvoice, deleteEstimate } from '../utils/invoiceService';
@@ -542,8 +541,9 @@ const PaymentsPage = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             {client && (
-                                                <InvoiceDownloadButton
-                                                    invoice={invoice}
+                                                <DocumentDownloadButton
+                                                    type="invoice"
+                                                    document={invoice}
                                                     client={client}
                                                     userSettings={userSettings}
                                                     variant="secondary"
@@ -680,8 +680,9 @@ const PaymentsPage = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             {client && (
-                                                <EstimateDownloadButton
-                                                    estimate={estimate}
+                                                <DocumentDownloadButton
+                                                    type="estimate"
+                                                    document={estimate}
                                                     client={client}
                                                     userSettings={userSettings}
                                                     variant="secondary"
