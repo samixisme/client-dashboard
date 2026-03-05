@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import { getFirestore } from './firebaseAdmin';
+import { triggerNotification } from './notifications';
 
 const webhookRouter = Router();
 
@@ -52,34 +54,38 @@ webhookRouter.post('/instagram', async (req: Request, res: Response) => {
     // Check if this is an event from a page subscription
     if (body.object === 'instagram') {
         // Iterate over each entry (may contain multiple events)
-        body.entry?.forEach((entry: any) => {
+        const entriesPromises = body.entry?.map(async (entry: any) => {
             console.log('Processing Instagram entry:', entry.id);
 
             // Get the webhook changes
             const changes = entry.changes || [];
-            changes.forEach((change: any) => {
+            const changesPromises = changes.map(async (change: any) => {
                 const { field, value } = change;
                 console.log(`Instagram ${field} event:`, value);
 
                 // Handle different event types
                 switch (field) {
                     case 'comments':
-                        handleCommentEvent(value);
+                        await handleCommentEvent(value);
                         break;
                     case 'messages':
-                        handleMessageEvent(value);
+                        await handleMessageEvent(value);
                         break;
                     case 'media':
-                        handleMediaEvent(value);
+                        await handleMediaEvent(value);
                         break;
                     case 'mentions':
-                        handleMentionEvent(value);
+                        await handleMentionEvent(value);
                         break;
                     default:
                         console.log('Unhandled Instagram webhook field:', field);
                 }
             });
-        });
+
+            await Promise.all(changesPromises);
+        }) || [];
+
+        await Promise.all(entriesPromises);
 
         // Return a '200 OK' response to all events
         res.status(200).send('EVENT_RECEIVED');
@@ -92,7 +98,7 @@ webhookRouter.post('/instagram', async (req: Request, res: Response) => {
 /**
  * Handle comment events (new comment, edited comment, deleted comment)
  */
-function handleCommentEvent(value: any) {
+async function handleCommentEvent(value: any) {
     console.log('Comment event:', {
         commentId: value.id,
         text: value.text,
@@ -108,7 +114,7 @@ function handleCommentEvent(value: any) {
 /**
  * Handle message events (new message, message reply)
  */
-function handleMessageEvent(value: any) {
+async function handleMessageEvent(value: any) {
     console.log('Message event:', {
         messageId: value.id,
         text: value.text,
@@ -116,13 +122,38 @@ function handleMessageEvent(value: any) {
         to: value.to,
     });
 
-    // TODO: Store in Firebase, send notification
+    try {
+        const db = getFirestore();
+        const messageRef = db.collection('socialMessages').doc(value.id);
+        const doc = await messageRef.get();
+
+        if (!doc.exists) {
+            await messageRef.set({
+                id: value.id,
+                text: value.text,
+                from: value.from,
+                to: value.to,
+                timestamp: new Date()
+            });
+
+            await triggerNotification({
+                workflowId: 'new-message',
+                subscriberId: value.to,
+                payload: {
+                    message: value.text,
+                    from: value.from
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error handling message event:', error);
+    }
 }
 
 /**
  * Handle media events (new post created)
  */
-function handleMediaEvent(value: any) {
+async function handleMediaEvent(value: any) {
     console.log('Media event:', {
         mediaId: value.id,
         mediaType: value.media_type,
@@ -136,7 +167,7 @@ function handleMediaEvent(value: any) {
 /**
  * Handle mention events (account mentioned in story/comment)
  */
-function handleMentionEvent(value: any) {
+async function handleMentionEvent(value: any) {
     console.log('Mention event:', {
         mentionId: value.id,
         mediaId: value.media_id,
