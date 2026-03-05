@@ -111,7 +111,7 @@ module.exports = {
         PORT: 3001,
       },
       max_memory_restart: '500M',
-      min_uptime: '10s',
+      min_uptime: '30s',
       max_restarts: 10,
       autorestart: true,
       error_file: '/var/www/client-samixism/logs/api-error.log',
@@ -119,9 +119,16 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
       kill_timeout: 5000,
-      listen_timeout: 3000,
+      listen_timeout: 10000,
+
+      // Monitoring
+      instance_var: 'INSTANCE_ID',
+
+      // BUG FIX: wait_ready: true means PM2 waits for process.send('ready').
+      // We now send that signal INSIDE app.listen() callback (after port is
+      // bound), so this is safe. Previously it was sent before listen() and
+      // caused cluster reload race conditions.
       wait_ready: true,
-      cron_restart: '0 3 * * *',
     },
     {
       name: 'client-dashboard-frontend',
