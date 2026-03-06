@@ -6,6 +6,71 @@ import { ChevronDownIcon } from '../icons/ChevronDownIcon';
 import { DragHandleIcon } from '../icons/DragHandleIcon';
 import { backgroundPatterns } from '../../data/patterns';
 
+// --- Subcomponents ---
+// Optimization: Extracted SidebarItem outside of TimelineView to prevent full unmount/remount on every parent render.
+// This preserves DOM state and significantly improves rendering performance for the sidebar list.
+const SidebarItem = React.memo(({
+    item,
+    itemType,
+    displayOrder,
+    provided,
+    tasksByRoadmapItem,
+    isEditMode,
+    isSidebarCollapsed,
+    expandedItems,
+    toggleExpand
+}: {
+    item: RoadmapItem | Task,
+    itemType: 'roadmap' | 'task',
+    displayOrder: string,
+    provided?: DraggableProvided,
+    tasksByRoadmapItem: Map<string, Task[]>,
+    isEditMode: boolean,
+    isSidebarCollapsed: boolean,
+    expandedItems: Set<string>,
+    toggleExpand: (id: string) => void
+}) => {
+    const hasChildren = itemType === 'roadmap' && tasksByRoadmapItem.has(item.id);
+    const itemLevel = itemType === 'task' ? 1 : 0;
+
+    return (
+        <div
+            ref={provided?.innerRef}
+            {...provided?.draggableProps}
+            className="h-12 flex items-center border-b border-t border-primary/10 -mt-px bg-black/95 hover:bg-black/80 hover:border-primary/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 animate-fade-in-up cursor-pointer"
+            style={provided?.draggableProps.style}
+        >
+            <div className="flex items-center gap-2 px-2 w-full">
+                {isEditMode && (
+                    <div {...provided?.dragHandleProps} className="p-1 cursor-grab text-text-secondary">
+                        <DragHandleIcon className="h-5 w-5"/>
+                    </div>
+                )}
+
+                <div
+                    className="flex-shrink-0 bg-glass/40 text-text-secondary font-mono text-xs rounded-md h-6 w-10 flex items-center justify-center border border-primary/20 shadow-sm"
+                    style={{ marginLeft: `${itemLevel * 1.5}rem`}}
+                >
+                    {displayOrder}
+                </div>
+
+                {!isSidebarCollapsed && (
+                    <div className="flex items-center gap-1 overflow-hidden">
+                        {hasChildren ? (
+                            <button onClick={() => toggleExpand(item.id)} className="p-0.5 rounded-sm hover:bg-glass/60 hover:scale-110 transition-all duration-200 focus:ring-2 focus:ring-primary">
+                                <ChevronDownIcon className={`w-4 h-4 text-text-secondary transition-transform ${expandedItems.has(item.id) ? '' : '-rotate-90'}`} />
+                            </button>
+                        ) : (
+                            <div className="w-5 flex-shrink-0"></div>
+                        )}
+                        <span className={`text-sm font-medium truncate ${itemType === 'roadmap' ? 'text-text-primary' : 'text-text-secondary'}`}>{item.title}</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+});
+
 // --- Helper Functions ---
 const startOfDay = (date: Date | string) => {
     const d = new Date(date);
@@ -310,49 +375,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
     };
 
 
-    // --- Render Components ---
-    const SidebarItem = ({item, displayOrder, provided}: {item: DraggableItem, displayOrder: string, provided?: DraggableProvided}) => {
-        const hasChildren = item._type === 'roadmap' && tasksByRoadmapItem.has(item.id);
-        const itemLevel = item._type === 'task' ? 1 : 0;
-
-        return (
-            <div
-                ref={provided?.innerRef}
-                {...provided?.draggableProps}
-                className="h-12 flex items-center border-b border-t border-primary/10 -mt-px bg-black/95 hover:bg-black/80 hover:border-primary/50 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 animate-fade-in-up cursor-pointer"
-                style={provided?.draggableProps.style}
-            >
-                <div className="flex items-center gap-2 px-2 w-full">
-                    {isEditMode && (
-                        <div {...provided?.dragHandleProps} className="p-1 cursor-grab text-text-secondary">
-                            <DragHandleIcon className="h-5 w-5"/>
-                        </div>
-                    )}
-
-                    <div
-                        className="flex-shrink-0 bg-glass/40 text-text-secondary font-mono text-xs rounded-md h-6 w-10 flex items-center justify-center border border-primary/20 shadow-sm"
-                        style={{ marginLeft: `${itemLevel * 1.5}rem`}}
-                    >
-                        {displayOrder}
-                    </div>
-
-                    {!isSidebarCollapsed && (
-                        <div className="flex items-center gap-1 overflow-hidden">
-                            {hasChildren ? (
-                                <button onClick={() => toggleExpand(item.id)} className="p-0.5 rounded-sm hover:bg-glass/60 hover:scale-110 transition-all duration-200 focus:ring-2 focus:ring-primary">
-                                    <ChevronDownIcon className={`w-4 h-4 text-text-secondary transition-transform ${expandedItems.has(item.id) ? '' : '-rotate-90'}`} />
-                                </button>
-                            ) : (
-                                <div className="w-5 flex-shrink-0"></div>
-                            )}
-                            <span className={`text-sm font-medium truncate ${item._type === 'roadmap' ? 'text-text-primary' : 'text-text-secondary'}`}>{item.title}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
-    
     const visibleItemCount = sortedRoadmapItems.length + Array.from(expandedItems).reduce((acc, id) => acc + (tasksByRoadmapItem.get(id)?.length || 0), 0);
 
     return (
@@ -379,7 +401,17 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                     <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={!isEditMode}>
                                                         {(provided) => (
                                                             <div ref={provided.innerRef} {...provided.draggableProps}>
-                                                                <SidebarItem item={{...item, _type: 'roadmap'}} displayOrder={`${roadmapItemOrder}`} provided={provided} />
+                                                                <SidebarItem
+                                                                    item={item}
+                                                                    itemType="roadmap"
+                                                                    displayOrder={`${roadmapItemOrder}`}
+                                                                    provided={provided}
+                                                                    tasksByRoadmapItem={tasksByRoadmapItem}
+                                                                    isEditMode={isEditMode}
+                                                                    isSidebarCollapsed={isSidebarCollapsed}
+                                                                    expandedItems={expandedItems}
+                                                                    toggleExpand={toggleExpand}
+                                                                />
                                                                 {expandedItems.has(item.id) && (
                                                                     <Droppable droppableId={item.id} type="TASK">
                                                                         {(provided) => (
@@ -387,7 +419,17 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                                                                                 {itemTasks.map((task, taskIndex) => (
                                                                                     <Draggable key={task.id} draggableId={task.id} index={taskIndex} isDragDisabled={!isEditMode}>
                                                                                         {(provided) => (
-                                                                                            <SidebarItem item={{...task, _type: 'task'}} displayOrder={`${roadmapItemOrder}.${taskIndex + 1}`} provided={provided} />
+                                                                                            <SidebarItem
+                                                                                                item={task}
+                                                                                                itemType="task"
+                                                                                                displayOrder={`${roadmapItemOrder}.${taskIndex + 1}`}
+                                                                                                provided={provided}
+                                                                                                tasksByRoadmapItem={tasksByRoadmapItem}
+                                                                                                isEditMode={isEditMode}
+                                                                                                isSidebarCollapsed={isSidebarCollapsed}
+                                                                                                expandedItems={expandedItems}
+                                                                                                toggleExpand={toggleExpand}
+                                                                                            />
                                                                                         )}
                                                                                     </Draggable>
                                                                                 ))}
