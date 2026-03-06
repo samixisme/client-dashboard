@@ -54,6 +54,8 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       {/* Select Button */}
       <button
         type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`
@@ -90,11 +92,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute z-50 w-full mt-2 bg-surface/98 backdrop-blur-2xl border border-primary/50 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_20px_rgba(163,230,53,0.2)] overflow-hidden animate-scale-in">
-          <div className="max-h-60 overflow-y-auto custom-scrollbar py-1">
+          <div role="listbox" className="max-h-60 overflow-y-auto custom-scrollbar py-1">
             {options.map((option) => (
               <button
                 key={option.value}
                 type="button"
+                role="option"
+                aria-selected={option.value === value}
                 onClick={() => handleSelect(option.value)}
                 className={`
                   w-full px-4 py-3 text-left text-sm font-medium
