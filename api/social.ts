@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import crypto from 'crypto';
+import { validateUrl } from './urlValidator';
 
 const socialRouter = Router();
 
@@ -271,6 +272,15 @@ socialRouter.post('/fetch/:platform', async (req: Request, res: Response) => {
 
     try {
         const url = endpoint.startsWith('http') ? endpoint : `${apiBase}${endpoint}`;
+
+        // SSRF protection
+        if (url.startsWith('http')) {
+            const urlValidation = validateUrl(url);
+            if (!urlValidation.isValid) {
+                return res.status(400).json({ error: urlValidation.error });
+            }
+        }
+
         const headers: Record<string, string> = {};
 
         // Platform-specific auth headers

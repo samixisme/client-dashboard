@@ -1,0 +1,4 @@
+## 2026-03-06 - [CRITICAL] Fix SSRF in `/api/social/fetch/:platform`
+**Vulnerability:** The `/fetch/:platform` API endpoint takes a user-provided `endpoint` URL and if it begins with 'http', the server blindly requests it using Axios. This exposes the backend to Server-Side Request Forgery (SSRF) attacks, allowing malicious actors to probe internal networks, read metadata services (like AWS 169.254.169.254), or send requests masquerading as the server.
+**Learning:** Never trust user input passed to a backend HTTP client (Axios, Fetch). A centralized URL validator should be used whenever URLs are accepted from clients. This codebase has a `validateUrl` function in `api/urlValidator.ts` designed to prevent SSRF by blocking private IP ranges and local hostnames.
+**Prevention:** Always validate external or arbitrary URLs through `validateUrl` before fetching them on the server side to ensure they don't point to local/private network space.
