@@ -292,8 +292,21 @@ export function AdminDataTable<TData extends { id: string }>({
               </tr>
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={table.getVisibleFlatColumns().length} className="px-4 py-12 text-center text-text-secondary text-sm">
-                  No results found.
+                <td colSpan={table.getVisibleFlatColumns().length} className="px-4 py-12 text-center text-sm">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <p className="text-text-primary font-medium text-base">No results found</p>
+                    <p className="text-text-secondary">
+                      {filterValue ? "Try adjusting your search or filters." : "There is no data to display."}
+                    </p>
+                    {filterValue && (
+                      <button
+                        onClick={() => handleFilterChange('')}
+                        className="mt-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 font-medium rounded-lg transition-colors"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (
