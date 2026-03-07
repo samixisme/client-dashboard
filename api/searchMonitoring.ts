@@ -1,6 +1,30 @@
 import * as admin from 'firebase-admin';
 import axios from 'axios';
 import { getSyncCheckpoint } from './searchState';
+import { getMeili } from './meiliClient';
+
+// ── In-Memory Latency Tracking for p50/p95/p99 ────────────────────────
+const MAX_LATENCY_SAMPLES = 1000;
+let latencySamples: number[] = [];
+
+export function recordSearchLatency(ms: number) {
+  latencySamples.push(ms);
+  if (latencySamples.length > MAX_LATENCY_SAMPLES) {
+    latencySamples.shift();
+  }
+}
+
+function calculatePercentiles(samples: number[]) {
+  if (samples.length === 0) return { p50: 0, p95: 0, p99: 0, count: 0 };
+  
+  const sorted = [...samples].sort((a, b) => a - b);
+  return {
+    p50: sorted[Math.floor(sorted.length * 0.50)],
+    p95: sorted[Math.floor(sorted.length * 0.95)],
+    p99: sorted[Math.floor(sorted.length * 0.99)],
+    count: sorted.length
+  };
+}
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -66,19 +90,46 @@ export async function triggerSyncAlert(indexName: string, failureCount: number, 
 /**
  * Health check core logic
  */
-export async function checkSyncHealth(intervalMs: number) {
+export async function checkSearchHealth(intervalMs: number) {
   const indexes = ['projects', 'tasks', 'brands', 'feedback_items', 'invoices', 'clients', 'drive_files'];
+  
   const healthData: any = {
     status: 'healthy',
-    indexes: {}
+    meilisearch: { status: 'unknown' },
+    sync: { status: 'healthy', indexes: {} },
+    metrics: calculatePercentiles(latencySamples)
   };
   
   const now = Date.now();
 
+  // 1. Check Meilisearch Connectivity and Queues
+  try {
+    const client = getMeili();
+    const isHealthy = await client.health();
+    if (isHealthy.status === 'available') {
+      const { results: activeTasks } = await client.getTasks({ statuses: ['enqueued', 'processing'] });
+      
+      healthData.meilisearch = {
+        status: 'available',
+        activeTaskCount: activeTasks.length,
+      };
+    } else {
+      healthData.status = 'degraded';
+      healthData.meilisearch.status = 'down';
+    }
+  } catch (err: any) {
+    healthData.status = 'degraded';
+    healthData.meilisearch = {
+      status: 'unreachable',
+      error: err.message
+    };
+  }
+
+  // 2. Check Sync Health
   for (const idx of indexes) {
     const checkpoint = await getSyncCheckpoint(idx);
     if (!checkpoint) {
-      healthData.indexes[idx] = { status: 'unknown', missing: true };
+      healthData.sync.indexes[idx] = { status: 'unknown', missing: true };
       continue;
     }
     
@@ -86,10 +137,12 @@ export async function checkSyncHealth(intervalMs: number) {
     const idxStatus = isOverdue ? 'overdue' : (checkpoint.consecutiveFailures > 0 ? 'failing' : 'healthy');
     
     if (idxStatus !== 'healthy') {
-      healthData.status = 'degraded';
+      healthData.sync.status = 'degraded';
+      // Overall status is degraded if sync is failing
+      if (healthData.status === 'healthy') healthData.status = 'degraded';
     }
 
-    healthData.indexes[idx] = {
+    healthData.sync.indexes[idx] = {
       status: idxStatus,
       lastSyncAt: checkpoint.lastSyncAt,
       consecutiveFailures: checkpoint.consecutiveFailures,
