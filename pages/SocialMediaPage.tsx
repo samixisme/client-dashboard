@@ -61,9 +61,13 @@ const SocialMediaPage: React.FC = () => {
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        <span class="font-semibold">${message}</span>
+                        <span class="font-semibold" id="success-message"></span>
                     </div>
                 `;
+                const msgSpan = notification.querySelector('#success-message');
+                if (msgSpan) {
+                    msgSpan.textContent = message;
+                }
                 document.body.appendChild(notification);
 
                 // Remove notification after 5 seconds
@@ -85,10 +89,14 @@ const SocialMediaPage: React.FC = () => {
                         </svg>
                         <div>
                             <div class="font-semibold">Connection Failed</div>
-                            <div class="text-sm text-red-300">${errorMessage}</div>
+                            <div class="text-sm text-red-300" id="error-message"></div>
                         </div>
                     </div>
                 `;
+                const errMsgSpan = notification.querySelector('#error-message');
+                if (errMsgSpan) {
+                    errMsgSpan.textContent = errorMessage;
+                }
                 document.body.appendChild(notification);
 
                 // Remove notification after 7 seconds
