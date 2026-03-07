@@ -1,0 +1,47 @@
+{
+  "passed": [
+    30,
+    29,
+    28,
+    27,
+    26,
+    25,
+    24,
+    23,
+    22,
+    21,
+    20,
+    19,
+    16,
+    15,
+    14,
+    13,
+    12,
+    11,
+    10,
+    9,
+    8,
+    6,
+    5,
+    4,
+    3,
+    2
+  ],
+  "failed": [
+    {
+      "number": 18,
+      "branch": "optimize-users-fetch-270343632925987415",
+      "error": "Command failed: git checkout optimize-users-fetch-270343632925987415"
+    },
+    {
+      "number": 17,
+      "branch": "fix-sortbypopover-type-widening-16051738933703024308",
+      "error": "Command failed: git checkout fix-sortbypopover-type-widening-16051738933703024308"
+    },
+    {
+      "number": 7,
+      "branch": "fix-stage-background-comment-4273368597350832620",
+      "error": "Command failed: git checkout fix-stage-background-comment-4273368597350832620"
+    }
+  ]
+}

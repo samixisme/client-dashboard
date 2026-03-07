@@ -6,7 +6,7 @@
     },
     "research": {
       "provider": "openrouter",
-      "modelId": "perplexity/sonar"
+      "modelId": "google/gemini-3.1-pro-preview"
     },
     "fallback": {
       "provider": "openrouter",
@@ -18,7 +18,7 @@
     "debug": false,
     "defaultNumTasks": 10,
     "defaultSubtasks": 5,
-    "OPENROUTER_API_KEY": "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",
+    "OPENROUTER_API_KEY": "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",
     "defaultPriority": "medium",
     "projectName": "Client Dashboard",
     "responseLanguage": "English",

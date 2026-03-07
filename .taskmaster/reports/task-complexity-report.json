@@ -1,133 +1,21 @@
 {
 	"meta": {
-		"generatedAt": "2026-03-03T16:46:30.366Z",
-		"tasksAnalyzed": 15,
-		"totalTasks": 85,
-		"analysisCount": 15,
+		"generatedAt": "2026-03-07T00:31:35.744Z",
+		"tasksAnalyzed": 1,
+		"totalTasks": 10,
+		"analysisCount": 1,
 		"thresholdScore": 5,
-		"projectName": "Task Master",
-		"usedResearch": true
+		"projectName": "Client Dashboard",
+		"usedResearch": false
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 104,
-			"taskTitle": "Backend: Enhance Drive API for Project-Scoped Access",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down the task of enhancing the Drive API. Subtasks should cover: 1. Modifying the endpoint signature to accept `projectId`. 2. Implementing the logic to resolve a `projectId` to a Google Drive folder ID. 3. Handling the file listing for an existing folder. 4. Integrating the call to the new folder creation endpoint when a folder does not exist.",
-			"reasoning": "The task involves modifying an existing endpoint with significant new logic, including conditional branching, interaction with an external API (Google Drive), and a dependency on another new endpoint (Task 105). This introduces multiple points of failure and requires careful testing of both the new and existing code paths."
-		},
-		{
-			"taskId": 105,
-			"taskTitle": "Backend: Create Endpoint for Drive Folder Creation",
-			"complexityScore": 7,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Generate subtasks for creating the Drive folder creation endpoint. Focus on: 1. Setting up the basic `POST /api/drive/folders` route. 2. Implementing the core logic to create a single folder given a parent ID. 3. Building the recursive or iterative helper function that processes a path (e.g., 'projects/xyz') to find or create each folder segment sequentially.",
-			"reasoning": "While it's a single endpoint, the requirement for handling nested folder creation (e.g., creating 'projects' if it doesn't exist before creating 'projectId' inside it) elevates the complexity significantly. This requires a non-trivial algorithm with multiple sequential API calls and robust error handling."
-		},
-		{
-			"taskId": 106,
-			"taskTitle": "Backend: Implement Link Metadata Fetching API",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down the implementation of the link metadata API. Subtasks should cover: 1. Setting up the basic `GET /api/link-meta` endpoint. 2. Integrating a metadata scraping library (e.g., `metascraper`) to fetch and parse the URL content. 3. Implementing comprehensive error handling (timeouts, invalid URLs) and security validations to prevent SSRF.",
-			"reasoning": "The complexity lies not in the core functionality, which is abstracted by a library, but in making it robust and secure. Handling arbitrary external URLs requires careful implementation of timeouts, error handling for various network and parsing failures, and security validation to prevent Server-Side Request Forgery (SSRF)."
-		},
-		{
-			"taskId": 107,
-			"taskTitle": "Data Model: Set Up `projectLinks` Firestore Collection",
-			"complexityScore": 2,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is straightforward and does not require further expansion. It involves defining a TypeScript interface and writing a basic Firestore security rule.",
-			"reasoning": "This task is low complexity as it primarily involves configuration and definitions rather than complex logic. It consists of defining a type interface and writing a simple Firestore security rule, which are foundational but low-effort actions."
-		},
-		{
-			"taskId": 108,
-			"taskTitle": "Data Layer: Integrate `projectLinks` into DataContext",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Generate subtasks for integrating `projectLinks` into the `DataContext`. The subtasks should be: 1. Add the `projectLinks` state and update the context's type definition. 2. Implement the `useEffect` hook to set up the Firestore `onSnapshot` listener for the `projectLinks` collection.",
-			"reasoning": "The task involves modifying a shared, global context, which requires careful implementation to avoid unintended side effects. While the pattern of adding a real-time listener is likely established, it still involves state management, effect cleanup, and potential performance considerations."
-		},
-		{
-			"taskId": 109,
-			"taskTitle": "Frontend Hook: Enhance `useDriveFiles` for Project Scoping",
+			"taskId": 119,
+			"taskTitle": "Implement Drive Health Endpoint",
 			"complexityScore": 3,
 			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a focused refactoring of a single hook and does not require further expansion. The work involves updating the hook's signature and modifying its internal fetch requests.",
-			"reasoning": "This is a low-complexity refactoring task. The logic is straightforward: accept an optional parameter and append it to API request URLs. The effort is contained within a single hook, and the change itself is minimal."
-		},
-		{
-			"taskId": 110,
-			"taskTitle": "Frontend Hook: Create `useProjectLinks` for Link Management",
-			"complexityScore": 3,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down the creation of the `useProjectLinks` hook into its core CRUD functions. Create subtasks for implementing: 1. The `addLink` function. 2. The `updateLink` function. 3. The `deleteLink` function.",
-			"reasoning": "This task involves creating a standard CRUD hook, which is a common and well-understood pattern. The complexity is low because it directly maps Firestore SDK functions to hook methods without complex state management, as it relies on `DataContext` for reads."
-		},
-		{
-			"taskId": 111,
-			"taskTitle": "Core Logic: Implement `useProjectFiles` Aggregation Hook",
-			"complexityScore": 8,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Generate subtasks for the `useProjectFiles` aggregation hook. Focus on the data transformation for each source. Subtasks should cover: 1. Consuming data from `useDriveFiles` and mapping it to `ProjectFile[]`. 2. Consuming `projectLinks` from `DataContext` and mapping them. 3. Consuming other sources (e.g., task attachments) and mapping them. 4. Combining all mapped arrays and wrapping the entire logic in a `useMemo` for performance.",
-			"reasoning": "This hook is a central aggregation point with multiple data dependencies. The logic involves filtering, mapping, and merging diverse data structures into a single, consistent format. Performance is a major concern, requiring careful use of memoization (`useMemo`) to prevent unnecessary re-renders."
-		},
-		{
-			"taskId": 112,
-			"taskTitle": "Routing & Page Shell: Create `ProjectFilesPage`",
-			"complexityScore": 2,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a standard setup for a new page and does not need to be broken down further. It involves adding a route and creating the main page component file.",
-			"reasoning": "This task has low complexity as it involves creating a new route and a container component, which are standard, boilerplate activities in a React application. The logic is minimal, primarily focused on wiring up routing and passing URL parameters to hooks."
-		},
-		{
-			"taskId": 113,
-			"taskTitle": "UI: Build `SourceFilterSidebar` Component",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Break down the creation of the `SourceFilterSidebar`. Subtasks should be: 1. Implement the UI and the logic to dynamically compute and display the count for each file source from the props. 2. Add state management for the active filter, handle user clicks, and call the parent component's callback with the selected filter.",
-			"reasoning": "This is a moderately complex UI component. It's not just presentational; it contains logic to compute derived state (the counts for each source) from props and manages its own interactive state (the currently selected filter), which it communicates back to its parent."
-		},
-		{
-			"taskId": 114,
-			"taskTitle": "UI: Implement External Link Management Features",
-			"complexityScore": 6,
-			"recommendedSubtasks": 4,
-			"expansionPrompt": "Generate subtasks for the link management UI. The breakdown should cover: 1. Building the `AddLinkDialog` component with its form. 2. Implementing the real-time metadata fetching by calling the `/api/link-meta` endpoint from the dialog. 3. Creating the `LinkCard` component to display link information. 4. Integrating the `useProjectLinks` hook to handle adding, editing, and deleting links.",
-			"reasoning": "This task is complex because it encompasses a full user flow involving multiple UI components (dialog, card), asynchronous API calls with state updates (fetching metadata), and state management via a custom hook for CRUD operations. Coordinating these pieces requires significant effort."
-		},
-		{
-			"taskId": 115,
-			"taskTitle": "UI: Develop Main Content View and Filtering Logic",
-			"complexityScore": 5,
-			"recommendedSubtasks": 3,
-			"expansionPrompt": "Break down the main content view implementation. Subtasks should cover: 1. Implementing the state management in the parent page for the search term and selected source filter. 2. Writing the client-side filtering logic that derives the displayed file list from the master list. 3. Building the component responsible for rendering the grid or list of `ProjectFileCard` components.",
-			"reasoning": "The complexity is in client-side state management and data derivation. The component must correctly combine multiple state inputs (the full data set, the selected filter, the search query) to render the final view, and do so performantly."
-		},
-		{
-			"taskId": 116,
-			"taskTitle": "Feature: Implement Direct File Upload to Project Drive",
-			"complexityScore": 3,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a straightforward integration of an existing component and does not require further expansion. The work involves placing the component and passing the correct props.",
-			"reasoning": "This task has low complexity because it involves reusing an existing, functional component (`FileUpload`). The primary work is placing this component in the new page and passing the correct `projectId` prop, along with some simple conditional rendering logic."
-		},
-		{
-			"taskId": 117,
-			"taskTitle": "Integration: Add 'Files' Tool Card to ToolsPage",
-			"complexityScore": 4,
-			"recommendedSubtasks": 2,
-			"expansionPrompt": "Break down the task of adding the 'Files' tool card. Subtasks should be: 1. Add the static UI for the new card to the `ToolsPage` with correct routing. 2. Implement the data fetching and aggregation logic to calculate and display the live stats (file counts, link counts) on the card.",
-			"reasoning": "The complexity is moderate because this isn't just a static UI change. It requires fetching data from multiple sources (Drive, Firestore), performing calculations (counts), and displaying them, which introduces data-loading and performance considerations on the `ToolsPage`."
-		},
-		{
-			"taskId": 118,
-			"taskTitle": "Navigation: Update Main App Sidebar",
-			"complexityScore": 2,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "This task is a small, targeted change to a single component and does not require further expansion. It involves adding a context hook and a ternary operator to a link's prop.",
-			"reasoning": "This is a low-complexity task involving a simple conditional change to a navigation link. It requires consuming an existing context and applying a ternary operator, which is a minimal and straightforward change."
+			"expansionPrompt": "The task is well-defined with existing subtasks covering the route implementation, error handling, and local smoke testing. No further expansion is necessary.",
+			"reasoning": "Adding a single GET endpoint with basic error handling is straightforward. The additional requirements to update the drive.files.get() call for Shared Drives and handle specific response metadata slightly increase the effort, but it remains a low-complexity task overall."
 		}
 	]
 }

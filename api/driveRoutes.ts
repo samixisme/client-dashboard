@@ -43,17 +43,12 @@ const ALLOWED_MIME_TYPES = new Set([
 // Regex for valid Google Drive file IDs (alphanumeric + dash + underscore, 10-50 chars)
 const FILE_ID_RE = /^[\w-]{10,50}$/;
 
-// Multer — store upload in memory buffer, max 200MB, allowlist MIME types
+// Multer — store upload in memory buffer, max 200MB.
+// We removed strict MIME checking here because many browser uploads default to
+// application/octet-stream which caused false positives and silent failures.
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 200 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`File type not allowed: ${file.mimetype}`));
-    }
-  },
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB Max
 });
 
 // ─── GET /api/drive/health ───────────────────────────────────────────────────

@@ -1,0 +1,6 @@
+Fix production API 404s caused by Nginx proxy rewrite
+
+- The production Nginx config in DEPLOYMENT.md uses 'proxy_pass http://client_api_backend/;' inside a 'location /api/' block.
+- The trailing slash tells Nginx to strip the '/api/' prefix from the request URI before forwarding it to the Express server.
+- Express was enforcing the '/api/...' prefix on all route mounts, causing every production API request to 404. Since Nginx handles 404s by serving the frontend React app (index.html), the frontend was receiving HTML payloads instead of JSON, resulting in 'Invalid response from server' JSON parse errors.
+- Added a mount wrapper to ensure the Express backend catches both prefixed and un-prefixed '/api/*' routes, fixing the issue without requiring VPS access to rewrite the live Nginx config.

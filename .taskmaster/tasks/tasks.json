@@ -84,14 +84,14 @@
         "testStrategy": "Restart the PM2 process and verify the environment variables are loaded correctly using `pm2 env client-dashboard-api`.",
         "priority": "high",
         "dependencies": [],
-        "status": "blocked",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "SSH into VPS and check PM2 environment for Drive credentials",
             "description": "Connect to the VPS via SSH and check if the Google Drive credentials are currently loaded in the PM2 environment.",
             "dependencies": [],
-            "details": "Run `pm2 env client-dashboard-api | grep -i google`. If GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON appear, credentials are set. If empty, proceed to the next subtask.\n<info added on 2026-03-07T01:29:31.195Z>\nSSH connection to clientdash@49.13.129.43 requires interactive password authentication. Cannot automate without SSH key-based auth. User must either: (1) provide SSH key access, or (2) manually run: pm2 env client-dashboard-api | grep -i google to check credentials.\n</info added on 2026-03-07T01:29:31.195Z>",
+            "details": "Run `pm2 env client-dashboard-api | grep -i google`. If GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON appear, credentials are set. If empty, proceed to the next subtask.\n<info added on 2026-03-07T01:29:31.195Z>\nSSH connection to clientdash@49.13.129.43 requires interactive password authentication. Cannot automate without SSH key-based auth. User must either: (1) provide SSH key access, or (2) manually run: pm2 env client-dashboard-api | grep -i google to check credentials.\n</info added on 2026-03-07T01:29:31.195Z>\n<info added on 2026-03-07T01:38:27.342Z>\nCode deployment is automated via GitHub Actions CI/CD, eliminating the need for manual SSH for code deployment. However, verifying and setting the Google Drive environment variables (GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_DRIVE_ROOT_FOLDER_ID) in the shared .env file on the VPS remains a manual step requiring server access.\n</info added on 2026-03-07T01:38:27.342Z>\n<info added on 2026-03-07T02:22:55.418Z>\nUploaded google-service-account.json to /home/clientdash/client-dashboard/ via SCP. Patched ecosystem.config.js with GOOGLE_SERVICE_ACCOUNT_PATH and GOOGLE_DRIVE_ROOT_FOLDER_ID. Added the same variables to shared/.env. Restarted PM2 from the current release directory, confirming both cluster instances are online. The health endpoint successfully returns status ok and credentialSource file-path.\n</info added on 2026-03-07T02:22:55.418Z>",
             "status": "pending",
             "testStrategy": "Verify the output of the grep command to determine if the environment variables are present.",
             "parentId": "undefined"
@@ -121,7 +121,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2026-03-07T01:29:19.755Z"
+        "updatedAt": "2026-03-07T02:09:56.360Z"
       },
       {
         "id": 122,
@@ -135,7 +135,7 @@
           "120",
           "121"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -171,7 +171,8 @@
             "testStrategy": "Monitor with `pm2 logs client-dashboard-api --lines 30` and confirm no crash restarts. Then verify the new health endpoint by running `curl https://client.samixism.com/api/drive/health`.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-03-07T02:09:56.379Z"
       },
       {
         "id": 123,
@@ -183,7 +184,7 @@
         "dependencies": [
           "122"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -202,7 +203,7 @@
             "dependencies": [
               "1"
             ],
-            "details": "In /etc/nginx/conf.d/custom_rules.conf, define `upstream api_backend { server 127.0.0.1:3001 max_fails=3 fail_timeout=30s; }`. This ensures Nginx marks the backend as down after 3 failures for 30 seconds.\n<info added on 2026-03-07T00:37:13.472Z>\nOpen the file with nano using sudo nano /etc/nginx/conf.d/custom_rules.conf. Navigate to the client.samixism.com server block. Before the existing location / line, insert the following two blocks without deleting anything:\n\nlocation /api/ {\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP $remote_addr;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header X-Forwarded-Proto https;\n    proxy_set_header X-Forwarded-SSL on;\n    proxy_pass http://127.0.0.1:3001;\n    client_max_body_size 210m;\n    proxy_read_timeout 300s;\n    proxy_send_timeout 300s;\n    proxy_connect_timeout 60s;\n}\n\nlocation /admin/api/ {\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP $remote_addr;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header X-Forwarded-Proto https;\n    proxy_set_header X-Forwarded-SSL on;\n    proxy_pass http://127.0.0.1:3001;\n}\n\nThe existing catch-all block for location / must remain last and unchanged, proxying to http://127.0.0.1:3000. Save in nano using Ctrl+X, Y, then Enter. Order matters: Nginx matches location blocks from most-specific to least, so /api/ and /admin/api/ must appear before location / or they will never be reached. Verify the edit before running nginx by executing sudo grep -n 'location\\|proxy_pass\\|client_max_body' /etc/nginx/conf.d/custom_rules.conf. The output should show /api/ routing to 3001, /admin/api/ routing to 3001, and / routing to 3000 in that exact order.\n</info added on 2026-03-07T00:37:13.472Z>",
+            "details": "In /etc/nginx/conf.d/custom_rules.conf, define `upstream api_backend { server 127.0.0.1:3001 max_fails=3 fail_timeout=30s; }`. This ensures Nginx marks the backend as down after 3 failures for 30 seconds.\n<info added on 2026-03-07T00:37:13.472Z>\nOpen the file with nano using sudo nano /etc/nginx/conf.d/custom_rules.conf. Navigate to the client.samixism.com server block. Before the existing location / line, insert the following two blocks without deleting anything:\n\nlocation /api/ {\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP $remote_addr;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header X-Forwarded-Proto https;\n    proxy_set_header X-Forwarded-SSL on;\n    proxy_pass http://127.0.0.1:3001;\n    client_max_body_size 210m;\n    proxy_read_timeout 300s;\n    proxy_send_timeout 300s;\n    proxy_connect_timeout 60s;\n}\n\nlocation /admin/api/ {\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP $remote_addr;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header X-Forwarded-Proto https;\n    proxy_set_header X-Forwarded-SSL on;\n    proxy_pass http://127.0.0.1:3001;\n}\n\nThe existing catch-all block for location / must remain last and unchanged, proxying to http://127.0.0.1:3000. Save in nano using Ctrl+X, Y, then Enter. Order matters: Nginx matches location blocks from most-specific to least, so /api/ and /admin/api/ must appear before location / or they will never be reached. Verify the edit before running nginx by executing sudo grep -n 'location\\|proxy_pass\\|client_max_body' /etc/nginx/conf.d/custom_rules.conf. The output should show /api/ routing to 3001, /admin/api/ routing to 3001, and / routing to 3000 in that exact order.\n</info added on 2026-03-07T00:37:13.472Z>\n<info added on 2026-03-07T02:23:05.412Z>\nAdded /api/ and /admin/api/ location blocks to custom_rules.conf inside the client.samixism.com server block. Created backup custom_rules.conf.bak.pre-api. Nginx syntax check passed and reload was successful. Verified the health endpoint returns HTTP/2 200 via HTTPS and the frontend continues to serve HTTP 200. Confirmed upload directives including 210m body, 300s read/send timeout, and 60s connect timeout are correctly set at lines 66-69.\n</info added on 2026-03-07T02:23:05.412Z>",
             "status": "pending",
             "testStrategy": "Run `nginx -t` to validate the upstream block syntax and ensure no duplicate upstream names exist.",
             "parentId": "undefined"
@@ -333,7 +334,8 @@
             "testStrategy": "Review /var/log/nginx/error.log and /var/log/nginx/access.log to confirm error states are logged correctly without exposing stack traces to the client.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-03-07T02:21:05.959Z"
       },
       {
         "id": 124,
@@ -345,7 +347,7 @@
         "dependencies": [
           "123"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -357,7 +359,8 @@
             "testStrategy": "Run `grep -A 5 'admin/api' /etc/nginx/conf.d/custom_rules.conf` to ensure the block is present and correctly formatted.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-03-07T02:21:05.967Z"
       },
       {
         "id": 125,
@@ -369,7 +372,7 @@
         "dependencies": [
           "123"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -381,7 +384,8 @@
             "testStrategy": "Run nginx -t to verify the configuration syntax is correct and the directives are valid.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-03-07T02:21:05.976Z"
       },
       {
         "id": 126,
@@ -395,7 +399,7 @@
           "124",
           "125"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -419,7 +423,8 @@
             "testStrategy": "Run `curl -I https://client.samixism.com/api/drive/health` and expect a 200 OK response instead of a 404 HTML page.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-03-07T02:22:36.126Z"
       },
       {
         "id": 127,
@@ -466,14 +471,14 @@
         "dependencies": [
           "126"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "Verify API health via curl",
             "description": "Run specific curl commands to confirm API endpoints return expected JSON responses and HTTP status codes.",
             "dependencies": [],
-            "details": "Run `curl -s https://client.samixism.com/api/drive/health` (expect {\"status\":\"ok\"}), `curl -s \"https://client.samixism.com/api/drive/files?folder=\" | head -c 200` (expect JSON array start), and `curl -s -o /dev/null -w \"%{http_code}\" https://client.samixism.com/api/drive/stats` (expect 200).",
+            "details": "Run `curl -s https://client.samixism.com/api/drive/health` (expect {\"status\":\"ok\"}), `curl -s \"https://client.samixism.com/api/drive/files?folder=\" | head -c 200` (expect JSON array start), and `curl -s -o /dev/null -w \"%{http_code}\" https://client.samixism.com/api/drive/stats` (expect 200).\n<info added on 2026-03-07T02:37:08.154Z>\nExecuted local and remote URL curl checks. Health returned JSON {status: ok} at 0.04s. Files endpoint returned valid JSON directory map. Conducted headless browser sanity check confirming the Firebase Auth UI and main frame loads cleanly via client.samixism.com with no 404s or 500s. E2E deployment flows stable.\n</info added on 2026-03-07T02:37:08.154Z>",
             "status": "pending",
             "testStrategy": "Verify terminal output matches expected JSON and HTTP 200 codes, ensuring no HTML is returned.",
             "parentId": "undefined"
@@ -516,18 +521,19 @@
             "testStrategy": "Check network tab timings in DevTools or use curl with time formatting to measure response duration.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-03-07T02:36:57.475Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-07T01:29:19.755Z",
+      "lastModified": "2026-03-07T02:36:57.476Z",
       "taskCount": 10,
-      "completedCount": 3,
+      "completedCount": 10,
       "tags": [
         "master"
       ],
-      "created": "2026-03-07T01:29:19.772Z",
+      "created": "2026-03-07T02:36:57.504Z",
       "description": "Tasks for master context"
     }
   }
