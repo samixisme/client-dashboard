@@ -121,12 +121,20 @@ export function useDriveFiles(
     try {
       const formData = new FormData();
       formData.append('file', file);
-      if (currentPath) formData.append('folder', currentPath);
+      
+      let uploadPath = currentPath;
+      if (!uploadPath && projectId) {
+        uploadPath = `projects/${projectId}`;
+      }
+      
+      if (uploadPath) {
+        formData.append('folder', uploadPath);
+      }
 
       const { uploadToDrive } = await import('../utils/driveUpload');
       await uploadToDrive(
         file,
-        currentPath || '',
+        uploadPath,
         file.name,
         (progress) => setUploadProgress(progress)
       );
@@ -139,7 +147,7 @@ export function useDriveFiles(
       setIsUploading(false);
       setUploadProgress(0);
     }
-  }, [currentPath]);
+  }, [currentPath, projectId]);
 
   // ── Delete ──────────────────────────────────────────────────────────────────
   const remove = useCallback(async (fileId: string) => {
