@@ -8,7 +8,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // Webhook verify token from environment variables (new method)
-const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'my-super-secret-webhook-token-12345';
+const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
 
 // Instagram OAuth credentials
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID || '';
@@ -40,6 +40,12 @@ export const instagramWebhook = functions.https.onRequest(async (req, res) => {
     console.log('Instagram webhook verification request:', { mode });
 
     if (mode && token) {
+      if (!WEBHOOK_VERIFY_TOKEN) {
+        console.error('🚨 CRITICAL ERROR: WEBHOOK_VERIFY_TOKEN environment variable is missing.');
+        res.status(500).send('Server misconfiguration: Webhook token missing');
+        return;
+      }
+
       if (mode === 'subscribe' && token === WEBHOOK_VERIFY_TOKEN) {
         console.log('✅ Instagram webhook verified successfully');
         res.status(200).send(challenge);
