@@ -1,0 +1,4 @@
+## 2024-03-08 - [HIGH] XSS Vulnerability in Social Media Page Notifications
+**Vulnerability:** The application was using `.innerHTML` to inject dynamic success and error messages related to social media account connections in `pages/SocialMediaPage.tsx`. Specifically, `result.username` and `result.message` were passed directly into the HTML string, posing an XSS threat.
+**Learning:** This is a classic DOM-based XSS vulnerability. If a user's `username` or the `message` returned from an OAuth callback contained malicious scripts, it would be executed because `.innerHTML` evaluates the HTML tags.
+**Prevention:** To prevent this, always avoid using `.innerHTML` when incorporating variables that could be user-controlled. Instead, dynamically construct the DOM elements and use `.textContent` to safely assign the text values, ensuring they are interpreted purely as text and not as executable code.
