@@ -56,6 +56,33 @@ const upload = multer({
   },
 });
 
+// ─── GET /api/drive/health ───────────────────────────────────────────────────
+// Test Google Drive credential loading and API reachability
+router.get('/health', async (_req: Request, res: Response) => {
+  try {
+    await initializeDrive();
+
+    const credentialSource = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+      ? 'env-json'
+      : process.env.GOOGLE_SERVICE_ACCOUNT_PATH
+        ? 'file-path'
+        : 'none';
+
+    return res.status(200).json({
+      status: 'ok',
+      message: 'Google Drive API is reachable',
+      rootFolderId: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID || 'auto-detected',
+      credentialSource,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Drive initialization failed';
+    return res.status(503).json({ status: 'error', message });
+  }
+});
+
+// NOTE: webViewLinks returned after upload may 403 briefly (5-30s) due to
+// Google Drive permission propagation delays. This is expected behavior.
+
 // ─── GET /api/drive/files ────────────────────────────────────────────────────
 // List files and subfolders at an optional ?folder= path
 router.get('/files', async (req: Request, res: Response) => {

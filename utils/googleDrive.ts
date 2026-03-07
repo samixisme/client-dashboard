@@ -305,6 +305,7 @@ export const getFileMetadata = async (fileId: string): Promise<any> => {
   const response = await drive.files.get({
     fileId: fileId,
     fields: 'id, name, mimeType, size, webViewLink, webContentLink, createdTime, modifiedTime',
+    supportsAllDrives: true,
   });
 
   // Cache for 1 hour
