@@ -133,8 +133,8 @@ service cloud.firestore {
     }
 
     // ── Feedback ──────────────────────────────────────────────────────────────
-    // feedbackItems are stored under projects/{projectId}/feedbackItems/{itemId}
-    match /projects/{projectId}/feedbackItems/{itemId} {
+    // feedbackItems uses collectionGroup query so needs a wildcard path rule
+    match /{path=**}/feedbackItems/{itemId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated();
