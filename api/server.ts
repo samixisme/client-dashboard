@@ -2,9 +2,22 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+import dotenv from 'dotenv';
+
+// Dynamically locate .env checking both local 'api/' and compiled 'dist-server/api/' directory trees
+const envPaths = [
+  path.resolve(__dirname, '../.env'),       // Local ts-node
+  path.resolve(__dirname, '../../.env')     // Production dist-server compiled Node
+];
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    break;
+  }
+}
+
 import proxyHandler from './proxy';
 import { optionalApiKeyAuth } from './authMiddleware';
 import notificationsRouter from './notifications';
