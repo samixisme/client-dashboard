@@ -37,19 +37,26 @@ export function initializeFirebaseAdmin(): admin.app.App | null {
       return adminApp;
     }
 
-    // Determine service account path
+    // Determine service account path or base64 environment injection
     const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
       '/home/clientdash/.firebase-admin.json';
+    const credentialsB64 = process.env.GOOGLE_SERVICE_ACCOUNT_B64;
 
-    // Check if service account file exists
-    if (!fs.existsSync(serviceAccountPath)) {
-      logger.warn({ serviceAccountPath }, 'Firebase Admin SDK: service account not found');
-      logger.warn('Admin API endpoints will return 503 Service Unavailable');
-      return null;
+    let serviceAccount;
+
+    if (credentialsB64) {
+      serviceAccount = JSON.parse(Buffer.from(credentialsB64, 'base64').toString('utf8'));
+      logger.info('Firebase Admin SDK: loaded credentials from base64 environment');
+    } else {
+      // Check if service account file exists
+      if (!fs.existsSync(serviceAccountPath)) {
+        logger.warn({ serviceAccountPath }, 'Firebase Admin SDK: service account not found');
+        logger.warn('Admin API endpoints will return 503 Service Unavailable');
+        return null;
+      }
+      // Read and parse service account
+      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     }
-
-    // Read and parse service account
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
     // Initialize Firebase Admin
     adminApp = admin.initializeApp({

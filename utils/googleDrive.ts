@@ -24,16 +24,19 @@ export const initializeDrive = async (): Promise<void> => {
 
   const credentialsPath = process.env.GOOGLE_SERVICE_ACCOUNT_PATH;
   const credentialsJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const credentialsB64 = process.env.GOOGLE_SERVICE_ACCOUNT_B64;
 
-  if (!credentialsPath && !credentialsJson) {
+  if (!credentialsPath && !credentialsJson && !credentialsB64) {
     throw new Error(
-      'Google Drive credentials not found. Set GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON'
+      'Google Drive credentials not found. Set GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_SERVICE_ACCOUNT_B64'
     );
   }
 
   let credentials;
   if (credentialsPath) {
     credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
+  } else if (credentialsB64) {
+    credentials = JSON.parse(Buffer.from(credentialsB64, 'base64').toString('utf8'));
   } else {
     credentials = JSON.parse(credentialsJson!);
   }
