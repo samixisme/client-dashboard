@@ -1,0 +1,114 @@
+≡ƒÅ╖  Brief: Enhanced Files Management System - Google Drive Integration (e941a9fc-f682-495b-92ce-f7c68c4a48ef)
+Listing tasks from: https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan (https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan)
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé Task: #DES-115 - Integrate FilePreview components with file card display Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+[90mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[90mΓöé[39m ID:                [90mΓöé[39m DES-115                                                                        [90mΓöé[39m
+[90mΓöé[39m Title:             [90mΓöé[39m Integrate FilePreview components with file card display                        [90mΓöé[39m
+[90mΓöé[39m Status:            [90mΓöé[39m Γùï pending                                                                      [90mΓöé[39m
+[90mΓöé[39m Priority:          [90mΓöé[39m high                                                                           [90mΓöé[39m
+[90mΓöé[39m Dependencies:      [90mΓöé[39m None                                                                           [90mΓöé[39m
+[90mΓöé[39m Complexity:        [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Category:          [90mΓöé[39m ≡ƒöº development                                                                 [90mΓöé[39m
+[90mΓöé[39m Skills:            [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Description:       [90mΓöé[39m Integrate the FilePreview router component into the existing file card UI to   [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m enable inline preview rendering. Update FileCard or equivalent component to    [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m use FilePreview for thumbnail display and modal triggers. Ensure preview       [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m loading doesn't block file list rendering, and that the preview system works   [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m seamlessly with the existing grid/list view layouts.                           [90mΓöé[39m
+[90mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Implementation Details:                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Summary                                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Integrate FilePreview components into the existing file card UI, enabling inline thumbnails    Γöé
+Γöé   and modal previews within the current layout system.                                           Γöé
+Γöé                                                                                                  Γöé
+Γöé   Implementation Approach                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Update `components/files/FileCard.tsx` (or equivalent) to:                                  Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Import FilePreview router component                                                          Γöé
+Γöé   * Pass file object to FilePreview component                                                    Γöé
+Γöé   * Render FilePreview as thumbnail area within card                                             Γöé
+Γöé   * Handle preview state (modal open/close)                                                      Γöé
+Γöé   * Maintain existing file metadata display below preview                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Modify file list/grid rendering to:                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Ensure file cards render with preview placeholders                                           Γöé
+Γöé   * Implement loading skeletons for cards while previews load                                    Γöé
+Γöé   * Prevent layout shift when previews load                                                      Γöé
+Γöé   * Use CSS grid/flexbox to maintain consistent spacing                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Update click handlers:                                                                      Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Preview click should open preview modal (not existing sidebar behavior)                      Γöé
+Γöé   * Preserve existing file card actions (rename, delete, etc.)                                   Γöé
+Γöé   * Ensure no conflicts with sidebar navigation (if applicable)                                  Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Handle preview state management:                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Use component state or Context for modal visibility                                          Γöé
+Γöé   * Close preview modal on ESC key or backdrop click                                             Γöé
+Γöé   * Prevent event bubbling to avoid triggering multiple handlers                                 Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Test integration across view modes:                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Grid view: ensure preview size fits card dimensions                                          Γöé
+Γöé   * List view: ensure preview appears in appropriate column                                      Γöé
+Γöé   * Mobile: ensure tap-to-preview works instead of hover                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   Acceptance Criteria                                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * File cards render FilePreview component for preview thumbnail display                        Γöé
+Γöé   * File cards remain responsive and don't block rendering while previews load                   Γöé
+Γöé   * Previews display correctly in both List and Grid view layouts                                Γöé
+Γöé   * Clicking file card triggers preview modal (not sidebar navigation)                           Γöé
+Γöé   * Preview component receives correct file metadata from file card props                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Technical Constraints                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Preserve existing FileCard component structure and props                                     Γöé
+Γöé   * Don't break existing file card functionality (name, type icon, etc.)                         Γöé
+Γöé   * Loading skeletons must match card design aesthetic                                           Γöé
+Γöé   * Mobile: tap-to-preview instead of hover-to-preview                                           Γöé
+Γöé   * Performance: prevent preview loading for all cards simultaneously                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   Code Patterns to Follow                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Conditional rendering of FilePreview based on preview availability                           Γöé
+Γöé   * Use React.lazy() and Suspense for preview component loading                                  Γöé
+Γöé   * Implement useCallback for click handlers to prevent re-creation                              Γöé
+Γöé   * Follow existing file card styling (glassmorphism, spacing)                                   Γöé
+Γöé   * Use Lucide React for file type icons as fallback                                             Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Γ£ô Acceptance Criteria:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   ΓÿÉ File cards render FilePreview component for preview thumbnail display                        Γöé
+Γöé   ΓÿÉ File cards remain responsive and don't block rendering while previews load                   Γöé
+Γöé   ΓÿÉ Previews display correctly in both List and Grid view layouts                                Γöé
+Γöé   ΓÿÉ Clicking file card triggers preview modal (not sidebar navigation)                           Γöé
+Γöé   ΓÿÉ Preview component receives correct file metadata from file card props                        Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Suggested Actions:                                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Run task-master set-status --id=DES-115 --status=in-progress to start working               Γöé
+Γöé   2. Run task-master expand --id=DES-115 to break down into subtasks                             Γöé
+Γöé   3. Run task-master update-task --id=DES-115 --prompt="..." to update details                   Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»

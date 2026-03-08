@@ -1,0 +1,27 @@
+{
+  "phase": "PLAN",
+  "batch": ["DES-106", "DES-118"],
+  "parentTask": "DES-80",
+  "analysisFindings": {
+    "utils/googleDrive.ts": "Needs moveFile and renameFile functions.",
+    "api/driveRoutes.ts": "Needs PATCH and POST routes.",
+    "hooks/useDriveFiles.ts": "Needs move() and createFolder/renameFolder actions.",
+    "components/files/FileCard.tsx": "Needs draggable=true and onDragStart.",
+    "components/files/FolderSidebar.tsx": "Needs onDragOver, onDrop, and 'New Folder' button."
+  },
+  "planSummary": "Modify backend and frontend to support complete folder/file organization. Requesting user approval.",
+  "decompositions": {
+    "waves": [
+      {
+        "wave": 1,
+        "tasks": ["DES-106", "DES-118"],
+        "files": ["utils/googleDrive.ts", "api/schemas/driveSchemas.ts", "api/driveRoutes.ts", "__tests__/driveRoutes.test.ts"]
+      },
+      {
+        "wave": 2,
+        "tasks": ["DES-106", "DES-118"],
+        "files": ["hooks/useDriveFiles.ts", "components/files/FileCard.tsx", "components/files/FolderSidebar.tsx", "pages/FilesPage.tsx"]
+      }
+    ]
+  }
+}

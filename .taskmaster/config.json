@@ -18,7 +18,7 @@
     "debug": false,
     "defaultNumTasks": 10,
     "defaultSubtasks": 5,
-    "OPENROUTER_API_KEY": "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",
+    "OPENROUTER_API_KEY": "$OPENROUTER_API_KEY",
     "defaultPriority": "medium",
     "projectName": "Client Dashboard",
     "responseLanguage": "English",

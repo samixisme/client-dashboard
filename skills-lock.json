@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "jules": {
+      "source": "sanjay3290/ai-skills",
+      "sourceType": "github",
+      "computedHash": "2a3997507f8bf2c8fe99d954cfc25c66e1b85d1d8f72c6bf44170864177ab62f"
+    },
+    "parallel-task": {
+      "source": "am-will/codex-skills",
+      "sourceType": "github",
+      "computedHash": "766cb30f18de3a5cf7b3e8af2d18ddb70e8e5d0fb35cb2d796f5e64894adc48b"
+    },
+    "ui-design-system": {
+      "source": "samhvw8/dot-claude",
+      "sourceType": "github",
+      "computedHash": "da805b478040b37f22d4ca74134bdad1f281f390f605fda2add000fec01df3c7"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "computedHash": "4cfe5e95a230616c17d92b44e3cd37bae543ce087a7756a446a62f77d7c58a37"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "d8e7d3afe37dcc8a97b99ffb5afdb4d0919ae0092ea8b68f44eb201f035e33ac"
+    },
+    "workflow-automation": {
+      "source": "supercent-io/skills-template",
+      "sourceType": "github",
+      "computedHash": "910da83d805046b56573e7bf5f531bdae43783a5bd54462c1a068d624192b819"
+    }
+  }
+}

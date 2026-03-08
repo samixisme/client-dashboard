@@ -8,10 +8,20 @@ import {
   deleteFile,
   getFileMetadata,
   getFolderId,
+  getFileRevisions,
+  revertFileRevision,
+  renameFile,
+  moveFile,
 } from '../utils/googleDrive';
 import { getQuotaStats } from '../utils/driveQuota';
 import { optionalApiKeyAuth } from './authMiddleware';
-import { createFolderBodySchema } from './schemas/driveSchemas';
+import {
+  createFolderBodySchema,
+  renameFileBodySchema,
+  moveFileBodySchema,
+  bulkDeleteBodySchema,
+  bulkMoveBodySchema,
+} from './schemas/driveSchemas';
 
 const router = Router();
 
@@ -140,6 +150,84 @@ router.get('/files/:fileId/meta', async (req: Request, res: Response) => {
   }
 });
 
+// ─── GET /api/drive/files/:fileId/revisions ─────────────────────────────────
+// Get version history for a file
+router.get('/files/:fileId/revisions', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ error: 'Invalid file ID' });
+  }
+  try {
+    const revisions = await getFileRevisions(fileId);
+    return res.json({ revisions });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to get file revisions' });
+  }
+});
+
+// ─── POST /api/drive/files/:fileId/revisions/:revisionId/revert ─────────────
+// Revert a file to a specific revision
+router.post('/files/:fileId/revisions/:revisionId/revert', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  const revisionId = String(req.params.revisionId);
+  
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ error: 'Invalid file ID' });
+  }
+  if (!revisionId) {
+    return res.status(400).json({ error: 'Invalid revision ID' });
+  }
+  
+  try {
+    await revertFileRevision(fileId, revisionId);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to revert file revision' });
+  }
+});
+
+// ─── PATCH /api/drive/files/:fileId/rename ──────────────────────────────────
+// Rename a file or folder
+router.patch('/files/:fileId/rename', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ error: 'Invalid file ID' });
+  }
+
+  const validation = renameFileBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: validation.error.errors[0].message });
+  }
+
+  try {
+    await renameFile(fileId, validation.data.name);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to rename file' });
+  }
+});
+
+// ─── POST /api/drive/files/:fileId/move ─────────────────────────────────────
+// Move a file or folder to a new location
+router.post('/files/:fileId/move', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ error: 'Invalid file ID' });
+  }
+
+  const validation = moveFileBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: validation.error.errors[0].message });
+  }
+
+  try {
+    await moveFile(fileId, validation.data.folderId);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to move file' });
+  }
+});
+
 // ─── POST /api/drive/upload ───────────────────────────────────────────────────
 // Upload a file. Body: multipart/form-data with field "file" and optional "folder"
 router.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
@@ -244,6 +332,75 @@ router.get('/stats', (_req: Request, res: Response) => {
   } catch (error) {
     return res.status(500).json({ error: 'Failed to get stats' });
   }
+});
+
+// ─── GET /api/drive/files/recent ────────────────────────────────────────────
+// Return the last 10 files sorted by modifiedTime descending
+router.get('/files/recent', async (_req: Request, res: Response) => {
+  try {
+    await initializeDrive();
+    const items = await listFiles('');
+    const files = items
+      .filter((f: { mimeType: string }) => f.mimeType !== 'application/vnd.google-apps.folder')
+      .sort((a: { modifiedTime?: string }, b: { modifiedTime?: string }) => {
+        const ta = a.modifiedTime ? new Date(a.modifiedTime).getTime() : 0;
+        const tb = b.modifiedTime ? new Date(b.modifiedTime).getTime() : 0;
+        return tb - ta;
+      })
+      .slice(0, 10);
+    return res.json({ success: true, data: { files } });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Failed to fetch recent files' });
+  }
+});
+
+// ─── POST /api/drive/files/bulk/delete ──────────────────────────────────────
+// Delete multiple files. Body: { fileIds: string[] }
+router.post('/files/bulk/delete', async (req: Request, res: Response) => {
+  const validation = bulkDeleteBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: validation.error.errors[0].message });
+  }
+  const { fileIds } = validation.data;
+  try {
+    await initializeDrive();
+    const results = await Promise.allSettled(fileIds.map((id) => deleteFile(id)));
+    const deleted = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    return res.json({ success: true, data: { deleted, failed, total: fileIds.length } });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Bulk delete failed' });
+  }
+});
+
+// ─── POST /api/drive/files/bulk/move ────────────────────────────────────────
+// Move multiple files to a folder. Body: { fileIds: string[], folderId: string }
+router.post('/files/bulk/move', async (req: Request, res: Response) => {
+  const validation = bulkMoveBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: validation.error.errors[0].message });
+  }
+  const { fileIds, folderId } = validation.data;
+  try {
+    await initializeDrive();
+    const results = await Promise.allSettled(fileIds.map((id) => moveFile(id, folderId)));
+    const moved = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    return res.json({ success: true, data: { moved, failed, total: fileIds.length } });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Bulk move failed' });
+  }
+});
+
+// ─── GET /api/drive/files/:fileId/share ─────────────────────────────────────
+// Generate a shareable download link for a file (no Drive API call needed)
+router.get('/files/:fileId/share', (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ success: false, error: 'Invalid file ID' });
+  }
+  const shareUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  return res.json({ success: true, data: { shareUrl, fileId } });
 });
 
 export default router;

@@ -106,3 +106,6 @@ session-*.txt
 session-*.md
 job-logs.txt
 prompt-analyze.txt
+
+# Added by ggshield
+.cache_ggshield

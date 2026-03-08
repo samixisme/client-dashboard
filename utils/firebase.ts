@@ -37,7 +37,7 @@ const initAppCheck = () => {
 
   try {
     return initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(siteKey || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'),
+      provider: new ReCaptchaV3Provider(siteKey || import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY_FALLBACK || ''),
       isTokenAutoRefreshEnabled: true
     });
   } catch {
