@@ -46,8 +46,8 @@ const KanbanView: React.FC<KanbanViewProps> = ({
                                     <span className="text-sm font-medium text-text-secondary bg-surface-light/50 px-2 py-0.5 rounded-md">{stageTasks.length}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-text-secondary">
-                                    <button onClick={() => setAddingToStage(stage.id)} className="hover:text-primary hover:bg-glass-light/60 hover:scale-110 transition-all duration-300 p-1 rounded-lg hover:shadow-lg"><AddIcon className="h-5 w-5"/></button>
-                                    <button onClick={(e) => onOpenStageActions(e.currentTarget, stage)} className="hover:text-primary hover:bg-glass-light/60 hover:scale-110 transition-all duration-300 p-1 rounded-lg hover:shadow-lg"><SettingsIcon className="h-5 w-5"/></button>
+                                    <button onClick={() => setAddingToStage(stage.id)} aria-label={`Add task to ${stage.name}`} className="hover:text-primary hover:bg-glass-light/60 hover:scale-110 transition-all duration-300 p-1 rounded-lg hover:shadow-lg"><AddIcon className="h-5 w-5"/></button>
+                                    <button onClick={(e) => onOpenStageActions(e.currentTarget, stage)} aria-label={`Stage settings for ${stage.name}`} className="hover:text-primary hover:bg-glass-light/60 hover:scale-110 transition-all duration-300 p-1 rounded-lg hover:shadow-lg"><SettingsIcon className="h-5 w-5"/></button>
                                 </div>
                             </div>
                             <Droppable droppableId={stage.id}>
@@ -95,7 +95,7 @@ const KanbanView: React.FC<KanbanViewProps> = ({
                                                         <span className="relative z-10">Add Task</span>
                                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                                     </button>
-                                                    <button onClick={() => setAddingToStage(null)} className="text-xl text-text-secondary hover:text-text-primary leading-none hover:scale-110 transition-all duration-300">&times;</button>
+                                                    <button onClick={() => setAddingToStage(null)} aria-label={`Cancel adding task to ${stage.name}`} className="text-xl text-text-secondary hover:text-text-primary leading-none hover:scale-110 transition-all duration-300">&times;</button>
                                                 </div>
                                             </div>
                                         ) : (
