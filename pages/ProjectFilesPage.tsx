@@ -1,211 +1,549 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProjectFiles } from '../src/hooks/useProjectFiles';
-import { useDriveFiles } from '../hooks/useDriveFiles';
 import { useData } from '../contexts/DataContext';
 import { ProjectFile, ProjectLink } from '../types';
+import { DriveFile, DriveViewMode, DriveFileSortKey, DriveFileSortDir } from '../types/drive';
+import { useDriveFiles } from '../hooks/useDriveFiles';
+import { useFileFilters } from '../hooks/useFileFilters';
+import { applyFileFilters } from '../utils/fileFilters';
+import { useBulkSelection } from '../hooks/useBulkSelection';
+
+// Components
 import SourceFilterSidebar from '../components/files/SourceFilterSidebar';
 import FileUpload from '../components/files/FileUpload';
 import AddLinkDialog from '../components/files/AddLinkDialog';
 import LinkCard from '../components/files/LinkCard';
+import FileCard from '../components/files/FileCard';
+import ViewModeSelector from '../components/files/ViewModeSelector';
+import MetadataSidebar from '../components/files/MetadataSidebar';
+import BulkActionsBar from '../components/files/BulkActionsBar';
+import FilterPanel from '../components/files/FilterPanel';
+import FilterChips from '../components/files/FilterChips';
+import ShareDialog from '../components/files/ShareDialog';
+import KanbanView from '../components/files/KanbanView';
+import GalleryView from '../components/files/GalleryView';
+import TimelineView from '../components/files/TimelineView';
+import { toast } from 'sonner';
+
+// ─── localStorage helpers ────────────────────────────────────────────────────
+const VIEW_MODE_KEY = 'projectFilesViewMode';
+const VALID_MODES: DriveViewMode[] = ['list', 'grid', 'kanban', 'gallery', 'timeline'];
+
+function getStoredViewMode(): DriveViewMode {
+  try {
+    const stored = localStorage.getItem(VIEW_MODE_KEY) as DriveViewMode | null;
+    if (stored && VALID_MODES.includes(stored)) return stored;
+  } catch { /* ignore */ }
+  return 'grid';
+}
+
+// ─── Sort icon ────────────────────────────────────────────────────────────────
+const SortIcon: React.FC<{ col: DriveFileSortKey; sortKey: DriveFileSortKey; sortDir: DriveFileSortDir }> = ({ col, sortKey, sortDir }) => {
+  if (sortKey !== col) return <span className="opacity-30">↕</span>;
+  return <span>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+};
 
 const ProjectFilesPage: React.FC = () => {
-    const { projectId } = useParams<{ projectId: string }>();
-    const safeProjectId = projectId || '';
-    const navigate = useNavigate();
-    const { data } = useData();
+  const { projectId } = useParams<{ projectId: string }>();
+  const safeProjectId = projectId || '';
+  const navigate = useNavigate();
+  const { data } = useData();
 
-    const files = useProjectFiles(safeProjectId);
-    const { upload, isUploading, uploadProgress, error: uploadError } = useDriveFiles({ projectId: safeProjectId });
+  // ── Drive files (full DriveFile type for new components) ─────────────────
+  const {
+    files: driveFiles,
+    folders,
+    isLoading: driveLoading,
+    isRefreshing,
+    isUploading,
+    uploadProgress,
+    error: driveError,
+    currentPath,
+    navigate: driveNavigate,
+    goUp,
+    refresh,
+    upload,
+    remove,
+    move,
+    createFolder,
+  } = useDriveFiles({ projectId: safeProjectId });
 
-    const [activeFilter, setActiveFilter] = useState<string>('all');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-    const [editingLink, setEditingLink] = useState<ProjectLink | undefined>(undefined);
+  // ── Project-native files (task attachments, mockups, videos) ─────────────
+  const projectLinks = useMemo(
+    () => data.projectLinks.filter(l => l.projectId === safeProjectId),
+    [data.projectLinks, safeProjectId]
+  );
 
-    // Get project links for LinkCard rendering
-    const projectLinks = useMemo(
-        () => data.projectLinks.filter(l => l.projectId === safeProjectId),
-        [data.projectLinks, safeProjectId]
-    );
+  // Non-drive project files (task attachments, mockups, feedback videos)
+  const nativeProjFiles = useMemo((): ProjectFile[] => {
+    const out: ProjectFile[] = [];
 
-    // Derived filtered list
-    const displayedFiles = useMemo(() => {
-        let filtered = files;
-        if (activeFilter !== 'all') {
-            filtered = filtered.filter(f => f.source === activeFilter);
-        }
-        if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            filtered = filtered.filter(f => f.name.toLowerCase().includes(q));
-        }
-        return filtered;
-    }, [files, activeFilter, searchQuery]);
+    // Task Attachments
+    const projectBoardIds = data.boards.filter(b => b.projectId === safeProjectId).map(b => b.id);
+    const tasks = data.tasks.filter(t => projectBoardIds.includes(t.boardId));
+    tasks.forEach(task => {
+      (task.attachments ?? []).forEach(att => {
+        out.push({
+          id: `task:${task.id}:${att.id}`,
+          projectId: safeProjectId,
+          name: att.name,
+          url: att.url,
+          type: att.type,
+          source: 'task',
+          sourceRoute: `/projects/${safeProjectId}/board/${task.boardId}?task=${task.id}`,
+          createdAt: task.createdAt,
+        });
+      });
+    });
 
-    const handleUpload = async (file: File) => {
-        if (!safeProjectId) return;
-        await upload(file);
-    };
+    // Feedback Mockups
+    data.feedbackMockups.filter(m => m.projectId === safeProjectId).forEach(mockup => {
+      (mockup.images ?? []).forEach(img => {
+        out.push({
+          id: `mockup:${mockup.id}:${img.id}`,
+          projectId: safeProjectId,
+          name: img.name,
+          url: img.url,
+          type: 'image',
+          source: 'mockup',
+          sourceRoute: `/projects/${safeProjectId}/feedback/${mockup.id}`,
+          createdAt: img.createdAt || new Date(),
+        });
+      });
+    });
 
-    const handleFileClick = (file: ProjectFile) => {
-        if (file.sourceRoute) {
-            // Internal route — use hash router navigation
-            if (file.sourceRoute.startsWith('/')) {
-                navigate(file.sourceRoute);
-            } else {
-                window.open(file.sourceRoute, '_blank', 'noopener');
-            }
-        } else if (file.url) {
-            window.open(file.url, '_blank', 'noopener');
-        }
-    };
+    // Feedback Videos
+    data.feedbackVideos.filter(v => v.projectId === safeProjectId).forEach(video => {
+      (video.videos ?? []).forEach(vid => {
+        out.push({
+          id: `video:${video.id}:${vid.id}`,
+          projectId: safeProjectId,
+          name: vid.name,
+          url: vid.url,
+          type: 'video',
+          source: 'video',
+          sourceRoute: `/projects/${safeProjectId}/feedback/${video.id}`,
+          createdAt: new Date(),
+        });
+      });
+    });
 
-    const handleEditLink = (link: ProjectLink) => {
-        setEditingLink(link);
-        setLinkDialogOpen(true);
-    };
+    return out;
+  }, [safeProjectId, data.boards, data.tasks, data.feedbackMockups, data.feedbackVideos]);
 
-    const handleCloseDialog = () => {
-        setLinkDialogOpen(false);
-        setEditingLink(undefined);
-    };
+  // ── UI state ─────────────────────────────────────────────────────────────
+  const [activeFilter, setActiveFilter]     = useState<string>('all');
+  const [searchQuery, setSearchQuery]       = useState('');
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [editingLink, setEditingLink]       = useState<ProjectLink | undefined>(undefined);
+  const [viewMode, setViewMode]             = useState<DriveViewMode>(getStoredViewMode);
+  const [sortKey, setSortKey]               = useState<DriveFileSortKey>('modifiedTime');
+  const [sortDir, setSortDir]               = useState<DriveFileSortDir>('desc');
+  const [selectedFile, setSelectedFile]     = useState<DriveFile | null>(null);
+  const [fileToShare, setFileToShare]       = useState<DriveFile | null>(null);
 
-    // Determine if we should show the upload zone
-    const canUpload = activeFilter === 'all' || activeFilter === 'drive';
-    // Determine if we show the add-link button
-    const canAddLink = activeFilter === 'all' || activeFilter === 'link';
+  useEffect(() => {
+    try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch { /* noop */ }
+  }, [viewMode]);
 
-    return (
-        <div className="flex h-[calc(100vh-64px)] overflow-hidden">
-            {/* Sidebar area */}
-            <SourceFilterSidebar
-                files={files}
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-            />
+  // ── Filters (Drive files only) ────────────────────────────────────────────
+  const filterState = useFileFilters();
+  const availableOwners = useMemo(() => {
+    const owners = new Set<string>();
+    driveFiles.forEach(f => {
+      f.owners?.forEach(o => {
+        if (o.displayName) owners.add(o.displayName);
+        else if (o.emailAddress) owners.add(o.emailAddress);
+      });
+    });
+    return Array.from(owners).sort();
+  }, [driveFiles]);
 
-            {/* Main Content Area */}
-            <div className="flex-1 p-8 overflow-y-auto">
-                <div className="max-w-6xl mx-auto space-y-8">
-                    <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-text-primary">Project Files</h1>
-                            <p className="text-text-secondary mt-1 text-sm">
-                                All attachments, links, and Drive files for this project.
-                            </p>
-                        </div>
+  // ── Bulk selection (Drive files only) ────────────────────────────────────
+  const driveFileIds = useMemo(() => driveFiles.map(f => f.id), [driveFiles]);
+  const bulk = useBulkSelection(driveFileIds);
 
-                        <div className="flex items-center gap-3">
-                            {canAddLink && (
-                                <button
-                                    onClick={() => { setEditingLink(undefined); setLinkDialogOpen(true); }}
-                                    className="px-4 py-2 text-sm font-bold bg-primary text-background rounded-xl hover:opacity-90 transition-opacity shrink-0"
-                                >
-                                    + Add Link
-                                </button>
-                            )}
-                            <div className="relative w-full md:w-56">
-                                <input
-                                    type="text"
-                                    placeholder="Search files..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full px-4 py-2 bg-glass border border-border-color rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
-                                />
-                            </div>
-                        </div>
-                    </header>
+  // ── New-file toast on refresh ─────────────────────────────────────────────
+  const prevCountRef   = useRef(driveFiles.length);
+  const firstRenderRef = useRef(true);
+  useEffect(() => {
+    if (firstRenderRef.current) { prevCountRef.current = driveFiles.length; firstRenderRef.current = false; return; }
+    if (driveFiles.length > prevCountRef.current) {
+      const added = driveFiles.length - prevCountRef.current;
+      toast.info(`📂 ${added} new file${added === 1 ? '' : 's'} available`);
+    }
+    prevCountRef.current = driveFiles.length;
+  }, [driveFiles]);
 
-                    {/* Upload area */}
-                    {canUpload && (
-                        <div className="animate-fade-in-up">
-                            {uploadError && (
-                                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
-                                    <span className="text-red-400 mt-0.5">⚠️</span>
-                                    <div className="flex-1">
-                                        <h4 className="text-sm font-bold text-red-400">Upload failed</h4>
-                                        <p className="text-sm text-red-400/80 mt-1">{uploadError}</p>
-                                    </div>
-                                </div>
-                            )}
-                            <FileUpload
-                                isUploading={isUploading}
-                                uploadProgress={uploadProgress}
-                                onUpload={handleUpload}
-                            />
-                        </div>
-                    )}
+  // ── Filtered + sorted Drive files ────────────────────────────────────────
+  const displayDriveFiles = useMemo(() => {
+    let list = applyFileFilters(driveFiles, filterState.filters);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(f => f.name.toLowerCase().includes(q));
+    }
+    return [...list].sort((a, b) => {
+      let va: string | number = '', vb: string | number = '';
+      if (sortKey === 'name')         { va = a.name.toLowerCase(); vb = b.name.toLowerCase(); }
+      if (sortKey === 'modifiedTime') { va = a.modifiedTime ?? ''; vb = b.modifiedTime ?? ''; }
+      if (sortKey === 'size')         { va = parseInt(a.size ?? '0', 10); vb = parseInt(b.size ?? '0', 10); }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ?  1 : -1;
+      return 0;
+    });
+  }, [driveFiles, searchQuery, sortKey, sortDir, filterState.filters]);
 
-                    {/* Link cards section — shown when links are in the filtered view */}
-                    {(activeFilter === 'all' || activeFilter === 'link') && projectLinks.length > 0 && (
-                        <div className="space-y-3">
-                            <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">External Links</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                {projectLinks
-                                    .filter(l => !searchQuery.trim() || l.title?.toLowerCase().includes(searchQuery.toLowerCase()) || l.url.toLowerCase().includes(searchQuery.toLowerCase()))
-                                    .map(link => (
-                                        <LinkCard key={link.id} link={link} onEdit={handleEditLink} />
-                                    ))
-                                }
-                            </div>
-                        </div>
-                    )}
+  const handleSort = useCallback((key: DriveFileSortKey) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('desc'); }
+  }, [sortKey]);
 
-                    {/* File grid */}
-                    <div className="space-y-3">
-                        {(activeFilter === 'all' || activeFilter !== 'link') && (
-                            <>
-                                <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">
-                                    {activeFilter === 'all' ? 'All Files' : activeFilter.replace('_', ' ')}
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    {displayedFiles
-                                        .filter(f => f.source !== 'link')
-                                        .map(file => (
-                                            <button
-                                                key={file.id}
-                                                onClick={() => handleFileClick(file)}
-                                                className="group p-5 rounded-xl border border-border-color bg-glass hover:bg-glass-light hover:border-primary/50 transition-all text-left cursor-pointer"
-                                            >
-                                                <p className="font-semibold text-text-primary truncate group-hover:text-primary transition-colors">
-                                                    {file.name}
-                                                </p>
-                                                <div className="flex items-center justify-between mt-3">
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary px-2 py-1 bg-background/50 rounded-md">
-                                                        {file.source.replace('_', ' ')}
-                                                    </span>
-                                                </div>
-                                            </button>
-                                        ))}
-                                </div>
-                            </>
-                        )}
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const handleUpload = useCallback(async (file: File) => {
+    try {
+      await upload(file);
+      toast.success(`"${file.name}" uploaded successfully`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed');
+    }
+  }, [upload]);
 
-                        {displayedFiles.length === 0 && projectLinks.length === 0 && (
-                            <div className="col-span-full py-16 text-center text-text-secondary bg-glass/20 rounded-2xl border border-border-color border-dashed">
-                                <span className="block text-4xl mb-3">📁</span>
-                                <p className="font-medium">No files found matching your criteria.</p>
-                                <p className="text-sm opacity-60 mt-1">Try adjusting your source filter or search terminology.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+  const handleDelete = useCallback(async (fileId: string) => {
+    const name = driveFiles.find(f => f.id === fileId)?.name ?? 'File';
+    try {
+      await remove(fileId);
+      toast.success(`"${name}" deleted`);
+      if (selectedFile?.id === fileId) setSelectedFile(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed');
+    }
+  }, [remove, driveFiles, selectedFile]);
+
+  const handleBulkDelete = useCallback(async (fileIds: string[]) => {
+    const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : 'https://client.samixism.com');
+    const res = await fetch(`${apiBase}/api/drive/files/bulk/delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileIds }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Bulk delete failed');
+    toast.success(`Deleted ${data.data.deleted} files`);
+    if (data.data.failed > 0) toast.error(`Failed to delete ${data.data.failed} files`);
+    await refresh();
+  }, [refresh]);
+
+  const handleBulkDownload = useCallback(async (fileIds: string[]) => {
+    fileIds.forEach((id, i) => setTimeout(() => window.open(`https://drive.google.com/uc?export=download&id=${id}`, '_blank'), i * 500));
+  }, []);
+
+  const handleNativeFileClick = useCallback((file: ProjectFile) => {
+    if (file.sourceRoute) {
+      if (file.sourceRoute.startsWith('/')) navigate(file.sourceRoute);
+      else window.open(file.sourceRoute, '_blank', 'noopener');
+    } else if (file.url) {
+      window.open(file.url, '_blank', 'noopener');
+    }
+  }, [navigate]);
+
+  // ── Derived visibility flags ──────────────────────────────────────────────
+  const showDrive    = activeFilter === 'all' || activeFilter === 'drive';
+  const showLinks    = activeFilter === 'all' || activeFilter === 'link';
+  const showTasks    = activeFilter === 'all' || activeFilter === 'task';
+  const showMockups  = activeFilter === 'all' || activeFilter === 'mockup';
+  const showVideos   = activeFilter === 'all' || activeFilter === 'video';
+  const canUpload    = showDrive;
+  const canAddLink   = showLinks;
+
+  // ── All files array needed by SourceFilterSidebar ────────────────────────
+  const allProjectFiles = useMemo((): ProjectFile[] => [
+    ...driveFiles.map((f): ProjectFile => ({
+      id: `drive:${f.id}`,
+      projectId: safeProjectId,
+      name: f.name,
+      url: f.webViewLink || '',
+      type: f.mimeType || 'file',
+      source: 'drive',
+      createdAt: f.createdTime,
+      size: parseFloat(f.size || '0'),
+      thumbnailUrl: f.thumbnailLink,
+    })),
+    ...projectLinks.map((l): ProjectFile => ({
+      id: `link:${l.id}`,
+      projectId: safeProjectId,
+      name: l.title || l.url,
+      url: l.url,
+      type: 'link',
+      source: 'link',
+      createdAt: l.createdAt,
+      thumbnailUrl: l.favicon,
+    })),
+    ...nativeProjFiles,
+  ], [driveFiles, projectLinks, nativeProjFiles, safeProjectId]);
+
+  // Filtered native files from non-drive sources (for search)
+  const filteredNativeFiles = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return nativeProjFiles.filter(f => !q || f.name.toLowerCase().includes(q));
+  }, [nativeProjFiles, searchQuery]);
+
+  return (
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+      {/* Sidebar */}
+      <SourceFilterSidebar
+        files={allProjectFiles}
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 p-6 overflow-y-auto flex flex-col min-h-0">
+        <div className="max-w-7xl mx-auto w-full flex flex-col gap-6 flex-1 min-h-0">
+
+          {/* ── Header ─────────────────────────────────────────────────────── */}
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
+            <div>
+              <h1 className="text-3xl font-bold text-text-primary">Project Files</h1>
+              <p className="text-text-secondary mt-1 text-sm">
+                All attachments, links, and Drive files for this project.
+              </p>
             </div>
 
-            {/* Add/Edit Link Dialog */}
-            <AddLinkDialog
-                projectId={safeProjectId}
-                open={linkDialogOpen}
-                onClose={handleCloseDialog}
-                editingLink={editingLink ? {
-                    id: editingLink.id,
-                    url: editingLink.url,
-                    title: editingLink.title,
-                    favicon: editingLink.favicon,
-                } : undefined}
-            />
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {/* View mode selector — only relevant for Drive files */}
+              {showDrive && (
+                <ViewModeSelector currentMode={viewMode} onChange={setViewMode} />
+              )}
+
+              {/* Refresh */}
+              {showDrive && (
+                <button
+                  onClick={refresh}
+                  disabled={driveLoading || isUploading}
+                  aria-label="Refresh Drive files"
+                  title="Refresh"
+                  className="h-9 w-9 flex items-center justify-center rounded-xl bg-glass border border-border-color text-text-secondary hover:text-text-primary hover:bg-glass-light transition-all disabled:opacity-50"
+                >
+                  <svg className={`w-4 h-4 ${driveLoading || isRefreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  </svg>
+                </button>
+              )}
+
+              {canAddLink && (
+                <button
+                  onClick={() => { setEditingLink(undefined); setLinkDialogOpen(true); }}
+                  className="px-4 py-2 text-sm font-bold bg-glass border border-border-color text-text-primary rounded-xl hover:bg-glass-light transition-colors shrink-0"
+                >
+                  + Add Link
+                </button>
+              )}
+
+              {/* Search */}
+              <div className="relative w-full md:w-52">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search files..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-glass border border-border-color rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+
+              {canUpload && (
+                <button
+                  onClick={() => {/* handled below by always-visible upload */}}
+                  className="hidden"
+                />
+              )}
+            </div>
+          </header>
+
+          {/* ── Upload zone ─────────────────────────────────────────────── */}
+          {canUpload && (
+            <div className="shrink-0">
+              {driveError && (
+                <div className="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
+                  ⚠️ {driveError}
+                </div>
+              )}
+              <FileUpload isUploading={isUploading} uploadProgress={uploadProgress} onUpload={handleUpload} />
+            </div>
+          )}
+
+          {/* ── Links section ────────────────────────────────────────────── */}
+          {showLinks && projectLinks.length > 0 && (
+            <section className="shrink-0 space-y-3">
+              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">External Links</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {projectLinks
+                  .filter(l => !searchQuery.trim() || l.title?.toLowerCase().includes(searchQuery.toLowerCase()) || l.url.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map(link => (
+                    <LinkCard key={link.id} link={link} onEdit={link => { setEditingLink(link); setLinkDialogOpen(true); }} />
+                  ))}
+              </div>
+            </section>
+          )}
+
+          {/* ── Native project files (task attachments, mockups, videos) ── */}
+          {(showTasks || showMockups || showVideos) && filteredNativeFiles.length > 0 && (
+            <section className="shrink-0 space-y-3">
+              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">Project Attachments</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredNativeFiles
+                  .filter(f => (f.source === 'task' && showTasks) || (f.source === 'mockup' && showMockups) || (f.source === 'video' && showVideos))
+                  .map(file => (
+                    <button
+                      key={file.id}
+                      onClick={() => handleNativeFileClick(file)}
+                      className="group p-5 rounded-xl border border-border-color bg-glass hover:bg-glass-light hover:border-primary/50 transition-all text-left cursor-pointer"
+                    >
+                      <p className="font-semibold text-text-primary truncate group-hover:text-primary transition-colors">{file.name}</p>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary px-2 py-1 bg-background/50 rounded-md">
+                          {file.source.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+              </div>
+            </section>
+          )}
+
+          {/* ── Drive Files section ──────────────────────────────────────── */}
+          {showDrive && (
+            <section className="flex flex-col flex-1 min-h-0 gap-2">
+              <div className="flex items-center justify-between shrink-0">
+                <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">Google Drive Files</h3>
+                <span className="text-xs text-text-secondary">{displayDriveFiles.length} file{displayDriveFiles.length !== 1 ? 's' : ''}</span>
+              </div>
+
+              {/* Bulk actions bar */}
+              <BulkActionsBar
+                count={bulk.count}
+                selectedIds={bulk.selectedIds}
+                onClearAll={bulk.clearAll}
+                onBulkDelete={handleBulkDelete}
+                onBulkDownload={handleBulkDownload}
+              />
+
+              {/* Filter panel + chips */}
+              <div className="shrink-0">
+                <FilterPanel {...filterState} availableOwners={availableOwners} />
+                <FilterChips {...filterState} />
+              </div>
+
+              {/* Sort headers for list/timeline */}
+              {(viewMode === 'list' || viewMode === 'timeline') && (
+                <div className="flex items-center gap-3 px-3 pb-1 text-xs font-medium text-text-secondary uppercase tracking-wider shrink-0">
+                  <div className="w-5" />
+                  <button className="flex-1 text-left hover:text-text-primary transition-colors flex items-center gap-1" onClick={() => handleSort('name')}>
+                    Name <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
+                  </button>
+                  <span className="w-12 text-right hidden sm:block">Type</span>
+                  <button className="w-16 text-right hover:text-text-primary transition-colors flex items-center justify-end gap-1" onClick={() => handleSort('size')}>
+                    Size <SortIcon col="size" sortKey={sortKey} sortDir={sortDir} />
+                  </button>
+                  <button className="w-20 text-right hover:text-text-primary transition-colors flex items-center justify-end gap-1" onClick={() => handleSort('modifiedTime')}>
+                    Modified <SortIcon col="modifiedTime" sortKey={sortKey} sortDir={sortDir} />
+                  </button>
+                  <div className="w-8" />
+                </div>
+              )}
+
+              {/* File grid / list / kanban / gallery / timeline */}
+              <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+                {driveLoading ? (
+                  <div className="flex flex-col items-center justify-center h-40 gap-3 text-text-secondary">
+                    <svg className="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    <p className="text-sm">{isRefreshing ? 'Refreshing…' : 'Loading Drive files…'}</p>
+                  </div>
+                ) : displayDriveFiles.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-40 gap-2 text-text-secondary">
+                    <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                    </svg>
+                    <p className="text-sm">{searchQuery ? 'No Drive files match your search' : 'No Drive files yet'}</p>
+                  </div>
+                ) : viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4">
+                    {displayDriveFiles.map(file => (
+                      <FileCard
+                        key={file.id}
+                        file={file}
+                        viewMode="grid"
+                        isSelected={bulk.isSelected(file.id)}
+                        onToggleSelect={bulk.toggle}
+                        onShare={setFileToShare}
+                        onDelete={handleDelete}
+                        onClick={() => setSelectedFile(file)}
+                      />
+                    ))}
+                  </div>
+                ) : viewMode === 'kanban' ? (
+                  <KanbanView files={displayDriveFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
+                ) : viewMode === 'gallery' ? (
+                  <GalleryView files={displayDriveFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
+                ) : viewMode === 'timeline' ? (
+                  <TimelineView files={displayDriveFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
+                ) : (
+                  <div className="flex flex-col pb-4">
+                    {displayDriveFiles.map(file => (
+                      <FileCard
+                        key={file.id}
+                        file={file}
+                        viewMode="list"
+                        isSelected={bulk.isSelected(file.id)}
+                        onToggleSelect={bulk.toggle}
+                        onShare={setFileToShare}
+                        onDelete={handleDelete}
+                        onClick={() => setSelectedFile(file)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Empty state when nothing matches the active source filter */}
+          {!showDrive && filteredNativeFiles.length === 0 && projectLinks.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
+              <span className="text-4xl mb-3">📁</span>
+              <p className="font-medium">No files found matching your criteria.</p>
+              <p className="text-sm opacity-60 mt-1">Try adjusting your source filter or search.</p>
+            </div>
+          )}
         </div>
-    );
+      </div>
+
+      {/* ── Metadata Sidebar ──────────────────────────────────────────────────── */}
+      {selectedFile && (
+        <MetadataSidebar
+          file={selectedFile}
+          onClose={() => setSelectedFile(null)}
+          onDelete={handleDelete}
+        />
+      )}
+
+      {/* ── Share Dialog ──────────────────────────────────────────────────────── */}
+      <ShareDialog file={fileToShare} onClose={() => setFileToShare(null)} />
+
+      {/* ── Add/Edit Link Dialog ─────────────────────────────────────────────── */}
+      <AddLinkDialog
+        projectId={safeProjectId}
+        open={linkDialogOpen}
+        onClose={() => { setLinkDialogOpen(false); setEditingLink(undefined); }}
+        editingLink={editingLink ? { id: editingLink.id, url: editingLink.url, title: editingLink.title, favicon: editingLink.favicon } : undefined}
+      />
+    </div>
+  );
 };
 
 export default ProjectFilesPage;

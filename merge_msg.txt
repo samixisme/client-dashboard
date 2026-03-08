@@ -1,0 +1,12 @@
+Merge branch 'feature/meilisearch-upgrade' into main
+
+This merge introduces the integrated Meilisearch functionality across both the API and client, providing a robust global search feature for the dashboard.
+
+Key Additions & Changes:
+- **Search UI Components:** Added `GlobalSearch`, `SearchResults`, `ResultCard`, and `FacetFilter` inside `src/components/search`.
+- **Hooks & Utils:** Introduced `useSearch` hook and `searchHighlight.ts` for client-side state handling and query highlighting.
+- **API Architecture:** Set up multiple new API endpoints and controllers for search operations, including `searchRoutes.ts`, `searchAnalytics.ts`, `searchChangeTracking.ts`, `searchConfig.ts`, `searchState.ts`, and `searchFallback.ts`.
+- **Background Jobs:** Created `searchSyncJob` to keep the Meilisearch database index aligned with primary records.
+- **Admin Scripts:** Added utility scripts to clear, configure, reindex, check status, and swap search indexes.
+- **Documentation:** Added a new comprehensive `docs/SEARCH.md`.
+- **System Changes:** Modified `package.json` to include necessary search dependencies and integrated the task processing workflows.

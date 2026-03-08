@@ -1,0 +1,5 @@
+fix(deploy): pre-create cache directory and ignore meilisearch sync timeout
+
+- Created `.cache/drive` in `deploy.yml` tarball to prevent `ENOENT` crashes when backend writes drive cache on boot.
+- Added `continue-on-error: true` to the Meilisearch Sync step in `deploy.yml` so that if the Docker container is unreachable, it logs a warning instead of failing the deployment.
+- Hardened `utils/driveCache.ts` directory creation to suppress non-critical FS creation errors.
