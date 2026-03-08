@@ -178,6 +178,8 @@ jobs:
           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_DRIVE_ROOT_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_ROOT_FOLDER_ID }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           SOCIAL_OAUTH_REDIRECT_URI: ${{ secrets.SOCIAL_OAUTH_REDIRECT_URI }}
@@ -220,7 +222,11 @@ jobs:
             "PAYMENTER_API_KEY=${PAYMENTER_API_KEY}" \
             "MEILISEARCH_HOST=${MEILISEARCH_HOST}" \
             "MEILISEARCH_MASTER_KEY=${MEILISEARCH_MASTER_KEY}" \
+            "GOOGLE_DRIVE_ROOT_FOLDER_ID=${GOOGLE_DRIVE_ROOT_FOLDER_ID}" \
             > /tmp/deploy.env
+
+          # Append the JSON payload wrapped in single quotes so multiline dotenv parsers don't break
+          echo "GOOGLE_SERVICE_ACCOUNT_JSON='${GOOGLE_SERVICE_ACCOUNT_JSON}'" >> /tmp/deploy.env
           scp -i ~/.ssh/deploy_key /tmp/deploy.env \
             ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env
           echo "✅ .env written from GitHub Secrets"
