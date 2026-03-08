@@ -7,7 +7,11 @@ const CACHE_DIR = path.join(__dirname, '..', '.cache', 'drive');
 // Ensure cache directory exists
 const ensureCacheDir = (): void => {
   if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
+    try {
+      fs.mkdirSync(CACHE_DIR, { recursive: true });
+    } catch (e) {
+      console.error(`Failed to create cache directory at ${CACHE_DIR}:`, e);
+    }
   }
 };
 
