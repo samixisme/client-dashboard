@@ -86,21 +86,7 @@ const getSortableTime = (dateStr: string | undefined): number => {
     return isNaN(time) ? 0 : time;
 };
 
-const FormInput = React.memo(({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) => (
-    <div>
-        <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
-        <input {...props} className="appearance-none block w-full px-3 py-2 border border-border-color bg-glass-light placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-    </div>
-));
 
-const FormSelect = React.memo(({ label, children, ...props }: { label: string, children: React.ReactNode } & React.SelectHTMLAttributes<HTMLSelectElement>) => (
-    <div>
-        <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
-        <select {...props} className="appearance-none block w-full px-3 py-2 border border-border-color bg-glass-light placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
-            {children}
-        </select>
-    </div>
-));
 
 export const CalendarPage = () => {
     // Get current user from context

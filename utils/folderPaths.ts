@@ -24,7 +24,7 @@ export const getBrandFolderPath = (brandName: string | undefined): string => {
 /**
  * Get standard subfolder paths within a project
  */
-export const getProjectSubfolderPath = (brandName: string | undefined, projectName: string | undefined, subfolder: 'Tasks' | 'Feedback' | 'Mockups' | 'Videos' | 'Deliverables'): string => {
+export const getProjectSubfolderPath = (brandName: string | undefined, projectName: string | undefined, subfolder: 'Tasks' | 'Feedback' | 'Mockups' | 'Videos' | 'Deliverables' | 'Roadmap'): string => {
   const projectPath = getProjectFolderPath(brandName, projectName);
   return `${projectPath}/${subfolder}`;
 };

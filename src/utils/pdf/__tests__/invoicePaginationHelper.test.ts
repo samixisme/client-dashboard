@@ -1,5 +1,5 @@
 import { calculateTotalPages } from '../invoicePaginationHelper';
-import { ItemCategory } from '../../../types';
+import { ItemCategory } from '../../../../types';
 
 // Alias to match the type used in the implementation
 type InvoiceItemCategory = ItemCategory;
