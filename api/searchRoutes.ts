@@ -202,7 +202,7 @@ async function fetchAndAggregateEvents(days: number, type: 'search' | 'click', f
   const snapshot = await query.limit(5000).get(); 
 
   const counts: Record<string, number> = {};
-  snapshot.forEach(doc => {
+  snapshot.forEach((doc: adminFirestore.QueryDocumentSnapshot) => {
     const data = doc.data();
     if (data.queryHash) {
       counts[data.queryHash] = (counts[data.queryHash] || 0) + 1;
