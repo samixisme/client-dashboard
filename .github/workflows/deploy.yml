@@ -225,8 +225,10 @@ jobs:
             "GOOGLE_DRIVE_ROOT_FOLDER_ID=${GOOGLE_DRIVE_ROOT_FOLDER_ID}" \
             > /tmp/deploy.env
 
-          # Append the JSON payload wrapped in single quotes so multiline dotenv parsers don't break
-          echo "GOOGLE_SERVICE_ACCOUNT_JSON='${GOOGLE_SERVICE_ACCOUNT_JSON}'" >> /tmp/deploy.env
+          # Provide secrets to bash environment safely using step env vars,
+          # then serialize JSON fields correctly into the env payload via jq
+          # so no special characters or quotes break the dotenv parser.
+          echo "GOOGLE_SERVICE_ACCOUNT_JSON=$(jq -n --arg json "$GOOGLE_SERVICE_ACCOUNT_JSON" '$json')" >> /tmp/deploy.env
           scp -i ~/.ssh/deploy_key /tmp/deploy.env \
             ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env
           echo "✅ .env written from GitHub Secrets"
