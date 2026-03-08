@@ -27,9 +27,8 @@ const StatusBadge: React.FC<{ status: ProjectStatus }> = ({ status }) => {
   );
 };
 
-const ProjectCard: React.FC<{ project: Project; index: number }> = ({ project, index }) => {
-    const { data } = useData();
-    const navigate = useNavigate();
+// Bolt Performance Optimization: ProjectCard is memoized to prevent re-renders when parent states (like filter/search) change.
+const ProjectCard = React.memo<{ project: Project; index: number; data: ReturnType<typeof useData>['data']; navigate: ReturnType<typeof useNavigate> }>(({ project, index, data, navigate }) => {
     const { brands, users, tasks, moodboards, boards, roadmapItems } = data;
 
     const brand = brands.find(b => b.id === project.brandId);
@@ -140,7 +139,65 @@ const ProjectCard: React.FC<{ project: Project; index: number }> = ({ project, i
             </div>
         </div>
     );
-};
+});
+
+// Bolt Performance Optimization: Extracted ProjectRow component to avoid full remounts on parent render
+// and memoized to prevent unnecessary recalculation of derived data (tasks, boards, progress) for unchanged projects.
+const ProjectRow = React.memo<{ project: Project; index: number; data: ReturnType<typeof useData>['data']; navigate: ReturnType<typeof useNavigate> }>(({ project, index, data, navigate }) => {
+    const brand = data.brands.find((b: Brand) => b.id === project.brandId);
+    const projectBoards = data.boards.filter((b: Board) => b.projectId === project.id);
+    const memberIds = [...new Set(projectBoards.flatMap((b: Board) => b.member_ids))];
+    const members = data.users.filter((m: User) => memberIds.includes(m.id));
+    const projectBoardIds = projectBoards.map((b: Board) => b.id);
+    const projectTasks = data.tasks.filter((t: Task) => projectBoardIds.includes(t.boardId));
+    const completedTasks = projectTasks.filter((t: Task) => t.stageId === 'stage-3').length;
+    const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0;
+    const mainBoard = projectBoards[0];
+    const boardCount = projectBoards.length;
+    const roadmapCount = data.roadmapItems.filter((r: import('../types').RoadmapItem) => r.projectId === project.id).length;
+
+    return (
+        <tr
+            className="border-b border-border-color/30 last:border-b-0 hover:bg-glass-light/60 hover:shadow-lg transition-all duration-300 animate-fade-in-up group/row cursor-pointer"
+            style={{ animationDelay: `${index * 30}ms` }}
+            onClick={() => mainBoard && navigate(`/board/${mainBoard.id}`)}
+        >
+            <td className="p-5">
+                <div className="flex items-center gap-3">
+                     {project.logoUrl && <img src={project.logoUrl} alt={project.name} className="w-10 h-10 rounded-lg object-cover border border-border-color shadow-sm transition-all duration-300 group-hover/row:scale-110 group-hover/row:shadow-lg group-hover/row:border-primary/50" />}
+                    <div className="flex items-center gap-2">
+                        <Link to={mainBoard ? `/board/${mainBoard.id}` : '#'} className="font-bold text-text-primary group-hover/row:text-primary transition-colors duration-300">{project.name}</Link>
+                        <StatusBadge status={project.status} />
+                    </div>
+                </div>
+            </td>
+            <td className="p-5 text-text-secondary font-medium">{brand?.name}</td>
+            <td className="p-5">
+                <div className="flex -space-x-2.5">
+                    {members.slice(0, 4).map((member: User) => (
+                        <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-9 h-9 rounded-full border-2 border-surface shadow-md transition-all duration-300 hover:scale-125 hover:z-10 hover:border-primary hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
+                    ))}
+                </div>
+            </td>
+            <td className="p-5 text-text-secondary font-semibold">{projectTasks.length}</td>
+            <td className="p-5 text-text-secondary font-semibold">{boardCount}</td>
+            <td className="p-5 text-text-secondary font-semibold">{roadmapCount}</td>
+            <td className="p-5">
+                <div className="flex items-center gap-3">
+                    <div className="w-28 bg-glass-light/50 backdrop-blur-sm rounded-full h-2 overflow-hidden border border-border-color/30 shadow-inner">
+                        <div
+                            className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)] relative overflow-hidden"
+                            style={{ width: `${progress}%` }}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                        </div>
+                    </div>
+                    <span className="text-sm font-bold text-text-primary min-w-[3rem]">{Math.round(progress)}%</span>
+                </div>
+            </td>
+        </tr>
+    );
+});
 
 
 const ProjectsPage = () => {
@@ -413,7 +470,7 @@ const ProjectsPage = () => {
       {viewMode === 'board' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProjects.map((project, index) => (
-                <ProjectCard key={project.id} project={project} index={index} />
+                <ProjectCard key={project.id} project={project} index={index} data={data} navigate={navigate} />
             ))}
         </div>
       ) : (
@@ -431,62 +488,9 @@ const ProjectsPage = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredProjects.map((project, index) => {
-                         const brand = data.brands.find(b => b.id === project.brandId);
-                         const projectBoards = data.boards.filter(b => b.projectId === project.id);
-                         const memberIds = [...new Set(projectBoards.flatMap(b => b.member_ids))];
-                         const members = data.users.filter(m => memberIds.includes(m.id));
-                         const projectBoardIds = projectBoards.map(b => b.id);
-                         const projectTasks = data.tasks.filter(t => projectBoardIds.includes(t.boardId));
-                         const completedTasks = projectTasks.filter(t => t.stageId === 'stage-3').length;
-                         const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0;
-                         const mainBoard = projectBoards[0];
-                         const boardCount = projectBoards.length;
-                         const roadmapCount = data.roadmapItems.filter(r => r.projectId === project.id).length;
-
-                        return (
-                            <tr
-                                key={project.id}
-                                className="border-b border-border-color/30 last:border-b-0 hover:bg-glass-light/60 hover:shadow-lg transition-all duration-300 animate-fade-in-up group/row cursor-pointer"
-                                style={{ animationDelay: `${index * 30}ms` }}
-                                onClick={() => mainBoard && navigate(`/board/${mainBoard.id}`)}
-                            >
-                                <td className="p-5">
-                                    <div className="flex items-center gap-3">
-                                         {project.logoUrl && <img src={project.logoUrl} alt={project.name} className="w-10 h-10 rounded-lg object-cover border border-border-color shadow-sm transition-all duration-300 group-hover/row:scale-110 group-hover/row:shadow-lg group-hover/row:border-primary/50" />}
-                                        <div className="flex items-center gap-2">
-                                            <Link to={mainBoard ? `/board/${mainBoard.id}` : '#'} className="font-bold text-text-primary group-hover/row:text-primary transition-colors duration-300">{project.name}</Link>
-                                            <StatusBadge status={project.status} />
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="p-5 text-text-secondary font-medium">{brand?.name}</td>
-                                <td className="p-5">
-                                    <div className="flex -space-x-2.5">
-                                        {members.slice(0, 4).map(member => (
-                                            <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-9 h-9 rounded-full border-2 border-surface shadow-md transition-all duration-300 hover:scale-125 hover:z-10 hover:border-primary hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
-                                        ))}
-                                    </div>
-                                </td>
-                                <td className="p-5 text-text-secondary font-semibold">{projectTasks.length}</td>
-                                <td className="p-5 text-text-secondary font-semibold">{boardCount}</td>
-                                <td className="p-5 text-text-secondary font-semibold">{roadmapCount}</td>
-                                <td className="p-5">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-28 bg-glass-light/50 backdrop-blur-sm rounded-full h-2 overflow-hidden border border-border-color/30 shadow-inner">
-                                            <div
-                                                className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)] relative overflow-hidden"
-                                                style={{ width: `${progress}%` }}
-                                            >
-                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-                                            </div>
-                                        </div>
-                                        <span className="text-sm font-bold text-text-primary min-w-[3rem]">{Math.round(progress)}%</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        )
-                    })}
+                    {filteredProjects.map((project, index) => (
+                        <ProjectRow key={project.id} project={project} index={index} data={data} navigate={navigate} />
+                    ))}
                 </tbody>
             </table>
         </div>
