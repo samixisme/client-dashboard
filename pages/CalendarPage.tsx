@@ -13,6 +13,24 @@ import { toast } from 'sonner';
 type CalendarView = 'day' | 'week' | 'month' | '3-month' | '6-month';
 const eventTypes: CalendarEvent['type'][] = ['task', 'invoice', 'estimate', 'roadmap_item', 'manual', 'comment'];
 
+// ⚡ Bolt Performance Optimization: Extract FormInput and FormSelect
+// Prevents complete unmounting and remounting on every parent render when typing in form inputs
+const FormInput = React.memo(({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) => (
+    <div>
+        <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+        <input {...props} className="appearance-none block w-full px-3 py-2 border border-border-color bg-glass-light placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+    </div>
+));
+
+const FormSelect = React.memo(({ label, children, ...props }: { label: string, children: React.ReactNode } & React.SelectHTMLAttributes<HTMLSelectElement>) => (
+    <div>
+        <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+        <select {...props} className="appearance-none block w-full px-3 py-2 border border-border-color bg-glass-light placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+            {children}
+        </select>
+    </div>
+));
+
 interface LaidOutEvent extends CalendarEvent {
     startCol: number;
     span: number;
@@ -928,22 +946,6 @@ export const CalendarPage = () => {
             </div>
         );
     };
-
-    const FormInput = ({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) => (
-        <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
-            <input {...props} className="appearance-none block w-full px-3 py-2 border border-border-color bg-glass-light placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-        </div>
-    );
-
-    const FormSelect = ({ label, children, ...props }: { label: string, children: React.ReactNode } & React.SelectHTMLAttributes<HTMLSelectElement>) => (
-        <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
-            <select {...props} className="appearance-none block w-full px-3 py-2 border border-border-color bg-glass-light placeholder-text-secondary text-text-primary rounded-lg focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
-                {children}
-            </select>
-        </div>
-    );
 
     // --- Main component return ---
      return (
