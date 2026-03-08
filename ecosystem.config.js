@@ -2,6 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'client-dashboard-api',
+      cwd: '/home/clientdash/client-dashboard/current',
       script: './dist-server/api/server.js',
       instances: 2,
       exec_mode: 'cluster',
@@ -62,6 +63,7 @@ module.exports = {
     },
     {
       name: 'client-dashboard-nginx',
+      cwd: '/home/clientdash/client-dashboard/current',
       script: 'serve',
       // BUG FIX: serve v14+ dropped the -l shorthand — must use --listen.
       // Also -s must come before the path for SPA mode to apply correctly.

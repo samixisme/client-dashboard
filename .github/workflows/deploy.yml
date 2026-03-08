@@ -262,9 +262,10 @@ jobs:
 
             cd ${{ env.DEPLOY_PATH }}/current
 
-            # Reload API server with new code and env. Fallback to start if first deploy.
-            pm2 reload ecosystem.config.js --env production --update-env \
-              || pm2 start ecosystem.config.js --env production
+            # We forcefully delete the old processes to clear corrupted symlink state,
+            # then start fresh with the new absolute cwd declarations in ecosystem.config.js.
+            pm2 delete client-dashboard-api client-dashboard-nginx || true
+            pm2 start ecosystem.config.js --env production
 
             # Save the process list so PM2 can resurrect after server reboot
             pm2 save --force
