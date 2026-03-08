@@ -21,12 +21,21 @@ interface CacheEntry<T> {
 }
 
 /**
+ * Sanitize cache key for valid fs representation
+ */
+const getCachePath = (key: string): string => {
+  // Convert colons, slashes, backslashes to hyphens to avoid unintended nested directories
+  const safeName = key.replace(/[:/\\]/g, '-');
+  return path.join(CACHE_DIR, `${safeName}.json`);
+};
+
+/**
  * Get cached data
  */
 export const getDriveCache = async <T>(key: string): Promise<T | null> => {
   try {
     ensureCacheDir();
-    const filePath = path.join(CACHE_DIR, `${key}.json`);
+    const filePath = getCachePath(key);
 
     if (!fs.existsSync(filePath)) {
       return null;
@@ -59,7 +68,7 @@ export const setDriveCache = async <T>(
 ): Promise<void> => {
   try {
     ensureCacheDir();
-    const filePath = path.join(CACHE_DIR, `${key}.json`);
+    const filePath = getCachePath(key);
 
     if (data === null || ttl === 0) {
       // Delete cache entry
@@ -84,14 +93,14 @@ export const setDriveCache = async <T>(
  * Get folder ID from cache (24-hour TTL)
  */
 export const getFolderCache = async (folderPath: string): Promise<string | null> => {
-  return getDriveCache<string>(`folder:${folderPath}`);
+  return getDriveCache<string>(`folder-${folderPath}`);
 };
 
 /**
  * Set folder ID in cache (24-hour TTL)
  */
 export const setFolderCache = async (folderPath: string, folderId: string): Promise<void> => {
-  await setDriveCache(`folder:${folderPath}`, folderId, 86400); // 24 hours
+  await setDriveCache(`folder-${folderPath}`, folderId, 86400); // 24 hours
 };
 
 /**
