@@ -33,17 +33,19 @@ const app = initializeApp(firebaseConfig);
 // Stopgap: set VITE_APPCHECK_DEBUG_TOKEN to a UUID registered in Firebase Console.
 const initAppCheck = () => {
   const siteKey = import.meta.env.VITE_FIREBASE_APP_CHECK_SITE_KEY;
-  // Only initialize AppCheck with ReCaptcha when we have a real site key.
-  // The debug token (if set) is picked up automatically by the SDK via the
-  // FIREBASE_APPCHECK_DEBUG_TOKEN global — we don't need to construct a
-  // ReCaptchaV3Provider in that case, and doing so with an empty siteKey
-  // throws "Missing required parameters: sitekey".
-  if (!siteKey) return null;
+  // If neither a real siteKey nor a debug token is set, skip App Check entirely.
+  if (!siteKey && !debugToken) return null;
 
   try {
+    // When only the debug token is set (no real siteKey), we still must call
+    // initializeAppCheck — if we skip it, no AppCheck token is sent and Firestore
+    // rejects ALL requests (enforcement is on). The SDK uses the debug token
+    // global instead of actually calling ReCaptcha, so the siteKey is not used.
+    // We pass a placeholder to satisfy the ReCaptchaV3Provider constructor validation.
+    const effectiveSiteKey = siteKey || 'debug-placeholder-not-used-in-debug-mode';
     return initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(siteKey),
-      isTokenAutoRefreshEnabled: true
+      provider: new ReCaptchaV3Provider(effectiveSiteKey),
+      isTokenAutoRefreshEnabled: true,
     });
   } catch {
     return null;
