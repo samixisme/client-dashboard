@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { Brand, BrandLogo } from '../types';
+
+// ⚡ Bolt Performance Optimization: Extract SelectionCard from BrandAssetCreatorPage
+// Prevents complete unmounting and remounting of image cards on every parent render
+const SelectionCard = React.memo(({ title, imageUrl, isSelected, onClick }: { title: string, imageUrl: string, isSelected: boolean, onClick: () => void }) => (
+    <button onClick={onClick} className={`bg-glass rounded-lg border-2 text-left overflow-hidden transition-all duration-200 ${isSelected ? 'border-primary shadow-lg' : 'border-border-color hover:border-primary/50'}`}>
+        <img src={imageUrl} alt={title} className="w-full h-32 object-cover" />
+        <div className="p-3">
+            <p className={`font-semibold text-sm ${isSelected ? 'text-primary' : 'text-text-primary'}`}>{title}</p>
+        </div>
+    </button>
+));
 import Stepper from '../components/ai/Stepper';
 // AI generation is now performed on the backend to avoid exposing API keys in client
 import { ArrowLeftIcon } from '../components/icons/ArrowLeftIcon';
@@ -215,15 +226,6 @@ const BrandAssetCreatorPage = () => {
             setIsGenerating(false);
         }
     };
-
-    const SelectionCard = ({ title, imageUrl, isSelected, onClick }: { title: string, imageUrl: string, isSelected: boolean, onClick: () => void }) => (
-        <button onClick={onClick} className={`bg-glass rounded-lg border-2 text-left overflow-hidden transition-all duration-200 ${isSelected ? 'border-primary shadow-lg' : 'border-border-color hover:border-primary/50'}`}>
-            <img src={imageUrl} alt={title} className="w-full h-32 object-cover" />
-            <div className="p-3">
-                <p className={`font-semibold text-sm ${isSelected ? 'text-primary' : 'text-text-primary'}`}>{title}</p>
-            </div>
-        </button>
-    );
 
     if (isGenerating) {
         return (
