@@ -31,6 +31,152 @@ const roadmapViewOptions: ViewOption[] = [
     { id: 'timeline', name: 'Timeline', Icon: TimelineIcon },
 ];
 
+interface KanbanViewComponentProps {
+    projectTasks: Task[];
+    roadmapItems: RoadmapItem[];
+    tasksByRoadmapItem: Map<string, Task[]>;
+    addingTaskTo: string | null;
+    setAddingTaskTo: (id: string | null) => void;
+    handleKanbanDragEnd: (result: DropResult) => void;
+    handleCreateTask: (roadmapItemId: string, title: string) => void;
+    handleCreateItem: () => void;
+    isEditMode: boolean;
+    setSelectedTask: (task: Task) => void;
+    setItemActionState: (state: { anchorEl: HTMLElement | null, item: RoadmapItem | null }) => void;
+}
+
+// ⚡ Bolt Optimization: Extracted KanbanViewComponent out of RoadmapPage to prevent full unmount/remount on every parent render.
+// Wrapped in React.memo to prevent unnecessary re-renders when props haven't changed.
+// This significantly improves performance when dragging tasks or editing inputs.
+const KanbanViewComponent = React.memo(({
+    projectTasks,
+    roadmapItems,
+    tasksByRoadmapItem,
+    addingTaskTo,
+    setAddingTaskTo,
+    handleKanbanDragEnd,
+    handleCreateTask,
+    handleCreateItem,
+    isEditMode,
+    setSelectedTask,
+    setItemActionState
+}: KanbanViewComponentProps) => {
+    const [newTaskTitle, setNewTaskTitle] = useState('');
+
+    const handleAddTaskClick = (roadmapItemId: string) => {
+        if(newTaskTitle.trim()){
+            handleCreateTask(roadmapItemId, newTaskTitle);
+            setNewTaskTitle('');
+        }
+    };
+
+    const unassignedTasks = projectTasks.filter(task => !task.roadmapItemId).sort((a,b) => (a.order || 0) - (b.order || 0));
+    const sortedRoadmapItems = [...roadmapItems].sort((a,b) => (a.order || 0) - (b.order || 0));
+
+    const allColumns = [...sortedRoadmapItems, { id: 'unassigned', title: 'Unassigned Tasks' }];
+
+    return (
+        <DragDropContext onDragEnd={handleKanbanDragEnd}>
+            <div className="flex gap-6 h-full w-full p-1">
+                {allColumns.map((item, index) => {
+                    const isUnassignedColumn = item.id === 'unassigned';
+                    const columnTasks = isUnassignedColumn ? unassignedTasks : (tasksByRoadmapItem.get(item.id) || []);
+                    const pattern = !isUnassignedColumn ? (item as RoadmapItem).backgroundPattern ? backgroundPatterns.find(p => p.id === (item as RoadmapItem).backgroundPattern)?.style : {} : {};
+
+                    return (
+                        <div
+                            key={item.id}
+                            className="w-80 flex-shrink-0 flex flex-col bg-glass/40 backdrop-blur-xl rounded-2xl border border-border-color shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in"
+                            style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                            <div className="flex justify-between items-center p-4 rounded-t-2xl backdrop-blur-xl bg-white/5 border-b border-border-color/50" style={{...pattern}}>
+                                <div className="flex items-center gap-2">
+                                    <h2 className="font-bold text-lg text-text-primary">{item.title}</h2>
+                                    <span className="text-xs font-bold text-text-secondary bg-white/5 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm border border-[rgba(163,230,53,0.1)]">{columnTasks.length}</span>
+                                </div>
+                                {!isUnassignedColumn && (
+                                    <div className="flex items-center gap-2 text-text-secondary">
+                                        <button onClick={() => setAddingTaskTo(item.id)} className="hover:text-text-primary p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110"><AddIcon className="h-5 w-5"/></button>
+                                        <button onClick={(e) => { e.stopPropagation(); setItemActionState({ anchorEl: e.currentTarget, item: item as RoadmapItem }); }} className="hover:text-text-primary p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110"><SettingsIcon className="h-5 w-5"/></button>
+                                    </div>
+                                )}
+                            </div>
+                            <Droppable droppableId={item.id} type="TASK">
+                                {(provided, snapshot) => (
+                                    <div
+                                        {...provided.droppableProps}
+                                        ref={provided.innerRef}
+                                        className={`p-3 flex-1 flex flex-col overflow-hidden transition-all duration-200 ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
+                                    >
+                                        <div className="flex flex-col gap-3 flex-grow overflow-y-auto pr-1 custom-scrollbar">
+                                            {columnTasks.length === 0 && addingTaskTo !== item.id && (
+                                                <div className="flex-1 flex items-center justify-center text-sm text-text-secondary p-6 text-center bg-glass-light/30 rounded-lg border border-dashed border-border-color">
+                                                    No tasks here.
+                                                </div>
+                                            )}
+                                            {columnTasks.map((task, taskIndex) => (
+                                                <Draggable key={task.id} draggableId={task.id} index={taskIndex}>
+                                                    {(provided, snapshot) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            onClick={() => setSelectedTask(task)}
+                                                            className={`transition-all duration-200 ${snapshot.isDragging ? 'opacity-50 rotate-2' : 'hover:scale-[1.02]'}`}
+                                                        >
+                                                            <TaskCard task={task} />
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                        </div>
+
+                                        {addingTaskTo === item.id && !isUnassignedColumn ? (
+                                            <div className="mt-3 p-1 animate-scale-in">
+                                                <Textarea
+                                                    value={newTaskTitle}
+                                                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                                                    placeholder="Enter task title..."
+                                                    className="w-full p-3 text-sm rounded-lg bg-glass-light backdrop-blur-sm border border-border-color focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm"
+                                                    rows={2} autoFocus
+                                                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddTaskClick(item.id))}
+                                                />
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <button onClick={() => handleAddTaskClick(item.id)} className="px-4 py-2 bg-primary text-background font-bold text-sm rounded-lg hover:bg-primary-hover hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md">Add Task</button>
+                                                    <button onClick={() => setAddingTaskTo(null)} className="text-2xl text-text-secondary hover:text-text-primary leading-none p-1 rounded-md hover:bg-glass-light transition-all duration-200">&times;</button>
+                                                </div>
+                                            </div>
+                                        ) : !isUnassignedColumn && (
+                                            <button onClick={() => setAddingTaskTo(item.id)} className="mt-2 w-full text-left text-sm p-3 rounded-lg text-text-secondary hover:bg-glass-light hover:text-text-primary flex items-center gap-2 transition-all duration-200 border border-transparent hover:border-border-color">
+                                                <AddIcon className="h-4 w-4"/> Add Task
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </Droppable>
+                        </div>
+                    );
+                })}
+                 {isEditMode && (
+                    <div className="flex-shrink-0 h-full flex items-center animate-slide-in-left" style={{ animationDelay: `${allColumns.length * 100}ms` }}>
+                        <button
+                            onClick={handleCreateItem}
+                            className="flex flex-col items-center justify-center gap-3 w-20 h-48 bg-primary hover:bg-primary-hover rounded-2xl transition-all duration-300 text-background shadow-lg hover:shadow-2xl hover:scale-105 border border-primary-hover"
+                        >
+                            <div className="bg-background/20 rounded-lg p-2 backdrop-blur-sm">
+                                <AddIcon className="h-6 w-6" />
+                            </div>
+                            <span className="font-bold text-sm [writing-mode:vertical-rl] rotate-180 tracking-wider">Add Item</span>
+                        </button>
+                    </div>
+                 )}
+            </div>
+        </DragDropContext>
+    );
+});
+KanbanViewComponent.displayName = 'KanbanViewComponent';
+
 const RoadmapPage = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const { data, forceUpdate } = useData();
@@ -300,122 +446,6 @@ const RoadmapPage = () => {
 
     const roadmapTitle = `${project.name} Roadmap`;
 
-    const KanbanViewComponent = () => {
-        const [newTaskTitle, setNewTaskTitle] = useState('');
-
-        const handleAddTaskClick = (roadmapItemId: string) => {
-            if(newTaskTitle.trim()){
-                handleCreateTask(roadmapItemId, newTaskTitle);
-                setNewTaskTitle('');
-            }
-        };
-
-        const unassignedTasks = projectTasks.filter(task => !task.roadmapItemId).sort((a,b) => (a.order || 0) - (b.order || 0));
-        const sortedRoadmapItems = [...roadmapItems].sort((a,b) => (a.order || 0) - (b.order || 0));
-
-        const allColumns = [...sortedRoadmapItems, { id: 'unassigned', title: 'Unassigned Tasks' }];
-
-        return (
-            <DragDropContext onDragEnd={handleKanbanDragEnd}>
-                <div className="flex gap-6 h-full w-full p-1">
-                    {allColumns.map((item, index) => {
-                        const isUnassignedColumn = item.id === 'unassigned';
-                        const columnTasks = isUnassignedColumn ? unassignedTasks : (tasksByRoadmapItem.get(item.id) || []);
-                        const pattern = !isUnassignedColumn ? (item as RoadmapItem).backgroundPattern ? backgroundPatterns.find(p => p.id === (item as RoadmapItem).backgroundPattern)?.style : {} : {};
-
-                        return (
-                            <div
-                                key={item.id}
-                                className="w-80 flex-shrink-0 flex flex-col bg-glass/40 backdrop-blur-xl rounded-2xl border border-border-color shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in"
-                                style={{ animationDelay: `${index * 100}ms` }}
-                            >
-                                <div className="flex justify-between items-center p-4 rounded-t-2xl backdrop-blur-xl bg-white/5 border-b border-border-color/50" style={{...pattern}}>
-                                    <div className="flex items-center gap-2">
-                                        <h2 className="font-bold text-lg text-text-primary">{item.title}</h2>
-                                        <span className="text-xs font-bold text-text-secondary bg-white/5 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm border border-[rgba(163,230,53,0.1)]">{columnTasks.length}</span>
-                                    </div>
-                                    {!isUnassignedColumn && (
-                                        <div className="flex items-center gap-2 text-text-secondary">
-                                            <button onClick={() => setAddingTaskTo(item.id)} className="hover:text-text-primary p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110"><AddIcon className="h-5 w-5"/></button>
-                                            <button onClick={(e) => { e.stopPropagation(); setItemActionState({ anchorEl: e.currentTarget, item: item as RoadmapItem }); }} className="hover:text-text-primary p-1.5 rounded-lg hover:bg-white/10 transition-all duration-200 hover:scale-110"><SettingsIcon className="h-5 w-5"/></button>
-                                        </div>
-                                    )}
-                                </div>
-                                <Droppable droppableId={item.id} type="TASK">
-                                    {(provided, snapshot) => (
-                                        <div
-                                            {...provided.droppableProps}
-                                            ref={provided.innerRef}
-                                            className={`p-3 flex-1 flex flex-col overflow-hidden transition-all duration-200 ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
-                                        >
-                                            <div className="flex flex-col gap-3 flex-grow overflow-y-auto pr-1 custom-scrollbar">
-                                                {columnTasks.length === 0 && addingTaskTo !== item.id && (
-                                                    <div className="flex-1 flex items-center justify-center text-sm text-text-secondary p-6 text-center bg-glass-light/30 rounded-lg border border-dashed border-border-color">
-                                                        No tasks here.
-                                                    </div>
-                                                )}
-                                                {columnTasks.map((task, taskIndex) => (
-                                                    <Draggable key={task.id} draggableId={task.id} index={taskIndex}>
-                                                        {(provided, snapshot) => (
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                                onClick={() => setSelectedTask(task)}
-                                                                className={`transition-all duration-200 ${snapshot.isDragging ? 'opacity-50 rotate-2' : 'hover:scale-[1.02]'}`}
-                                                            >
-                                                                <TaskCard task={task} />
-                                                            </div>
-                                                        )}
-                                                    </Draggable>
-                                                ))}
-                                                {provided.placeholder}
-                                            </div>
-
-                                            {addingTaskTo === item.id && !isUnassignedColumn ? (
-                                                <div className="mt-3 p-1 animate-scale-in">
-                                                    <Textarea
-                                                        value={newTaskTitle}
-                                                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                                                        placeholder="Enter task title..."
-                                                        className="w-full p-3 text-sm rounded-lg bg-glass-light backdrop-blur-sm border border-border-color focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm"
-                                                        rows={2} autoFocus
-                                                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddTaskClick(item.id))}
-                                                    />
-                                                    <div className="flex items-center gap-2 mt-2">
-                                                        <button onClick={() => handleAddTaskClick(item.id)} className="px-4 py-2 bg-primary text-background font-bold text-sm rounded-lg hover:bg-primary-hover hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md">Add Task</button>
-                                                        <button onClick={() => setAddingTaskTo(null)} className="text-2xl text-text-secondary hover:text-text-primary leading-none p-1 rounded-md hover:bg-glass-light transition-all duration-200">&times;</button>
-                                                    </div>
-                                                </div>
-                                            ) : !isUnassignedColumn && (
-                                                <button onClick={() => setAddingTaskTo(item.id)} className="mt-2 w-full text-left text-sm p-3 rounded-lg text-text-secondary hover:bg-glass-light hover:text-text-primary flex items-center gap-2 transition-all duration-200 border border-transparent hover:border-border-color">
-                                                    <AddIcon className="h-4 w-4"/> Add Task
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </Droppable>
-                            </div>
-                        );
-                    })}
-                     {isEditMode && (
-                        <div className="flex-shrink-0 h-full flex items-center animate-slide-in-left" style={{ animationDelay: `${allColumns.length * 100}ms` }}>
-                            <button
-                                onClick={handleCreateItem}
-                                className="flex flex-col items-center justify-center gap-3 w-20 h-48 bg-primary hover:bg-primary-hover rounded-2xl transition-all duration-300 text-background shadow-lg hover:shadow-2xl hover:scale-105 border border-primary-hover"
-                            >
-                                <div className="bg-background/20 rounded-lg p-2 backdrop-blur-sm">
-                                    <AddIcon className="h-6 w-6" />
-                                </div>
-                                <span className="font-bold text-sm [writing-mode:vertical-rl] rotate-180 tracking-wider">Add Item</span>
-                            </button>
-                        </div>
-                     )}
-                </div>
-            </DragDropContext>
-        );
-    };
-
     return (
         <div className="h-full flex flex-col">
             <style>{`
@@ -569,7 +599,19 @@ const RoadmapPage = () => {
             <div className="flex-1 flex flex-col overflow-hidden">
                 {viewMode === 'kanban' ? (
                     <div className="flex-1 overflow-x-auto pb-4 -mx-1">
-                        <KanbanViewComponent />
+                        <KanbanViewComponent
+                            projectTasks={projectTasks}
+                            roadmapItems={roadmapItems}
+                            tasksByRoadmapItem={tasksByRoadmapItem}
+                            addingTaskTo={addingTaskTo}
+                            setAddingTaskTo={setAddingTaskTo}
+                            handleKanbanDragEnd={handleKanbanDragEnd}
+                            handleCreateTask={handleCreateTask}
+                            handleCreateItem={handleCreateItem}
+                            isEditMode={isEditMode}
+                            setSelectedTask={setSelectedTask}
+                            setItemActionState={setItemActionState}
+                        />
                     </div>
                 ) : projectStartDate && projectEndDate ? (
                      <TimelineView 
