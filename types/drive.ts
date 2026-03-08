@@ -11,6 +11,7 @@ export interface DriveFile {
   createdTime?: string;
   modifiedTime?: string;
   parents?: string[];
+  owners?: { displayName?: string; emailAddress?: string }[];
 }
 
 export interface DriveFolder {
@@ -19,6 +20,13 @@ export interface DriveFolder {
   mimeType: 'application/vnd.google-apps.folder';
   createdTime?: string;
   modifiedTime?: string;
+}
+
+export interface DriveRevision {
+  id: string;
+  modifiedTime?: string;
+  size?: string;
+  lastModifyingUser?: { displayName?: string; emailAddress?: string };
 }
 
 export interface DriveListResponse {
@@ -43,7 +51,52 @@ export interface DriveStatsResponse {
   lastResetDate: string;
 }
 
-export type DriveViewMode = 'list' | 'grid';
+export type DriveViewMode = 'list' | 'grid' | 'kanban' | 'gallery' | 'timeline';
+
+// ─── Filter types ─────────────────────────────────────────────────────────────
+
+export type DriveFileType = 'image' | 'video' | 'document' | 'pdf' | 'archive' | 'code' | 'other';
+export type DriveSizeRange = '<1mb' | '1-10mb' | '10-100mb' | '>100mb';
+export type DriveDateRange = 'today' | 'last7' | 'last30' | 'last90' | 'custom';
+
+export interface FileFilter {
+  fileType?: DriveFileType[];
+  sizeRange?: DriveSizeRange;
+  dateRange?: DriveDateRange;
+  customDateStart?: string;
+  customDateEnd?: string;
+  owner?: string[];
+  tags?: string[];
+  folder?: string[];
+}
+
+// ─── Tag types ─────────────────────────────────────────────────────────────────
+
+export interface FileTag {
+  id: string;
+  name: string;
+  color?: string;
+  createdBy: string;
+  createdAt: string;
+  fileCount?: number;
+}
+
+export interface FileTagAssignment {
+  id: string;
+  fileId: string;
+  tagId: string;
+  assignedAt: string;
+  assignedBy: string;
+}
+
+// ─── Star / Favorites ─────────────────────────────────────────────────────────
+
+export interface StarredFile {
+  id: string;       // same as fileId (for convenience)
+  fileId: string;   // Google Drive file ID
+  userId: string;   // 'local' for anonymous dev mode
+  starredAt: string; // ISO timestamp
+}
 
 export type DriveFileSortKey = 'name' | 'modifiedTime' | 'size';
 export type DriveFileSortDir = 'asc' | 'desc';

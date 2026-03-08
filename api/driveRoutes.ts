@@ -8,10 +8,25 @@ import {
   deleteFile,
   getFileMetadata,
   getFolderId,
+  getFileRevisions,
+  revertFileRevision,
+  renameFile,
+  moveFile,
 } from '../utils/googleDrive';
 import { getQuotaStats } from '../utils/driveQuota';
 import { optionalApiKeyAuth } from './authMiddleware';
-import { createFolderBodySchema } from './schemas/driveSchemas';
+import {
+  createFolderBodySchema,
+  renameFileBodySchema,
+  moveFileBodySchema,
+  bulkDeleteBodySchema,
+  bulkMoveBodySchema,
+  createTagBodySchema,
+  assignTagBodySchema,
+  logActivityBodySchema,
+} from './schemas/driveSchemas';
+import { getFirestore } from './firebaseAdmin';
+import logger from './logger';
 
 const router = Router();
 
@@ -140,6 +155,84 @@ router.get('/files/:fileId/meta', async (req: Request, res: Response) => {
   }
 });
 
+// ─── GET /api/drive/files/:fileId/revisions ─────────────────────────────────
+// Get version history for a file
+router.get('/files/:fileId/revisions', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ error: 'Invalid file ID' });
+  }
+  try {
+    const revisions = await getFileRevisions(fileId);
+    return res.json({ revisions });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to get file revisions' });
+  }
+});
+
+// ─── POST /api/drive/files/:fileId/revisions/:revisionId/revert ─────────────
+// Revert a file to a specific revision
+router.post('/files/:fileId/revisions/:revisionId/revert', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  const revisionId = String(req.params.revisionId);
+  
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ error: 'Invalid file ID' });
+  }
+  if (!revisionId) {
+    return res.status(400).json({ error: 'Invalid revision ID' });
+  }
+  
+  try {
+    await revertFileRevision(fileId, revisionId);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to revert file revision' });
+  }
+});
+
+// ─── PATCH /api/drive/files/:fileId/rename ──────────────────────────────────
+// Rename a file or folder
+router.patch('/files/:fileId/rename', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ error: 'Invalid file ID' });
+  }
+
+  const validation = renameFileBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: validation.error.errors[0].message });
+  }
+
+  try {
+    await renameFile(fileId, validation.data.name);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to rename file' });
+  }
+});
+
+// ─── POST /api/drive/files/:fileId/move ─────────────────────────────────────
+// Move a file or folder to a new location
+router.post('/files/:fileId/move', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ error: 'Invalid file ID' });
+  }
+
+  const validation = moveFileBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ error: validation.error.errors[0].message });
+  }
+
+  try {
+    await moveFile(fileId, validation.data.folderId);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to move file' });
+  }
+});
+
 // ─── POST /api/drive/upload ───────────────────────────────────────────────────
 // Upload a file. Body: multipart/form-data with field "file" and optional "folder"
 router.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
@@ -243,6 +336,340 @@ router.get('/stats', (_req: Request, res: Response) => {
     return res.json(stats);
   } catch (error) {
     return res.status(500).json({ error: 'Failed to get stats' });
+  }
+});
+
+// ─── GET /api/drive/files/recent ────────────────────────────────────────────
+// Return the last 10 files sorted by modifiedTime descending
+router.get('/files/recent', async (_req: Request, res: Response) => {
+  try {
+    await initializeDrive();
+    const items = await listFiles('');
+    const files = items
+      .filter((f: { mimeType: string }) => f.mimeType !== 'application/vnd.google-apps.folder')
+      .sort((a: { modifiedTime?: string }, b: { modifiedTime?: string }) => {
+        const ta = a.modifiedTime ? new Date(a.modifiedTime).getTime() : 0;
+        const tb = b.modifiedTime ? new Date(b.modifiedTime).getTime() : 0;
+        return tb - ta;
+      })
+      .slice(0, 10);
+    return res.json({ success: true, data: { files } });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Failed to fetch recent files' });
+  }
+});
+
+// ─── POST /api/drive/files/bulk/delete ──────────────────────────────────────
+// Delete multiple files. Body: { fileIds: string[] }
+router.post('/files/bulk/delete', async (req: Request, res: Response) => {
+  const validation = bulkDeleteBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: validation.error.errors[0].message });
+  }
+  const { fileIds } = validation.data;
+  try {
+    await initializeDrive();
+    const results = await Promise.allSettled(fileIds.map((id) => deleteFile(id)));
+    const deleted = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    return res.json({ success: true, data: { deleted, failed, total: fileIds.length } });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Bulk delete failed' });
+  }
+});
+
+// ─── POST /api/drive/files/bulk/move ────────────────────────────────────────
+// Move multiple files to a folder. Body: { fileIds: string[], folderId: string }
+router.post('/files/bulk/move', async (req: Request, res: Response) => {
+  const validation = bulkMoveBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: validation.error.errors[0].message });
+  }
+  const { fileIds, folderId } = validation.data;
+  try {
+    await initializeDrive();
+    const results = await Promise.allSettled(fileIds.map((id) => moveFile(id, folderId)));
+    const moved = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    return res.json({ success: true, data: { moved, failed, total: fileIds.length } });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Bulk move failed' });
+  }
+});
+
+// ─── GET /api/drive/files/:fileId/share ─────────────────────────────────────
+// Generate a shareable download link for a file (no Drive API call needed)
+router.get('/files/:fileId/share', (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  if (!FILE_ID_RE.test(fileId)) {
+    return res.status(400).json({ success: false, error: 'Invalid file ID' });
+  }
+  const shareUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  return res.json({ success: true, data: { shareUrl, fileId } });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ─── TAG MANAGEMENT (DES-122) ───────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+
+// POST /api/drive/tags — Create a new tag
+router.post('/tags', async (req: Request, res: Response) => {
+  const validation = createTagBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: validation.error.errors[0].message });
+  }
+  try {
+    const db = getFirestore();
+    const { name, color, projectId } = validation.data;
+
+    // Idempotent: check for duplicate tag name in the same project
+    const existingSnap = await db.collection('fileTags')
+      .where('name', '==', name)
+      .where('projectId', '==', projectId || 'default')
+      .limit(1)
+      .get();
+    if (!existingSnap.empty) {
+      const existing = existingSnap.docs[0];
+      return res.json({ success: true, data: { id: existing.id, ...existing.data() } });
+    }
+
+    const tagData = {
+      name,
+      color: color || 'red',
+      projectId: projectId || 'default',
+      createdBy: 'local',
+      createdAt: new Date().toISOString(),
+      fileCount: 0,
+    };
+    const docRef = await db.collection('fileTags').add(tagData);
+    logger.info({ tagId: docRef.id, name }, 'Tag created');
+    return res.status(201).json({ success: true, data: { id: docRef.id, ...tagData } });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to create tag');
+    return res.status(500).json({ success: false, error: 'Failed to create tag' });
+  }
+});
+
+// GET /api/drive/tags — List tags for a project
+router.get('/tags', async (req: Request, res: Response) => {
+  try {
+    const db = getFirestore();
+    const projectId = String(req.query.projectId || 'default');
+    const snap = await db.collection('fileTags')
+      .where('projectId', '==', projectId)
+      .orderBy('name')
+      .get();
+    const tags = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return res.json({ success: true, data: { tags } });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to list tags');
+    return res.status(500).json({ success: false, error: 'Failed to list tags' });
+  }
+});
+
+// DELETE /api/drive/tags/:tagId — Delete a tag and cascade remove assignments
+router.delete('/tags/:tagId', async (req: Request, res: Response) => {
+  const tagId = String(req.params.tagId);
+  if (!tagId) {
+    return res.status(400).json({ success: false, error: 'Tag ID is required' });
+  }
+  try {
+    const db = getFirestore();
+    // Delete all assignments for this tag
+    const assignmentsSnap = await db.collection('fileTagMappings')
+      .where('tagId', '==', tagId)
+      .get();
+    const batch = db.batch();
+    assignmentsSnap.docs.forEach((doc) => batch.delete(doc.ref));
+    batch.delete(db.collection('fileTags').doc(tagId));
+    await batch.commit();
+    logger.info({ tagId }, 'Tag deleted with cascade');
+    return res.json({ success: true });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to delete tag');
+    return res.status(500).json({ success: false, error: 'Failed to delete tag' });
+  }
+});
+
+// POST /api/drive/files/:fileId/tags — Assign a tag to a file
+router.post('/files/:fileId/tags', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  const validation = assignTagBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: validation.error.errors[0].message });
+  }
+  try {
+    const db = getFirestore();
+    const { tagId } = validation.data;
+
+    // Check if already assigned
+    const existingSnap = await db.collection('fileTagMappings')
+      .where('fileId', '==', fileId)
+      .where('tagId', '==', tagId)
+      .limit(1)
+      .get();
+    if (!existingSnap.empty) {
+      return res.json({ success: true, data: { message: 'Tag already assigned' } });
+    }
+
+    const assignmentData = {
+      fileId,
+      tagId,
+      assignedAt: new Date().toISOString(),
+      assignedBy: 'local',
+    };
+    const docRef = await db.collection('fileTagMappings').add(assignmentData);
+
+    // Increment fileCount on the tag
+    await db.collection('fileTags').doc(tagId).update({
+      fileCount: (await db.collection('fileTagMappings').where('tagId', '==', tagId).get()).size,
+    });
+
+    return res.status(201).json({ success: true, data: { id: docRef.id, ...assignmentData } });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to assign tag');
+    return res.status(500).json({ success: false, error: 'Failed to assign tag' });
+  }
+});
+
+// DELETE /api/drive/files/:fileId/tags/:tagId — Remove a tag from a file
+router.delete('/files/:fileId/tags/:tagId', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  const tagId = String(req.params.tagId);
+  try {
+    const db = getFirestore();
+    const snap = await db.collection('fileTagMappings')
+      .where('fileId', '==', fileId)
+      .where('tagId', '==', tagId)
+      .get();
+    const batch = db.batch();
+    snap.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+
+    // Update fileCount on the tag
+    try {
+      await db.collection('fileTags').doc(tagId).update({
+        fileCount: (await db.collection('fileTagMappings').where('tagId', '==', tagId).get()).size,
+      });
+    } catch { /* tag may have been deleted */ }
+
+    return res.json({ success: true });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to remove tag');
+    return res.status(500).json({ success: false, error: 'Failed to remove tag' });
+  }
+});
+
+// GET /api/drive/files/:fileId/tags — Get tags for a specific file
+router.get('/files/:fileId/tags', async (req: Request, res: Response) => {
+  const fileId = String(req.params.fileId);
+  try {
+    const db = getFirestore();
+    const mappingsSnap = await db.collection('fileTagMappings')
+      .where('fileId', '==', fileId)
+      .get();
+    const tagIds = mappingsSnap.docs.map((doc) => doc.data().tagId as string);
+    if (tagIds.length === 0) {
+      return res.json({ success: true, data: { tags: [] } });
+    }
+    // Fetch tag details
+    const tagsSnap = await Promise.all(
+      tagIds.map((id) => db.collection('fileTags').doc(id).get())
+    );
+    const tags = tagsSnap
+      .filter((doc) => doc.exists)
+      .map((doc) => ({ id: doc.id, ...doc.data() }));
+    return res.json({ success: true, data: { tags } });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to get file tags');
+    return res.status(500).json({ success: false, error: 'Failed to get file tags' });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ─── ACTIVITY LOG (DES-93) ──────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+
+// POST /api/drive/activity — Log an activity event
+router.post('/activity', async (req: Request, res: Response) => {
+  const validation = logActivityBodySchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({ success: false, error: validation.error.errors[0].message });
+  }
+  try {
+    const db = getFirestore();
+    const activityData = {
+      ...validation.data,
+      projectId: validation.data.projectId || 'default',
+      timestamp: new Date().toISOString(),
+    };
+    const docRef = await db.collection('fileActivity').add(activityData);
+    return res.status(201).json({ success: true, data: { id: docRef.id } });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to log activity');
+    return res.status(500).json({ success: false, error: 'Failed to log activity' });
+  }
+});
+
+// GET /api/drive/activity — Get recent activity
+router.get('/activity', async (req: Request, res: Response) => {
+  try {
+    const db = getFirestore();
+    const projectId = String(req.query.projectId || 'default');
+    const limit = Math.min(parseInt(String(req.query.limit || '50'), 10), 100);
+    const snap = await db.collection('fileActivity')
+      .where('projectId', '==', projectId)
+      .orderBy('timestamp', 'desc')
+      .limit(limit)
+      .get();
+    const activities = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return res.json({ success: true, data: { activities } });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to fetch activity log');
+    return res.status(500).json({ success: false, error: 'Failed to fetch activity' });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ─── STORAGE QUOTA (DES-117) ────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+
+// GET /api/drive/storage — Get Google Drive storage quota
+router.get('/storage', async (_req: Request, res: Response) => {
+  try {
+    await initializeDrive();
+    // Use the google drive about API to get storage quota
+    const { google } = await import('googleapis');
+    const drive = google.drive('v3');
+    const about = await drive.about.get({ fields: 'storageQuota,user' });
+    const quota = about.data.storageQuota;
+    if (!quota) {
+      return res.json({
+        success: true,
+        data: {
+          used: 0,
+          total: 0,
+          usedInDrive: 0,
+          usedInTrash: 0,
+          percentUsed: 0,
+        },
+      });
+    }
+    const used = parseInt(quota.usage || '0', 10);
+    const total = parseInt(quota.limit || '0', 10);
+    return res.json({
+      success: true,
+      data: {
+        used,
+        total,
+        usedInDrive: parseInt(quota.usageInDrive || '0', 10),
+        usedInTrash: parseInt(quota.usageInDriveTrash || '0', 10),
+        percentUsed: total > 0 ? Math.round((used / total) * 100) : 0,
+      },
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to fetch storage quota');
+    return res.status(500).json({ success: false, error: 'Failed to fetch storage quota' });
   }
 });
 

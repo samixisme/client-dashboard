@@ -1,0 +1,92 @@
+≡ƒÅ╖  Brief: Enhanced Files Management System - Google Drive Integration (e941a9fc-f682-495b-92ce-f7c68c4a48ef)
+Listing tasks from: https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan (https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan)
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé Task: #DES-89 - Implement tag editing in metadata sidebar Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+[90mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[90mΓöé[39m ID:                [90mΓöé[39m DES-89                                                                         [90mΓöé[39m
+[90mΓöé[39m Title:             [90mΓöé[39m Implement tag editing in metadata sidebar                                      [90mΓöé[39m
+[90mΓöé[39m Status:            [90mΓöé[39m Γùï pending                                                                      [90mΓöé[39m
+[90mΓöé[39m Priority:          [90mΓöé[39m high                                                                           [90mΓöé[39m
+[90mΓöé[39m Dependencies:      [90mΓöé[39m None                                                                           [90mΓöé[39m
+[90mΓöé[39m Complexity:        [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Category:          [90mΓöé[39m ≡ƒöº development                                                                 [90mΓöé[39m
+[90mΓöé[39m Skills:            [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Description:       [90mΓöé[39m Add tag management functionality to the MetadataSidebar component. The sidebar [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m should:                                                                        [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m     * Display existing tags as color-coded chips/badges specific to the file   [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m     * Show an "Add tag" button/input field for adding new tags                 [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m     * Support tag removal by clicking an X on individual tag chips             [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m     * Fetch available tags from Firestore to provide a tag list for selection  [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m     * Support autocomplete when adding tags (suggest existing tags first, allΓÇª [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m creating new ones)                                                             [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m     * Save tag changes to Firestore in real-time (update the file's tags arraΓÇª [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m     * Show loading state while saving tag changes                              [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m     * Handle Firestore write errors gracefully with user feedback              [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m This feature should integrate with the sibling task "Files can be organized    [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m with folders and tags" which manages the Firestore tag schema, but the sidebar [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m is responsible for the inline edit UX within the file detail view.             [90mΓöé[39m
+[90mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Implementation Details:                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Summary                                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Add tag management UI within the metadata sidebar allowing users to view, add, and remove      Γöé
+Γöé   tags specific to files.                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Implementation Approach                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Create tag display section in MetadataSidebar with color-coded chips                        Γöé
+Γöé   2. Import/use useFileTags hook (or create if not exists) to fetch and manage file tags         Γöé
+Γöé   3. Implement tag input with autocomplete dropdown (suggest existing tags first)                Γöé
+Γöé   4. Add tag removal via X button on chips                                                       Γöé
+Γöé   5. Connect to Firestore to save tag changes                                                    Γöé
+Γöé   6. Add loading spinner during save operations                                                  Γöé
+Γöé   7. Implement error handling with user-friendly error messages                                  Γöé
+Γöé   8. Test with multiple tag scenarios                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   Acceptance Criteria                                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Tags are displayed as color-coded chips within the sidebar metadata section                  Γöé
+Γöé   * User can add new tags via input field with autocomplete suggestions from existing tags       Γöé
+Γöé   * User can remove tags by clicking X button on tag chips; removal updates Firestore            Γöé
+Γöé   * Tag changes are persisted to Firestore with proper error handling                            Γöé
+Γöé   * Loading state displays while tag changes are being saved                                     Γöé
+Γöé   * Autocomplete prioritizes existing tags and allows custom tag creation                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Technical Constraints                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Must use Firestore for tag storage/retrieval                                                 Γöé
+Γöé   * Tag colors must be consistent across the app                                                 Γöé
+Γöé   * Must handle concurrent tag updates without conflicts                                         Γöé
+Γöé   * Autocomplete must be performant with debouncing                                              Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Γ£ô Acceptance Criteria:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   ΓÿÉ Tags are displayed as color-coded chips within the sidebar metadata section                  Γöé
+Γöé   ΓÿÉ User can add new tags via input field with autocomplete suggestions from existing tags       Γöé
+Γöé   ΓÿÉ User can remove tags by clicking X button on tag chips; removal updates Firestore            Γöé
+Γöé   ΓÿÉ Tag changes are persisted to Firestore with proper error handling                            Γöé
+Γöé   ΓÿÉ Loading state displays while tag changes are being saved                                     Γöé
+Γöé   ΓÿÉ Autocomplete prioritizes existing tags and allows custom tag creation                        Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Suggested Actions:                                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Run task-master set-status --id=DES-89 --status=in-progress to start working                Γöé
+Γöé   2. Run task-master expand --id=DES-89 to break down into subtasks                              Γöé
+Γöé   3. Run task-master update-task --id=DES-89 --prompt="..." to update details                    Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»

@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DriveFolder } from '../../types/drive';
 
 interface FolderSidebarProps {
   folders: DriveFolder[];
   currentPath: string;
   onNavigate: (path: string) => void;
+  onMoveFile?: (fileId: string, folderPath: string) => Promise<void>;
+  onCreateFolder?: (name: string) => Promise<void>;
 }
 
 const PINNED_FOLDERS = [
@@ -20,23 +22,76 @@ const FolderIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const FolderSidebar: React.FC<FolderSidebarProps> = ({ folders, currentPath, onNavigate }) => {
+const FolderSidebar: React.FC<FolderSidebarProps> = ({ 
+  folders, currentPath, onNavigate, onMoveFile, onCreateFolder 
+}) => {
+  const [dragHover, setDragHover] = useState<string | null>(null);
+
+  const handleDragOver = (e: React.DragEvent, path: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragHover(path);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragHover(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetPath: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragHover(null);
+    try {
+      const rawData = e.dataTransfer.getData('application/json');
+      if (!rawData) return;
+      const parsed = JSON.parse(rawData);
+      if (parsed && parsed.id && onMoveFile) {
+        await onMoveFile(parsed.id, targetPath);
+      }
+    } catch { /* ignore drop parse error */ }
+  };
+
+  const handleNewFolder = () => {
+    const name = window.prompt("Enter new folder name:");
+    if (name && name.trim() && onCreateFolder) {
+      onCreateFolder(name.trim());
+    }
+  };
+
   return (
-    <aside className="w-44 flex-shrink-0 flex flex-col gap-1">
-      <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider px-2 mb-1">
-        Quick Access
-      </p>
+    <aside className="w-44 shrink-0 flex flex-col gap-1">
+      <div className="flex items-center justify-between px-2 mb-1">
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+          Quick Access
+        </p>
+        <button 
+          onClick={handleNewFolder}
+          className="text-text-secondary hover:text-primary transition-colors"
+          title="New Folder"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
+      </div>
       {PINNED_FOLDERS.map(({ label, path }) => (
         <button
           key={path}
           onClick={() => onNavigate(path)}
+          onDragOver={(e) => handleDragOver(e, path)}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, path)}
           className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-left transition-colors ${
-            currentPath === path
-              ? 'bg-primary text-background font-medium'
-              : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
+            dragHover === path 
+              ? 'bg-primary/20 border border-primary/50 text-primary'
+              : currentPath === path
+                ? 'bg-primary text-background font-medium'
+                : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
           }`}
         >
-          <FolderIcon className="w-4 h-4 flex-shrink-0" />
+          <FolderIcon className="w-4 h-4 shrink-0" />
           {label}
         </button>
       ))}
@@ -52,13 +107,18 @@ const FolderSidebar: React.FC<FolderSidebarProps> = ({ folders, currentPath, onN
               <button
                 key={folder.id}
                 onClick={() => onNavigate(folderPath)}
+                onDragOver={(e) => handleDragOver(e, folderPath)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, folderPath)}
                 className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-left transition-colors ${
-                  currentPath === folderPath
-                    ? 'bg-primary text-background font-medium'
-                    : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
+                  dragHover === folderPath
+                    ? 'bg-primary/20 border border-primary/50 text-primary'
+                    : currentPath === folderPath
+                      ? 'bg-primary text-background font-medium'
+                      : 'text-text-secondary hover:bg-glass-light hover:text-text-primary'
                 }`}
               >
-                <FolderIcon className="w-4 h-4 flex-shrink-0" />
+                <FolderIcon className="w-4 h-4 shrink-0" />
                 <span className="truncate">{folder.name}</span>
               </button>
             );

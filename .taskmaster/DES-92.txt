@@ -1,0 +1,100 @@
+≡ƒÅ╖  Brief: Enhanced Files Management System - Google Drive Integration (e941a9fc-f682-495b-92ce-f7c68c4a48ef)
+Listing tasks from: https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan (https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan)
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé Task: #DES-92 - Implement PDF preview showing first page Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+[90mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[90mΓöé[39m ID:                [90mΓöé[39m DES-92                                                                         [90mΓöé[39m
+[90mΓöé[39m Title:             [90mΓöé[39m Implement PDF preview showing first page                                       [90mΓöé[39m
+[90mΓöé[39m Status:            [90mΓöé[39m Γùï pending                                                                      [90mΓöé[39m
+[90mΓöé[39m Priority:          [90mΓöé[39m high                                                                           [90mΓöé[39m
+[90mΓöé[39m Dependencies:      [90mΓöé[39m None                                                                           [90mΓöé[39m
+[90mΓöé[39m Complexity:        [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Category:          [90mΓöé[39m ≡ƒöº development                                                                 [90mΓöé[39m
+[90mΓöé[39m Skills:            [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Description:       [90mΓöé[39m Create a PDF preview component using PDF.js library that renders the first     [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m page of a PDF file as an inline preview within file cards. Users should be     [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m able to see a preview thumbnail of the PDF's first page on hover, with the     [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m ability to click through to a full-page viewer modal. This enables quick       [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m visual identification of PDF files without opening them separately.            [90mΓöé[39m
+[90mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Implementation Details:                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Summary                                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Create a PDF preview component using PDF.js that renders the first page as an inline           Γöé
+Γöé   thumbnail with a modal viewer for browsing full PDF documents.                                 Γöé
+Γöé                                                                                                  Γöé
+Γöé   Implementation Approach                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Install and configure `react-pdf` or use `PDF.js` directly for rendering                    Γöé
+Γöé   2. Create `components/files/PDFPreview.tsx` component that:                                    Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Accepts PDF file URL from Google Drive                                                       Γöé
+Γöé   * Renders first page as a thumbnail preview                                                    Γöé
+Γöé   * Displays thumbnail with PDF icon overlay                                                     Γöé
+Γöé   * Shows page count (e.g., "1 of 12 pages")                                                     Γöé
+Γöé   * Implements error boundary for failed PDF loads                                               Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Create `components/files/PDFViewer.tsx` modal that:                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Displays full PDF viewer interface                                                           Γöé
+Γöé   * Renders current page with zoom controls                                                      Γöé
+Γöé   * Includes navigation buttons (previous/next page)                                             Γöé
+Γöé   * Shows page number indicator                                                                  Γöé
+Γöé   * Allows keyboard navigation (arrow keys)                                                      Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Implement lazy loading to defer PDF.js library load until needed                            Γöé
+Γöé   2. Add error handling for invalid or corrupted PDF files                                       Γöé
+Γöé                                                                                                  Γöé
+Γöé   Acceptance Criteria                                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * PDF files display a rendered first-page preview thumbnail within the file card               Γöé
+Γöé   * Clicking the preview opens a modal showing the full PDF viewer with the first page visible   Γöé
+Γöé   * PDF rendering uses PDF.js library with proper error handling if PDF is corrupted             Γöé
+Γöé   * Preview is lazy-loaded to avoid rendering all PDFs simultaneously                            Γöé
+Γöé   * Modal includes page navigation (next/previous) to browse through PDF pages                   Γöé
+Γöé                                                                                                  Γöé
+Γöé   Technical Constraints                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Use react-pdf library (version ^7.0.0) or PDF.js directly                                    Γöé
+Γöé   * Error boundary required to handle failed PDF rendering                                       Γöé
+Γöé   * Must support both Google Drive hosted PDFs and uploaded files                                Γöé
+Γöé   * Performance: lazy-load PDF.js worker file                                                    Γöé
+Γöé   * Accessibility: ARIA labels for viewer controls                                               Γöé
+Γöé                                                                                                  Γöé
+Γöé   Code Patterns to Follow                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Detect application/pdf MIME type                                                             Γöé
+Γöé   * Use React.Suspense for lazy-loaded PDF component                                             Γöé
+Γöé   * Implement error state UI for unsupported/corrupted PDFs                                      Γöé
+Γöé   * Follow existing modal and button component patterns                                          Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Γ£ô Acceptance Criteria:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   ΓÿÉ PDF files display a rendered first-page preview thumbnail within the file card               Γöé
+Γöé   ΓÿÉ Clicking the preview opens a modal showing the full PDF viewer with the first page visible   Γöé
+Γöé   ΓÿÉ PDF rendering uses PDF.js library with proper error handling if PDF is corrupted             Γöé
+Γöé   ΓÿÉ Preview is lazy-loaded to avoid rendering all PDFs simultaneously                            Γöé
+Γöé   ΓÿÉ Modal includes page navigation (next/previous) to browse through PDF pages                   Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Suggested Actions:                                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Run task-master set-status --id=DES-92 --status=in-progress to start working                Γöé
+Γöé   2. Run task-master expand --id=DES-92 to break down into subtasks                              Γöé
+Γöé   3. Run task-master update-task --id=DES-92 --prompt="..." to update details                    Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»

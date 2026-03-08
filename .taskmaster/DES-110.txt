@@ -1,0 +1,116 @@
+≡ƒÅ╖  Brief: Enhanced Files Management System - Google Drive Integration (e941a9fc-f682-495b-92ce-f7c68c4a48ef)
+Listing tasks from: https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan (https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan)
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé Task: #DES-110 - Create unified FilePreview router component Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+[90mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[90mΓöé[39m ID:                [90mΓöé[39m DES-110                                                                        [90mΓöé[39m
+[90mΓöé[39m Title:             [90mΓöé[39m Create unified FilePreview router component                                    [90mΓöé[39m
+[90mΓöé[39m Status:            [90mΓöé[39m Γùï pending                                                                      [90mΓöé[39m
+[90mΓöé[39m Priority:          [90mΓöé[39m high                                                                           [90mΓöé[39m
+[90mΓöé[39m Dependencies:      [90mΓöé[39m None                                                                           [90mΓöé[39m
+[90mΓöé[39m Complexity:        [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Category:          [90mΓöé[39m ≡ƒöº development                                                                 [90mΓöé[39m
+[90mΓöé[39m Skills:            [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Description:       [90mΓöé[39m Create a central FilePreview component that acts as a router, detecting file   [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m MIME types and rendering the appropriate preview component (image, PDF, video, [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m Office doc, or code). This component orchestrates all preview types and        [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m integrates with the file card system. It should handle fallback cases for      [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m unsupported file types and provide consistent UI across all preview types.     [90mΓöé[39m
+[90mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Implementation Details:                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Summary                                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Create a centralized FilePreview router component that detects file types and renders          Γöé
+Γöé   appropriate preview components, with fallback handling for unsupported formats.                Γöé
+Γöé                                                                                                  Γöé
+Γöé   Implementation Approach                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Create `components/files/FilePreview.tsx` component that:                                   Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Accepts file object with name, type, size, URL, and metadata                                 Γöé
+Γöé   * Detects file MIME type or extracts from file extension                                       Γöé
+Γöé   * Renders conditional logic to route to appropriate preview component                          Γöé
+Γöé   * Implements preview state management (showPreview, showModal)                                 Γöé
+Γöé   * Provides consistent wrapper UI (hover effects, loading states)                               Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Implement type detection logic:                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   - Image/* ΓåÆ ImagePreview                                                                       Γöé
+Γöé   - application/pdf ΓåÆ PDFPreview                                                                 Γöé
+Γöé   - Video/* ΓåÆ VideoPreview                                                                       Γöé
+Γöé   - Word/Excel/PowerPoint MIME types ΓåÆ OfficeDocumentPreview                                     Γöé
+Γöé   - Text/* or code file extensions ΓåÆ CodePreview                                                 Γöé
+Γöé   - Other ΓåÆ UnsupportedPreview fallback                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Create fallback component for unsupported types:                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Display file icon from Lucide React                                                          Γöé
+Γöé   * Show file type and size                                                                      Γöé
+Γöé   * Provide download button as alternative                                                       Γöé
+Γöé   * Optional: hide preview on hover                                                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Implement consistent styling:                                                               Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Glassmorphism hover effect                                                                   Γöé
+Γöé   * Loading skeleton while fetching preview                                                      Γöé
+Γöé   * Error state with retry option                                                                Γöé
+Γöé   * Responsive design for mobile                                                                 Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Export all preview child components from this file for centralized imports                  Γöé
+Γöé                                                                                                  Γöé
+Γöé   Acceptance Criteria                                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * FilePreview component correctly detects file type from MIME type or file extension           Γöé
+Γöé   * Routes to appropriate preview component based on file type (Image, PDF, Video, Office,       Γöé
+Γöé   Code)                                                                                          Γöé
+Γöé   * Renders unsupported file type indicator with file icon for unsupported formats               Γöé
+Γöé   * Preview state (hover/click) is managed at this component level                               Γöé
+Γöé   * Passes all necessary file metadata (name, size, URL, type) to child preview components       Γöé
+Γöé                                                                                                  Γöé
+Γöé   Technical Constraints                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Must maintain type safety with TypeScript (ensure proper typing of file metadata)            Γöé
+Γöé   * Lazy-load preview components with React.lazy() for performance                               Γöé
+Γöé   * Error boundaries recommended for preview rendering                                           Γöé
+Γöé   * Mobile-responsive preview triggers (tap instead of hover)                                    Γöé
+Γöé   * Performance: use memo to prevent unnecessary re-renders                                      Γöé
+Γöé                                                                                                  Γöé
+Γöé   Code Patterns to Follow                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Type guards for MIME type detection                                                          Γöé
+Γöé   * Conditional rendering based on file.type or file.name extension                              Γöé
+Γöé   * Use React.lazy() and Suspense for lazy loading child components                              Γöé
+Γöé   * Implement consistent error and loading UI pattern                                            Γöé
+Γöé   * Export preview type constants for reuse across codebase                                      Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Γ£ô Acceptance Criteria:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   ΓÿÉ FilePreview component correctly detects file type from MIME type or file extension           Γöé
+Γöé   ΓÿÉ Routes to appropriate preview component based on file type (Image, PDF, Video, Office,       Γöé
+Γöé   Code)                                                                                          Γöé
+Γöé   ΓÿÉ Renders unsupported file type indicator with file icon for unsupported formats               Γöé
+Γöé   ΓÿÉ Preview state (hover/click) is managed at this component level                               Γöé
+Γöé   ΓÿÉ Passes all necessary file metadata (name, size, URL, type) to child preview components       Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Suggested Actions:                                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Run task-master set-status --id=DES-110 --status=in-progress to start working               Γöé
+Γöé   2. Run task-master expand --id=DES-110 to break down into subtasks                             Γöé
+Γöé   3. Run task-master update-task --id=DES-110 --prompt="..." to update details                   Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»

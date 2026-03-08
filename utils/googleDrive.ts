@@ -304,7 +304,7 @@ export const getFileMetadata = async (fileId: string): Promise<any> => {
 
   const response = await drive.files.get({
     fileId: fileId,
-    fields: 'id, name, mimeType, size, webViewLink, webContentLink, createdTime, modifiedTime',
+    fields: 'id, name, mimeType, size, webViewLink, webContentLink, thumbnailLink, createdTime, modifiedTime, owners(displayName,emailAddress)',
     supportsAllDrives: true,
   });
 
@@ -312,6 +312,83 @@ export const getFileMetadata = async (fileId: string): Promise<any> => {
   await setDriveCache(`file:${fileId}`, response.data, 3600);
 
   return response.data;
+};
+
+/**
+ * Get file revisions
+ */
+export const getFileRevisions = async (fileId: string): Promise<any[]> => {
+  if (!drive) await initializeDrive();
+
+  const response = await drive.revisions.list({
+    fileId: fileId,
+    fields: 'revisions(id, modifiedTime, size, lastModifyingUser(displayName,emailAddress))',
+    pageSize: 10,
+  });
+
+  return response.data.revisions || [];
+};
+
+/**
+ * Revert file to a specific revision
+ */
+export const revertFileRevision = async (fileId: string, revisionId: string): Promise<any> => {
+  if (!drive) await initializeDrive();
+
+  const response = await drive.revisions.update({
+    fileId: fileId,
+    revisionId: revisionId,
+    requestBody: {}
+  });
+
+  return response.data;
+};
+
+/**
+ * Rename a file or folder
+ * @param fileId - ID of the file or folder to rename
+ * @param newName - The new name
+ */
+export const renameFile = async (fileId: string, newName: string): Promise<void> => {
+  if (!drive) await initializeDrive();
+
+  await drive.files.update({
+    fileId: fileId,
+    requestBody: { name: newName },
+    supportsAllDrives: true,
+  });
+
+  // Invalidating all caches is safest here, or specifically targeting
+  // getDriveCache(`file:${fileId}`) and any folder cache it belonged to.
+  // We'll just remove the specific file cache for now.
+  await setDriveCache(`file:${fileId}`, null, 0);
+};
+
+/**
+ * Move a file or folder to a new folder
+ * @param fileId - ID of the file to move
+ * @param newFolderId - Target folder ID
+ */
+export const moveFile = async (fileId: string, newFolderId: string): Promise<void> => {
+  if (!drive) await initializeDrive();
+
+  // Retrieve the existing parents to remove
+  const file = await drive.files.get({
+    fileId: fileId,
+    fields: 'parents',
+    supportsAllDrives: true,
+  });
+
+  const previousParents = file.data.parents ? file.data.parents.join(',') : '';
+
+  await drive.files.update({
+    fileId: fileId,
+    addParents: newFolderId,
+    removeParents: previousParents,
+    supportsAllDrives: true,
+  });
+
+  await setDriveCache(`file:${fileId}`, null, 0);
 };
 
 /**

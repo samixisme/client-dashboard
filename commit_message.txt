@@ -1,0 +1,12 @@
+feat: complete Google Drive integration features (tags, activity log, quota)
+
+This commit finalizes the integration of Google Drive features into the Enhanced Files Management System.
+
+Key additions and modifications include:
+- Metadata & Tags: Implemented TagManager and TagAutocomplete components for managing file tags.
+- Hook Integrations: Added useFileTags, useActivityLog, and useStorageQuota hooks to interact with backend services.
+- Activity Logging: Added ActivityLog component to track and display file-related actions.
+- Storage Management: Implemented StorageQuotaDisplay component to visualize current Google Drive storage usage and limits.
+- UI Updates: Updated MetadataSidebar and FilesPage to incorporate the newly created components for a unified user experience.
+- Backend Routes & Schemas: Extended driveRoutes.ts and driveSchemas.ts to support the new metadata, logging, and quota endpoints.
+- Utilities: Added tagColors.ts for consistent tag color formatting.

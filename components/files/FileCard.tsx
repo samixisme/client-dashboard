@@ -1,11 +1,17 @@
+import { DriveFile, DriveFileCategory, DriveViewMode, formatFileSize, formatRelativeTime, getFileCategory, MIME_LABELS } from '../../types/drive';
 import React, { useState, useEffect } from 'react';
-import { DriveFile, DriveFileCategory, formatFileSize, formatRelativeTime, getFileCategory, MIME_LABELS } from '../../types/drive';
-
+import FilePreview from './FilePreview';
+import StarButton from './StarButton';
 interface FileCardProps {
   file: DriveFile;
-  viewMode: 'list' | 'grid';
+  viewMode: DriveViewMode;
+  isSelected?: boolean;
+  onToggleSelect?: (fileId: string) => void;
+  onShare?: (file: DriveFile) => void;
   onDelete: (fileId: string) => Promise<void>;
+  onClick?: () => void;
 }
+
 
 const CategoryIcon: React.FC<{ mimeType: string; className?: string }> = ({ mimeType, className }) => {
   const category = getFileCategory(mimeType);
@@ -51,7 +57,9 @@ const iconColorMap: Record<DriveFileCategory, string> = {
   other:       'text-text-secondary',
 };
 
-const FileCard: React.FC<FileCardProps> = ({ file, viewMode, onDelete }) => {
+const FileCard: React.FC<FileCardProps> = ({ 
+  file, viewMode, isSelected, onToggleSelect, onShare, onDelete, onClick 
+}) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const category = getFileCategory(file.mimeType);
@@ -75,52 +83,132 @@ const FileCard: React.FC<FileCardProps> = ({ file, viewMode, onDelete }) => {
     setConfirmDelete(false);
   };
 
-  if (viewMode === 'grid') {
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(file));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  if (viewMode === 'grid' || viewMode === 'kanban' || viewMode === 'gallery') {
+    const isKanban = viewMode === 'kanban';
     return (
-      <div className="group relative flex flex-col gap-2 p-3 rounded-xl bg-glass border border-border-color hover:border-primary/40 hover:bg-glass-light transition-all">
-        <div className={`flex items-center justify-center h-14 ${iconColor}`}>
-          <CategoryIcon mimeType={file.mimeType} className="w-10 h-10" />
+      <div
+        draggable={!isKanban}
+        onDragStart={!isKanban ? handleDragStart : undefined}
+        onClick={onClick}
+        className={`group relative flex flex-col p-3 rounded-xl bg-glass border transition-all duration-300 ease-out cursor-pointer ${
+          isSelected 
+            ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/30' 
+            : 'border-border-color hover:border-primary/40 hover:bg-glass-light hover:shadow-lg'
+        }`}
+      >
+        {/* Checkbox Overlay */}
+        {onToggleSelect && (
+          <div className="absolute top-4 left-4 z-10" onClick={e => e.stopPropagation()}>
+            <input 
+              type="checkbox"
+              checked={isSelected || false}
+              onChange={() => onToggleSelect(file.id)}
+              className={`w-4 h-4 rounded border-border-color text-primary focus:ring-primary focus:ring-offset-background cursor-pointer transition-opacity ${
+                isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}
+            />
+          </div>
+        )}
+
+        {/* Preview Area */}
+        <div className="h-36 w-full -mx-3 -mt-3 mb-3 rounded-t-xl overflow-hidden bg-background/30 shrink-0 relative">
+          <div className="absolute inset-0 group-hover:scale-[1.02] transition-transform duration-300 ease-out">
+            <FilePreview file={file} />
+          </div>
+          {/* Type badge */}
+          <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-background/80 backdrop-blur-sm text-[9px] font-medium text-text-secondary uppercase tracking-wide">
+            {label}
+          </span>
         </div>
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-text-primary truncate" title={file.name}>{file.name}</p>
-          <p className="text-xs text-text-secondary">{formatFileSize(file.size)}</p>
+
+        {/* Info Area */}
+        <div className="min-w-0 flex flex-col flex-1 gap-0.5 pr-7">
+          <p className="text-xs font-medium text-text-primary line-clamp-2 leading-snug" title={file.name}>{file.name}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${iconColor}`} />
+            <span className="text-[10px] text-text-secondary">{formatFileSize(file.size)}</span>
+            {file.modifiedTime && (
+              <span className="text-[10px] text-text-secondary ml-auto">{formatRelativeTime(file.modifiedTime)}</span>
+            )}
+          </div>
+          {file.owners && file.owners[0]?.displayName && (
+            <p className="text-[10px] text-text-secondary/70 truncate mt-0.5">{file.owners[0].displayName}</p>
+          )}
         </div>
-        <FileActions
-          file={file}
-          menuOpen={menuOpen}
-          confirmDelete={confirmDelete}
-          onMenuToggle={() => { setMenuOpen(o => !o); setConfirmDelete(false); }}
-          onMenuClose={() => { setMenuOpen(false); setConfirmDelete(false); }}
-          onDelete={handleDelete}
-          label={label}
-        />
+
+        {/* Actions Area */}
+        <div className="absolute bottom-2.5 right-2 flex items-center gap-0.5">
+          <StarButton fileId={file.id} />
+          <FileActions
+            file={file}
+            menuOpen={menuOpen}
+            confirmDelete={confirmDelete}
+            onMenuToggle={() => { setMenuOpen(o => !o); setConfirmDelete(false); }}
+            onMenuClose={() => { setMenuOpen(false); setConfirmDelete(false); }}
+            onShare={() => onShare?.(file)}
+            onDelete={handleDelete}
+            label={label}
+          />
+        </div>
       </div>
     );
   }
 
-  // List view
+  // List / Timeline view (DES-90 enhanced)
   return (
-    <div className="group flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-glass-light transition-colors">
-      <CategoryIcon mimeType={file.mimeType} className={`w-5 h-5 flex-shrink-0 ${iconColor}`} />
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      onClick={onClick}
+      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all border cursor-pointer ${
+        isSelected
+          ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/30'
+          : 'border-transparent hover:border-border-color/50 hover:bg-glass-light'
+      }`}
+    >
+      {onToggleSelect && (
+        <div onClick={e => e.stopPropagation()} className="shrink-0 flex items-center justify-center w-5 h-5">
+          <input 
+            type="checkbox"
+            checked={isSelected || false}
+            onChange={() => onToggleSelect(file.id)}
+            className={`w-4 h-4 rounded border-border-color text-primary focus:ring-primary focus:ring-offset-background cursor-pointer transition-opacity ${
+              isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+          />
+        </div>
+      )}
+      <CategoryIcon mimeType={file.mimeType} className={`w-5 h-5 shrink-0 ${iconColor}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-text-primary truncate" title={file.name}>{file.name}</p>
+        {file.owners && file.owners[0]?.displayName && (
+          <p className="text-[10px] text-text-secondary/70 truncate hidden lg:block">{file.owners[0].displayName}</p>
+        )}
       </div>
-      <span className="text-xs text-text-secondary w-12 text-right flex-shrink-0">{label}</span>
-      <span className="text-xs text-text-secondary w-16 text-right flex-shrink-0">{formatFileSize(file.size)}</span>
-      <span className="text-xs text-text-secondary w-20 text-right flex-shrink-0">{formatRelativeTime(file.modifiedTime)}</span>
-      <div className="w-8 flex-shrink-0 flex justify-end">
+      <span className="text-xs text-text-secondary w-12 text-right shrink-0 hidden sm:block">{label}</span>
+      <span className="text-xs text-text-secondary w-16 text-right shrink-0">{formatFileSize(file.size)}</span>
+      <span className="text-xs text-text-secondary w-20 text-right shrink-0 hidden md:block">{formatRelativeTime(file.modifiedTime)}</span>
+      <div className="w-14 shrink-0 flex items-center justify-end gap-0.5">
+        <StarButton fileId={file.id} className="hidden sm:block" />
         <FileActions
           file={file}
           menuOpen={menuOpen}
           confirmDelete={confirmDelete}
           onMenuToggle={() => { setMenuOpen(o => !o); setConfirmDelete(false); }}
           onMenuClose={() => { setMenuOpen(false); setConfirmDelete(false); }}
+          onShare={() => onShare?.(file)}
           onDelete={handleDelete}
           label={label}
         />
       </div>
     </div>
   );
+
 };
 
 // ─── File Actions (kebab menu) ────────────────────────────────────────────────
@@ -130,18 +218,19 @@ interface FileActionsProps {
   confirmDelete: boolean;
   onMenuToggle: () => void;
   onMenuClose: () => void;
+  onShare?: () => void;
   onDelete: () => void;
   label: string;
 }
 
 const FileActions: React.FC<FileActionsProps> = ({
-  file, menuOpen, confirmDelete, onMenuToggle, onMenuClose, onDelete,
+  file, menuOpen, confirmDelete, onMenuToggle, onMenuClose, onShare, onDelete,
 }) => {
   return (
     <div className="relative">
       <button
         onClick={(e) => { e.stopPropagation(); onMenuToggle(); }}
-        className="p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-glass transition-colors opacity-0 group-hover:opacity-100"
+        className="p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-glass transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
         title="Actions"
       >
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -181,6 +270,18 @@ const FileActions: React.FC<FileActionsProps> = ({
                 Download
               </a>
             )}
+            {onShare && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onMenuClose(); onShare(); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-glass-light transition-colors text-left"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                </svg>
+                Copy Share Link
+              </button>
+            )}
+            <div className="h-px bg-border-color my-1 mx-3" />
             <button
               onClick={onDelete}
               className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${

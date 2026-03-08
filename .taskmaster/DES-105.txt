@@ -1,0 +1,112 @@
+≡ƒÅ╖  Brief: Enhanced Files Management System - Google Drive Integration (e941a9fc-f682-495b-92ce-f7c68c4a48ef)
+Listing tasks from: https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan (https://tryhamster.com/home/designs-team/briefs/e941a9fc-f682-495b-92ce-f7c68c4a48ef/plan)
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé Task: #DES-105 - Implement syntax-highlighted code file preview Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+[90mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[90mΓöé[39m ID:                [90mΓöé[39m DES-105                                                                        [90mΓöé[39m
+[90mΓöé[39m Title:             [90mΓöé[39m Implement syntax-highlighted code file preview                                 [90mΓöé[39m
+[90mΓöé[39m Status:            [90mΓöé[39m Γùï pending                                                                      [90mΓöé[39m
+[90mΓöé[39m Priority:          [90mΓöé[39m medium                                                                         [90mΓöé[39m
+[90mΓöé[39m Dependencies:      [90mΓöé[39m None                                                                           [90mΓöé[39m
+[90mΓöé[39m Complexity:        [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Category:          [90mΓöé[39m ≡ƒöº development                                                                 [90mΓöé[39m
+[90mΓöé[39m Skills:            [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Description:       [90mΓöé[39m Create a code file preview component that syntax-highlights text-based files   [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m (JavaScript, TypeScript, JSON, CSS, HTML, Python, etc.) using a syntax         [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m highlighter library. Users should see a readable code preview on hover within  [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m file cards, with the ability to click to open a full-screen code viewer with   [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m line numbers and copy-to-clipboard functionality.                              [90mΓöé[39m
+[90mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Implementation Details:                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Summary                                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Create a code file preview component with syntax highlighting that displays truncated          Γöé
+Γöé   previews inline and full-file viewing in a modal.                                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   Implementation Approach                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Create `components/files/CodePreview.tsx` component that:                                   Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Accepts text-based file content and language detection                                       Γöé
+Γöé   * Fetches and displays first 10-15 lines of code with syntax highlighting                      Γöé
+Γöé   * Uses react-syntax-highlighter for rendering                                                  Γöé
+Γöé   * Truncates long lines for readability                                                         Γöé
+Γöé   * Shows "..." indicator if file is longer                                                      Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Create `components/files/CodeViewer.tsx` modal that:                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Displays full file content with syntax highlighting                                          Γöé
+Γöé   * Includes line numbers on the left                                                            Γöé
+Γöé   * Shows file name, language, and file size in header                                           Γöé
+Γöé   * Implements copy-to-clipboard button                                                          Γöé
+Γöé   * Supports keyboard shortcuts (Ctrl+C/Cmd+C for copy)                                          Γöé
+Γöé   * Scrollable content area with proper overflow handling                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Implement language detection:                                                               Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Detect from file extension (.js, .ts, .json, .py, etc.)                                      Γöé
+Γöé   * Use language hints for syntax-highlighter                                                    Γöé
+Γöé   * Fallback to plaintext for unknown extensions                                                 Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Implement file content fetching:                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Fetch from Google Drive using fetch() or established API                                     Γöé
+Γöé   * Handle large files (lazy load or truncate preview)                                           Γöé
+Γöé   * Implement error handling for unreadable files                                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Use react-syntax-highlighter library with a chosen theme (matching dark glassmorphism       Γöé
+Γöé   style)                                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   Acceptance Criteria                                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Code file cards display a truncated, syntax-highlighted code preview on hover                Γöé
+Γöé   * Clicking opens a modal showing the full file content with syntax highlighting                Γöé
+Γöé   * Line numbers are displayed in the modal code viewer                                          Γöé
+Γöé   * Copy-to-clipboard button allows copying entire file content                                  Γöé
+Γöé   * Supported formats include .js, .ts, .tsx, .jsx, .json, .py, .html, .css, .txt, .xml          Γöé
+Γöé                                                                                                  Γöé
+Γöé   Technical Constraints                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Use react-syntax-highlighter library (version ^15.5.0)                                       Γöé
+Γöé   * File content must be fetched from Google Drive securely                                      Γöé
+Γöé   * Large files (>1MB) should have content truncated for performance                             Γöé
+Γöé   * Syntax highlighting theme should match glassmorphism dark mode                               Γöé
+Γöé   * Copy button should provide visual feedback (toast notification)                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   Code Patterns to Follow                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Detect text file MIME types (text/*, application/json)                                       Γöé
+Γöé   * Use language extension map for syntax-highlighter configuration                              Γöé
+Γöé   * Implement useState for copy state and feedback                                               Γöé
+Γöé   * Handle file fetch errors gracefully with fallback UI                                         Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Γ£ô Acceptance Criteria:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   ΓÿÉ Code file cards display a truncated, syntax-highlighted code preview on hover                Γöé
+Γöé   ΓÿÉ Clicking opens a modal showing the full file content with syntax highlighting                Γöé
+Γöé   ΓÿÉ Line numbers are displayed in the modal code viewer                                          Γöé
+Γöé   ΓÿÉ Copy-to-clipboard button allows copying entire file content                                  Γöé
+Γöé   ΓÿÉ Supported formats include .js, .ts, .tsx, .jsx, .json, .py, .html, .css, .txt, .xml          Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Suggested Actions:                                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Run task-master set-status --id=DES-105 --status=in-progress to start working               Γöé
+Γöé   2. Run task-master expand --id=DES-105 to break down into subtasks                             Γöé
+Γöé   3. Run task-master update-task --id=DES-105 --prompt="..." to update details                   Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
