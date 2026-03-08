@@ -171,14 +171,13 @@ app.use('/api/search', optionalApiKeyAuth, searchRouter);
 // Link metadata fetcher (title + favicon extraction)
 app.use('/api/link-meta', linkMetaRouter);
 
-if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`API server listening at http://localhost:${port}`);
+// Start the server
+app.listen(port, () => {
+  console.log(`API server listening at http://localhost:${port}`);
 
-    // PM2 ready signal — MUST be sent AFTER listen() confirms port is bound
-    // Sending it before listen() causes PM2 cluster reload race conditions
-    if (process.send) {
-      process.send('ready');
-    }
-  });
-}
+  // PM2 ready signal — MUST be sent AFTER listen() confirms port is bound
+  // Sending it before listen() causes PM2 cluster reload race conditions
+  if (process.send) {
+    process.send('ready');
+  }
+});
