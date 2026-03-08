@@ -156,7 +156,9 @@ jobs:
             # BlockSuite, etc.) are not needed on the server since dist/ and
             # dist-server/ are pre-built on GitHub runners. This also avoids
             # ENOMEM crashes on the memory-constrained VPS.
-            npm ci --omit=dev
+            # To explicitly avoid spawn ENOMEM, limit node memory and ignore expensive audits.
+            export NODE_OPTIONS="--max-old-space-size=512"
+            npm ci --omit=dev --no-audit --no-fund
           EOF
 
       - name: Write environment file from secrets
@@ -225,10 +227,10 @@ jobs:
             "GOOGLE_DRIVE_ROOT_FOLDER_ID=${GOOGLE_DRIVE_ROOT_FOLDER_ID}" \
             > /tmp/deploy.env
 
-          # Provide secrets to bash environment safely using step env vars,
-          # then serialize JSON fields correctly into the env payload via jq
-          # so no special characters or quotes break the dotenv parser.
-          echo "GOOGLE_SERVICE_ACCOUNT_JSON=$(jq -n --arg json "$GOOGLE_SERVICE_ACCOUNT_JSON" '$json')" >> /tmp/deploy.env
+          # Encode the JSON payload in base64 before injecting it so multiline structures
+          # and inner double-quotes do not completely break bash processing and .env serialization.
+          JSON_BASE64=$(echo -n "${GOOGLE_SERVICE_ACCOUNT_JSON}" | base64 -w 0 || echo -n "${GOOGLE_SERVICE_ACCOUNT_JSON}" | base64)
+          echo "GOOGLE_SERVICE_ACCOUNT_B64=${JSON_BASE64}" >> /tmp/deploy.env
           scp -i ~/.ssh/deploy_key /tmp/deploy.env \
             ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}/.env
           echo "✅ .env written from GitHub Secrets"
