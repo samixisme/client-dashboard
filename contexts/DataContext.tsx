@@ -287,13 +287,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ),
 
                 onSnapshot(
-                    query(collection(db, 'invoices'), orderBy('date', 'desc')),
+                    query(collection(db, 'invoices'), orderBy('createdAt', 'desc')),
                     snap => { dataStore.invoices = snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)); bump(); },
                     errHandler('invoices')
                 ),
 
                 onSnapshot(
-                    query(collection(db, 'estimates'), orderBy('date', 'desc')),
+                    query(collection(db, 'estimates'), orderBy('createdAt', 'desc')),
                     snap => { dataStore.estimates = snap.docs.map(d => ({ id: d.id, ...d.data() } as Estimate)); bump(); },
                     errHandler('estimates')
                 ),

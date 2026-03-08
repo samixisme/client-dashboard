@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // ── Helper functions ──────────────────────────────────────────────────────
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -12,69 +12,174 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Users collection - own profile only OR admin can read all
+    // ── Users ─────────────────────────────────────────────────────────────────
+    // All authenticated users can read the users list (needed for board members,
+    // mentions, etc.). Only owners and admins can update their own documents.
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
-    // Admin-controlled collections - only admins can write
-    match /brands/{brandId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+    // ── User settings ─────────────────────────────────────────────────────────
+    match /userSettings/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
+    // ── Projects ──────────────────────────────────────────────────────────────
     match /projects/{projectId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
-
-      // Boards subcollection
-      match /boards/{boardId} {
-        allow read: if isAuthenticated();
-        allow write: if isAuthenticated();
-
-        // Stages subcollection
-        match /stages/{stageId} {
-          allow read, write: if isAuthenticated();
-        }
-      }
-    }
-
-    match /calendar_events/{eventId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
+    // ── Boards ────────────────────────────────────────────────────────────────
+    match /boards/{boardId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+
+    // ── Stages ────────────────────────────────────────────────────────────────
+    match /stages/{stageId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ── Tasks ─────────────────────────────────────────────────────────────────
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+
+    // ── Tags ──────────────────────────────────────────────────────────────────
+    match /tags/{tagId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // ── Comments ──────────────────────────────────────────────────────────────
+    match /comments/{commentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    // ── Activities ────────────────────────────────────────────────────────────
+    match /activities/{activityId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Time logs ─────────────────────────────────────────────────────────────
+    match /time_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ── Brands ────────────────────────────────────────────────────────────────
+    match /brands/{brandId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ── Clients ───────────────────────────────────────────────────────────────
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ── Invoices ──────────────────────────────────────────────────────────────
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ── Estimates ─────────────────────────────────────────────────────────────
+    match /estimates/{estimateId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ── Roadmap ───────────────────────────────────────────────────────────────
     match /roadmap/{itemId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAuthenticated() && isAdmin();
     }
 
-    match /roadmap_items/{itemId} {
+    // ── Moodboards ────────────────────────────────────────────────────────────
+    match /moodboards/{moodboardId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
+    match /moodboard_items/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+
+    // ── Feedback ──────────────────────────────────────────────────────────────
+    // feedbackItems are stored under projects/{projectId}/feedbackItems/{itemId}
+    match /projects/{projectId}/feedbackItems/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+
+    match /feedbackComments/{commentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    // ── Email Templates ───────────────────────────────────────────────────────
+    match /emailTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ── Calendar Events ───────────────────────────────────────────────────────
+    match /calendar_events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.createdBy == request.auth.uid || isAdmin());
+    }
+
+    // ── Social ────────────────────────────────────────────────────────────────
     match /social_accounts/{accountId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     match /social_posts/{postId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
     match /scheduled_posts/{postId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
     match /social_anomalies/{anomalyId} {
@@ -82,193 +187,45 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /emailTemplates/{templateId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+    // ── Social Auth tokens (server-side only) ─────────────────────────────────
+    match /socialTokens/{platform} {
+      allow read, write: if false;
     }
 
-    // Clients - admin full access; managedBy array controls team member read
-    match /clients/{clientId} {
-      allow read: if isAuthenticated() && (isAdmin() || request.auth.uid in resource.data.managedBy);
-      allow create: if isAdmin();
-      allow update, delete: if isAdmin();
-
-      // Social OAuth tokens — server-side only, never client-accessible
-      match /socialTokens/{platform} {
-        allow read, write: if isAdmin();
-      }
-    }
-
-    // Invoices - creator or admin can read/update; only admin can delete
-    match /invoices/{invoiceId} {
-      allow read: if isAuthenticated() && (isAdmin() || resource.data.createdBy == request.auth.uid);
-      allow create: if isAuthenticated()
-                    && request.resource.data.keys().hasAll(['clientId', 'createdBy'])
-                    && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
-      allow delete: if isAdmin();
-    }
-
-    // Estimates - same pattern as invoices
-    match /estimates/{estimateId} {
-      allow read: if isAuthenticated() && (isAdmin() || resource.data.createdBy == request.auth.uid);
-      allow create: if isAuthenticated()
-                    && request.resource.data.keys().hasAll(['clientId', 'createdBy'])
-                    && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
-      allow delete: if isAdmin();
-    }
-
-    // Collaborative collections with ownership guards
-    match /boards/{boardId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    match /stages/{stageId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    // Tasks - require required fields on create; assignee or admin can update/delete
-    match /tasks/{taskId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated()
-                    && request.resource.data.keys().hasAll(['boardId', 'stageId', 'title']);
-      allow update, delete: if isAuthenticated()
-                    && (('assignees' in resource.data && resource.data.assignees.hasAny([request.auth.uid])) || isAdmin());
-
-      // Comments subcollection on tasks
-      match /comments/{commentId} {
-        allow read: if isAuthenticated();
-        allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
-        allow update, delete: if isAuthenticated()
-                      && (resource.data.authorId == request.auth.uid || isAdmin());
-      }
-    }
-
-    match /tags/{tagId} {
-      allow read, write: if isAuthenticated();
-    }
-
-    // Comments (top-level) - owner or admin can update/delete
-    match /comments/{commentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated()
-                    && (resource.data.userId == request.auth.uid || isAdmin());
-    }
-
-    // Activities - owner or admin can update/delete
-    match /activities/{activityId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated()
-                    && (resource.data.userId == request.auth.uid || isAdmin());
-    }
-
-    // Time logs - owner or admin can manage
-    match /time_logs/{logId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated()
-                    && (resource.data.userId == request.auth.uid || isAdmin());
-    }
-
-    // Moodboards - creator or admin can update/delete
-    match /moodboards/{moodboardId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isAuthenticated()
-                    && (resource.data.createdBy == request.auth.uid || isAdmin());
-    }
-
-    match /moodboard_items/{itemId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isAuthenticated()
-                    && (resource.data.createdBy == request.auth.uid || isAdmin());
-    }
-
-    // Feedback - creator or admin can update/delete
-    match /feedbackItems/{itemId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isAuthenticated()
-                    && (resource.data.createdBy == request.auth.uid || isAdmin());
-    }
-
-    match /feedbackComments/{commentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isAuthenticated()
-                    && (resource.data.createdBy == request.auth.uid || isAdmin());
-    }
-
-    // ── AFFiNE Docs & Whiteboards ─────────────────────────────────────────────
-    // Owners can read/write their own docs. Admins can read/write any doc.
-    // createdBy is set at creation time and must match the requesting user's UID.
-    match /docs/{docId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.createdBy
-                    && request.resource.data.mode in ['page', 'edgeless'];
-      allow update: if isAuthenticated()
-                    && (request.auth.uid == resource.data.createdBy || isAdmin());
-      allow delete: if isAuthenticated()
-                    && (request.auth.uid == resource.data.createdBy || isAdmin());
-
-      // Incremental Yjs update ops — written on every keystroke by doc owner or admin
-      match /updates/{updateId} {
-        allow read: if isAuthenticated();
-        allow create: if isAuthenticated()
-                      && (request.auth.uid == get(/databases/$(database)/documents/docs/$(docId)).data.createdBy || isAdmin());
-        allow delete: if isAuthenticated()
-                      && (request.auth.uid == get(/databases/$(database)/documents/docs/$(docId)).data.createdBy || isAdmin());
-      }
-
-      // Compacted Yjs state snapshots — written on unmount compaction
-      match /snapshots/{snapshotId} {
-        allow read: if isAuthenticated();
-        allow write: if isAuthenticated()
-                     && (request.auth.uid == get(/databases/$(database)/documents/docs/$(docId)).data.createdBy || isAdmin());
-      }
-    }
-
-    // Notification metrics cache — server-written only
+    // ── Social metrics cache (server-written only) ────────────────────────────
     match /socialMetrics/{clientId}/{platform} {
       allow read: if isAuthenticated() && isAdmin();
       allow write: if isAdmin();
     }
 
-    // Proposals - authenticated read, creator or admin can update/delete
-    match /proposals/{proposalId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated()
-                    && request.resource.data.keys().hasAll(['title', 'submitterId'])
-                    && request.resource.data.submitterId == request.auth.uid;
-      allow update: if isAuthenticated() && (resource.data.submitterId == request.auth.uid || isAdmin());
-      allow delete: if isAdmin();
-    }
-
-    // Project Links — creator or admin can manage, authenticated read
+    // ── Project Links ─────────────────────────────────────────────────────────
     match /projectLinks/{linkId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isAuthenticated()
-                    && (resource.data.createdBy == request.auth.uid || isAdmin());
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.createdBy == request.auth.uid || isAdmin());
     }
 
-    // ============================================================================
-    // CATCH-ALL: DENY BY DEFAULT
-    // ============================================================================
-    // IMPORTANT: This rule denies ALL reads and writes to any collection that
-    // does not have an explicit rule defined ABOVE this block.
-    //
-    // If you are adding a NEW Firestore collection, you MUST add a dedicated
-    // match rule for it ABOVE this catch-all. Otherwise, all access to that
-    // collection will be silently denied with a "permission-denied" error.
-    //
-    // See the existing rules above for patterns (authenticated read, admin write,
-    // owner-based access, etc.)
-    // ============================================================================
+    // ── Proposals ─────────────────────────────────────────────────────────────
+    match /proposals/{proposalId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        request.resource.data.keys().hasAll(['title', 'submitterId']) &&
+        request.resource.data.submitterId == request.auth.uid;
+      allow update: if isAuthenticated() &&
+        (resource.data.submitterId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ── Catch-all: DENY everything not explicitly listed above ────────────────
     match /{document=**} {
       allow read, write: if false;
     }
