@@ -56,14 +56,17 @@ const SocialMediaPage: React.FC = () => {
                 // Create a success notification element
                 const notification = document.createElement('div');
                 notification.className = 'fixed top-4 right-4 bg-lime-500/20 border border-lime-500/30 text-lime-400 px-6 py-4 rounded-xl shadow-lg backdrop-blur-xl z-50 animate-fade-in';
+                // SECURITY: Use textContent for dynamic message to prevent XSS
                 notification.innerHTML = `
                     <div class="flex items-center gap-3">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        <span class="font-semibold">${message}</span>
+                        <span class="font-semibold message-container"></span>
                     </div>
                 `;
+                const messageContainer = notification.querySelector('.message-container');
+                if (messageContainer) messageContainer.textContent = message;
                 document.body.appendChild(notification);
 
                 // Remove notification after 5 seconds
@@ -78,6 +81,7 @@ const SocialMediaPage: React.FC = () => {
 
                 const notification = document.createElement('div');
                 notification.className = 'fixed top-4 right-4 bg-red-500/20 border border-red-500/30 text-red-400 px-6 py-4 rounded-xl shadow-lg backdrop-blur-xl z-50 animate-fade-in';
+                // SECURITY: Use textContent for dynamic errorMessage to prevent XSS
                 notification.innerHTML = `
                     <div class="flex items-center gap-3">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,10 +89,12 @@ const SocialMediaPage: React.FC = () => {
                         </svg>
                         <div>
                             <div class="font-semibold">Connection Failed</div>
-                            <div class="text-sm text-red-300">${errorMessage}</div>
+                            <div class="text-sm text-red-300 error-container"></div>
                         </div>
                     </div>
                 `;
+                const errorContainer = notification.querySelector('.error-container');
+                if (errorContainer) errorContainer.textContent = errorMessage;
                 document.body.appendChild(notification);
 
                 // Remove notification after 7 seconds
