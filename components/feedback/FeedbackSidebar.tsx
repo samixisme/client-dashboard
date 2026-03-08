@@ -239,7 +239,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
             <div className="flex justify-between items-center p-4 border-b border-border-color/50 flex-shrink-0 bg-glass/60 backdrop-blur-xl">
                 {selectedCommentId ? (
                      <div className="flex items-center gap-2">
-                        <button onClick={handleBackToList} className="p-1.5 hover:bg-glass-light rounded-lg text-text-secondary hover:text-text-primary transition-all duration-300 hover:scale-110">
+                        <button aria-label="Back to comments list" onClick={handleBackToList} className="p-1.5 hover:bg-glass-light rounded-lg text-text-secondary hover:text-text-primary transition-all duration-300 hover:scale-110">
                             <ArrowLeftIcon className="w-5 h-5"/>
                         </button>
                         <span className="font-bold text-text-primary">Comment #{selectedComment?.pin_number}</span>
@@ -260,7 +260,7 @@ const FeedbackSidebar: React.FC<FeedbackSidebarProps> = ({
                         </button>
                     </div>
                 )}
-                <button onClick={onClose} className="p-1.5 rounded-lg text-text-secondary hover:bg-glass-light hover:text-text-primary transition-all duration-300 hover:scale-110">
+                <button aria-label="Close sidebar" onClick={onClose} className="p-1.5 rounded-lg text-text-secondary hover:bg-glass-light hover:text-text-primary transition-all duration-300 hover:scale-110">
                     <CancelIcon className="w-5 h-5"/>
                 </button>
             </div>
