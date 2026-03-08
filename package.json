@@ -125,6 +125,11 @@
     "paymenter:key": "docker compose -f docker-compose.paymenter.yml exec paymenter php artisan key:generate --show",
     "seed": "tsx scripts/seedFirestore.ts",
     "search:sync": "tsx api/searchSync.ts",
+    "search:configure": "tsx scripts/search-configure.ts",
+    "search:reindex": "tsx scripts/search-reindex.ts",
+    "search:status": "tsx scripts/search-status.ts",
+    "search:clear": "tsx scripts/search-clear.ts",
+    "search:swap": "tsx scripts/search-swap.ts",
     "test:integration": "cross-env NODE_ENV=test FIREBASE_AUTH_EMULATOR_HOST=localhost:9099 FIRESTORE_EMULATOR_HOST=localhost:8080 jest __tests__/integration --runInBand --forceExit"
   }
 }

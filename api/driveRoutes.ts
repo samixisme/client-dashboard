@@ -256,6 +256,30 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
     const fileId = await uploadFile(req.file.buffer, filePath);
     const meta = await getFileMetadata(fileId);
 
+    // [DES-46 & DES-48] Sync drive file metadata to search and firestore
+    try {
+      const { default: admin } = await import('firebase-admin');
+      if (!admin.apps.length) admin.initializeApp();
+      const db = admin.firestore();
+      
+      const fileDocument = {
+        name: safeName,
+        mimeType: req.file.mimetype || 'application/octet-stream',
+        webViewLink: meta?.webViewLink || '',
+        folderPath: safeFolder,
+        size: req.file.size || 0,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      // 1. Save to Firestore for batch job tracking
+      await db.collection('drive_files').doc(fileId).set(fileDocument, { merge: true });
+
+      // 2. Push immediately to Meilisearch
+      const { upsertDocument } = await import('./searchSync');
+      await upsertDocument('drive_files', { id: fileId, ...fileDocument, modifiedTime: new Date().toISOString() });
+    } catch (syncErr: any) {
+      console.warn('[driveRoutes] Could not sync uploaded file to search:', syncErr.message);
+    }
+
     return res.status(201).json({
       fileId,
       name: safeName,
@@ -277,6 +301,25 @@ router.delete('/files/:fileId', async (req: Request, res: Response) => {
   try {
     await initializeDrive();
     await deleteFile(fileId);
+
+    // [DES-26 & DES-48] Mark as deleted in Firestore and remove from Meilisearch
+    try {
+      const { default: admin } = await import('firebase-admin');
+      if (!admin.apps.length) admin.initializeApp();
+      const db = admin.firestore();
+      
+      await db.collection('drive_files').doc(fileId).set({
+        isDeleted: true,
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      const { deleteDocument } = await import('./searchSync');
+      await deleteDocument('drive_files', fileId);
+    } catch (syncErr: any) {
+      console.warn('[driveRoutes] Could not sync deleted file to search:', syncErr.message);
+    }
+
     return res.json({ success: true });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to delete file' });
