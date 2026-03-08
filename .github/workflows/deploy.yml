@@ -190,6 +190,7 @@ jobs:
           PAYMENTER_API_KEY: ${{ secrets.PAYMENTER_API_KEY }}
           MEILISEARCH_HOST: ${{ secrets.MEILISEARCH_HOST }}
           MEILISEARCH_MASTER_KEY: ${{ secrets.MEILISEARCH_MASTER_KEY }}
+          LINKWARDEN_TOKEN: ${{ secrets.LINKWARDEN_TOKEN }}
         run: |
           # Build .env on the runner then scp it — avoids heredoc-in-quoted-SSH YAML issues.
           # Secrets are expanded by the GitHub Actions runner (never stored in YAML).
@@ -225,6 +226,7 @@ jobs:
             "MEILISEARCH_HOST=${MEILISEARCH_HOST}" \
             "MEILISEARCH_MASTER_KEY=${MEILISEARCH_MASTER_KEY}" \
             "GOOGLE_DRIVE_ROOT_FOLDER_ID=${GOOGLE_DRIVE_ROOT_FOLDER_ID}" \
+            "LINKWARDEN_TOKEN=${LINKWARDEN_TOKEN}" \
             > /tmp/deploy.env
 
           # Encode the JSON payload in base64 before injecting it so multiline structures
