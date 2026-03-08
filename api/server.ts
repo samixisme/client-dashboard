@@ -28,6 +28,7 @@ import paymenterRouter from './paymenterRoutes';
 import driveRouter from './driveRoutes';
 import searchRouter from './searchRoutes';
 import linkMetaRouter from './linkMetaRoutes';
+import linkwardenRouter from './linkwardenRoutes';
 
 
 export const app = express();
@@ -183,6 +184,9 @@ app.use('/api/search', optionalApiKeyAuth, searchRouter);
 
 // Link metadata fetcher (title + favicon extraction)
 app.use('/api/link-meta', linkMetaRouter);
+
+// Linkwarden proxy (keeps Bearer token server-side)
+app.use('/api/linkwarden', linkwardenRouter);
 
 // Start the server
 app.listen(port, () => {
