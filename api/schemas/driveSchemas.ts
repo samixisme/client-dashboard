@@ -32,3 +32,36 @@ export const bulkMoveBodySchema = z.object({
   folderId: z.string().min(1, 'Target folder ID is required'),
 });
 export type BulkMoveBody = z.infer<typeof bulkMoveBodySchema>;
+
+// ─── Tag management ───────────────────────────────────────────────────────────
+
+// POST /api/drive/tags — create a tag
+export const createTagBodySchema = z.object({
+  name: z.string().min(1, 'Tag name is required').max(50, 'Tag name too long')
+    .regex(/^[\w\s-]+$/, 'Tag name may only contain letters, numbers, spaces, hyphens'),
+  color: z.string().max(20).optional(),
+  projectId: z.string().min(1, 'Project ID is required').optional(),
+});
+export type CreateTagBody = z.infer<typeof createTagBodySchema>;
+
+// POST /api/drive/files/:fileId/tags — assign tag to file
+export const assignTagBodySchema = z.object({
+  tagId: z.string().min(1, 'Tag ID is required'),
+});
+export type AssignTagBody = z.infer<typeof assignTagBodySchema>;
+
+// ─── Activity logging ─────────────────────────────────────────────────────────
+
+const activityAction = z.enum(['upload', 'delete', 'rename', 'share', 'move', 'tag', 'comment']);
+
+// POST /api/drive/activity — log an activity event
+export const logActivityBodySchema = z.object({
+  fileId: z.string().min(1, 'File ID is required'),
+  fileName: z.string().min(1, 'File name is required'),
+  action: activityAction,
+  userId: z.string().min(1, 'User ID is required'),
+  userName: z.string().optional(),
+  details: z.record(z.unknown()).optional(),
+  projectId: z.string().optional(),
+});
+export type LogActivityBody = z.infer<typeof logActivityBodySchema>;

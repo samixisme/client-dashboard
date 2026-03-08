@@ -24,6 +24,9 @@ import { useBulkSelection } from '../hooks/useBulkSelection';
 import BulkActionsBar from '../components/files/BulkActionsBar';
 import RecentFilesPanel from '../components/files/RecentFilesPanel';
 import ShareDialog from '../components/files/ShareDialog';
+import ActivityLog from '../components/files/ActivityLog';
+import StorageQuotaDisplay from '../components/files/StorageQuotaDisplay';
+import { Activity } from 'lucide-react';
 
 // ─── localStorage helpers for view mode ─────────────────────────────────────
 const VIEW_MODE_KEY = 'filesViewMode';
@@ -75,6 +78,7 @@ const FilesPage: React.FC = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
   const [fileToShare, setFileToShare] = useState<DriveFile | null>(null);
+  const [showActivityLog, setShowActivityLog] = useState(false);
 
   // ── Filters & Computed metadata ────────────────────────────────────────────
   const filterState = useFileFilters();
@@ -303,6 +307,20 @@ const FilesPage: React.FC = () => {
             </span>
           </button>
 
+          {/* Activity button */}
+          <button
+            onClick={() => setShowActivityLog(v => !v)}
+            aria-label="Toggle activity log"
+            title="View recent activity"
+            className={`h-9 flex items-center justify-center px-3 rounded-xl border transition-all ${
+              showActivityLog
+                ? 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/20'
+                : 'bg-glass border-border-color text-text-secondary hover:text-text-primary hover:bg-glass-light'
+            }`}
+          >
+            <Activity size={16} />
+          </button>
+
           {/* Upload button */}
           <button
             onClick={() => setShowUpload(v => !v)}
@@ -495,7 +513,9 @@ const FilesPage: React.FC = () => {
               {displayFiles.length} {displayFiles.length === 1 ? 'file' : 'files'}
               {search && ` matching "${search}"`}
             </span>
-            <StorageUsage stats={stats} />
+            <div className="w-1/4 min-w-62.5">
+              <StorageQuotaDisplay />
+            </div>
           </div>
         </div>
       </div>
@@ -526,6 +546,22 @@ const FilesPage: React.FC = () => {
         file={fileToShare} 
         onClose={() => setFileToShare(null)} 
       />
+
+      {/* Activity Log Sidebar (DES-93) */}
+      {showActivityLog && (
+        <div className="fixed right-0 top-0 bottom-0 z-40 w-full max-w-sm bg-glass/60 backdrop-blur-xl border-l border-border-color shadow-2xl p-4 flex flex-col">
+          <div className="flex justify-end mb-2">
+            <button onClick={() => setShowActivityLog(false)} className="p-1 rounded-md hover:bg-white/10 text-text-secondary">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+             <ActivityLog />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

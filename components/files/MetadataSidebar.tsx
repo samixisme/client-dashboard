@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, X, Download, Trash2, ExternalLink, Clock, Tag, User, Calendar, FileIcon } from 'lucide-react';
 import { DriveFile, formatFileSize, formatRelativeTime } from '../../types/drive';
 import { useFileMetadata } from '../../hooks/useFileMetadata';
+import { useFileTags } from '../../hooks/useFileTags';
+import TagAutocomplete from './TagAutocomplete';
 import { db } from '../../utils/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -20,52 +22,46 @@ const MetadataSidebar: React.FC<MetadataSidebarProps> = ({ file, onClose, onDele
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isReverting, setIsReverting] = useState(false);
 
-  // Tags state
-  const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState('');
-  const [isSavingTags, setIsSavingTags] = useState(false);
+  // The actual metadata object to display (merge list-level basic meta with full meta)
+  const displayMeta = metadata || file;
 
-  // Load tags from Firestore
+  // Tags state via new system
+  const {
+    tags: fileTags,
+    isLoading: isTagsLoading,
+    assignTag,
+    removeTag,
+    createTag,
+    getFileTags
+  } = useFileTags('default'); // Use actual project ID if available; fallback for now
+
+  // Local state for tags assigned to *this* file
+  const [assignedTags, setAssignedTags] = useState<any[]>([]);
+
+  // Fetch tags assigned to this file
   useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const docRef = doc(db, 'fileMetadata', file.id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setTags(docSnap.data().tags || []);
-        }
-      } catch (err) {
-        console.error('Failed to fetch tags', err);
-      }
-    };
-    fetchTags();
-  }, [file.id]);
-
-  // Save tags to Firestore
-  const saveTags = async (updatedTags: string[]) => {
-    setIsSavingTags(true);
-    try {
-      const docRef = doc(db, 'fileMetadata', file.id);
-      await setDoc(docRef, { tags: updatedTags }, { merge: true });
-      setTags(updatedTags);
-    } catch (err) {
-      console.error('Failed to save tags', err);
-    } finally {
-      setIsSavingTags(false);
+    let active = true;
+    if (file.id) {
+      getFileTags(file.id).then(tags => {
+        if (active) setAssignedTags(tags);
+      });
     }
+    return () => { active = false; };
+  }, [file.id, getFileTags]);
+
+  const handleAssignTag = async (tag: any) => {
+    setAssignedTags(prev => [...prev, tag]); // optimistic
+    await assignTag(file.id, tag.id);
   };
 
-  const handleAddTag = (e: React.FormEvent) => {
-    e.preventDefault();
-    const tag = newTag.trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      saveTags([...tags, tag]);
-    }
-    setNewTag('');
+  const handleRemoveTag = async (tagId: string) => {
+    setAssignedTags(prev => prev.filter(t => t.id !== tagId)); // optimistic
+    await removeTag(file.id, tagId);
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    saveTags(tags.filter(t => t !== tagToRemove));
+  const handleCreateAndAssignTag = async (name: string) => {
+    const newTag = await createTag(name);
+    if (newTag) handleAssignTag(newTag);
   };
 
   const handleDelete = async () => {
@@ -96,9 +92,6 @@ const MetadataSidebar: React.FC<MetadataSidebarProps> = ({ file, onClose, onDele
       }
     }
   };
-
-  // The actual metadata object to display (merge list-level basic meta with full meta)
-  const displayMeta = metadata || file;
   
   const ownerNames = displayMeta.owners?.map(o => o.displayName || o.emailAddress).join(', ') || 'Unknown';
 
@@ -182,34 +175,21 @@ const MetadataSidebar: React.FC<MetadataSidebarProps> = ({ file, onClose, onDele
               </div>
 
               {/* Tags Section */}
-              <div className="space-y-3 pt-4 border-t border-border-color">
+              <div className="space-y-3 pt-4 border-t border-border-color overflow-visible">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
                     <Tag className="w-3.5 h-3.5" /> Tags
                   </h3>
-                  {isSavingTags && <Loader2 className="w-3 h-3 animate-spin text-text-secondary" />}
                 </div>
                 
-                <div className="flex flex-wrap gap-2">
-                  {tags.map(tag => (
-                    <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-                      {tag}
-                      <button onClick={() => handleRemoveTag(tag)} className="hover:text-primary/70 ml-0.5">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                
-                <form onSubmit={handleAddTag} className="mt-2">
-                  <input 
-                    type="text" 
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Add a tag..."
-                    className="w-full bg-input text-sm text-text-primary border border-border-color rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary/50 transition-colors"
-                  />
-                </form>
+                <TagAutocomplete
+                  availableTags={fileTags}
+                  assignedTags={assignedTags}
+                  onAssign={handleAssignTag}
+                  onRemove={handleRemoveTag}
+                  onCreateNew={handleCreateAndAssignTag}
+                  isLoading={isTagsLoading}
+                />
               </div>
 
             </div>

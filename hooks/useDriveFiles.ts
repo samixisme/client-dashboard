@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { DriveFile, DriveFolder, DriveStatsResponse } from '../types/drive';
+import { useActivityLog } from './useActivityLog';
 
 const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : 'https://client.samixism.com');
 const DRIVE_API_PATH = `${API_BASE}/api/drive`;
@@ -66,6 +67,8 @@ export function useDriveFiles(
       ? { initialPath: optionsOrPath }
       : optionsOrPath;
   const { projectId, initialPath = '' } = options;
+
+  const { logActivity } = useActivityLog(projectId || 'default');
 
   const [currentPath, setCurrentPath] = useState(initialPath);
   const [files, setFiles]       = useState<DriveFile[]>([]);
@@ -231,6 +234,14 @@ export function useDriveFiles(
         (progress) => setUploadProgress(progress)
       );
 
+      logActivity({
+        fileId: 'new', // Since uploadToDrive doesn't return ID directly yet, though we could fix that later
+        fileName: file.name,
+        action: 'upload',
+        userId: 'local',
+        projectId
+      }).catch(() => {});
+
       setRefreshTick(t => t + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -246,9 +257,19 @@ export function useDriveFiles(
     setError(null);
     // Optimistic update — snapshot for rollback on failure
     const snapshot = files;
+    const fileToRemove = files.find(f => f.id === fileId);
     setFiles(prev => prev.filter(f => f.id !== fileId));
     try {
       await apiFetch(`/files/${fileId}`, { method: 'DELETE' });
+      if (fileToRemove) {
+        logActivity({
+          fileId,
+          fileName: fileToRemove.name,
+          action: 'delete',
+          userId: 'local',
+          projectId
+        }).catch(() => {});
+      }
     } catch (err) {
       // Roll back optimistic removal
       setFiles(snapshot);
@@ -266,6 +287,17 @@ export function useDriveFiles(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName }),
       });
+      const file = files.find(f => f.id === fileId);
+      if (file) {
+        logActivity({
+          fileId,
+          fileName: file.name,
+          action: 'rename',
+          userId: 'local',
+          details: { oldName: file.name, newName },
+          projectId
+        }).catch(() => {});
+      }
       setRefreshTick(t => t + 1); // Trigger refresh to get updated files
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to rename file');
@@ -289,6 +321,18 @@ export function useDriveFiles(
         body: JSON.stringify({ folderId: folderRes.folderId }),
       });
       
+      const file = files.find(f => f.id === fileId);
+      if (file) {
+        logActivity({
+          fileId,
+          fileName: file.name,
+          action: 'move',
+          userId: 'local',
+          details: { targetFolderPath },
+          projectId
+        }).catch(() => {});
+      }
+
       setRefreshTick(t => t + 1); // Trigger refresh
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to move file');
