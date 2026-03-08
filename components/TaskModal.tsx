@@ -390,7 +390,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                     <RoadmapIcon className="w-4 h-4"/> Go to Roadmap
                                 </Link>
                             )}
-                            <button onClick={onClose} className="text-2xl text-text-secondary hover:text-text-primary">&times;</button>
+                            <button onClick={onClose} className="text-2xl text-text-secondary hover:text-text-primary" aria-label="Close modal" title="Close modal">&times;</button>
                         </div>
                     </div>
                 </div>
@@ -442,7 +442,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                     <div key={att.id} className="flex items-center gap-3 bg-glass/40 backdrop-blur-sm p-2 rounded-lg border border-border-color">
                                         <FileIcon className="w-6 h-6 text-text-secondary"/>
                                         <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-text-primary hover:underline flex-1 truncate">{att.name}</a>
-                                        <button onClick={() => handleRemoveAttachment(att.id)} className="p-1 rounded-full hover:bg-red-500/20 text-text-secondary hover:text-red-400"><DeleteIcon className="w-4 h-4"/></button>
+                                        <button onClick={() => handleRemoveAttachment(att.id)} className="p-1 rounded-full hover:bg-red-500/20 text-text-secondary hover:text-red-400" aria-label="Remove attachment" title="Remove attachment"><DeleteIcon className="w-4 h-4"/></button>
                                     </div>
                                 ))}
                              </div>
@@ -521,12 +521,12 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                     return (
                                         <div key={member.id} className="relative group">
                                             <img className="h-8 w-8 rounded-full object-cover" src={member.avatarUrl} alt={member.name} title={member.name} />
-                                            <button onClick={() => handleRemoveAssignee(member.id)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100">&times;</button>
+                                            <button onClick={() => handleRemoveAssignee(member.id)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100" aria-label="Remove assignee" title="Remove assignee">&times;</button>
                                         </div>
                                     );
                                 })}
                                 <div className="relative">
-                                    <button onClick={() => setIsAssigneeDropdownOpen(o => !o)} className="h-8 w-8 rounded-full bg-surface-light border border-dashed border-border-color flex items-center justify-center text-text-secondary hover:border-primary hover:text-primary"><AddIcon className="w-4 h-4" /></button>
+                                    <button onClick={() => setIsAssigneeDropdownOpen(o => !o)} className="h-8 w-8 rounded-full bg-surface-light border border-dashed border-border-color flex items-center justify-center text-text-secondary hover:border-primary hover:text-primary" aria-label="Add assignee" title="Add assignee"><AddIcon className="w-4 h-4" /></button>
                                     {isAssigneeDropdownOpen && (
                                         <div className="absolute top-full left-0 mt-2 w-60 bg-glass/60 backdrop-blur-xl p-2 rounded-lg border border-border-color shadow-lg z-10">
                                             {availableMembers.length > 0 ? (
@@ -549,11 +549,11 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                 {taskCurrentTags.map(tag => (
                                     <div key={tag.id} className="flex items-center gap-1.5 px-2 py-0.5 rounded" style={{ backgroundColor: `${tag.color}30` }}>
                                         <span className="text-xs font-semibold" style={{ color: tag.color }}>{tag.name}</span>
-                                        <button onClick={() => handleToggleTag(tag.id)} className="text-xs hover:font-bold" style={{ color: tag.color }}>&times;</button>
+                                        <button onClick={() => handleToggleTag(tag.id)} className="text-xs hover:font-bold" style={{ color: tag.color }} aria-label="Remove tag" title="Remove tag">&times;</button>
                                     </div>
                                 ))}
                                  <div className="relative">
-                                    <button onClick={() => setIsTagDropdownOpen(o => !o)} className="p-1 rounded-full bg-surface-light hover:bg-border-color"><AddIcon className="w-3 h-3 text-text-secondary"/></button>
+                                    <button onClick={() => setIsTagDropdownOpen(o => !o)} className="p-1 rounded-full bg-surface-light hover:bg-border-color" aria-label="Add tag" title="Add tag"><AddIcon className="w-3 h-3 text-text-secondary"/></button>
                                     {isTagDropdownOpen && (
                                         <div className="absolute top-full left-0 mt-2 w-56 bg-glass/60 backdrop-blur-xl p-2 rounded-lg border border-border-color shadow-lg z-10">
                                             <input type="text" placeholder="Search/create..." value={tagSearch} onChange={e => setTagSearch(e.target.value)} className="w-full text-xs bg-glass/40 backdrop-blur-sm border border-border-color rounded px-2 py-1 mb-2 focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all"/>
