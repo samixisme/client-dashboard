@@ -7,8 +7,8 @@ import LinksPage from './LinksPage';
 type LibraryTab = 'files' | 'links';
 
 const TABS: { id: LibraryTab; label: string; Icon: typeof HardDrive }[] = [
-  { id: 'files', label: 'Files',  Icon: HardDrive },
-  { id: 'links', label: 'Links',  Icon: Link2     },
+  { id: 'files', label: 'Files', Icon: HardDrive },
+  { id: 'links', label: 'Links', Icon: Link2 },
 ];
 
 const LibraryPage: React.FC = () => {
@@ -27,7 +27,7 @@ const LibraryPage: React.FC = () => {
   return (
     <div className="flex flex-col h-full min-h-0">
 
-      {/* ── Page header ──────────────────────────────────────────────────────── */}
+      {/* ── Library header ── */}
       <div className="flex items-center justify-between gap-4 mb-5 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Library</h1>
@@ -49,14 +49,14 @@ const LibraryPage: React.FC = () => {
                 key={id}
                 role="tab"
                 aria-selected={isActive}
-                aria-controls={`library-panel-${id}`}
-                id={`library-tab-${id}`}
                 onClick={() => handleTabChange(id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150 cursor-pointer ${
+                className={[
+                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150 cursor-pointer',
+                  'border-r border-border-color last:border-r-0',
                   isActive
-                    ? 'bg-primary/10 text-primary border-r border-primary/20 last:border-r-0'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-glass-light border-r border-border-color last:border-r-0'
-                }`}
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-glass-light',
+                ].join(' ')}
               >
                 <Icon size={14} className="shrink-0" />
                 {label}
@@ -66,23 +66,10 @@ const LibraryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Tab panels ───────────────────────────────────────────────────────── */}
-      <div
-        id="library-panel-files"
-        role="tabpanel"
-        aria-labelledby="library-tab-files"
-        className={`flex-1 min-h-0 ${activeTab === 'files' ? 'flex flex-col' : 'hidden'}`}
-      >
-        <FilesPage />
-      </div>
-
-      <div
-        id="library-panel-links"
-        role="tabpanel"
-        aria-labelledby="library-tab-links"
-        className={`flex-1 min-h-0 ${activeTab === 'links' ? 'flex flex-col' : 'hidden'}`}
-      >
-        <LinksPage />
+      {/* ── Active tab — only the active child is mounted ── */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {activeTab === 'files' && <FilesPage />}
+        {activeTab === 'links' && <LinksPage />}
       </div>
 
     </div>
