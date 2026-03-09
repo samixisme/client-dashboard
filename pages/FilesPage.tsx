@@ -29,7 +29,81 @@ import ActivityLog from '../components/files/ActivityLog';
 import StorageQuotaDisplay from '../components/files/StorageQuotaDisplay';
 import PreviewModal from '../components/files/PreviewModal';
 import FolderGrid from '../components/files/FolderGrid';
-import { Activity } from 'lucide-react';
+import { Activity, X, FolderPlus } from 'lucide-react';
+
+// ── Custom Folder Create Modal ────────────────────────────────────────────────
+interface FolderCreateModalProps {
+  onConfirm: (name: string) => void;
+  onCancel: () => void;
+}
+const FolderCreateModal: React.FC<FolderCreateModalProps> = ({ onConfirm, onCancel }) => {
+  const [folderName, setFolderName] = React.useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = folderName.trim();
+    if (trimmed) onConfirm(trimmed);
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4">
+        <div className="bg-glass/90 backdrop-blur-2xl border border-border-color rounded-2xl shadow-2xl p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <FolderPlus className="w-5 h-5 text-primary" />
+              </div>
+              <h2 className="text-base font-semibold text-text-primary">New Folder</h2>
+            </div>
+            <button
+              onClick={onCancel}
+              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-glass-light transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <label className="block text-xs text-text-secondary mb-2">Folder name</label>
+            <input
+              ref={inputRef}
+              type="text"
+              value={folderName}
+              onChange={e => setFolderName(e.target.value)}
+              placeholder="Untitled folder"
+              className="w-full px-3 py-2.5 rounded-xl bg-glass-light border border-border-color text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary/50 transition-colors"
+            />
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-glass-light border border-border-color transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!folderName.trim()}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-background hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Create
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // ─── localStorage helpers for view mode ─────────────────────────────────────
 const VIEW_MODE_KEY = 'filesViewMode';
@@ -87,6 +161,7 @@ const FilesPage: React.FC<FilesPageProps> = ({ activeTab = 'files.all' }) => {
   const [previewFile, setPreviewFile]       = useState<DriveFile | null>(null);
   const [fileToShare, setFileToShare]       = useState<DriveFile | null>(null);
   const [showActivity, setShowActivity]     = useState(false);
+  const [showFolderModal, setShowFolderModal] = useState(false);
 
   // ── Filters & Computed metadata ────────────────────────────────────────────
   const filterState = useFileFilters();
@@ -248,15 +323,13 @@ const FilesPage: React.FC<FilesPageProps> = ({ activeTab = 'files.all' }) => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [handleNavigate]);
 
-  const handleCreateFolder = async () => {
-    const name = window.prompt("Enter new folder name:");
-    if (name && name.trim()) {
-      try {
-        await createFolder(name.trim());
-        toast.success(`Folder "${name}" created`);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to create folder');
-      }
+  const handleCreateFolder = async (name: string) => {
+    try {
+      await createFolder(name);
+      toast.success(`Folder "${name}" created`);
+      setShowFolderModal(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create folder');
     }
   };
 
@@ -369,16 +442,16 @@ const FilesPage: React.FC<FilesPageProps> = ({ activeTab = 'files.all' }) => {
           </button>
 
           <button
-            onClick={handleCreateFolder}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-glass border border-border-color text-text-primary text-sm font-bold hover:bg-glass-light transition-colors shrink-0"
+            onClick={() => setShowFolderModal(true)}
+            className="h-9 flex items-center gap-2 px-3 rounded-xl bg-glass border border-border-color text-text-primary text-sm font-medium hover:bg-glass-light transition-colors shrink-0"
           >
-            <span className="mr-1">+</span> Folder
+            <FolderPlus className="w-4 h-4" /> Folder
           </button>
 
           {/* Upload button */}
           <button
             onClick={() => setShowUpload(v => !v)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-background text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="h-9 flex items-center gap-2 px-3 rounded-xl bg-primary text-background text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -437,7 +510,7 @@ const FilesPage: React.FC<FilesPageProps> = ({ activeTab = 'files.all' }) => {
             {navigationStack.length > 0 && (
               <button
                 onClick={goUp}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-glass-light transition-colors shrink-0"
+                className="h-9 flex items-center gap-1 px-3 rounded-xl text-sm text-text-secondary hover:text-text-primary hover:bg-glass-light border border-border-color bg-glass transition-colors shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -454,7 +527,7 @@ const FilesPage: React.FC<FilesPageProps> = ({ activeTab = 'files.all' }) => {
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
                 placeholder="Search files..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-glass border border-border-color text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary/50 transition-colors"
+                className="h-9 w-full pl-9 pr-3 rounded-xl bg-glass border border-border-color text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary/50 transition-colors"
               />
             </div>
           </div>
@@ -467,7 +540,7 @@ const FilesPage: React.FC<FilesPageProps> = ({ activeTab = 'files.all' }) => {
 
           {/* List/Timeline headers (list + timeline view only) — DES-90 */}
           {(viewMode === 'list' || viewMode === 'timeline') && (
-            <div className="flex items-center gap-3 px-3 pb-1 text-xs font-medium text-text-secondary uppercase tracking-wider shrink-0">
+            <div className="flex items-center gap-3 px-3 pb-1 text-xs font-medium text-text-secondary tracking-wide shrink-0">
               <div className="w-5" />
               <button className="flex-1 text-left hover:text-text-primary transition-colors flex items-center gap-1" onClick={() => handleSort('name')}>
                 Name <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
@@ -600,6 +673,14 @@ const FilesPage: React.FC<FilesPageProps> = ({ activeTab = 'files.all' }) => {
         file={fileToShare} 
         onClose={() => setFileToShare(null)} 
       />
+
+      {/* Custom Folder Create Modal */}
+      {showFolderModal && (
+        <FolderCreateModal
+          onConfirm={handleCreateFolder}
+          onCancel={() => setShowFolderModal(false)}
+        />
+      )}
 
       {/* Activity Log Sidebar (DES-93) */}
       {showActivity && (
