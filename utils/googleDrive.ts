@@ -434,6 +434,26 @@ export const listFiles = async (folderPath: string = ''): Promise<any[]> => {
 };
 
 /**
+ * List files by exact folder ID
+ */
+export const listFilesByFolderId = async (folderId: string): Promise<any[]> => {
+  if (!drive) await initializeDrive();
+
+  const targetFolderId = folderId || rootFolderId!;
+
+  const response = await drive.files.list({
+    q: `'${targetFolderId}' in parents and trashed=false`,
+    fields: 'files(id, name, mimeType, size, webViewLink, webContentLink, thumbnailLink, createdTime, modifiedTime, owners(displayName,emailAddress), appProperties)',
+    orderBy: 'modifiedTime desc',
+    pageSize: 100,
+    supportsAllDrives: true,  // Required for Shared Drives
+    includeItemsFromAllDrives: true,  // Include Shared Drive items in results
+  });
+
+  return response.data.files || [];
+};
+
+/**
  * Get MIME type from file extension
  */
 const getMimeType = (filename: string): string => {

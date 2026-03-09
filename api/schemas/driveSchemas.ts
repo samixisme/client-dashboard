@@ -2,7 +2,11 @@ import { z } from 'zod';
 
 // POST /api/drive/folders — body schema
 export const createFolderBodySchema = z.object({
-  path: z.string().min(1, 'Folder path is required').max(500, 'Folder path too long'),
+  path: z.string().max(500, 'Folder path too long').optional(),
+  parentFolderId: z.string().optional(),
+  name: z.string().max(200, 'Folder name too long').optional(),
+}).refine(data => data.path || (data.parentFolderId && data.name), {
+  message: 'Must provide either path OR both parentFolderId and name',
 });
 
 export type CreateFolderBody = z.infer<typeof createFolderBodySchema>;

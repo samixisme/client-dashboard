@@ -5,6 +5,7 @@ import { ProjectFile, ProjectLink } from '../types';
 import { DriveFile, DriveViewMode, DriveFileSortKey, DriveFileSortDir } from '../types/drive';
 import { useDriveFiles } from '../hooks/useDriveFiles';
 import { useFileFilters } from '../hooks/useFileFilters';
+import { useFileStars } from '../hooks/useFileStars';
 import { applyFileFilters } from '../utils/fileFilters';
 import { useBulkSelection } from '../hooks/useBulkSelection';
 
@@ -23,13 +24,12 @@ import FilterPanel from '../components/files/FilterPanel';
 import FilterChips from '../components/files/FilterChips';
 import ShareDialog from '../components/files/ShareDialog';
 import KanbanView from '../components/files/KanbanView';
-import GalleryView from '../components/files/GalleryView';
 import TimelineView from '../components/files/TimelineView';
 import { toast } from 'sonner';
 
 // ─── localStorage helpers ────────────────────────────────────────────────────
 const VIEW_MODE_KEY = 'projectFilesViewMode';
-const VALID_MODES: DriveViewMode[] = ['list', 'grid', 'kanban', 'gallery', 'timeline'];
+const VALID_MODES: DriveViewMode[] = ['list', 'grid', 'kanban', 'timeline'];
 
 function getStoredViewMode(): DriveViewMode {
   try {
@@ -63,6 +63,7 @@ const ProjectFilesPage: React.FC = () => {
     uploadProgress,
     error: driveError,
     currentPath,
+    navigationStack,
     navigate: navigateFolder,
     goUp,
     refresh,
@@ -138,14 +139,15 @@ const ProjectFilesPage: React.FC = () => {
   // ── UI state ─────────────────────────────────────────────────────────────
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
-  const activeTab: LibraryTab = rawTab === 'files' || rawTab === 'links' ? rawTab : 'files';
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const VALID_TABS: LibraryTab[] = ['files.all', 'files.recent', 'files.starred', 'links'];
+  const activeTab: LibraryTab =
+    rawTab && VALID_TABS.includes(rawTab as LibraryTab)
+      ? (rawTab as LibraryTab)
+      : 'files.all';
 
   const handleTabChange = useCallback((tab: LibraryTab) => {
     setSearchParams({ tab }, { replace: true });
   }, [setSearchParams]);
-
-  const toggleCollapse = useCallback(() => setIsSidebarCollapsed(p => !p), []);
 
   const [searchQuery, setSearchQuery]       = useState('');
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -173,6 +175,9 @@ const ProjectFilesPage: React.FC = () => {
     return Array.from(owners).sort();
   }, [driveFiles]);
 
+  // ── Starred IDs (for filter) ────────────────────────────────────────────
+  const { starredIds } = useFileStars();
+
   // ── Bulk selection (Drive files only) ────────────────────────────────────
   const driveFileIds = useMemo(() => driveFiles.map(f => f.id), [driveFiles]);
   const bulk = useBulkSelection(driveFileIds);
@@ -192,6 +197,14 @@ const ProjectFilesPage: React.FC = () => {
   // ── Filtered + sorted Drive files ────────────────────────────────────────
   const displayDriveFiles = useMemo(() => {
     let list = applyFileFilters(driveFiles, filterState.filters);
+    // Sub-tab filtering (DES-169)
+    if (activeTab === 'files.recent') {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      list = list.filter(f => f.modifiedTime && new Date(f.modifiedTime) >= sevenDaysAgo);
+    } else if (activeTab === 'files.starred') {
+      list = list.filter(f => starredIds.has(f.id));
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(f => f.name.toLowerCase().includes(q));
@@ -205,7 +218,7 @@ const ProjectFilesPage: React.FC = () => {
       if (va > vb) return sortDir === 'asc' ?  1 : -1;
       return 0;
     });
-  }, [driveFiles, searchQuery, sortKey, sortDir, filterState.filters]);
+  }, [driveFiles, searchQuery, sortKey, sortDir, filterState.filters, activeTab, starredIds]);
 
   const handleSort = useCallback((key: DriveFileSortKey) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -280,21 +293,19 @@ const ProjectFilesPage: React.FC = () => {
   }, [nativeProjFiles, searchQuery]);
 
   // Derived visibility based on tab
-  const canUpload = activeTab === 'files';
+  const canUpload = activeTab.startsWith('files.');
   const canAddLink = activeTab === 'links';
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+    <div className="flex h-full overflow-hidden px-4 md:px-10 pt-4 pb-24 md:pb-10">
       {/* Sidebar */}
       <LibrarySidebar
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={toggleCollapse}
       />
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto flex flex-col min-h-0">
+      <div className="flex-1 pl-6 flex flex-col min-h-0">
         <div className="max-w-7xl mx-auto w-full flex flex-col gap-6 flex-1 min-h-0">
 
           {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -308,12 +319,12 @@ const ProjectFilesPage: React.FC = () => {
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {/* View mode selector — only relevant for Drive files */}
-              {activeTab === 'files' && (
+              {activeTab.startsWith('files.') && (
                 <ViewModeSelector currentMode={viewMode} onChange={setViewMode} />
               )}
 
               {/* Refresh */}
-              {activeTab === 'files' && (
+              {activeTab.startsWith('files.') && (
                 <button
                   onClick={refresh}
                   disabled={driveLoading || isUploading}
@@ -327,7 +338,7 @@ const ProjectFilesPage: React.FC = () => {
                 </button>
               )}
 
-              {canUpload && activeTab === 'files' && (
+              {canUpload && activeTab.startsWith('files.') && (
                 <button
                   onClick={handleCreateFolder}
                   className="px-4 py-2 text-sm font-bold bg-glass border border-border-color text-text-primary rounded-xl hover:bg-glass-light transition-colors shrink-0"
@@ -352,7 +363,7 @@ const ProjectFilesPage: React.FC = () => {
                 </svg>
                 <input
                   type="text"
-                  placeholder={activeTab === 'files' ? "Search files..." : "Search links..."}
+                  placeholder={activeTab.startsWith('files.') ? "Search files..." : "Search links..."}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-glass border border-border-color rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
@@ -377,7 +388,7 @@ const ProjectFilesPage: React.FC = () => {
           {activeTab === 'links' && (
             <section className="flex flex-col flex-1 min-h-0 gap-3">
               {projectLinks.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto custom-scrollbar pb-4">
                   {projectLinks
                     .filter(l => !searchQuery.trim() || l.title?.toLowerCase().includes(searchQuery.toLowerCase()) || l.url.toLowerCase().includes(searchQuery.toLowerCase()))
                     .map(link => (
@@ -394,7 +405,7 @@ const ProjectFilesPage: React.FC = () => {
           )}
 
           {/* ── Files section ────────────────────────────────────────────── */}
-          {activeTab === 'files' && (
+          {activeTab.startsWith('files.') && (
             <>
               {/* Native project files (task attachments, mockups, videos) */}
               {filteredNativeFiles.length > 0 && (
@@ -422,7 +433,7 @@ const ProjectFilesPage: React.FC = () => {
               {/* ── Drive Files section ────────────────────────────────────────────── */}
               <section className="flex flex-col flex-1 min-h-0 gap-2">
                 {/* Search / Path breadcrumb nav */}
-                {currentPath && (
+                {navigationStack.length > 0 && (
                   <div className="flex items-center gap-2 mb-3 shrink-0">
                     <button
                       onClick={goUp}
@@ -475,7 +486,7 @@ const ProjectFilesPage: React.FC = () => {
               )}
 
               {/* File grid / list / kanban / gallery / timeline */}
-              <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+              <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 pr-1">
                 {driveLoading ? (
                   <div className="flex flex-col items-center justify-center h-40 gap-3 text-text-secondary">
                     <svg className="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
@@ -486,7 +497,7 @@ const ProjectFilesPage: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <FolderGrid folders={folders} currentPath={currentPath} onNavigate={navigateFolder} />
+                    <FolderGrid folders={folders} onNavigate={navigateFolder} />
                     {displayDriveFiles.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-40 gap-2 text-text-secondary">
                         <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
@@ -511,8 +522,6 @@ const ProjectFilesPage: React.FC = () => {
                   </div>
                 ) : viewMode === 'kanban' ? (
                   <KanbanView files={displayDriveFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
-                ) : viewMode === 'gallery' ? (
-                  <GalleryView files={displayDriveFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
                 ) : viewMode === 'timeline' ? (
                   <TimelineView files={displayDriveFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
                 ) : (

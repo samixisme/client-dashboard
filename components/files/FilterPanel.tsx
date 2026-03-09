@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SlidersHorizontal, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, ChevronUp, Check, X, Image, Film, FileText, FileType, Archive, Code2 } from 'lucide-react';
 import { UseFileFiltersReturn } from '../../hooks/useFileFilters';
 import { DriveFileType, DriveSizeRange, DriveDateRange } from '../../types/drive';
 
@@ -7,13 +7,13 @@ interface FilterPanelProps extends UseFileFiltersReturn {
   availableOwners: string[];
 }
 
-const FILE_TYPE_OPTIONS: { value: DriveFileType; label: string; icon: string }[] = [
-  { value: 'image',    label: 'Images',     icon: '🖼' },
-  { value: 'video',    label: 'Videos',     icon: '🎬' },
-  { value: 'document', label: 'Documents',  icon: '📝' },
-  { value: 'pdf',      label: 'PDFs',       icon: '📄' },
-  { value: 'archive',  label: 'Archives',   icon: '🗜' },
-  { value: 'code',     label: 'Code',       icon: '💻' },
+const FILE_TYPE_OPTIONS: { value: DriveFileType; label: string; icon: React.ReactNode }[] = [
+  { value: 'image',    label: 'Images',     icon: <Image className="w-3.5 h-3.5 text-primary" /> },
+  { value: 'video',    label: 'Videos',     icon: <Film className="w-3.5 h-3.5 text-primary" /> },
+  { value: 'document', label: 'Documents',  icon: <FileText className="w-3.5 h-3.5 text-primary" /> },
+  { value: 'pdf',      label: 'PDFs',       icon: <FileType className="w-3.5 h-3.5 text-primary" /> },
+  { value: 'archive',  label: 'Archives',   icon: <Archive className="w-3.5 h-3.5 text-primary" /> },
+  { value: 'code',     label: 'Code',       icon: <Code2 className="w-3.5 h-3.5 text-primary" /> },
 ];
 
 const SIZE_OPTIONS: { value: DriveSizeRange; label: string }[] = [
@@ -80,7 +80,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
       {/* Panel Dropdown */}
       {open && (
-        <div className="absolute top-full left-0 mt-3 w-full sm:w-[500px] lg:w-[800px] p-5 rounded-2xl bg-glass-medium border border-border-color shadow-2xl backdrop-blur-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="absolute top-full left-0 mt-3 w-full sm:w-125 lg:w-200 p-5 rounded-2xl bg-glass-medium border border-border-color shadow-2xl backdrop-blur-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           
           {/* File Type - Custom Toggle Buttons */}
           <div>

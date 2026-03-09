@@ -482,7 +482,7 @@ function App() {
                    } />
                    {/* Unified Library page (Files + Links) */}
                    <Route path="/library" element={
-                      <MainLayout onLogout={handleLogout}>
+                      <MainLayout onLogout={handleLogout} fullBleed={true}>
                          <LibraryPage />
                       </MainLayout>
                    } />
@@ -501,7 +501,7 @@ function App() {
                    } />
 
                    <Route element={
-                      <MainLayout onLogout={handleLogout}>
+                      <MainLayout onLogout={handleLogout} fullBleed={true}>
                           <ProjectLayout />
                       </MainLayout>
                    }>

@@ -3,11 +3,10 @@ import { DriveFolder } from '../../types/drive';
 
 interface FolderGridProps {
   folders: DriveFolder[];
-  onNavigate: (path: string) => void;
-  currentPath: string;
+  onNavigate: (folderId: string, folderName?: string) => void;
 }
 
-const FolderGrid: React.FC<FolderGridProps> = ({ folders, onNavigate, currentPath }) => {
+const FolderGrid: React.FC<FolderGridProps> = ({ folders, onNavigate }) => {
   if (folders.length === 0) return null;
 
   return (
@@ -15,12 +14,11 @@ const FolderGrid: React.FC<FolderGridProps> = ({ folders, onNavigate, currentPat
       <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest mb-3">Folders</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {folders.map(folder => {
-          const folderPath = currentPath ? `${currentPath}/${folder.name}` : folder.name;
           return (
             <button
               key={folder.id}
-              onClick={() => onNavigate(folderPath)}
-              onDoubleClick={() => onNavigate(folderPath)}
+              onClick={() => onNavigate(folder.id, folder.name)}
+              onDoubleClick={() => onNavigate(folder.id, folder.name)}
               className="flex items-center gap-3 p-3 rounded-xl bg-glass border border-border-color hover:border-primary/40 hover:bg-glass-light transition-all group text-left"
             >
               <svg className="w-5 h-5 text-primary shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

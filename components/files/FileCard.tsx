@@ -88,7 +88,7 @@ const FileCard: React.FC<FileCardProps> = ({
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  if (viewMode === 'grid' || viewMode === 'kanban' || viewMode === 'gallery') {
+  if (viewMode === 'grid' || viewMode === 'kanban') {
     const isKanban = viewMode === 'kanban';
     return (
       <div

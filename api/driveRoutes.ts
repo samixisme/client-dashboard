@@ -4,6 +4,7 @@ import multer from 'multer';
 import {
   initializeDrive,
   listFiles,
+  listFilesByFolderId,
   uploadFile,
   deleteFile,
   getFileMetadata,
@@ -95,14 +96,19 @@ router.get('/health', async (_req: Request, res: Response) => {
 // Google Drive permission propagation delays. This is expected behavior.
 
 // ─── GET /api/drive/files ────────────────────────────────────────────────────
-// List files and subfolders at an optional ?folder= path
+// List files and subfolders at an optional ?folder= path or ?folderId=
 router.get('/files', async (req: Request, res: Response) => {
   try {
     await initializeDrive();
     
     let safeFolderPath = '';
+    let items;
 
-    if (req.query.projectId) {
+    if (req.query.folderId) {
+      const folderId = String(req.query.folderId).trim();
+      items = await listFilesByFolderId(folderId);
+      safeFolderPath = folderId;
+    } else if (req.query.projectId) {
       const rawProjectId = String(req.query.projectId);
       const safeProjectId = rawProjectId
         .replace(/\.\./g, '')
@@ -116,6 +122,7 @@ router.get('/files', async (req: Request, res: Response) => {
       } catch {
         // Folder resolution failed — listFiles will return empty results
       }
+      items = await listFiles(safeFolderPath);
     } else {
       const folderPath = (req.query.folder as string) || '';
       // Sanitize folder path: strip leading slashes and block traversal sequences
@@ -123,9 +130,8 @@ router.get('/files', async (req: Request, res: Response) => {
         .replace(/\.\./g, '')
         .replace(/^\/+/, '')
         .trim();
+      items = await listFiles(safeFolderPath);
     }
-
-    const items = await listFiles(safeFolderPath);
 
     const files = items.filter(
       (f: { mimeType: string }) => f.mimeType !== 'application/vnd.google-apps.folder'
@@ -355,7 +361,26 @@ router.post('/folders', async (req: Request, res: Response) => {
 
     await initializeDrive();
 
-    const safePath = validation.data.path
+    if (validation.data.parentFolderId && validation.data.name) {
+      const { google } = await import('googleapis');
+      const drive = google.drive('v3');
+      
+      const folderMetadata = {
+        name: validation.data.name,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [validation.data.parentFolderId],
+      };
+      
+      const folder = await drive.files.create({
+        requestBody: folderMetadata,
+        fields: 'id, name',
+        supportsAllDrives: true,
+      });
+      
+      return res.status(201).json({ success: true, data: { folder: folder.data } });
+    }
+
+    const safePath = validation.data.path!
       .replace(/\.\./g, '')
       .replace(/^\/+/, '')
       .trim();

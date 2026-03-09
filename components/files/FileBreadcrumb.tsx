@@ -1,17 +1,16 @@
 import React from 'react';
+import { NavigationStackItem } from '../../hooks/useDriveFiles';
 
 interface FileBreadcrumbProps {
-  currentPath: string;
-  onNavigate: (path: string) => void;
+  navigationStack: NavigationStackItem[];
+  onNavigate: (folderId: string, folderName?: string) => void;
 }
 
-const FileBreadcrumb: React.FC<FileBreadcrumbProps> = ({ currentPath, onNavigate }) => {
-  const parts = currentPath.split('/').filter(Boolean);
-
+const FileBreadcrumb: React.FC<FileBreadcrumbProps> = ({ navigationStack, onNavigate }) => {
   return (
     <nav aria-label="File path breadcrumb" className="flex items-center gap-1 text-sm text-text-secondary overflow-x-auto no-scrollbar">
       <button
-        onClick={() => onNavigate('')}
+        onClick={() => onNavigate('', '')}
         className="hover:text-text-primary transition-colors whitespace-nowrap flex items-center gap-1"
       >
         <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -20,25 +19,24 @@ const FileBreadcrumb: React.FC<FileBreadcrumbProps> = ({ currentPath, onNavigate
         All Files
       </button>
 
-      {parts.map((part, index) => {
-        const path = parts.slice(0, index + 1).join('/');
-        const isLast = index === parts.length - 1;
+      {navigationStack.map((item, index) => {
+        const isLast = index === navigationStack.length - 1;
         return (
-          <React.Fragment key={path}>
+          <React.Fragment key={item.id}>
             <span className="text-border-color flex-shrink-0">/</span>
             {isLast ? (
               <span
                 aria-current="page"
                 className="whitespace-nowrap text-text-primary font-medium"
               >
-                {part}
+                {item.name}
               </span>
             ) : (
               <button
-                onClick={() => onNavigate(path)}
+                onClick={() => onNavigate(item.id, item.name)}
                 className="whitespace-nowrap transition-colors hover:text-text-primary cursor-pointer"
               >
-                {part}
+                {item.name}
               </button>
             )}
           </React.Fragment>

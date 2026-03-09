@@ -3,7 +3,6 @@ import {
   List,
   LayoutGrid,
   Columns,
-  Image,
   Clock,
 } from 'lucide-react';
 import { DriveViewMode } from '../../types/drive';
@@ -21,7 +20,6 @@ const VIEW_MODES: {
   { mode: 'list',     label: 'List',     icon: List },
   { mode: 'grid',     label: 'Grid',     icon: LayoutGrid },
   { mode: 'kanban',   label: 'Kanban',   icon: Columns },
-  { mode: 'gallery',  label: 'Gallery',  icon: Image },
   { mode: 'timeline', label: 'Timeline', icon: Clock },
 ];
 

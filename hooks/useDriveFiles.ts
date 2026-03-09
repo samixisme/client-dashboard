@@ -29,6 +29,11 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
+export interface NavigationStackItem {
+  id: string;
+  name: string;
+}
+
 export interface UseDriveFilesOptions {
   projectId?: string;
   initialPath?: string;
@@ -44,10 +49,11 @@ export interface UseDriveFilesReturn {
   uploadProgress: number; // 0-100
   error: string | null;
   currentPath: string;
+  navigationStack: NavigationStackItem[];
   autoRefreshEnabled: boolean;
   lastRefreshTime: Date | undefined;
   // Actions
-  navigate: (path: string) => void;
+  navigate: (folderId: string, folderName?: string) => void;
   goUp: () => void;
   refresh: () => void;
   toggleAutoRefresh: () => void;
@@ -71,6 +77,9 @@ export function useDriveFiles(
   const { logActivity } = useActivityLog(projectId || 'default');
 
   const [currentPath, setCurrentPath] = useState(initialPath);
+  const [navigationStack, setNavigationStack] = useState<NavigationStackItem[]>([]);
+  const currentFolderId = navigationStack.length > 0 ? navigationStack[navigationStack.length - 1].id : '';
+
   const [files, setFiles]       = useState<DriveFile[]>([]);
   const [folders, setFolders]   = useState<DriveFolder[]>([]);
   const [stats, setStats]       = useState<DriveStatsResponse | null>(null);
@@ -109,7 +118,15 @@ export function useDriveFiles(
     setError(null);
 
     const projectParam = projectId ? `&projectId=${encodeURIComponent(projectId)}` : '';
-    const query = currentPath ? `?folder=${encodeURIComponent(currentPath)}${projectParam}` : (projectParam ? `?projectId=${encodeURIComponent(projectId!)}` : '');
+    
+    let query = '';
+    if (currentFolderId) {
+      query = `?folderId=${encodeURIComponent(currentFolderId)}${projectParam}`;
+    } else if (currentPath) {
+      query = `?folder=${encodeURIComponent(currentPath)}${projectParam}`;
+    } else if (projectParam) {
+      query = `?projectId=${encodeURIComponent(projectId)}`;
+    }
 
     Promise.all([
       apiFetch<{ files: DriveFile[]; folders: DriveFolder[] }>(`/files${query}`),
@@ -177,15 +194,31 @@ export function useDriveFiles(
   }, [autoRefreshEnabled]);
 
   // ── Navigation ──────────────────────────────────────────────────────────────
-  const navigate = useCallback((path: string) => {
-    setCurrentPath(path);
+  const navigate = useCallback((folderId: string, folderName?: string) => {
+    if (!folderId) {
+      setNavigationStack([]);
+      setCurrentPath('');
+    } else {
+      setNavigationStack(prev => {
+        const index = prev.findIndex(item => item.id === folderId);
+        if (index >= 0) return prev.slice(0, index + 1);
+        return [...prev, { id: folderId, name: folderName || 'Unknown Folder' }];
+      });
+      setCurrentPath(prev => prev ? `${prev}/${folderName || folderId}` : (folderName || folderId));
+    }
   }, []);
 
   const goUp = useCallback(() => {
-    const parts = currentPath.split('/').filter(Boolean);
-    parts.pop();
-    setCurrentPath(parts.join('/'));
-  }, [currentPath]);
+    setNavigationStack(prev => {
+      if (prev.length <= 1) return [];
+      return prev.slice(0, prev.length - 1);
+    });
+    setCurrentPath(prev => {
+      const parts = prev.split('/').filter(Boolean);
+      parts.pop();
+      return parts.join('/');
+    });
+  }, []);
 
   // Debounced refresh: ignores calls within REFRESH_DEBOUNCE_MS of each other
   const refresh = useCallback(() => {
@@ -344,18 +377,24 @@ export function useDriveFiles(
   const createFolder = useCallback(async (folderName: string) => {
     setError(null);
     try {
-      const targetPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+      const topStack = navigationStack[navigationStack.length - 1];
+      const parentFolderId = topStack ? topStack.id : '';
+
+      const body = parentFolderId 
+        ? { parentFolderId, name: folderName }
+        : { path: currentPath ? `${currentPath}/${folderName}` : folderName };
+
       await apiFetch(`/folders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: targetPath }),
+        body: JSON.stringify(body),
       });
       setRefreshTick(t => t + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create folder');
       throw err;
     }
-  }, [currentPath]);
+  }, [currentPath, navigationStack]);
 
   return {
     files,
@@ -367,6 +406,7 @@ export function useDriveFiles(
     uploadProgress,
     error,
     currentPath,
+    navigationStack,
     autoRefreshEnabled,
     lastRefreshTime,
     navigate,

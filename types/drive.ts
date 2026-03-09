@@ -52,7 +52,7 @@ export interface DriveStatsResponse {
   lastResetDate: string;
 }
 
-export type DriveViewMode = 'list' | 'grid' | 'kanban' | 'gallery' | 'timeline';
+export type DriveViewMode = 'list' | 'grid' | 'kanban' | 'timeline';
 
 // ─── Filter types ─────────────────────────────────────────────────────────────
 

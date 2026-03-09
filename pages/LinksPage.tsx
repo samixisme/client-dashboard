@@ -171,7 +171,7 @@ const LinksPage: React.FC = () => {
   const hasFilters = query.trim() !== '' || collectionId !== null;
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+    <div className="flex h-full overflow-hidden">
 
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       <aside className="w-56 shrink-0 flex flex-col border-r border-border-color bg-glass/40 overflow-y-auto">
@@ -345,7 +345,7 @@ const LinksPage: React.FC = () => {
         )}
 
         {/* Link grid / list */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5">
           {isLoading ? (
             <div className={viewMode === 'grid'
               ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'

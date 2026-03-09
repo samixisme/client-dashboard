@@ -3,7 +3,6 @@ import { useDriveFiles } from '../hooks/useDriveFiles';
 import { useToast } from '../src/hooks/useToast';
 import { DriveViewMode, DriveFileSortKey, DriveFileSortDir } from '../types/drive';
 import KanbanView from '../components/files/KanbanView';
-import GalleryView from '../components/files/GalleryView';
 import TimelineView from '../components/files/TimelineView';
 import FileBreadcrumb from '../components/files/FileBreadcrumb';
 import FolderSidebar from '../components/files/FolderSidebar';
@@ -15,9 +14,11 @@ import ViewModeSelector from '../components/files/ViewModeSelector';
 import FilterPanel from '../components/files/FilterPanel';
 import FilterChips from '../components/files/FilterChips';
 import { useFileFilters } from '../hooks/useFileFilters';
+import { useFileStars } from '../hooks/useFileStars';
 import { applyFileFilters } from '../utils/fileFilters';
 import { toast } from 'sonner';
 import { DriveFile } from '../types/drive';
+import { LibraryTab } from '../components/files/LibrarySidebar';
 
 // New Imports
 import { useBulkSelection } from '../hooks/useBulkSelection';
@@ -32,7 +33,7 @@ import { Activity } from 'lucide-react';
 
 // ─── localStorage helpers for view mode ─────────────────────────────────────
 const VIEW_MODE_KEY = 'filesViewMode';
-const VALID_MODES: DriveViewMode[] = ['list', 'grid', 'kanban', 'gallery', 'timeline'];
+const VALID_MODES: DriveViewMode[] = ['list', 'grid', 'kanban', 'timeline'];
 
 function getStoredViewMode(): DriveViewMode {
   try {
@@ -63,12 +64,16 @@ interface PlaceholderProps {
 
 
 
-const FilesPage: React.FC = () => {
+interface FilesPageProps {
+  activeTab?: LibraryTab;
+}
+
+const FilesPage: React.FC<FilesPageProps> = ({ activeTab = 'files.all' }) => {
 
   const {
     files, folders, stats,
     isLoading, isRefreshing, isUploading, uploadProgress,
-    error, currentPath, autoRefreshEnabled, lastRefreshTime,
+    error, currentPath, navigationStack, autoRefreshEnabled, lastRefreshTime,
     navigate, goUp, refresh, toggleAutoRefresh, upload, remove, move, createFolder,
   } = useDriveFiles('');
 
@@ -85,6 +90,7 @@ const FilesPage: React.FC = () => {
 
   // ── Filters & Computed metadata ────────────────────────────────────────────
   const filterState = useFileFilters();
+  const { starredIds } = useFileStars();
   const availableOwners = useMemo(() => {
     const owners = new Set<string>();
     files.forEach(f => {
@@ -257,6 +263,14 @@ const FilesPage: React.FC = () => {
   // ── Filtered + sorted files ─────────────────────────────────────────────────
   const displayFiles = useMemo(() => {
     let list = applyFileFilters(files, filterState.filters);
+    // Sub-tab filtering (DES-169)
+    if (activeTab === 'files.recent') {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      list = list.filter(f => f.modifiedTime && new Date(f.modifiedTime) >= sevenDaysAgo);
+    } else if (activeTab === 'files.starred') {
+      list = list.filter(f => starredIds.has(f.id));
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(f => f.name.toLowerCase().includes(q));
@@ -271,7 +285,7 @@ const FilesPage: React.FC = () => {
       if (va > vb) return sortDir === 'asc' ?  1 : -1;
       return 0;
     });
-  }, [files, search, sortKey, sortDir, filterState.filters]);
+  }, [files, search, sortKey, sortDir, filterState.filters, activeTab, starredIds]);
 
   const isDisabled = isLoading || isUploading;
 
@@ -288,7 +302,7 @@ const FilesPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Files</h1>
           <div className="mt-1">
-            <FileBreadcrumb currentPath={currentPath} onNavigate={navigate} />
+            <FileBreadcrumb navigationStack={navigationStack} onNavigate={navigate} />
           </div>
         </div>
 
@@ -420,7 +434,7 @@ const FilesPage: React.FC = () => {
           />
           {/* Search + back */}
           <div className="flex items-center gap-2 mb-3 shrink-0">
-            {currentPath && (
+            {navigationStack.length > 0 && (
               <button
                 onClick={goUp}
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-glass-light transition-colors shrink-0"
@@ -470,7 +484,7 @@ const FilesPage: React.FC = () => {
           )}
 
           {/* File list / grid / kanban / gallery / timeline */}
-          <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0 pr-1">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-40 gap-3 text-text-secondary">
                 <svg className="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
@@ -481,7 +495,7 @@ const FilesPage: React.FC = () => {
               </div>
             ) : (
               <>
-                <FolderGrid folders={folders} currentPath={currentPath} onNavigate={navigate} />
+                <FolderGrid folders={folders} onNavigate={navigate} />
                 {displayFiles.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-40 gap-2 text-text-secondary">
                     <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
@@ -514,8 +528,6 @@ const FilesPage: React.FC = () => {
                 </div>
               ) : viewMode === 'kanban' ? (
                 <KanbanView files={displayFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
-              ) : viewMode === 'gallery' ? (
-                <GalleryView files={displayFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
               ) : viewMode === 'timeline' ? (
                 <TimelineView files={displayFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
               ) : (
