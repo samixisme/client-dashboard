@@ -37,7 +37,7 @@ const ReorderStagesModal: React.FC<ReorderStagesModalProps> = ({ isOpen, onClose
             <div className="bg-glass/60 backdrop-blur-xl w-full max-w-md rounded-2xl shadow-2xl border border-border-color p-8 animate-scale-in" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-text-primary">Reorder Stages</h2>
-                    <button onClick={onClose} className="text-2xl text-text-secondary hover:text-text-primary hover:scale-110 transition-all duration-300">&times;</button>
+                    <button onClick={onClose} className="text-2xl text-text-secondary hover:text-text-primary hover:scale-110 transition-all duration-300" aria-label="Close modal" title="Close modal">&times;</button>
                 </div>
 
                 <DragDropContext onDragEnd={handleDragEnd}>
