@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { getFirestore } from './firebaseAdmin';
 import * as admin from 'firebase-admin';
+import crypto from 'crypto';
 
 const webhookRouter = Router();
 
 // Webhook verify token - should match what you set in Meta App Dashboard
 // This is stored in .env and used to verify Meta's subscription request
-const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'your-webhook-verify-token-here';
+const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
 
 /**
  * GET /api/webhooks/instagram
@@ -15,6 +16,11 @@ const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'your-webhook-v
  * You must respond with the challenge parameter if the verify_token matches.
  */
 webhookRouter.get('/instagram', (req: Request, res: Response) => {
+    if (!WEBHOOK_VERIFY_TOKEN) {
+        console.error('CRITICAL ERROR: WEBHOOK_VERIFY_TOKEN is not configured in environment variables');
+        return res.status(500).send('Server configuration error');
+    }
+
     // Parse params from query string
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
@@ -47,6 +53,40 @@ webhookRouter.get('/instagram', (req: Request, res: Response) => {
  * This is where you receive real-time updates about posts, comments, messages, etc.
  */
 webhookRouter.post('/instagram', async (req: Request, res: Response) => {
+    // 1. Validate payload signature from Meta
+    const signatureHeader = req.headers['x-hub-signature-256'] as string;
+    const clientSecret = process.env.INSTAGRAM_CLIENT_SECRET;
+
+    if (!clientSecret) {
+        console.error('CRITICAL ERROR: INSTAGRAM_CLIENT_SECRET is missing. Cannot verify webhook signature.');
+        return res.status(500).send('Server configuration error');
+    }
+
+    if (!signatureHeader) {
+        console.error('Webhook signature missing');
+        return res.status(401).send('Signature missing');
+    }
+
+    // req.rawBody is populated by our express.json middleware in server.ts
+    const rawBody = (req as any).rawBody;
+    if (!rawBody) {
+        console.error('Webhook raw body missing');
+        return res.status(500).send('Internal Server Error: Raw body not available');
+    }
+
+    const expectedSignature = `sha256=${crypto.createHmac('sha256', clientSecret).update(rawBody).digest('hex')}`;
+
+    try {
+        if (!crypto.timingSafeEqual(Buffer.from(signatureHeader), Buffer.from(expectedSignature))) {
+            console.error('Webhook signature invalid');
+            return res.status(401).send('Signature invalid');
+        }
+    } catch (e) {
+        // Handle length mismatch errors from timingSafeEqual
+        console.error('Webhook signature invalid (length mismatch)');
+        return res.status(401).send('Signature invalid');
+    }
+
     const body = req.body;
 
     console.log('Instagram webhook event received:', JSON.stringify(body, null, 2));
