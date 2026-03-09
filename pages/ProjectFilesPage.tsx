@@ -8,6 +8,7 @@ import { useFileFilters } from '../hooks/useFileFilters';
 import { useFileStars } from '../hooks/useFileStars';
 import { applyFileFilters } from '../utils/fileFilters';
 import { useBulkSelection } from '../hooks/useBulkSelection';
+import { FolderPlus, X } from 'lucide-react';
 
 // Components
 import LibrarySidebar, { LibraryTab } from '../components/files/LibrarySidebar';
@@ -43,6 +44,80 @@ function getStoredViewMode(): DriveViewMode {
 const SortIcon: React.FC<{ col: DriveFileSortKey; sortKey: DriveFileSortKey; sortDir: DriveFileSortDir }> = ({ col, sortKey, sortDir }) => {
   if (sortKey !== col) return <span className="opacity-30">↕</span>;
   return <span>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+};
+
+// ─── Custom Folder Create Modal (replaces blue browser native prompt) ──────────────
+interface FolderCreateModalProps {
+  onConfirm: (name: string) => void;
+  onCancel: () => void;
+}
+const FolderCreateModal: React.FC<FolderCreateModalProps> = ({ onConfirm, onCancel }) => {
+  const [folderName, setFolderName] = React.useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = folderName.trim();
+    if (trimmed) onConfirm(trimmed);
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4">
+        <div className="bg-glass/90 backdrop-blur-2xl border border-border-color rounded-2xl shadow-2xl p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <FolderPlus className="w-5 h-5 text-primary" />
+              </div>
+              <h2 className="text-base font-semibold text-text-primary">New Folder</h2>
+            </div>
+            <button
+              onClick={onCancel}
+              className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-glass-light transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <label className="block text-xs text-text-secondary mb-2">Folder name</label>
+            <input
+              ref={inputRef}
+              type="text"
+              value={folderName}
+              onChange={e => setFolderName(e.target.value)}
+              placeholder="Untitled folder"
+              className="w-full px-3 py-2.5 rounded-xl bg-glass-light border border-border-color text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary/50 transition-colors"
+            />
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-glass-light border border-border-color transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!folderName.trim()}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-background hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Create
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
 };
 
 const ProjectFilesPage: React.FC = () => {
@@ -137,6 +212,7 @@ const ProjectFilesPage: React.FC = () => {
   }, [safeProjectId, data.boards, data.tasks, data.feedbackMockups, data.feedbackVideos]);
 
   // ── UI state ─────────────────────────────────────────────────────────────
+  const [showFolderModal, setShowFolderModal] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
   const VALID_TABS: LibraryTab[] = ['files.all', 'files.recent', 'files.starred', 'links'];
@@ -225,15 +301,13 @@ const ProjectFilesPage: React.FC = () => {
     else { setSortKey(key); setSortDir('desc'); }
   }, [sortKey]);
 
-  const handleCreateFolder = async () => {
-    const name = window.prompt("Enter new folder name:");
-    if (name && name.trim()) {
-      try {
-        await createFolder(name.trim());
-        toast.success(`Folder "${name}" created`);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to create folder');
-      }
+  const handleCreateFolder = async (name: string) => {
+    try {
+      await createFolder(name);
+      toast.success(`Folder "${name}" created`);
+      setShowFolderModal(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create folder');
     }
   };
 
@@ -340,10 +414,10 @@ const ProjectFilesPage: React.FC = () => {
 
               {canUpload && activeTab.startsWith('files.') && (
                 <button
-                  onClick={handleCreateFolder}
-                  className="px-4 py-2 text-sm font-bold bg-glass border border-border-color text-text-primary rounded-xl hover:bg-glass-light transition-colors shrink-0"
+                  onClick={() => setShowFolderModal(true)}
+                  className="h-9 flex items-center gap-2 px-3 rounded-xl bg-glass border border-border-color text-text-primary text-sm font-medium hover:bg-glass-light transition-colors shrink-0"
                 >
-                  <span className="mr-1">+</span> Folder
+                  <FolderPlus className="w-4 h-4" /> Folder
                 </button>
               )}
 
@@ -366,7 +440,7 @@ const ProjectFilesPage: React.FC = () => {
                   placeholder={activeTab.startsWith('files.') ? "Search files..." : "Search links..."}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-glass border border-border-color rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="h-9 w-full pl-9 pr-3 bg-glass border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
             </div>
@@ -469,7 +543,7 @@ const ProjectFilesPage: React.FC = () => {
 
               {/* Sort headers for list/timeline */}
               {(viewMode === 'list' || viewMode === 'timeline') && (
-                <div className="flex items-center gap-3 px-3 pb-1 text-xs font-medium text-text-secondary uppercase tracking-wider shrink-0">
+                <div className="flex items-center gap-3 px-3 pb-1 text-xs font-medium text-text-secondary tracking-wide shrink-0">
                   <div className="w-5" />
                   <button className="flex-1 text-left hover:text-text-primary transition-colors flex items-center gap-1" onClick={() => handleSort('name')}>
                     Name <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
@@ -571,6 +645,14 @@ const ProjectFilesPage: React.FC = () => {
 
       {/* ── Share Dialog ──────────────────────────────────────────────────────── */}
       <ShareDialog file={fileToShare} onClose={() => setFileToShare(null)} />
+
+      {/* ── Custom Folder Create Modal ────────────────────────────────────────── */}
+      {showFolderModal && (
+        <FolderCreateModal
+          onConfirm={handleCreateFolder}
+          onCancel={() => setShowFolderModal(false)}
+        />
+      )}
 
       {/* ── Add/Edit Link Dialog ─────────────────────────────────────────────── */}
       <AddLinkDialog

@@ -185,7 +185,8 @@ const SearchBar: React.FC = () => {
     return (
         <div ref={containerRef} className="relative w-full">
             <input
-                type="search"
+                type="text"
+                autoComplete="off"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search…"
