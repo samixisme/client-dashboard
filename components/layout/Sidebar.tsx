@@ -3,7 +3,6 @@ import { NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import { DashboardIcon } from '../icons/DashboardIcon';
 import BrandProjectSwitcher from './BrandProjectSwitcher';
 import { PaymentsIcon } from '../icons/PaymentsIcon';
-import { RecurringIcon } from '../icons/RecurringIcon';
 import { SettingsIcon } from '../icons/SettingsIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
 import { GridViewIcon } from '../icons/GridViewIcon';
@@ -17,8 +16,7 @@ const mainNavItems = [
     { to: '/dashboard',     Icon: DashboardIcon, label: 'Dashboard'     },
     { to: '/links',         Icon: LinkIcon,       label: 'Links'         },
     { to: '/calendar',      Icon: CalendarIcon,  label: 'Calendar'      },
-    { to: '/payments',      Icon: PaymentsIcon,  label: 'Payments'      },
-    { to: '/subscriptions', Icon: RecurringIcon, label: 'Subscriptions' },
+    { to: '/billing',       Icon: PaymentsIcon,  label: 'Billing'       },
 ];
 
 const bottomNavItems = [
@@ -40,8 +38,8 @@ const TYPE_ROUTES: Record<string, (hit: Record<string, unknown>) => string> = {
     tasks: (h) => `/board/${h.boardId ?? ''}`,
     brands: (h) => `/brands/${h.id}`,
     feedback_items: (h) => `/feedback/${h.projectId ?? ''}`,
-    invoices: () => '/payments',
-    clients: () => '/payments',
+    invoices: () => '/billing?tab=invoices',
+    clients: () => '/billing?tab=invoices',
     drive_files: () => '',
 };
 

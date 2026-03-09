@@ -14,8 +14,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // --- Other Page Imports ---
 import DashboardPage from './pages/DashboardPage';
-import PaymentsPage from './pages/PaymentsPage';
-import SubscriptionsPage from './pages/SubscriptionsPage';
+import BillingPage from './pages/BillingPage';
 import CreateInvoicePage from './pages/CreateInvoicePage';
 import EditInvoicePage from './pages/EditInvoicePage';
 import CreateEstimatePage from './pages/CreateEstimatePage';
@@ -309,11 +308,16 @@ function App() {
                        <Route index element={<ProjectBoardPage />} />
                   </Route>
 
-                   <Route path="/payments" element={
+                   {/* Unified Billing page */}
+                   <Route path="/billing" element={
                       <MainLayout onLogout={handleLogout}>
-                         <PaymentsPage />
+                         <BillingPage />
                       </MainLayout>
                    } />
+                   {/* Legacy redirects */}
+                   <Route path="/payments" element={<Navigate to="/billing?tab=invoices" replace />} />
+                   <Route path="/subscriptions" element={<Navigate to="/billing?tab=subscriptions" replace />} />
+                   {/* Invoice / estimate sub-pages (unchanged) */}
                    <Route path="/payments/invoice/new" element={
                       <MainLayout onLogout={handleLogout}>
                          <CreateInvoicePage />
@@ -332,11 +336,6 @@ function App() {
                    <Route path="/payments/estimates/edit/:id" element={
                       <MainLayout onLogout={handleLogout}>
                          <EditEstimatePage />
-                      </MainLayout>
-                   } />
-                   <Route path="/subscriptions" element={
-                      <MainLayout onLogout={handleLogout}>
-                         <SubscriptionsPage />
                       </MainLayout>
                    } />
                    <Route path="/calendar" element={
