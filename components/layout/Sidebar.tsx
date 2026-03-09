@@ -8,13 +8,12 @@ import { CalendarIcon } from '../icons/CalendarIcon';
 import { GridViewIcon } from '../icons/GridViewIcon';
 import { useActiveProject } from '../../contexts/ActiveProjectContext';
 import { FileIcon } from '../icons/FileIcon';
-import { LinkIcon } from '../icons/LinkIcon';
+import { BookOpen } from 'lucide-react';
 import { useSearch } from '../../contexts/SearchContext';
 
 // Main nav — Social Media and Brands moved to Tools page
 const mainNavItems = [
     { to: '/dashboard',     Icon: DashboardIcon, label: 'Dashboard'     },
-    { to: '/links',         Icon: LinkIcon,       label: 'Links'         },
     { to: '/calendar',      Icon: CalendarIcon,  label: 'Calendar'      },
     { to: '/billing',       Icon: PaymentsIcon,  label: 'Billing'       },
 ];
@@ -101,19 +100,27 @@ const ToolsNavItem: React.FC = () => {
     );
 };
 
-// ─── Files Nav Item (dynamic route based on active project) ───────────────────
-const FilesNavItem: React.FC = () => {
+// ─── Library Nav Item (Files + Links hub) ────────────────────────────────────
+const LibraryNavItem: React.FC = () => {
     const { activeProjectId } = useActiveProject();
     const location = useLocation();
     const navigate = useNavigate();
 
-    const isActive = location.pathname.includes('/files');
-    const href = activeProjectId ? `/projects/${activeProjectId}/files` : '/files';
+    const isActive =
+        location.pathname.startsWith('/library') ||
+        location.pathname.startsWith('/files') ||
+        location.pathname.startsWith('/links') ||
+        (activeProjectId && location.pathname.includes(`/projects/${activeProjectId}/files`));
+
+    // When a project is active, default to the project's files view
+    const href = activeProjectId
+        ? `/projects/${activeProjectId}/files`
+        : '/library';
 
     return (
         <button
             onClick={() => navigate(href)}
-            title="Files"
+            title="Library"
             className={`group flex items-center h-11 w-11 hover:w-44 rounded-xl transition-all duration-300 ease-in-out overflow-hidden cursor-pointer ${
                 isActive
                     ? 'bg-primary text-background font-bold'
@@ -121,10 +128,10 @@ const FilesNavItem: React.FC = () => {
             }`}
         >
             <div className="h-11 w-11 flex-shrink-0 flex items-center justify-center">
-                <FileIcon className="h-6 w-6" />
+                <BookOpen className="h-5 w-5" />
             </div>
             <div className="whitespace-nowrap pr-4 pl-2">
-                <span className="font-medium text-sm">Files</span>
+                <span className="font-medium text-sm">Library</span>
             </div>
         </button>
     );
@@ -270,7 +277,7 @@ const Sidebar = () => {
             <div className="flex-1 flex flex-col justify-center pt-4">
                 <nav className="flex flex-col gap-1 w-11">
                     <ToolsNavItem />
-                    <FilesNavItem />
+                    <LibraryNavItem />
                     {mainNavItems.map(({ to, Icon, label }) =>
                         <NavItem key={to} to={to} Icon={Icon} label={label} />
                     )}

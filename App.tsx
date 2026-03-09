@@ -88,6 +88,7 @@ import ToolsPage from './pages/ToolsPage';
 import FilesPage from './pages/FilesPage';
 import SearchPage from './pages/SearchPage';
 import LinksPage from './pages/LinksPage';
+import LibraryPage from './pages/LibraryPage';
 import { toast } from 'sonner';
 import CustomContextMenu, { ContextMenuState } from './src/components/ui/CustomContextMenu';
 
@@ -479,16 +480,15 @@ function App() {
                          <ProfilePage />
                       </MainLayout>
                    } />
-                   <Route path="/files" element={
+                   {/* Unified Library page (Files + Links) */}
+                   <Route path="/library" element={
                       <MainLayout onLogout={handleLogout}>
-                         <FilesPage />
+                         <LibraryPage />
                       </MainLayout>
                    } />
-                   <Route path="/links" element={
-                      <MainLayout onLogout={handleLogout}>
-                         <LinksPage />
-                      </MainLayout>
-                   } />
+                   {/* Legacy redirects */}
+                   <Route path="/files" element={<Navigate to="/library?tab=files" replace />} />
+                   <Route path="/links" element={<Navigate to="/library?tab=links" replace />} />
                    <Route path="/settings" element={
                       <MainLayout onLogout={handleLogout}>
                          <SettingsPage />
