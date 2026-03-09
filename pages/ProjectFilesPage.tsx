@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { ProjectFile, ProjectLink } from '../types';
 import { DriveFile, DriveViewMode, DriveFileSortKey, DriveFileSortDir } from '../types/drive';
@@ -9,13 +9,15 @@ import { applyFileFilters } from '../utils/fileFilters';
 import { useBulkSelection } from '../hooks/useBulkSelection';
 
 // Components
-import SourceFilterSidebar from '../components/files/SourceFilterSidebar';
+import LibrarySidebar, { LibraryTab } from '../components/files/LibrarySidebar';
 import FileUpload from '../components/files/FileUpload';
 import AddLinkDialog from '../components/files/AddLinkDialog';
 import LinkCard from '../components/files/LinkCard';
+import PreviewModal from '../components/files/PreviewModal';
 import FileCard from '../components/files/FileCard';
 import ViewModeSelector from '../components/files/ViewModeSelector';
 import MetadataSidebar from '../components/files/MetadataSidebar';
+import FolderGrid from '../components/files/FolderGrid';
 import BulkActionsBar from '../components/files/BulkActionsBar';
 import FilterPanel from '../components/files/FilterPanel';
 import FilterChips from '../components/files/FilterChips';
@@ -50,6 +52,8 @@ const ProjectFilesPage: React.FC = () => {
   const { data } = useData();
 
   // ── Drive files (full DriveFile type for new components) ─────────────────
+  const filterState = useFileFilters();
+
   const {
     files: driveFiles,
     folders,
@@ -59,13 +63,13 @@ const ProjectFilesPage: React.FC = () => {
     uploadProgress,
     error: driveError,
     currentPath,
-    navigate: driveNavigate,
+    navigate: navigateFolder,
     goUp,
     refresh,
     upload,
     remove,
     move,
-    createFolder,
+    createFolder
   } = useDriveFiles({ projectId: safeProjectId });
 
   // ── Project-native files (task attachments, mockups, videos) ─────────────
@@ -132,7 +136,17 @@ const ProjectFilesPage: React.FC = () => {
   }, [safeProjectId, data.boards, data.tasks, data.feedbackMockups, data.feedbackVideos]);
 
   // ── UI state ─────────────────────────────────────────────────────────────
-  const [activeFilter, setActiveFilter]     = useState<string>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get('tab');
+  const activeTab: LibraryTab = rawTab === 'files' || rawTab === 'links' ? rawTab : 'files';
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const handleTabChange = useCallback((tab: LibraryTab) => {
+    setSearchParams({ tab }, { replace: true });
+  }, [setSearchParams]);
+
+  const toggleCollapse = useCallback(() => setIsSidebarCollapsed(p => !p), []);
+
   const [searchQuery, setSearchQuery]       = useState('');
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [editingLink, setEditingLink]       = useState<ProjectLink | undefined>(undefined);
@@ -140,6 +154,7 @@ const ProjectFilesPage: React.FC = () => {
   const [sortKey, setSortKey]               = useState<DriveFileSortKey>('modifiedTime');
   const [sortDir, setSortDir]               = useState<DriveFileSortDir>('desc');
   const [selectedFile, setSelectedFile]     = useState<DriveFile | null>(null);
+  const [previewFile, setPreviewFile]       = useState<DriveFile | null>(null);
   const [fileToShare, setFileToShare]       = useState<DriveFile | null>(null);
 
   useEffect(() => {
@@ -147,7 +162,6 @@ const ProjectFilesPage: React.FC = () => {
   }, [viewMode]);
 
   // ── Filters (Drive files only) ────────────────────────────────────────────
-  const filterState = useFileFilters();
   const availableOwners = useMemo(() => {
     const owners = new Set<string>();
     driveFiles.forEach(f => {
@@ -198,6 +212,18 @@ const ProjectFilesPage: React.FC = () => {
     else { setSortKey(key); setSortDir('desc'); }
   }, [sortKey]);
 
+  const handleCreateFolder = async () => {
+    const name = window.prompt("Enter new folder name:");
+    if (name && name.trim()) {
+      try {
+        await createFolder(name.trim());
+        toast.success(`Folder "${name}" created`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to create folder');
+      }
+    }
+  };
+
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleUpload = useCallback(async (file: File) => {
     try {
@@ -214,10 +240,11 @@ const ProjectFilesPage: React.FC = () => {
       await remove(fileId);
       toast.success(`"${name}" deleted`);
       if (selectedFile?.id === fileId) setSelectedFile(null);
+      if (previewFile?.id === fileId) setPreviewFile(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Delete failed');
     }
-  }, [remove, driveFiles, selectedFile]);
+  }, [remove, driveFiles, selectedFile, previewFile]);
 
   const handleBulkDelete = useCallback(async (fileIds: string[]) => {
     const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : 'https://client.samixism.com');
@@ -246,54 +273,24 @@ const ProjectFilesPage: React.FC = () => {
     }
   }, [navigate]);
 
-  // ── Derived visibility flags ──────────────────────────────────────────────
-  const showDrive    = activeFilter === 'all' || activeFilter === 'drive';
-  const showLinks    = activeFilter === 'all' || activeFilter === 'link';
-  const showTasks    = activeFilter === 'all' || activeFilter === 'task';
-  const showMockups  = activeFilter === 'all' || activeFilter === 'mockup';
-  const showVideos   = activeFilter === 'all' || activeFilter === 'video';
-  const canUpload    = showDrive;
-  const canAddLink   = showLinks;
-
-  // ── All files array needed by SourceFilterSidebar ────────────────────────
-  const allProjectFiles = useMemo((): ProjectFile[] => [
-    ...driveFiles.map((f): ProjectFile => ({
-      id: `drive:${f.id}`,
-      projectId: safeProjectId,
-      name: f.name,
-      url: f.webViewLink || '',
-      type: f.mimeType || 'file',
-      source: 'drive',
-      createdAt: f.createdTime,
-      size: parseFloat(f.size || '0'),
-      thumbnailUrl: f.thumbnailLink,
-    })),
-    ...projectLinks.map((l): ProjectFile => ({
-      id: `link:${l.id}`,
-      projectId: safeProjectId,
-      name: l.title || l.url,
-      url: l.url,
-      type: 'link',
-      source: 'link',
-      createdAt: l.createdAt,
-      thumbnailUrl: l.favicon,
-    })),
-    ...nativeProjFiles,
-  ], [driveFiles, projectLinks, nativeProjFiles, safeProjectId]);
-
   // Filtered native files from non-drive sources (for search)
   const filteredNativeFiles = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return nativeProjFiles.filter(f => !q || f.name.toLowerCase().includes(q));
   }, [nativeProjFiles, searchQuery]);
 
+  // Derived visibility based on tab
+  const canUpload = activeTab === 'files';
+  const canAddLink = activeTab === 'links';
+
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden">
       {/* Sidebar */}
-      <SourceFilterSidebar
-        files={allProjectFiles}
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
+      <LibrarySidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleCollapse}
       />
 
       {/* Main Content */}
@@ -311,12 +308,12 @@ const ProjectFilesPage: React.FC = () => {
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {/* View mode selector — only relevant for Drive files */}
-              {showDrive && (
+              {activeTab === 'files' && (
                 <ViewModeSelector currentMode={viewMode} onChange={setViewMode} />
               )}
 
               {/* Refresh */}
-              {showDrive && (
+              {activeTab === 'files' && (
                 <button
                   onClick={refresh}
                   disabled={driveLoading || isUploading}
@@ -330,12 +327,21 @@ const ProjectFilesPage: React.FC = () => {
                 </button>
               )}
 
-              {canAddLink && (
+              {canUpload && activeTab === 'files' && (
+                <button
+                  onClick={handleCreateFolder}
+                  className="px-4 py-2 text-sm font-bold bg-glass border border-border-color text-text-primary rounded-xl hover:bg-glass-light transition-colors shrink-0"
+                >
+                  <span className="mr-1">+</span> Folder
+                </button>
+              )}
+
+              {canAddLink && activeTab === 'links' && (
                 <button
                   onClick={() => { setEditingLink(undefined); setLinkDialogOpen(true); }}
                   className="px-4 py-2 text-sm font-bold bg-glass border border-border-color text-text-primary rounded-xl hover:bg-glass-light transition-colors shrink-0"
                 >
-                  + Add Link
+                  <span className="mr-1">+</span> Link
                 </button>
               )}
 
@@ -346,19 +352,12 @@ const ProjectFilesPage: React.FC = () => {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Search files..."
+                  placeholder={activeTab === 'files' ? "Search files..." : "Search links..."}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-glass border border-border-color rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
-
-              {canUpload && (
-                <button
-                  onClick={() => {/* handled below by always-visible upload */}}
-                  className="hidden"
-                />
-              )}
             </div>
           </header>
 
@@ -375,64 +374,85 @@ const ProjectFilesPage: React.FC = () => {
           )}
 
           {/* ── Links section ────────────────────────────────────────────── */}
-          {showLinks && projectLinks.length > 0 && (
-            <section className="shrink-0 space-y-3">
-              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">External Links</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {projectLinks
-                  .filter(l => !searchQuery.trim() || l.title?.toLowerCase().includes(searchQuery.toLowerCase()) || l.url.toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map(link => (
-                    <LinkCard key={link.id} link={link} onEdit={link => { setEditingLink(link); setLinkDialogOpen(true); }} />
-                  ))}
-              </div>
+          {activeTab === 'links' && (
+            <section className="flex flex-col flex-1 min-h-0 gap-3">
+              {projectLinks.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto pb-4">
+                  {projectLinks
+                    .filter(l => !searchQuery.trim() || l.title?.toLowerCase().includes(searchQuery.toLowerCase()) || l.url.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map(link => (
+                      <LinkCard key={link.id} link={link} onEdit={link => { setEditingLink(link); setLinkDialogOpen(true); }} />
+                    ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-12 text-text-secondary">
+                  <span className="text-4xl mb-3">🔗</span>
+                  <p className="font-medium">No links added to this project yet.</p>
+                </div>
+              )}
             </section>
           )}
 
-          {/* ── Native project files (task attachments, mockups, videos) ── */}
-          {(showTasks || showMockups || showVideos) && filteredNativeFiles.length > 0 && (
-            <section className="shrink-0 space-y-3">
-              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">Project Attachments</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredNativeFiles
-                  .filter(f => (f.source === 'task' && showTasks) || (f.source === 'mockup' && showMockups) || (f.source === 'video' && showVideos))
-                  .map(file => (
+          {/* ── Files section ────────────────────────────────────────────── */}
+          {activeTab === 'files' && (
+            <>
+              {/* Native project files (task attachments, mockups, videos) */}
+              {filteredNativeFiles.length > 0 && (
+                <section className="shrink-0 space-y-3 mb-6">
+                  <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">Project Attachments</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filteredNativeFiles.map(file => (
+                      <button
+                        key={file.id}
+                        onClick={() => handleNativeFileClick(file)}
+                        className="group p-5 rounded-xl border border-border-color bg-glass hover:bg-glass-light hover:border-primary/50 transition-all text-left cursor-pointer"
+                      >
+                        <p className="font-semibold text-text-primary truncate group-hover:text-primary transition-colors">{file.name}</p>
+                        <div className="flex items-center justify-between mt-3">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary px-2 py-1 bg-background/50 rounded-md">
+                            {file.source.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* ── Drive Files section ────────────────────────────────────────────── */}
+              <section className="flex flex-col flex-1 min-h-0 gap-2">
+                {/* Search / Path breadcrumb nav */}
+                {currentPath && (
+                  <div className="flex items-center gap-2 mb-3 shrink-0">
                     <button
-                      key={file.id}
-                      onClick={() => handleNativeFileClick(file)}
-                      className="group p-5 rounded-xl border border-border-color bg-glass hover:bg-glass-light hover:border-primary/50 transition-all text-left cursor-pointer"
+                      onClick={goUp}
+                      className="flex items-center justify-center py-1.5 px-3 rounded-xl bg-glass border border-border-color text-sm text-text-secondary hover:text-text-primary hover:bg-glass-light transition-colors shrink-0"
                     >
-                      <p className="font-semibold text-text-primary truncate group-hover:text-primary transition-colors">{file.name}</p>
-                      <div className="flex items-center justify-between mt-3">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary px-2 py-1 bg-background/50 rounded-md">
-                          {file.source.replace('_', ' ')}
-                        </span>
-                      </div>
+                      <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                      </svg>
+                      Back
                     </button>
-                  ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── Drive Files section ──────────────────────────────────────── */}
-          {showDrive && (
-            <section className="flex flex-col flex-1 min-h-0 gap-2">
-              <div className="flex items-center justify-between shrink-0">
-                <h3 className="text-xs font-bold text-text-secondary uppercase tracking-widest">Google Drive Files</h3>
-                <span className="text-xs text-text-secondary">{displayDriveFiles.length} file{displayDriveFiles.length !== 1 ? 's' : ''}</span>
-              </div>
-
-              {/* Bulk actions bar */}
-              <BulkActionsBar
-                count={bulk.count}
-                selectedIds={bulk.selectedIds}
-                onClearAll={bulk.clearAll}
-                onBulkDelete={handleBulkDelete}
-                onBulkDownload={handleBulkDownload}
-              />
+                    <div className="flex bg-glass border border-border-color px-3 py-1.5 rounded-xl text-sm overflow-hidden flex-1 items-center gap-2">
+                         <span className="text-text-secondary">/{currentPath}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex flex-col shrink-0">
+                  <FilterPanel {...filterState} availableOwners={availableOwners} />
+                </div>
+                
+                {/* Bulk actions bar */}
+                <BulkActionsBar
+                  count={bulk.count}
+                  selectedIds={bulk.selectedIds}
+                  onClearAll={bulk.clearAll}
+                  onBulkDelete={handleBulkDelete}
+                  onBulkDownload={handleBulkDownload}
+                />
 
               {/* Filter panel + chips */}
               <div className="shrink-0">
-                <FilterPanel {...filterState} availableOwners={availableOwners} />
                 <FilterChips {...filterState} />
               </div>
 
@@ -464,14 +484,17 @@ const ProjectFilesPage: React.FC = () => {
                     </svg>
                     <p className="text-sm">{isRefreshing ? 'Refreshing…' : 'Loading Drive files…'}</p>
                   </div>
-                ) : displayDriveFiles.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-40 gap-2 text-text-secondary">
-                    <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-                    </svg>
-                    <p className="text-sm">{searchQuery ? 'No Drive files match your search' : 'No Drive files yet'}</p>
-                  </div>
-                ) : viewMode === 'grid' ? (
+                ) : (
+                  <>
+                    <FolderGrid folders={folders} currentPath={currentPath} onNavigate={navigateFolder} />
+                    {displayDriveFiles.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-40 gap-2 text-text-secondary">
+                        <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                        </svg>
+                        <p className="text-sm">{searchQuery ? 'No Drive files match your search' : 'No Drive files yet'}</p>
+                      </div>
+                    ) : viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4">
                     {displayDriveFiles.map(file => (
                       <FileCard
@@ -482,16 +505,16 @@ const ProjectFilesPage: React.FC = () => {
                         onToggleSelect={bulk.toggle}
                         onShare={setFileToShare}
                         onDelete={handleDelete}
-                        onClick={() => setSelectedFile(file)}
+                        onClick={() => setPreviewFile(file)}
                       />
                     ))}
                   </div>
                 ) : viewMode === 'kanban' ? (
-                  <KanbanView files={displayDriveFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
+                  <KanbanView files={displayDriveFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
                 ) : viewMode === 'gallery' ? (
-                  <GalleryView files={displayDriveFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
+                  <GalleryView files={displayDriveFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
                 ) : viewMode === 'timeline' ? (
-                  <TimelineView files={displayDriveFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
+                  <TimelineView files={displayDriveFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
                 ) : (
                   <div className="flex flex-col pb-4">
                     {displayDriveFiles.map(file => (
@@ -503,22 +526,16 @@ const ProjectFilesPage: React.FC = () => {
                         onToggleSelect={bulk.toggle}
                         onShare={setFileToShare}
                         onDelete={handleDelete}
-                        onClick={() => setSelectedFile(file)}
+                        onClick={() => setPreviewFile(file)}
                       />
                     ))}
                   </div>
                 )}
+                  </>
+                )}
               </div>
             </section>
-          )}
-
-          {/* Empty state when nothing matches the active source filter */}
-          {!showDrive && filteredNativeFiles.length === 0 && projectLinks.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
-              <span className="text-4xl mb-3">📁</span>
-              <p className="font-medium">No files found matching your criteria.</p>
-              <p className="text-sm opacity-60 mt-1">Try adjusting your source filter or search.</p>
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -529,6 +546,17 @@ const ProjectFilesPage: React.FC = () => {
           file={selectedFile}
           onClose={() => setSelectedFile(null)}
           onDelete={handleDelete}
+        />
+      )}
+
+      {/* ── File Preview Modal ────────────────────────────────────────────────── */}
+      {previewFile && (
+        <PreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
+          onShowInfo={() => {
+            setSelectedFile(previewFile);
+          }}
         />
       )}
 

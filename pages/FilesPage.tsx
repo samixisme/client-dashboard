@@ -26,6 +26,8 @@ import RecentFilesPanel from '../components/files/RecentFilesPanel';
 import ShareDialog from '../components/files/ShareDialog';
 import ActivityLog from '../components/files/ActivityLog';
 import StorageQuotaDisplay from '../components/files/StorageQuotaDisplay';
+import PreviewModal from '../components/files/PreviewModal';
+import FolderGrid from '../components/files/FolderGrid';
 import { Activity } from 'lucide-react';
 
 // ─── localStorage helpers for view mode ─────────────────────────────────────
@@ -72,13 +74,14 @@ const FilesPage: React.FC = () => {
 
   const { info: showInfo } = useToast();
 
-  const [viewMode, setViewMode]     = useState<DriveViewMode>(getStoredViewMode);
-  const [sortKey, setSortKey]       = useState<DriveFileSortKey>('modifiedTime');
-  const [sortDir, setSortDir]       = useState<DriveFileSortDir>('desc');
-  const [showUpload, setShowUpload] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
-  const [fileToShare, setFileToShare] = useState<DriveFile | null>(null);
-  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [viewMode, setViewMode]             = useState<DriveViewMode>(getStoredViewMode);
+  const [sortKey, setSortKey]               = useState<DriveFileSortKey>('modifiedTime');
+  const [sortDir, setSortDir]               = useState<DriveFileSortDir>('desc');
+  const [showUpload, setShowUpload]         = useState(false);
+  const [selectedFile, setSelectedFile]     = useState<DriveFile | null>(null);
+  const [previewFile, setPreviewFile]       = useState<DriveFile | null>(null);
+  const [fileToShare, setFileToShare]       = useState<DriveFile | null>(null);
+  const [showActivity, setShowActivity]     = useState(false);
 
   // ── Filters & Computed metadata ────────────────────────────────────────────
   const filterState = useFileFilters();
@@ -202,14 +205,16 @@ const FilesPage: React.FC = () => {
 
   // ── Delete handler ─────────────────────────────────────────────────────────
   const handleDelete = useCallback(async (fileId: string) => {
-    const fileName = files.find(f => f.id === fileId)?.name ?? 'File';
+    const name = files.find(f => f.id === fileId)?.name ?? 'File';
     try {
       await remove(fileId);
-      toast.success(`"${fileName}" deleted`);
+      toast.success(`"${name}" deleted`);
+      if (selectedFile?.id === fileId) setSelectedFile(null);
+      if (previewFile?.id === fileId) setPreviewFile(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Delete failed');
     }
-  }, [remove, files]);
+  }, [remove, files, selectedFile, previewFile]);
 
   // ── Sort toggle ─────────────────────────────────────────────────────────────
   const handleSort = useCallback((key: DriveFileSortKey) => {
@@ -220,6 +225,34 @@ const FilesPage: React.FC = () => {
       setSortDir('desc');
     }
   }, [sortKey]);
+
+  const handleNavigate = useCallback((path: string) => {
+    navigate(path);
+  }, [navigate]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const sp = new URLSearchParams(window.location.search);
+      const f = sp.get('folder');
+      if (f !== null) {
+        handleNavigate(f);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [handleNavigate]);
+
+  const handleCreateFolder = async () => {
+    const name = window.prompt("Enter new folder name:");
+    if (name && name.trim()) {
+      try {
+        await createFolder(name.trim());
+        toast.success(`Folder "${name}" created`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to create folder');
+      }
+    }
+  };
 
   // ── Filtered + sorted files ─────────────────────────────────────────────────
   const displayFiles = useMemo(() => {
@@ -309,16 +342,23 @@ const FilesPage: React.FC = () => {
 
           {/* Activity button */}
           <button
-            onClick={() => setShowActivityLog(v => !v)}
+            onClick={() => setShowActivity(v => !v)}
             aria-label="Toggle activity log"
             title="View recent activity"
             className={`h-9 flex items-center justify-center px-3 rounded-xl border transition-all ${
-              showActivityLog
+              showActivity
                 ? 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/20'
                 : 'bg-glass border-border-color text-text-secondary hover:text-text-primary hover:bg-glass-light'
             }`}
           >
             <Activity size={16} />
+          </button>
+
+          <button
+            onClick={handleCreateFolder}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-glass border border-border-color text-text-primary text-sm font-bold hover:bg-glass-light transition-colors shrink-0"
+          >
+            <span className="mr-1">+</span> Folder
           </button>
 
           {/* Upload button */}
@@ -366,15 +406,6 @@ const FilesPage: React.FC = () => {
 
       {/* ── Main body ───────────────────────────────────────────────────────── */}
       <div className="flex gap-5 flex-1 min-h-0">
-        {/* Folder sidebar */}
-        <FolderSidebar
-          folders={folders}
-          currentPath={currentPath}
-          onNavigate={navigate}
-          onMoveFile={move}
-          onCreateFolder={createFolder}
-        />
-
         {/* File content area */}
         <div className="flex-1 flex flex-col min-w-0 min-h-0 relative">
           
@@ -448,62 +479,62 @@ const FilesPage: React.FC = () => {
                 </svg>
                 <p className="text-sm">{isRefreshing ? 'Refreshing...' : 'Loading files...'}</p>
               </div>
-            ) : displayFiles.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 gap-2 text-text-secondary">
-                <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-                </svg>
-                <p className="text-sm">{search ? 'No files match your search' : 'No files here yet'}</p>
-                {!search && (
-                  <button
-                    onClick={() => setShowUpload(true)}
-                    className="text-sm text-primary hover:underline mt-1"
-                  >
-                    Upload the first file
-                  </button>
-                )}
-              </div>
-            ) : viewMode === 'grid' ? (
-              /* Enhanced Grid — DES-94: fewer, larger columns */
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4">
-                {displayFiles.map(file => (
-                  <FileCard 
-                    key={file.id} 
-                    file={file} 
-                    viewMode="grid" 
-                    isSelected={bulk.isSelected(file.id)}
-                    onToggleSelect={bulk.toggle}
-                    onShare={setFileToShare}
-                    onDelete={handleDelete} 
-                    onClick={() => setSelectedFile(file)} 
-                  />
-                ))}
-              </div>
-            ) : viewMode === 'kanban' ? (
-              /* Kanban View — DES-103 */
-              <KanbanView files={displayFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
-            ) : viewMode === 'gallery' ? (
-              /* Gallery view — DES-113 */
-              <GalleryView files={displayFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
-            ) : viewMode === 'timeline' ? (
-              /* Timeline view — DES-119 */
-              <TimelineView files={displayFiles} onDelete={handleDelete} onSelect={setSelectedFile} />
             ) : (
-              /* List view — DES-90 enhanced */
-              <div className="flex flex-col pb-4">
-                {displayFiles.map(file => (
-                  <FileCard 
-                    key={file.id} 
-                    file={file} 
-                    viewMode="list" 
-                    isSelected={bulk.isSelected(file.id)}
-                    onToggleSelect={bulk.toggle}
-                    onShare={setFileToShare}
-                    onDelete={handleDelete} 
-                    onClick={() => setSelectedFile(file)} 
-                  />
-                ))}
-              </div>
+              <>
+                <FolderGrid folders={folders} currentPath={currentPath} onNavigate={navigate} />
+                {displayFiles.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-40 gap-2 text-text-secondary">
+                    <svg className="w-12 h-12 opacity-30" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 01-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                    </svg>
+                    <p className="text-sm">{search ? 'No files match your search' : 'No files here yet'}</p>
+                    {!search && (
+                      <button
+                        onClick={() => setShowUpload(true)}
+                        className="text-sm text-primary hover:underline mt-1"
+                      >
+                        Upload the first file
+                      </button>
+                    )}
+                  </div>
+                ) : viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4">
+                  {displayFiles.map(file => (
+                    <FileCard
+                      key={file.id}
+                      file={file}
+                      viewMode="grid"
+                      isSelected={bulk.isSelected(file.id)}
+                      onToggleSelect={bulk.toggle}
+                      onShare={setFileToShare}
+                      onDelete={handleDelete}
+                      onClick={() => setPreviewFile(file)}
+                    />
+                  ))}
+                </div>
+              ) : viewMode === 'kanban' ? (
+                <KanbanView files={displayFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
+              ) : viewMode === 'gallery' ? (
+                <GalleryView files={displayFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
+              ) : viewMode === 'timeline' ? (
+                <TimelineView files={displayFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
+              ) : (
+                <div className="flex flex-col pb-4">
+                  {displayFiles.map(file => (
+                    <FileCard
+                      key={file.id}
+                      file={file}
+                      viewMode="list"
+                      isSelected={bulk.isSelected(file.id)}
+                      onToggleSelect={bulk.toggle}
+                      onShare={setFileToShare}
+                      onDelete={handleDelete}
+                      onClick={() => setPreviewFile(file)}
+                    />
+                  ))}
+                </div>
+              )}
+              </>
             )}
           </div>
 
@@ -532,12 +563,23 @@ const FilesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Metadata Sidebar (DES-77) */}
+      {/* ── Metadata Sidebar ──────────────────────────────────────────────────── */}
       {selectedFile && (
-        <MetadataSidebar 
-          file={selectedFile} 
-          onClose={() => setSelectedFile(null)} 
-          onDelete={handleDelete} 
+        <MetadataSidebar
+          file={selectedFile}
+          onClose={() => setSelectedFile(null)}
+          onDelete={handleDelete}
+        />
+      )}
+
+      {/* ── File Preview Modal ────────────────────────────────────────────────── */}
+      {previewFile && (
+        <PreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
+          onShowInfo={() => {
+            setSelectedFile(previewFile);
+          }}
         />
       )}
       
@@ -548,10 +590,10 @@ const FilesPage: React.FC = () => {
       />
 
       {/* Activity Log Sidebar (DES-93) */}
-      {showActivityLog && (
+      {showActivity && (
         <div className="fixed right-0 top-0 bottom-0 z-40 w-full max-w-sm bg-glass/60 backdrop-blur-xl border-l border-border-color shadow-2xl p-4 flex flex-col">
           <div className="flex justify-end mb-2">
-            <button onClick={() => setShowActivityLog(false)} className="p-1 rounded-md hover:bg-white/10 text-text-secondary">
+            <button onClick={() => setShowActivity(false)} className="p-1 rounded-md hover:bg-white/10 text-text-secondary">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>

@@ -1,7 +1,5 @@
-// components/files/FilterPanel.tsx — DES-101
-// Collapsible filter panel with controls for all 6 filter criteria.
 import React, { useState } from 'react';
-import { SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
 import { UseFileFiltersReturn } from '../../hooks/useFileFilters';
 import { DriveFileType, DriveSizeRange, DriveDateRange } from '../../types/drive';
 
@@ -9,13 +7,13 @@ interface FilterPanelProps extends UseFileFiltersReturn {
   availableOwners: string[];
 }
 
-const FILE_TYPE_OPTIONS: { value: DriveFileType; label: string }[] = [
-  { value: 'image',    label: '🖼  Images' },
-  { value: 'video',    label: '🎬 Videos' },
-  { value: 'document', label: '📝 Documents' },
-  { value: 'pdf',      label: '📄 PDFs' },
-  { value: 'archive',  label: '🗜  Archives' },
-  { value: 'code',     label: '💻 Code' },
+const FILE_TYPE_OPTIONS: { value: DriveFileType; label: string; icon: string }[] = [
+  { value: 'image',    label: 'Images',     icon: '🖼' },
+  { value: 'video',    label: 'Videos',     icon: '🎬' },
+  { value: 'document', label: 'Documents',  icon: '📝' },
+  { value: 'pdf',      label: 'PDFs',       icon: '📄' },
+  { value: 'archive',  label: 'Archives',   icon: '🗜' },
+  { value: 'code',     label: 'Code',       icon: '💻' },
 ];
 
 const SIZE_OPTIONS: { value: DriveSizeRange; label: string }[] = [
@@ -53,21 +51,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   };
 
   return (
-    <div className="mb-3 shrink-0">
+    <div className="mb-3 shrink-0 relative z-20">
       {/* Toggle button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-all ${
+        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
           hasActiveFilters
-            ? 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/20'
-            : 'border-border-color bg-glass text-text-secondary hover:text-text-primary hover:bg-glass-light'
+            ? 'bg-primary text-background shadow-md shadow-primary/20'
+            : 'border border-border-color bg-glass text-text-secondary hover:text-text-primary hover:bg-glass-light'
         }`}
         aria-expanded={open}
       >
         <SlidersHorizontal className="w-4 h-4" />
         Filters
         {hasActiveFilters && (
-          <span className="text-xs bg-primary text-background px-1.5 rounded-full">
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-background/20 text-background ml-1">
             {[
               (filters.fileType?.length ?? 0),
               filters.sizeRange ? 1 : 0,
@@ -77,95 +75,115 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             ].reduce((a, b) => a + b, 0)}
           </span>
         )}
-        {open ? <ChevronUp className="w-3.5 h-3.5 ml-1" /> : <ChevronDown className="w-3.5 h-3.5 ml-1" />}
+        {open ? <ChevronUp className="w-3.5 h-3.5 ml-0.5 opacity-70" /> : <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />}
       </button>
 
-      {/* Panel */}
+      {/* Panel Dropdown */}
       {open && (
-        <div className="mt-2 p-4 rounded-xl bg-glass/60 backdrop-blur-xl border border-border-color grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {/* File Type */}
+        <div className="absolute top-full left-0 mt-3 w-full sm:w-[500px] lg:w-[800px] p-5 rounded-2xl bg-glass-medium border border-border-color shadow-2xl backdrop-blur-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          
+          {/* File Type - Custom Toggle Buttons */}
           <div>
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">File Type</h4>
-            <div className="flex flex-col gap-1.5">
-              {FILE_TYPE_OPTIONS.map(({ value, label }) => (
-                <label key={value} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer hover:text-primary transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={(filters.fileType ?? []).includes(value)}
-                    onChange={() => toggleType(value)}
-                    className="rounded border-border-color accent-primary"
-                  />
-                  {label}
-                </label>
-              ))}
+            <div className="flex items-center justify-between mb-3 text-xs font-bold text-text-secondary uppercase tracking-widest">
+              File Type
+              {(filters.fileType?.length ?? 0) > 0 && (
+                 <button onClick={() => setFileType(undefined)} className="text-[10px] hover:text-red-400 transition-colors cursor-pointer">Clear</button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {FILE_TYPE_OPTIONS.map(({ value, label, icon }) => {
+                const isActive = (filters.fileType ?? []).includes(value);
+                return (
+                  <button
+                    key={value}
+                    onClick={() => toggleType(value)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                      isActive 
+                        ? 'bg-primary border border-primary text-background' 
+                        : 'bg-background/40 border border-border-color text-text-secondary hover:text-text-primary hover:border-primary/50'
+                    }`}
+                  >
+                    <span>{icon}</span> {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Size Range */}
+          {/* File Size - Pill Selector */}
           <div>
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">File Size</h4>
-            <div className="flex flex-col gap-1.5">
-              {SIZE_OPTIONS.map(({ value, label }) => (
-                <label key={value} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer hover:text-primary transition-colors">
-                  <input
-                    type="radio"
-                    name="sizeRange"
-                    checked={filters.sizeRange === value}
-                    onChange={() => setSizeRange(value)}
-                    className="accent-primary"
-                  />
-                  {label}
-                </label>
-              ))}
+            <div className="flex items-center justify-between mb-3 text-xs font-bold text-text-secondary uppercase tracking-widest">
+              File Size
               {filters.sizeRange && (
-                <button
-                  onClick={() => setSizeRange(undefined)}
-                  className="text-xs text-text-secondary hover:text-red-400 transition-colors text-left mt-1"
-                >
-                  Clear size filter
-                </button>
+                 <button onClick={() => setSizeRange(undefined)} className="text-[10px] hover:text-red-400 transition-colors cursor-pointer">Clear</button>
               )}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {SIZE_OPTIONS.map(({ value, label }) => {
+                const isActive = filters.sizeRange === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setSizeRange(isActive ? undefined : value)}
+                    className={`flex items-center justify-between w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? 'bg-primary/10 text-primary border border-primary/30'
+                        : 'bg-background/20 text-text-secondary border border-transparent hover:bg-background/40 hover:text-text-primary'
+                    }`}
+                  >
+                    {label}
+                    {isActive && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Date Range */}
+          {/* Date Range - Pill Selector */}
           <div>
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Modified Date</h4>
-            <div className="flex flex-col gap-1.5">
-              {DATE_OPTIONS.map(({ value, label }) => (
-                <label key={value} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer hover:text-primary transition-colors">
-                  <input
-                    type="radio"
-                    name="dateRange"
-                    checked={filters.dateRange === value}
-                    onChange={() => setDateRange(value)}
-                    className="accent-primary"
-                  />
-                  {label}
-                </label>
-              ))}
+            <div className="flex items-center justify-between mb-3 text-xs font-bold text-text-secondary uppercase tracking-widest">
+              Modified Date
               {filters.dateRange && (
-                <button
-                  onClick={() => setDateRange(undefined)}
-                  className="text-xs text-text-secondary hover:text-red-400 transition-colors text-left mt-1"
-                >
-                  Clear date filter
-                </button>
+                 <button onClick={() => setDateRange(undefined)} className="text-[10px] hover:text-red-400 transition-colors cursor-pointer">Clear</button>
               )}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {DATE_OPTIONS.map(({ value, label }) => {
+                const isActive = filters.dateRange === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setDateRange(isActive ? undefined : value)}
+                    className={`flex items-center justify-between w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? 'bg-primary/10 text-primary border border-primary/30'
+                        : 'bg-background/20 text-text-secondary border border-transparent hover:bg-background/40 hover:text-text-primary'
+                    }`}
+                  >
+                    {label}
+                    {isActive && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Owner */}
           {availableOwners.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Owner</h4>
-              <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
-                {availableOwners.map(owner => (
-                  <label key={owner} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer hover:text-primary transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={(filters.owner ?? []).includes(owner)}
-                      onChange={() => {
+              <div className="flex items-center justify-between mb-3 text-xs font-bold text-text-secondary uppercase tracking-widest">
+                Owner
+                {(filters.owner?.length ?? 0) > 0 && (
+                  <button onClick={() => setOwner(undefined)} className="text-[10px] hover:text-red-400 transition-colors cursor-pointer">Clear</button>
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1 stylish-scrollbar">
+                {availableOwners.map(owner => {
+                  const isActive = (filters.owner ?? []).includes(owner);
+                  return (
+                    <button
+                      key={owner}
+                      onClick={() => {
                         const current = filters.owner ?? [];
                         setOwner(
                           current.includes(owner)
@@ -173,11 +191,17 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                             : [...current, owner]
                         );
                       }}
-                      className="rounded border-border-color accent-primary"
-                    />
-                    <span className="truncate">{owner}</span>
-                  </label>
-                ))}
+                      className={`flex items-center justify-between w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 overflow-hidden cursor-pointer ${
+                        isActive
+                          ? 'bg-primary/10 text-primary border border-primary/30'
+                          : 'bg-background/20 text-text-secondary border border-transparent hover:bg-background/40 hover:text-text-primary'
+                      }`}
+                    >
+                      <span className="truncate pr-2">{owner}</span>
+                      {isActive && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

@@ -12,6 +12,7 @@ export interface DriveFile {
   modifiedTime?: string;
   parents?: string[];
   owners?: { displayName?: string; emailAddress?: string }[];
+  appProperties?: Record<string, string>;
 }
 
 export interface DriveFolder {

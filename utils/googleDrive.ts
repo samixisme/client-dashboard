@@ -307,7 +307,7 @@ export const getFileMetadata = async (fileId: string): Promise<any> => {
 
   const response = await drive.files.get({
     fileId: fileId,
-    fields: 'id, name, mimeType, size, webViewLink, webContentLink, thumbnailLink, createdTime, modifiedTime, owners(displayName,emailAddress)',
+    fields: 'id, name, mimeType, size, webViewLink, webContentLink, thumbnailLink, createdTime, modifiedTime, owners(displayName,emailAddress), appProperties',
     supportsAllDrives: true,
   });
 
@@ -395,6 +395,25 @@ export const moveFile = async (fileId: string, newFolderId: string): Promise<voi
 };
 
 /**
+ * Update appProperties for a file
+ * @param fileId - ID of the file
+ * @param appProperties - Key-value metadata (pass null for a key to delete it)
+ */
+export const updateFileAppProperties = async (fileId: string, appProperties: Record<string, string | null>): Promise<void> => {
+  if (!drive) await initializeDrive();
+
+  await drive.files.update({
+    fileId: fileId,
+    requestBody: {
+      appProperties,
+    },
+    supportsAllDrives: true,
+  });
+
+  await setDriveCache(`file:${fileId}`, null, 0);
+};
+
+/**
  * List files in a folder
  */
 export const listFiles = async (folderPath: string = ''): Promise<any[]> => {
@@ -404,7 +423,7 @@ export const listFiles = async (folderPath: string = ''): Promise<any[]> => {
 
   const response = await drive.files.list({
     q: `'${folderId}' in parents and trashed=false`,
-    fields: 'files(id, name, mimeType, size, webViewLink, createdTime, modifiedTime)',
+    fields: 'files(id, name, mimeType, size, webViewLink, webContentLink, thumbnailLink, createdTime, modifiedTime, owners(displayName,emailAddress), appProperties)',
     orderBy: 'modifiedTime desc',
     pageSize: 100,
     supportsAllDrives: true,  // Required for Shared Drives

@@ -1,21 +1,16 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { HardDrive, Link2 } from 'lucide-react';
 import FilesPage from './FilesPage';
 import LinksPage from './LinksPage';
-
-type LibraryTab = 'files' | 'links';
-
-const TABS: { id: LibraryTab; label: string; Icon: typeof HardDrive }[] = [
-  { id: 'files', label: 'Files', Icon: HardDrive },
-  { id: 'links', label: 'Links', Icon: Link2 },
-];
+import LibrarySidebar, { LibraryTab } from '../components/files/LibrarySidebar';
 
 const LibraryPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
   const activeTab: LibraryTab =
     rawTab === 'files' || rawTab === 'links' ? rawTab : 'files';
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const handleTabChange = useCallback(
     (tab: LibraryTab) => {
@@ -24,54 +19,30 @@ const LibraryPage: React.FC = () => {
     [setSearchParams],
   );
 
+  const toggleCollapse = useCallback(() => {
+    setIsSidebarCollapsed(prev => !prev);
+  }, []);
+
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+      {/* ── Collapsible Sidebar ── */}
+      <LibrarySidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={toggleCollapse}
+      />
 
-      {/* ── Library header ── */}
-      <div className="flex items-center justify-between gap-4 mb-5 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Library</h1>
-          <p className="text-xs text-text-secondary mt-0.5">
-            Your files and saved links in one place
-          </p>
-        </div>
+      {/* ── Main Content Area ── */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Optional: we can add a very small contextual breadcrumb right here if needed later, 
+            but for now FilesPage/LinksPage bring their own headers inside the content pane. */}
 
-        {/* Tab switcher */}
-        <div
-          className="flex items-center bg-glass border border-border-color rounded-xl overflow-hidden shrink-0"
-          role="tablist"
-          aria-label="Library tabs"
-        >
-          {TABS.map(({ id, label, Icon }) => {
-            const isActive = activeTab === id;
-            return (
-              <button
-                key={id}
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => handleTabChange(id)}
-                className={[
-                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150 cursor-pointer',
-                  'border-r border-border-color last:border-r-0',
-                  isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-glass-light',
-                ].join(' ')}
-              >
-                <Icon size={14} className="shrink-0" />
-                {label}
-              </button>
-            );
-          })}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
+          {activeTab === 'files' && <FilesPage />}
+          {activeTab === 'links' && <LinksPage />}
         </div>
       </div>
-
-      {/* ── Active tab — only the active child is mounted ── */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        {activeTab === 'files' && <FilesPage />}
-        {activeTab === 'links' && <LinksPage />}
-      </div>
-
     </div>
   );
 };

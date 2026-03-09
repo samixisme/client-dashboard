@@ -12,6 +12,7 @@ import {
   revertFileRevision,
   renameFile,
   moveFile,
+  updateFileAppProperties,
 } from '../utils/googleDrive';
 import { getQuotaStats } from '../utils/driveQuota';
 import { optionalApiKeyAuth } from './authMiddleware';
@@ -568,6 +569,20 @@ router.post('/files/:fileId/tags', async (req: Request, res: Response) => {
       fileCount: (await db.collection('fileTagMappings').where('tagId', '==', tagId).get()).size,
     });
 
+    // [DES-122] Sync to Drive appProperties
+    try {
+      const fileMeta = await getFileMetadata(fileId);
+      const existingAppProps = fileMeta.appProperties || {};
+      const currentTagsStr = existingAppProps.tags || '';
+      const tagsArray = currentTagsStr ? currentTagsStr.split(',') : [];
+      if (!tagsArray.includes(tagId)) {
+        tagsArray.push(tagId);
+        await updateFileAppProperties(fileId, { tags: tagsArray.join(',') });
+      }
+    } catch (e) {
+      console.warn('Failed to sync tag to Drive appProperties', e);
+    }
+
     return res.status(201).json({ success: true, data: { id: docRef.id, ...assignmentData } });
   } catch (error) {
     logger.error({ err: error }, 'Failed to assign tag');
@@ -595,6 +610,20 @@ router.delete('/files/:fileId/tags/:tagId', async (req: Request, res: Response) 
         fileCount: (await db.collection('fileTagMappings').where('tagId', '==', tagId).get()).size,
       });
     } catch { /* tag may have been deleted */ }
+
+    // [DES-122] Sync down to Drive appProperties
+    try {
+      const fileMeta = await getFileMetadata(fileId);
+      const existingAppProps = fileMeta.appProperties || {};
+      const currentTagsStr = existingAppProps.tags || '';
+      let tagsArray = currentTagsStr ? currentTagsStr.split(',') : [];
+      if (tagsArray.includes(tagId)) {
+        tagsArray = tagsArray.filter((id: string) => id !== tagId);
+        await updateFileAppProperties(fileId, { tags: tagsArray.join(',') || null }); // delete property if empty
+      }
+    } catch (e) {
+      console.warn('Failed to sync tag remove to Drive appProperties', e);
+    }
 
     return res.json({ success: true });
   } catch (error) {
