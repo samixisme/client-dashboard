@@ -71,6 +71,12 @@ jobs:
           cp ecosystem.config.js deploy-package/
           cp -r firestore.* deploy-package/ || true
 
+          # Install prod-only node_modules on the CI runner (unlimited RAM).
+          # This avoids ENOMEM crashes when running npm ci on the memory-constrained VPS.
+          cd deploy-package
+          npm ci --omit=dev --no-audit --no-fund
+          cd ..
+
           # Create version file
           echo "{\"version\":\"${{ github.sha }}\",\"build_time\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"branch\":\"${{ github.ref_name }}\"}" > deploy-package/version.json
 
@@ -148,18 +154,8 @@ jobs:
             rm deploy-${{ github.sha }}.tar.gz
           EOF
 
-      - name: Install production dependencies on server
-        run: |
-          ssh -i ~/.ssh/deploy_key ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} << 'EOF'
-            cd ${{ env.DEPLOY_PATH }}/releases/${{ github.sha }}
-            # Only install production deps — devDeps (Vite, TypeScript, Jest,
-            # BlockSuite, etc.) are not needed on the server since dist/ and
-            # dist-server/ are pre-built on GitHub runners. This also avoids
-            # ENOMEM crashes on the memory-constrained VPS.
-            # To explicitly avoid spawn ENOMEM, limit node memory and ignore expensive audits.
-            export NODE_OPTIONS="--max-old-space-size=512"
-            npm ci --omit=dev --no-audit --no-fund
-          EOF
+      # node_modules (prod-only) are now pre-installed on the CI runner and
+      # shipped inside the tarball — no npm install needed on the server.
 
       - name: Write environment file from secrets
         env:
