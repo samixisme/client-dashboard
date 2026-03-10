@@ -1,12 +1,50 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { getFirestore } from './firebaseAdmin';
 import * as admin from 'firebase-admin';
+import crypto from 'crypto';
 
 const webhookRouter = Router();
 
 // Webhook verify token - should match what you set in Meta App Dashboard
 // This is stored in .env and used to verify Meta's subscription request
-const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'your-webhook-verify-token-here';
+const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
+
+/**
+ * Middleware to verify Meta Webhook signature
+ */
+function verifyMetaSignature(req: Request, res: Response, next: NextFunction) {
+    const signatureHeader = req.headers['x-hub-signature-256'];
+    const appSecret = process.env.INSTAGRAM_CLIENT_SECRET;
+
+    if (!appSecret) {
+        console.error('Missing INSTAGRAM_CLIENT_SECRET in environment variables');
+        return res.status(500).send('Server configuration error');
+    }
+
+    if (!signatureHeader || typeof signatureHeader !== 'string') {
+        console.error('Missing or invalid X-Hub-Signature-256 header');
+        return res.status(401).send('Unauthorized: Missing signature');
+    }
+
+    if (!req.rawBody) {
+        console.error('req.rawBody is missing. Ensure express.json is configured to expose it.');
+        return res.status(500).send('Server configuration error');
+    }
+
+    const expectedSignature = `sha256=${crypto.createHmac('sha256', appSecret).update(req.rawBody).digest('hex')}`;
+
+    try {
+        if (!crypto.timingSafeEqual(Buffer.from(signatureHeader), Buffer.from(expectedSignature))) {
+            console.error('Signature mismatch');
+            return res.status(401).send('Unauthorized: Invalid signature');
+        }
+    } catch (error) {
+        console.error('Error during signature comparison:', error);
+        return res.status(401).send('Unauthorized: Invalid signature format');
+    }
+
+    next();
+}
 
 /**
  * GET /api/webhooks/instagram
@@ -25,7 +63,10 @@ webhookRouter.get('/instagram', (req: Request, res: Response) => {
     // Check if a token and mode were sent
     if (mode && token) {
         // Check the mode and token sent are correct
-        if (mode === 'subscribe' && token === WEBHOOK_VERIFY_TOKEN) {
+        if (!WEBHOOK_VERIFY_TOKEN) {
+            console.error('Missing WEBHOOK_VERIFY_TOKEN in environment variables');
+            res.sendStatus(500);
+        } else if (mode === 'subscribe' && token === WEBHOOK_VERIFY_TOKEN) {
             // Respond with 200 OK and challenge token from the request
             console.log('Instagram webhook verified successfully');
             res.status(200).send(challenge);
@@ -46,7 +87,7 @@ webhookRouter.get('/instagram', (req: Request, res: Response) => {
  * Meta sends POST requests with webhook events.
  * This is where you receive real-time updates about posts, comments, messages, etc.
  */
-webhookRouter.post('/instagram', async (req: Request, res: Response) => {
+webhookRouter.post('/instagram', verifyMetaSignature, async (req: Request, res: Response) => {
     const body = req.body;
 
     console.log('Instagram webhook event received:', JSON.stringify(body, null, 2));

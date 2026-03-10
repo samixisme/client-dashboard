@@ -29,7 +29,18 @@ jest.mock('../../api/logger', () => ({
 
 // Capture the verify token that the webhooks module loaded at import time
 // (from .env or the hardcoded fallback). Module-level const can't be changed at runtime.
-const LOADED_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'your-webhook-verify-token-here';
+const LOADED_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'test-verify-token';
+process.env.WEBHOOK_VERIFY_TOKEN = LOADED_VERIFY_TOKEN;
+process.env.INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET || 'test-client-secret';
+
+import crypto from 'crypto';
+
+// Helper to generate HMAC signature for mock requests
+const generateSignature = (body: any) => {
+  const secret = process.env.INSTAGRAM_CLIENT_SECRET as string;
+  const rawBody = Buffer.from(JSON.stringify(body));
+  return `sha256=${crypto.createHmac('sha256', secret).update(rawBody).digest('hex')}`;
+};
 
 describe('Webhook Routes — GET /api/webhooks/instagram (verification)', () => {
   it('returns challenge when verify token matches', async () => {
@@ -68,8 +79,28 @@ describe('Webhook Routes — POST /api/webhooks/instagram (events)', () => {
   });
 
   it('returns 200 EVENT_RECEIVED for valid instagram webhook', async () => {
+    const payload = {
+        object: 'instagram',
+        entry: [
+          {
+            changes: [
+              { field: 'comments', value: { id: 'comment-1', text: 'Great post!' } },
+            ],
+          },
+        ],
+      };
     const res = await request(app)
       .post('/api/webhooks/instagram')
+      .set('x-hub-signature-256', generateSignature(payload))
+      .send(payload);
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('EVENT_RECEIVED');
+  });
+
+  it('returns 401 Unauthorized for invalid signature', async () => {
+    const res = await request(app)
+      .post('/api/webhooks/instagram')
+      .set('x-hub-signature-256', 'sha256=invalid-signature')
       .send({
         object: 'instagram',
         entry: [
@@ -80,14 +111,11 @@ describe('Webhook Routes — POST /api/webhooks/instagram (events)', () => {
           },
         ],
       });
-    expect(res.status).toBe(200);
-    expect(res.text).toBe('EVENT_RECEIVED');
+    expect(res.status).toBe(401);
   });
 
   it('returns 200 for message events', async () => {
-    const res = await request(app)
-      .post('/api/webhooks/instagram')
-      .send({
+    const payload = {
         object: 'instagram',
         entry: [
           {
@@ -99,14 +127,16 @@ describe('Webhook Routes — POST /api/webhooks/instagram (events)', () => {
             ],
           },
         ],
-      });
+      };
+    const res = await request(app)
+      .post('/api/webhooks/instagram')
+      .set('x-hub-signature-256', generateSignature(payload))
+      .send(payload);
     expect(res.status).toBe(200);
   });
 
   it('returns 200 for media events', async () => {
-    const res = await request(app)
-      .post('/api/webhooks/instagram')
-      .send({
+    const payload = {
         object: 'instagram',
         entry: [
           {
@@ -115,14 +145,16 @@ describe('Webhook Routes — POST /api/webhooks/instagram (events)', () => {
             ],
           },
         ],
-      });
+      };
+    const res = await request(app)
+      .post('/api/webhooks/instagram')
+      .set('x-hub-signature-256', generateSignature(payload))
+      .send(payload);
     expect(res.status).toBe(200);
   });
 
   it('returns 200 for mention events', async () => {
-    const res = await request(app)
-      .post('/api/webhooks/instagram')
-      .send({
+    const payload = {
         object: 'instagram',
         entry: [
           {
@@ -131,21 +163,25 @@ describe('Webhook Routes — POST /api/webhooks/instagram (events)', () => {
             ],
           },
         ],
-      });
+      };
+    const res = await request(app)
+      .post('/api/webhooks/instagram')
+      .set('x-hub-signature-256', generateSignature(payload))
+      .send(payload);
     expect(res.status).toBe(200);
   });
 
   it('returns 404 for non-instagram object', async () => {
+    const payload = { object: 'page', entry: [] };
     const res = await request(app)
       .post('/api/webhooks/instagram')
-      .send({ object: 'page', entry: [] });
+      .set('x-hub-signature-256', generateSignature(payload))
+      .send(payload);
     expect(res.status).toBe(404);
   });
 
   it('handles multiple entries and changes', async () => {
-    const res = await request(app)
-      .post('/api/webhooks/instagram')
-      .send({
+    const payload = {
         object: 'instagram',
         entry: [
           {
@@ -160,14 +196,16 @@ describe('Webhook Routes — POST /api/webhooks/instagram (events)', () => {
             ],
           },
         ],
-      });
+      };
+    const res = await request(app)
+      .post('/api/webhooks/instagram')
+      .set('x-hub-signature-256', generateSignature(payload))
+      .send(payload);
     expect(res.status).toBe(200);
   });
 
   it('handles unknown field types gracefully', async () => {
-    const res = await request(app)
-      .post('/api/webhooks/instagram')
-      .send({
+    const payload = {
         object: 'instagram',
         entry: [
           {
@@ -176,7 +214,11 @@ describe('Webhook Routes — POST /api/webhooks/instagram (events)', () => {
             ],
           },
         ],
-      });
+      };
+    const res = await request(app)
+      .post('/api/webhooks/instagram')
+      .set('x-hub-signature-256', generateSignature(payload))
+      .send(payload);
     expect(res.status).toBe(200);
   });
 });

@@ -126,8 +126,22 @@ const limiter = rateLimit({
 
 app.use('/api/', limiter);
 
-// Parse JSON bodies with size limit
-app.use(express.json({ limit: '1mb' }));
+// Extend Express Request interface to include rawBody for webhook signature verification
+declare global {
+  namespace Express {
+    interface Request {
+      rawBody?: Buffer;
+    }
+  }
+}
+
+// Parse JSON bodies with size limit, keeping raw body for webhook verification
+app.use(express.json({
+  limit: '1mb',
+  verify: (req: express.Request, res: express.Response, buf: Buffer) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
 // VercelRequest and VercelResponse are compatible enough with Express req/res
