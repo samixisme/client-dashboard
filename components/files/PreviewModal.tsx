@@ -7,9 +7,10 @@ interface PreviewModalProps {
   file: DriveFile;
   onClose: () => void;
   onShowInfo?: () => void;
+  isSidebarOpen?: boolean;
 }
 
-const PreviewModal: React.FC<PreviewModalProps> = ({ file, onClose, onShowInfo }) => {
+const PreviewModal: React.FC<PreviewModalProps> = ({ file, onClose, onShowInfo, isSidebarOpen }) => {
   // Close on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -20,7 +21,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ file, onClose, onShowInfo }
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 md:p-12">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6 md:p-12">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
@@ -28,7 +29,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ file, onClose, onShowInfo }
       />
 
       {/* Modal */}
-      <div className="relative w-full h-full max-w-6xl max-h-[90vh] flex flex-col bg-background/90 border border-border-color shadow-2xl rounded-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200">
+      <div className={`relative w-full h-full max-w-6xl max-h-[90vh] flex flex-col bg-background/90 border border-border-color shadow-2xl rounded-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200 transition-all ${isSidebarOpen ? 'lg:mr-96' : ''}`}>
         
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-color bg-glass/50 shrink-0">

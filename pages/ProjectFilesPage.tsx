@@ -240,6 +240,11 @@ const ProjectFilesPage: React.FC = () => {
 
   const { tags: allTags } = useFileTags(safeProjectId);
 
+  const handleFileClick = useCallback((file: DriveFile) => {
+    setPreviewFile(file);
+    setSelectedFile(file);
+  }, []);
+
   useEffect(() => {
     try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch { /* noop */ }
   }, [viewMode]);
@@ -708,14 +713,14 @@ const ProjectFilesPage: React.FC = () => {
                         onToggleSelect={bulk.toggle}
                         onShare={setFileToShare}
                         onDelete={handleDelete}
-                        onClick={() => setPreviewFile(file)}
+                        onClick={() => handleFileClick(file)}
                       />
                     ))}
                   </div>
                 ) : viewMode === 'kanban' ? (
-                  <KanbanView files={displayDriveFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
+                  <KanbanView files={displayDriveFiles} onDelete={handleDelete} onSelect={handleFileClick} />
                 ) : viewMode === 'timeline' ? (
-                  <TimelineView files={displayDriveFiles} onDelete={handleDelete} onSelect={setPreviewFile} />
+                  <TimelineView files={displayDriveFiles} onDelete={handleDelete} onSelect={handleFileClick} />
                 ) : (
                   <div className="flex flex-col pb-4">
                     {displayDriveFiles.map(file => (
@@ -728,7 +733,7 @@ const ProjectFilesPage: React.FC = () => {
                         onToggleSelect={bulk.toggle}
                         onShare={setFileToShare}
                         onDelete={handleDelete}
-                        onClick={() => setPreviewFile(file)}
+                        onClick={() => handleFileClick(file)}
                       />
                     ))}
                   </div>
@@ -759,6 +764,7 @@ const ProjectFilesPage: React.FC = () => {
           onShowInfo={() => {
             setSelectedFile(previewFile);
           }}
+          isSidebarOpen={!!selectedFile}
         />
       )}
 
