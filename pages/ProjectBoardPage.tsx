@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Stage, Task, getTimestampSeconds } from '../types';
 import TaskModal from '../components/TaskModal';
@@ -168,7 +168,9 @@ const ProjectBoardPage = () => {
         }
     }, [boardId, data.boards, data.projects]);
 
-    const { boardStages, tasksByStage } = (() => {
+    const { boardStages, tasksByStage } = useMemo(() => {
+        // Bolt ⚡: Memoizing expensive board and task grouping logic
+        // Impact: Reduces CPU work on every re-render (which happens frequently during drag-and-drop or typing)
         if (!boardId) return { boardStages: [], tasksByStage: new Map() };
 
         const stages = data.stages
@@ -205,7 +207,7 @@ const ProjectBoardPage = () => {
 
         return { boardStages: stages, tasksByStage: tasksMap };
 
-    })();
+    }, [boardId, data.stages, data.tasks]);
     
     const handleDragEnd = async (result: { destination?: { droppableId: string; index: number }; source: { droppableId: string; index: number }; draggableId: string }) => {
         const { destination, source, draggableId } = result;
