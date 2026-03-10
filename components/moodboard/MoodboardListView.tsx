@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { MoodboardItem } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { TextIcon } from '../icons/TextIcon';
@@ -26,6 +26,27 @@ const TypeIcon = ({ type }: { type: MoodboardItem['type'] }) => {
     const Icon = icons[type];
     return Icon ? <Icon className="h-5 w-5 text-text-secondary" /> : null;
 };
+
+const SortableHeader = React.memo(({
+    sortKey,
+    label,
+    sortConfig,
+    requestSort
+}: {
+    sortKey: SortConfig['key'],
+    label: string,
+    sortConfig: SortConfig | null,
+    requestSort: (key: SortConfig['key']) => void
+}) => {
+    const isSorted = sortConfig?.key === sortKey;
+    const directionIcon = sortConfig?.direction === 'ascending' ? '▲' : '▼';
+    return (
+        <th onClick={() => requestSort(sortKey)} className="p-4 text-left text-xs font-medium text-text-secondary uppercase cursor-pointer hover:text-text-primary">
+            {label} {isSorted && directionIcon}
+        </th>
+    );
+});
+SortableHeader.displayName = 'SortableHeader';
 
 const MoodboardListView = ({ items }: { items: MoodboardItem[] }) => {
     const { data } = useData();
@@ -63,34 +84,26 @@ const MoodboardListView = ({ items }: { items: MoodboardItem[] }) => {
         return sortableItems;
     }, [items, sortConfig, data.board_members]);
 
-    const requestSort = (key: SortConfig['key']) => {
-        let direction: 'ascending' | 'descending' = 'ascending';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const SortableHeader = ({ sortKey, label }: { sortKey: SortConfig['key'], label: string }) => {
-        const isSorted = sortConfig?.key === sortKey;
-        const directionIcon = sortConfig?.direction === 'ascending' ? '▲' : '▼';
-        return (
-            <th onClick={() => requestSort(sortKey)} className="p-4 text-left text-xs font-medium text-text-secondary uppercase cursor-pointer hover:text-text-primary">
-                {label} {isSorted && directionIcon}
-            </th>
-        );
-    };
+    const requestSort = useCallback((key: SortConfig['key']) => {
+        setSortConfig(prev => {
+            let direction: 'ascending' | 'descending' = 'ascending';
+            if (prev && prev.key === key && prev.direction === 'ascending') {
+                direction = 'descending';
+            }
+            return { key, direction };
+        });
+    }, []);
 
     return (
         <div className="p-4 bg-glass border border-border-color rounded-lg">
             <table className="min-w-full">
                 <thead>
                     <tr className="border-b border-border-color">
-                        <SortableHeader sortKey="type" label="Type" />
+                        <SortableHeader sortKey="type" label="Type" sortConfig={sortConfig} requestSort={requestSort} />
                         <th className="p-4 text-left text-xs font-medium text-text-secondary uppercase">Content</th>
-                        <SortableHeader sortKey="creator" label="Creator" />
-                        <SortableHeader sortKey="createdAt" label="Created" />
-                        <SortableHeader sortKey="updatedAt" label="Last Modified" />
+                        <SortableHeader sortKey="creator" label="Creator" sortConfig={sortConfig} requestSort={requestSort} />
+                        <SortableHeader sortKey="createdAt" label="Created" sortConfig={sortConfig} requestSort={requestSort} />
+                        <SortableHeader sortKey="updatedAt" label="Last Modified" sortConfig={sortConfig} requestSort={requestSort} />
                     </tr>
                 </thead>
                 <tbody>
