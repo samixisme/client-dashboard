@@ -115,7 +115,7 @@ const AddFeedbackRequestModal: React.FC<AddFeedbackRequestModalProps> = ({ proje
                 {step === 2 && (
                     <form onSubmit={handleSubmit} className="p-8">
                         <div className="flex items-center gap-4 mb-6">
-                            <button type="button" onClick={handleBack} className="p-2 rounded-lg hover:bg-glass-light hover:scale-110 transition-all duration-300"><ArrowLeftIcon className="h-5 w-5"/></button>
+                            <button type="button" onClick={handleBack} className="p-2 rounded-lg hover:bg-glass-light hover:scale-110 transition-all duration-300" aria-label="Go back" title="Go back"><ArrowLeftIcon className="h-5 w-5"/></button>
                             <h2 className="text-2xl font-bold text-text-primary">New {type} Feedback</h2>
                         </div>
                         <div className="space-y-4">
