@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { ProjectFile, ProjectLink } from '../types';
@@ -6,9 +7,10 @@ import { DriveFile, DriveViewMode, DriveFileSortKey, DriveFileSortDir } from '..
 import { useDriveFiles } from '../hooks/useDriveFiles';
 import { useFileFilters } from '../hooks/useFileFilters';
 import { useFileStars } from '../hooks/useFileStars';
+import { useFileTags } from '../hooks/useFileTags';
 import { applyFileFilters } from '../utils/fileFilters';
 import { useBulkSelection } from '../hooks/useBulkSelection';
-import { FolderPlus, X } from 'lucide-react';
+import { FolderPlus, X, Upload, SlidersHorizontal, ChevronDown } from 'lucide-react';
 
 // Components
 import LibrarySidebar, { LibraryTab } from '../components/files/LibrarySidebar';
@@ -213,6 +215,7 @@ const ProjectFilesPage: React.FC = () => {
 
   // ── UI state ─────────────────────────────────────────────────────────────
   const [showFolderModal, setShowFolderModal] = useState(false);
+  const [openPanel, setOpenPanel]           = useState<'filters' | 'upload' | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab');
   const VALID_TABS: LibraryTab[] = ['files.all', 'files.recent', 'files.starred', 'links'];
@@ -234,6 +237,8 @@ const ProjectFilesPage: React.FC = () => {
   const [selectedFile, setSelectedFile]     = useState<DriveFile | null>(null);
   const [previewFile, setPreviewFile]       = useState<DriveFile | null>(null);
   const [fileToShare, setFileToShare]       = useState<DriveFile | null>(null);
+
+  const { tags: allTags } = useFileTags(safeProjectId);
 
   useEffect(() => {
     try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch { /* noop */ }
@@ -290,11 +295,21 @@ const ProjectFilesPage: React.FC = () => {
       if (sortKey === 'name')         { va = a.name.toLowerCase(); vb = b.name.toLowerCase(); }
       if (sortKey === 'modifiedTime') { va = a.modifiedTime ?? ''; vb = b.modifiedTime ?? ''; }
       if (sortKey === 'size')         { va = parseInt(a.size ?? '0', 10); vb = parseInt(b.size ?? '0', 10); }
+      if (sortKey === 'tags') {
+        const getFirstTagName = (file: DriveFile) => {
+          if (!file.appProperties?.tags) return '';
+          const firstTagId = file.appProperties.tags.split(',')[0];
+          const tag = allTags.find(t => t.id === firstTagId);
+          return tag ? tag.name.toLowerCase() : '';
+        };
+        va = getFirstTagName(a);
+        vb = getFirstTagName(b);
+      }
       if (va < vb) return sortDir === 'asc' ? -1 : 1;
       if (va > vb) return sortDir === 'asc' ?  1 : -1;
       return 0;
     });
-  }, [driveFiles, searchQuery, sortKey, sortDir, filterState.filters, activeTab, starredIds]);
+  }, [driveFiles, searchQuery, sortKey, sortDir, filterState.filters, activeTab, starredIds, allTags]);
 
   const handleSort = useCallback((key: DriveFileSortKey) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -371,27 +386,68 @@ const ProjectFilesPage: React.FC = () => {
   const canAddLink = activeTab === 'links';
 
   return (
-    <div className="flex h-full overflow-hidden px-4 md:px-10 pt-4 pb-24 md:pb-10">
-      {/* Sidebar */}
-      <LibrarySidebar
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 pl-6 flex flex-col min-h-0">
-        <div className="max-w-7xl mx-auto w-full flex flex-col gap-6 flex-1 min-h-0">
+    <div className="flex h-full overflow-hidden px-4 md:px-10 pt-4 pb-24 md:pb-28">
+      {/* Main Content — full width, sidebar is now fixed bottom-center */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="w-full flex flex-col gap-6 flex-1 min-h-0">
 
           {/* ── Header ─────────────────────────────────────────────────────── */}
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
-            <div>
-              <h1 className="text-3xl font-bold text-text-primary">Project Files</h1>
-              <p className="text-text-secondary mt-1 text-sm">
-                All attachments, links, and Drive files for this project.
-              </p>
-            </div>
+          <header className="shrink-0 w-full">
+            <div className="flex items-center gap-2 flex-wrap w-full">
+              {/* Filters button — only when Drive files tab is active */}
+              {activeTab.startsWith('files.') && (
+                <button
+                  onClick={() => setOpenPanel(p => p === 'filters' ? null : 'filters')}
+                  aria-expanded={openPanel === 'filters'}
+                  className={`h-9 flex items-center gap-2 px-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                    filterState.hasActiveFilters
+                      ? 'bg-primary text-background shadow-md shadow-primary/20'
+                      : openPanel === 'filters'
+                        ? 'border border-primary/40 bg-primary/10 text-primary'
+                        : 'border border-border-color bg-glass text-text-secondary hover:text-text-primary hover:bg-glass-light'
+                  }`}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  Filters
+                  {filterState.hasActiveFilters && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-background/20 text-background ml-1">
+                      {[
+                        (filterState.filters.fileType?.length ?? 0),
+                        filterState.filters.sizeRange ? 1 : 0,
+                        filterState.filters.dateRange ? 1 : 0,
+                        (filterState.filters.owner?.length ?? 0),
+                        (filterState.filters.tags?.length ?? 0),
+                      ].reduce((a, b) => a + b, 0)}
+                    </span>
+                  )}
+                  <motion.span
+                    animate={{ rotate: openPanel === 'filters' ? 180 : 0 }}
+                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    className="ml-0.5"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                  </motion.span>
+                </button>
+              )}
 
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {/* Upload button */}
+              {canUpload && activeTab.startsWith('files.') && (
+                <button
+                  onClick={() => setOpenPanel(p => p === 'upload' ? null : 'upload')}
+                  className={`h-9 flex items-center gap-2 px-3 rounded-xl border text-sm font-medium transition-colors shrink-0 ${
+                    openPanel === 'upload'
+                      ? 'bg-glass border-border-color text-text-primary'
+                      : 'bg-primary border-primary text-background hover:bg-primary/90'
+                  }`}
+                >
+                  <Upload className="w-4 h-4" />
+                  <span className="hidden sm:inline">{openPanel === 'upload' ? 'Close' : 'Upload'}</span>
+                </button>
+              )}
+
+              {/* Spacer — pushes view controls to the right */}
+              <div className="flex-1" />
+
               {/* View mode selector — only relevant for Drive files */}
               {activeTab.startsWith('files.') && (
                 <ViewModeSelector currentMode={viewMode} onChange={setViewMode} />
@@ -446,15 +502,12 @@ const ProjectFilesPage: React.FC = () => {
             </div>
           </header>
 
-          {/* ── Upload zone ─────────────────────────────────────────────── */}
-          {canUpload && (
+          {/* ── Drive Error zone ─────────────────────────────────────────────── */}
+          {canUpload && driveError && (
             <div className="shrink-0">
-              {driveError && (
                 <div className="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400">
                   ⚠️ {driveError}
                 </div>
-              )}
-              <FileUpload isUploading={isUploading} uploadProgress={uploadProgress} onUpload={handleUpload} />
             </div>
           )}
 
@@ -523,10 +576,76 @@ const ProjectFilesPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <div className="flex flex-col shrink-0">
-                  <FilterPanel {...filterState} availableOwners={availableOwners} />
-                </div>
-                
+                {/* Inline full-width animated panel (mutually exclusive) */}
+                <AnimatePresence initial={false}>
+                  {openPanel === 'filters' && (
+                    <motion.div
+                      key="filter-panel-project"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{
+                        opacity: 1,
+                        height: 'auto',
+                        transition: {
+                          height:  { type: 'spring', stiffness: 280, damping: 30, mass: 0.8 },
+                          opacity: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+                        },
+                      }}
+                      exit={{
+                        opacity: 0,
+                        height: 0,
+                        transition: {
+                          height:  { type: 'spring', stiffness: 320, damping: 35, mass: 0.6 },
+                          opacity: { duration: 0.15, ease: 'easeIn' },
+                        },
+                      }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div className="pt-3">
+                        <FilterPanel {...filterState} availableOwners={availableOwners} />
+                      </div>
+                    </motion.div>
+                  )}
+                  {openPanel === 'upload' && (
+                    <motion.div
+                      key="upload-panel-project"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{
+                        opacity: 1,
+                        height: 'auto',
+                        transition: {
+                          height:  { type: 'spring', stiffness: 280, damping: 30, mass: 0.8 },
+                          opacity: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
+                        },
+                      }}
+                      exit={{
+                        opacity: 0,
+                        height: 0,
+                        transition: {
+                          height:  { type: 'spring', stiffness: 320, damping: 35, mass: 0.6 },
+                          opacity: { duration: 0.15, ease: 'easeIn' },
+                        },
+                      }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div className="pt-3 w-full">
+                        <div className="rounded-xl overflow-hidden border border-border-color bg-glass/95 backdrop-blur-2xl shadow-xl p-0.5">
+                          <FileUpload
+                            isUploading={isUploading}
+                            uploadProgress={uploadProgress}
+                            onUpload={async (file) => {
+                              await upload(file);
+                              setOpenPanel(null);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Filter chips always visible below panels */}
+                <FilterChips {...filterState} />
+
                 {/* Bulk actions bar */}
                 <BulkActionsBar
                   count={bulk.count}
@@ -536,17 +655,15 @@ const ProjectFilesPage: React.FC = () => {
                   onBulkDownload={handleBulkDownload}
                 />
 
-              {/* Filter panel + chips */}
-              <div className="shrink-0">
-                <FilterChips {...filterState} />
-              </div>
-
               {/* Sort headers for list/timeline */}
               {(viewMode === 'list' || viewMode === 'timeline') && (
                 <div className="flex items-center gap-3 px-3 pb-1 text-xs font-medium text-text-secondary tracking-wide shrink-0">
                   <div className="w-5" />
                   <button className="flex-1 text-left hover:text-text-primary transition-colors flex items-center gap-1" onClick={() => handleSort('name')}>
                     Name <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
+                  </button>
+                  <button className="w-24 text-left hidden lg:flex hover:text-text-primary transition-colors items-center gap-1" onClick={() => handleSort('tags')}>
+                    Tags <SortIcon col="tags" sortKey={sortKey} sortDir={sortDir} />
                   </button>
                   <span className="w-12 text-right hidden sm:block">Type</span>
                   <button className="w-16 text-right hover:text-text-primary transition-colors flex items-center justify-end gap-1" onClick={() => handleSort('size')}>
@@ -555,7 +672,7 @@ const ProjectFilesPage: React.FC = () => {
                   <button className="w-20 text-right hover:text-text-primary transition-colors flex items-center justify-end gap-1" onClick={() => handleSort('modifiedTime')}>
                     Modified <SortIcon col="modifiedTime" sortKey={sortKey} sortDir={sortDir} />
                   </button>
-                  <div className="w-8" />
+                  <div className="w-14" />
                 </div>
               )}
 
@@ -586,6 +703,7 @@ const ProjectFilesPage: React.FC = () => {
                         key={file.id}
                         file={file}
                         viewMode="grid"
+                        allTags={allTags}
                         isSelected={bulk.isSelected(file.id)}
                         onToggleSelect={bulk.toggle}
                         onShare={setFileToShare}
@@ -605,6 +723,7 @@ const ProjectFilesPage: React.FC = () => {
                         key={file.id}
                         file={file}
                         viewMode="list"
+                        allTags={allTags}
                         isSelected={bulk.isSelected(file.id)}
                         onToggleSelect={bulk.toggle}
                         onShare={setFileToShare}
@@ -661,6 +780,8 @@ const ProjectFilesPage: React.FC = () => {
         onClose={() => { setLinkDialogOpen(false); setEditingLink(undefined); }}
         editingLink={editingLink ? { id: editingLink.id, url: editingLink.url, title: editingLink.title, favicon: editingLink.favicon } : undefined}
       />
+      {/* ── Library Tab Nav \u2014 fixed bottom-center pill */}
+      <LibrarySidebar activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 };

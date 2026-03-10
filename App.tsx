@@ -85,7 +85,6 @@ import { UserProvider } from './contexts/UserContext';
 import { NotificationHistoryProvider } from './contexts/NotificationHistoryContext';
 import { ActiveProjectProvider } from './contexts/ActiveProjectContext';
 import ToolsPage from './pages/ToolsPage';
-import FilesPage from './pages/FilesPage';
 import SearchPage from './pages/SearchPage';
 import LinksPage from './pages/LinksPage';
 import LibraryPage from './pages/LibraryPage';

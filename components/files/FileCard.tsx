@@ -1,17 +1,17 @@
-import { DriveFile, DriveFileCategory, DriveViewMode, formatFileSize, formatRelativeTime, getFileCategory, MIME_LABELS } from '../../types/drive';
+import { DriveFile, DriveFileCategory, DriveViewMode, formatFileSize, formatRelativeTime, getFileCategory, MIME_LABELS, FileTag } from '../../types/drive';
 import React, { useState, useEffect } from 'react';
 import FilePreview from './FilePreview';
 import StarButton from './StarButton';
 interface FileCardProps {
   file: DriveFile;
   viewMode: DriveViewMode;
+  allTags?: any[]; // Array of tag objects
   isSelected?: boolean;
   onToggleSelect?: (fileId: string) => void;
   onShare?: (file: DriveFile) => void;
   onDelete: (fileId: string) => Promise<void>;
   onClick?: () => void;
 }
-
 
 const CategoryIcon: React.FC<{ mimeType: string; className?: string }> = ({ mimeType, className }) => {
   const category = getFileCategory(mimeType);
@@ -58,13 +58,19 @@ const iconColorMap: Record<DriveFileCategory, string> = {
 };
 
 const FileCard: React.FC<FileCardProps> = ({ 
-  file, viewMode, isSelected, onToggleSelect, onShare, onDelete, onClick 
+  file, viewMode, allTags, isSelected, onToggleSelect, onShare, onDelete, onClick 
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const category = getFileCategory(file.mimeType);
   const iconColor = iconColorMap[category] ?? 'text-text-secondary';
   const label = MIME_LABELS[file.mimeType] ?? 'File';
+
+  // Extract tags from file.appProperties.tags if it exists
+  const fileTagIds = file.appProperties?.tags ? file.appProperties.tags.split(',') : [];
+  const fileTags = allTags 
+    ? allTags.filter(t => fileTagIds.includes(t.id)).slice(0, 2)
+    : [];
 
   // Close menu on Escape key
   useEffect(() => {
@@ -129,6 +135,13 @@ const FileCard: React.FC<FileCardProps> = ({
         {/* Info Area */}
         <div className="min-w-0 flex flex-col flex-1 gap-0.5 pr-7">
           <p className="text-xs font-medium text-text-primary line-clamp-2 leading-snug" title={file.name}>{file.name}</p>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {fileTags.map(t => (
+              <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded shadow-sm text-white" style={{ backgroundColor: t.color || '#3b82f6' }}>
+                {t.name}
+              </span>
+            ))}
+          </div>
           <div className="flex items-center gap-2 mt-1">
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${iconColor}`} />
             <span className="text-[10px] text-text-secondary">{formatFileSize(file.size)}</span>
@@ -189,6 +202,13 @@ const FileCard: React.FC<FileCardProps> = ({
         {file.owners && file.owners[0]?.displayName && (
           <p className="text-[10px] text-text-secondary/70 truncate hidden lg:block">{file.owners[0].displayName}</p>
         )}
+      </div>
+      <div className="w-24 shrink-0 items-center gap-1 hidden lg:flex flex-wrap overflow-hidden h-[22px]">
+        {fileTags.map(t => (
+          <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded shadow-sm text-white truncate max-w-full" style={{ backgroundColor: t.color || '#3b82f6' }} title={t.name}>
+            {t.name}
+          </span>
+        ))}
       </div>
       <span className="text-xs text-text-secondary w-12 text-right shrink-0 hidden sm:block">{label}</span>
       <span className="text-xs text-text-secondary w-16 text-right shrink-0">{formatFileSize(file.size)}</span>

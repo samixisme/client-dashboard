@@ -26,7 +26,7 @@ const VIEW_MODES: {
 const ViewModeSelector: React.FC<ViewModeSelectorProps> = ({ currentMode, onChange }) => {
   return (
     <div
-      className="flex items-center bg-glass/60 backdrop-blur-xl border border-border-color rounded-lg p-0.5"
+      className="flex items-center h-9 bg-glass border border-border-color rounded-xl p-1 shrink-0"
       role="group"
       aria-label="View mode"
     >
@@ -38,7 +38,7 @@ const ViewModeSelector: React.FC<ViewModeSelectorProps> = ({ currentMode, onChan
             onClick={() => onChange(mode)}
             title={`${label} view`}
             aria-pressed={isActive}
-            className={`p-1.5 rounded-md transition-all flex items-center justify-center ${
+            className={`h-full aspect-square rounded-lg transition-all flex items-center justify-center ${
               isActive
                 ? 'bg-primary text-background shadow-sm'
                 : 'text-text-secondary hover:text-text-primary hover:bg-glass-light'

@@ -1,6 +1,16 @@
 {
   "version": 1,
   "skills": {
+    "awwwards-animations": {
+      "source": "devmartinese/awwwards-animations-skill",
+      "sourceType": "github",
+      "computedHash": "10574282bd24f42072059efa58cfce6ff3a80347505eb191af55544426fe4c3a"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "computedHash": "25872a21881a950edc3db1f3329664d60405d539660ce05b3265db2de06a7dfd"
+    },
     "jules": {
       "source": "sanjay3290/ai-skills",
       "sourceType": "github",
@@ -10,6 +20,11 @@
       "source": "am-will/codex-skills",
       "sourceType": "github",
       "computedHash": "766cb30f18de3a5cf7b3e8af2d18ddb70e8e5d0fb35cb2d796f5e64894adc48b"
+    },
+    "prd-taskmaster": {
+      "source": "anombyte93/prd-taskmaster",
+      "sourceType": "github",
+      "computedHash": "c9d35198f51363e92a79e02c92555f08097624acd6911bac1468a7ffcf0c86d9"
     },
     "ui-design-system": {
       "source": "samhvw8/dot-claude",
@@ -25,6 +40,11 @@
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "computedHash": "d8e7d3afe37dcc8a97b99ffb5afdb4d0919ae0092ea8b68f44eb201f035e33ac"
+    },
+    "web-motion-design": {
+      "source": "dylantarre/animation-principles",
+      "sourceType": "github",
+      "computedHash": "b73096ae0ad4bf50ee888519a9a863e949e0203b61339f4c274b3f460618a7f2"
     },
     "workflow-automation": {
       "source": "supercent-io/skills-template",

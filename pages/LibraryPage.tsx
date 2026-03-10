@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import FilesPage from './FilesPage';
+import ProjectFilesPage from './ProjectFilesPage';
 import LinksPage from './LinksPage';
 import LibrarySidebar, { LibraryTab } from '../components/files/LibrarySidebar';
 
@@ -22,7 +22,7 @@ const LibraryPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-full overflow-hidden px-4 md:px-10 pt-4 pb-24 md:pb-10">
+    <div className="flex h-full overflow-hidden pt-4 pb-24 md:pb-10">
       {/* ── Sidebar (always visible, 224px) ── */}
       <LibrarySidebar
         activeTab={activeTab}
@@ -35,7 +35,7 @@ const LibraryPage: React.FC = () => {
           {activeTab === 'links' ? (
             <LinksPage />
           ) : (
-            <FilesPage activeTab={activeTab} />
+            <ProjectFilesPage />
           )}
         </div>
       </div>

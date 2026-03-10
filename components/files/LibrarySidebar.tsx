@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { HardDrive, Link2, Clock, Star, FolderOpen } from 'lucide-react';
 
 // ── Updated LibraryTab type (DES-131 / DES-160) ─────────────────────────────
@@ -9,57 +9,46 @@ interface LibrarySidebarProps {
   onTabChange: (tab: LibraryTab) => void;
 }
 
-// ── Nav items: each gets an icon and tooltip label ───────────────────────────
 const NAV_ITEMS: { id: LibraryTab; label: string; Icon: typeof FolderOpen }[] = [
-  { id: 'files.all',     label: 'All Files',   Icon: HardDrive },
-  { id: 'files.recent',  label: 'Recent',      Icon: Clock },
-  { id: 'files.starred', label: 'Starred',     Icon: Star },
-  { id: 'links',         label: 'Linkwarden',  Icon: Link2 },
+  { id: 'files.all',     label: 'All Files',  Icon: HardDrive },
+  { id: 'files.recent',  label: 'Recent',     Icon: Clock },
+  { id: 'files.starred', label: 'Starred',    Icon: Star },
+  { id: 'links',         label: 'Linkwarden', Icon: Link2 },
 ];
 
-const LibrarySidebar: React.FC<LibrarySidebarProps> = ({
-  activeTab,
-  onTabChange,
-}) => {
-  const [tooltip, setTooltip] = useState<LibraryTab | null>(null);
-
+/**
+ * Renders a fixed horizontal pill at the bottom-center of the viewport,
+ * at the same Y position as the sidebar settings button (bottom-6).
+ * Each button uses the identical expand-on-hover animation as the main nav.
+ */
+const LibrarySidebar: React.FC<LibrarySidebarProps> = ({ activeTab, onTabChange }) => {
   return (
-    <div className="flex flex-col items-center shrink-0 w-16 border-r border-border-color bg-background/60 h-full py-4 gap-2">
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 p-1.5 rounded-2xl bg-background/80 backdrop-blur-xl border border-border-color shadow-2xl no-print">
       {NAV_ITEMS.map(({ id, label, Icon }) => {
         const isActive = activeTab === id;
         return (
-          <div key={id} className="relative flex items-center group">
-            <button
-              onClick={() => onTabChange(id)}
-              onMouseEnter={() => setTooltip(id)}
-              onMouseLeave={() => setTooltip(null)}
-              aria-label={label}
-              title={label}
-              className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-200 ${
-                isActive
-                  ? 'bg-primary text-background shadow-lg shadow-primary/30'
-                  : 'text-text-secondary hover:bg-glass hover:text-text-primary'
-              }`}
-            >
+          <button
+            key={id}
+            onClick={() => onTabChange(id)}
+            aria-label={label}
+            className={`group flex items-center h-11 w-11 hover:w-36 rounded-xl transition-all duration-300 ease-in-out overflow-hidden ${
+              isActive
+                ? 'bg-primary text-background font-bold'
+                : 'bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color'
+            }`}
+          >
+            {/* Fixed icon cell */}
+            <div className="h-11 w-11 shrink-0 flex items-center justify-center">
               <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
-            </button>
-
-            {/* Tooltip */}
-            {tooltip === id && (
-              <div className="absolute left-14 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
-                <div className="flex items-center gap-1.5">
-                  {/* Arrow */}
-                  <div className="w-1.5 h-3 bg-glass border-l border-t border-b border-border-color clip-arrow" />
-                  <div className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-glass/90 backdrop-blur-xl border border-border-color text-xs font-medium text-text-primary shadow-xl">
-                    {label}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+            {/* Sliding label */}
+            <div className="whitespace-nowrap pr-4 pl-1">
+              <span className="font-medium text-sm">{label}</span>
+            </div>
+          </button>
         );
       })}
-    </div>
+    </nav>
   );
 };
 

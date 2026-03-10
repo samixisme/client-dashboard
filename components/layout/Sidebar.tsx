@@ -61,7 +61,7 @@ const NavItem: React.FC<{ to: string; Icon: React.FC<{ className?: string }>; la
                 }`;
             }}
         >
-            <div className="h-11 w-11 flex-shrink-0 flex items-center justify-center">
+            <div className="h-11 w-11 shrink-0 flex items-center justify-center">
                 <Icon className="h-6 w-6" />
             </div>
             <div className="whitespace-nowrap pr-4 pl-2">
@@ -190,7 +190,7 @@ const SearchBar: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search…"
-                className="w-full px-3 py-1.5 text-xs rounded-lg bg-glass border border-border-color text-text-primary placeholder-text-secondary focus:outline-none focus:border-primary"
+                className="h-11 w-full px-3 text-xs rounded-lg bg-glass border border-border-color text-text-primary placeholder-text-secondary focus:outline-none focus:border-primary"
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && searchQuery.length >= 2) goToFullSearch();
                     if (e.key === 'Escape') clearSearch();
@@ -269,8 +269,8 @@ const Sidebar = () => {
         <aside
             className="hidden md:flex flex-col items-center bg-background px-4 pb-4 w-24 relative z-30 no-print overflow-visible"
         >
-            {/* Brand / Project Switcher */}
-            <div className="py-5 flex-shrink-0">
+            {/* Brand / Project Switcher — locked to exactly match MainLayout topbar height (88px) for perfect y-alignment */}
+            <div className="h-[88px] flex items-center justify-center shrink-0">
                 <BrandProjectSwitcher />
             </div>
 

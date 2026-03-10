@@ -108,7 +108,7 @@ const Header: React.FC<HeaderProps> = ({ onLogout }) => {
   const recentNotifications = notifications.slice(0, 3);
 
   return (
-    <div className="flex items-center justify-end space-x-3 flex-wrap">
+    <div className="flex items-center justify-end space-x-3">
         <NovuInbox />
 
         <GlobalTimerWidget />

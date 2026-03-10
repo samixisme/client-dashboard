@@ -99,7 +99,7 @@ export interface StarredFile {
   starredAt: string; // ISO timestamp
 }
 
-export type DriveFileSortKey = 'name' | 'modifiedTime' | 'size';
+export type DriveFileSortKey = 'name' | 'modifiedTime' | 'size' | 'mimeType' | 'tags';
 export type DriveFileSortDir = 'asc' | 'desc';
 
 // ─── MIME type helpers ────────────────────────────────────────────────────────

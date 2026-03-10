@@ -215,11 +215,7 @@ const BrandProjectSwitcher: React.FC = () => {
                 <div
                     ref={panelRef}
                     className="absolute left-full top-0 ml-3 z-[9999]"
-                    style={{
-                        width: 320,
-                        transformOrigin: 'top left',
-                        animation: 'bps-open 0.2s cubic-bezier(0.16,1,0.3,1) both',
-                    }}
+                    style={{ width: 320 }}
                 >
                     <style>{`
                         @keyframes bps-open {
@@ -228,23 +224,20 @@ const BrandProjectSwitcher: React.FC = () => {
                         }
                     `}</style>
 
-                    {/* Glass shell — lower opacity so LiquidEther blurs through */}
                     <div
-                        className="flex flex-col overflow-hidden"
+                        className="rounded-2xl shadow-2xl overflow-hidden"
                         style={{
-                            borderRadius: 20,
-                            background: 'rgba(3, 4, 8, 0.85)',
-                            backdropFilter: 'blur(52px) saturate(1.8)',
-                            WebkitBackdropFilter: 'blur(52px) saturate(1.8)',
-                            border: '1px solid rgba(255,255,255,0.07)',
-                            boxShadow: '0 32px 80px rgba(0,0,0,0.90), inset 0 1px 0 rgba(255,255,255,0.05)',
+                            transformOrigin: 'top left',
+                            animation: 'bps-open 0.2s cubic-bezier(0.16,1,0.3,1) both',
                             maxHeight: '82vh',
+                            background: 'rgba(28, 28, 28, 0.95)',
+                            backdropFilter: 'blur(12px)',
+                            border: '1px solid rgba(163, 230, 53, 0.2)',
                         }}
                     >
                         {/* Header */}
                         <div
-                            className="flex items-center justify-between px-4 pt-4 pb-3 flex-shrink-0"
-                            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                            className="flex items-center justify-between px-4 pt-4 pb-3 flex-shrink-0 border-b border-border-color"
                         >
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-[0.14em]"
@@ -272,8 +265,7 @@ const BrandProjectSwitcher: React.FC = () => {
                         {/* Brand tabs — only if multiple brands */}
                         {data.brands.length > 1 && (
                             <div
-                                className="flex gap-1.5 px-3 py-2.5 flex-shrink-0 overflow-x-auto"
-                                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                                className="flex gap-1.5 px-3 py-2.5 flex-shrink-0 overflow-x-auto border-b border-border-color"
                             >
                                 {data.brands.map(brand => {
                                     const isSel = selectedBrand?.id === brand.id;
@@ -348,8 +340,7 @@ const BrandProjectSwitcher: React.FC = () => {
 
                         {/* Footer */}
                         <div
-                            className="flex items-center justify-between px-4 py-3 flex-shrink-0"
-                            style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+                            className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-t border-border-color"
                         >
                             <button
                                 onClick={() => { navigate('/dashboard'); setOpen(false); }}

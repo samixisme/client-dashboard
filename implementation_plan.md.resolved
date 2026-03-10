@@ -1,0 +1,39 @@
+# Refining UI Animation & Layouts
+
+## Goal Description
+The user wants to refine the layout of [FilesPage](file:///c:/Users/Sami/client-dashboard/pages/FilesPage.tsx#147-764) and [ProjectFilesPage](file:///c:/Users/Sami/client-dashboard/pages/ProjectFilesPage.tsx#125-739). We will:
+1. Improve the animations of the filter and upload panels to be smooth using `framer-motion` spring animations (`awwwards-animations` workflow).
+2. Fix the layout issue where expanding the filter panel obscures or breaks the layout for the upload button.
+3. Make the filter and upload panels mutually exclusive (only one can be open at a time).
+4. Remove the title elements and shift the action row (Filters, Upload) up to reclaim screen estate.
+5. Ensure the active extended panel (Upload or Filter) spans the full width of its container.
+
+## Proposed Changes
+
+### [components/files/FilterPanel.tsx](file:///c:/Users/Sami/client-dashboard/components/files/FilterPanel.tsx)
+- **[MODIFY]** Extract the "Filter" button out of the component, or allow the component to receive `isOpen` and `onToggle` props. 
+- *Better Architecture:* Split the component so the parent can render the Toolbar buttons together in a `flex-row`, and conditionally render the expanding `FilterPanelBody` in a full-width container directly underneath. I will remove the internal `useState(true)` and turn it into a purely controlled, render-only panel body.
+
+### [pages/FilesPage.tsx](file:///c:/Users/Sami/client-dashboard/pages/FilesPage.tsx)
+- **[MODIFY]** Remove the `<h1>Files</h1>` heading.
+- **[MODIFY]** Move the Filter and Upload buttons to the same line as the ViewMode selector and Refresh toggles.
+- **[MODIFY]** Introduce mutually exclusive states: `openPanel: 'filters' | 'upload' | null`.
+- **[MODIFY]** Render a single, full-width `AnimatePresence` wrapper below the header row that houses either the Upload UI or the Filter panel. This will use the requested `framer-motion` configurations.
+
+### [pages/ProjectFilesPage.tsx](file:///c:/Users/Sami/client-dashboard/pages/ProjectFilesPage.tsx)
+- **[MODIFY]** Replicate the same changes here. Remove the project files heading.
+- **[MODIFY]** Add mutually exclusive `openPanel` state.
+- **[MODIFY]** Consolidate header actions into a single row.
+- **[MODIFY]** Place the full-width animated container directly below the row.
+
+## Verification Plan
+
+### Automated Tests
+- Run `npm run lint` and `npm run test` (if applicable) to ensure no syntax errors were introduced.
+
+### Manual Verification
+1. Navigate to `/` (FilesPage).
+2. Verify the page header title is removed and buttons are moved up.
+3. Click "Filters". Ensure it slides down smoothly.
+4. Click "Upload". Ensure the Filters slide up, and Upload slides down smoothly (mutually exclusive).
+5. Open Project Files via sidebar, and run through the same steps (3, 4) to verify consistency.

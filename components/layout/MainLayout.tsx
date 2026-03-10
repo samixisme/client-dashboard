@@ -40,8 +40,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout, fullBleed }
     <div className="flex h-screen bg-background">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar — back/forward + search (center) + header */}
-        <div className="flex items-center justify-between px-4 md:px-10 py-5 flex-shrink-0 no-print">
+        {/* Top bar — rigidly locked to h-[88px] to strictly match Sidebar alignment */}
+        <div className="h-[88px] flex items-center justify-between px-4 md:px-10 shrink-0 no-print">
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-2">
                 <button onClick={() => navigate(-1)} title="Go back" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
