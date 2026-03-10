@@ -27,6 +27,9 @@ const TypeIcon = ({ type }: { type: MoodboardItem['type'] }) => {
     return Icon ? <Icon className="h-5 w-5 text-text-secondary" /> : null;
 };
 
+// ⚡ Bolt Performance Optimization:
+// Extracted SortableHeader to the top level and wrapped in React.memo
+// to prevent it from completely unmounting/remounting on every parent render.
 const SortableHeader = React.memo(({
     sortKey,
     label,
@@ -84,6 +87,9 @@ const MoodboardListView = ({ items }: { items: MoodboardItem[] }) => {
         return sortableItems;
     }, [items, sortConfig, data.board_members]);
 
+    // ⚡ Bolt Performance Optimization:
+    // Memoized requestSort with useCallback and functional state update
+    // to prevent unnecessary re-renders of the child SortableHeader components.
     const requestSort = useCallback((key: SortConfig['key']) => {
         setSortConfig(prev => {
             let direction: 'ascending' | 'descending' = 'ascending';
