@@ -83,7 +83,8 @@ export interface ResultCardProps {
   isSelected?: boolean;
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({
+// Wrapped in React.memo to prevent re-renders when navigating search results with keyboard arrows
+export const ResultCard: React.FC<ResultCardProps> = React.memo(({
   hit,
   indexUid,
   onClick,
@@ -144,4 +145,4 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       </div>
     </button>
   );
-};
+});
