@@ -98,10 +98,22 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   const titlePositions = getFieldMatchPositions(hit._matchesPosition, meta.titleField);
   const snippetPositions = getFieldMatchPositions(hit._matchesPosition, meta.snippetField);
 
-  const highlightedTitle = highlightMatches(title, titlePositions, 120);
-  const highlightedSnippet = snippet
+  const titleSegments = highlightMatches(title, titlePositions, 120);
+  const snippetSegments = snippet
     ? highlightMatches(snippet, snippetPositions, 160)
-    : '';
+    : [];
+
+  const renderHighlightedText = (segments: Array<{ text: string; isMatch: boolean }>) => {
+    return segments.map((segment, idx) => (
+      <React.Fragment key={idx}>
+        {segment.isMatch ? (
+          <mark className="search-highlight">{segment.text}</mark>
+        ) : (
+          segment.text
+        )}
+      </React.Fragment>
+    ));
+  };
 
   // Status badge
   const status = hit.status as string | undefined;
@@ -120,18 +132,16 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
       <div className="result-card__content">
         <div className="result-card__header">
-          <span
-            className="result-card__title"
-            dangerouslySetInnerHTML={{ __html: highlightedTitle }}
-          />
+          <span className="result-card__title">
+            {renderHighlightedText(titleSegments)}
+          </span>
           <span className="result-card__type">{meta.label}</span>
         </div>
 
-        {highlightedSnippet && (
-          <p
-            className="result-card__snippet"
-            dangerouslySetInnerHTML={{ __html: highlightedSnippet }}
-          />
+        {snippetSegments.length > 0 && (
+          <p className="result-card__snippet">
+            {renderHighlightedText(snippetSegments)}
+          </p>
         )}
 
         {status && (
