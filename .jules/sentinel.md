@@ -2,3 +2,8 @@
 **Vulnerability:** XSS vulnerability in `SocialMediaPage.tsx` caused by directly interpolating URL parameters (`result.username`, `result.message`) into a template string passed to `.innerHTML` for toast notifications.
 **Learning:** URL parameters fetched during OAuth callbacks can contain malicious payloads. If directly assigned to `.innerHTML`, script tags or other malicious HTML can be executed by the browser. Even simple fields like `username` or `message` should be considered untrusted.
 **Prevention:** Never use template literals containing dynamic values with `.innerHTML`. Always create empty containers (e.g., `<span class="message-container"></span>`) and then use `.textContent` or `.innerText` to securely inject dynamic content, ensuring it is treated as text, not executable HTML.
+
+## 2025-03-11 - Prevent Stored XSS from Search Result Highlights
+**Vulnerability:** XSS vulnerability in `ResultCard.tsx` caused by rendering search highlight results using `dangerouslySetInnerHTML`. An attacker could inject malicious scripts into searchable fields like task titles or feedback content.
+**Learning:** Search result highlights from Meilisearch return text with `<mark>` tags around matched strings. Using `dangerouslySetInnerHTML` to render these highlights exposes the application to XSS if the original text contains unsanitized HTML/scripts.
+**Prevention:** Never use `dangerouslySetInnerHTML` to render search highlights. Use a specialized component like `HighlightText` that safely splits the text by `<mark>` tags and renders the segments using standard React rendering, escaping any other HTML in the content.
