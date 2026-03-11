@@ -10,18 +10,20 @@ interface TaskCardProps {
     task: Task;
 }
 
-const PriorityBox: React.FC<{ priority: Task['priority'] }> = ({ priority }) => {
+const PriorityBox = React.memo<{ priority: Task['priority'] }>(({ priority }) => {
     const priorityClasses = {
         High: 'bg-red-500/20 text-red-400',
         Medium: 'bg-yellow-500/20 text-yellow-400',
         Low: 'bg-green-500/20 text-green-400',
     };
     return <span className={`px-2 py-0.5 text-xs font-semibold rounded ${priorityClasses[priority]}`}>{priority}</span>;
-}
+});
 
 const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
+// ⚡ Bolt Performance Optimization: Wrapped TaskCard in React.memo
+// Prevents unnecessary re-renders of task cards when parent board components update
+const TaskCard = React.memo<TaskCardProps>(({ task }) => {
     const { data } = useData();
     const { tags, users, roadmapItems, boards, projects } = data;
     const taskTags = tags.filter(t => task.labelIds.includes(t.id));
@@ -81,6 +83,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             </div>
         </div>
     );
-};
+});
+
+// Added a display name for easier debugging in React DevTools
+TaskCard.displayName = 'TaskCard';
+PriorityBox.displayName = 'PriorityBox';
 
 export default TaskCard;
