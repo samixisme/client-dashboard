@@ -101,7 +101,18 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
     setSelectedIndex(-1);
   }, [clearAll]);
 
-  // Global keyboard shortcut: Cmd+K / Ctrl+K
+  // Handle result navigation
+  const handleResultClick = useCallback(
+    (hit: SearchHit, indexUid: string) => {
+      addRecentSearch(query);
+      onSearch?.(query);
+      closeSearch();
+      navigate(getResultRoute(hit, indexUid));
+    },
+    [query, onSearch, closeSearch, navigate]
+  );
+
+  // Global keyboard shortcut: Cmd+K / Ctrl+K & Modal navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -113,14 +124,39 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
         }
       }
 
-      if (e.key === 'Escape' && isOpen) {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
         closeSearch();
+        return;
+      }
+
+      // Keyboard navigation logic
+      const flatResults: { hit: SearchHit; uid: string }[] = [];
+      Object.entries(results).forEach(([uid, r]) => {
+        r.hits.forEach((hit) => flatResults.push({ hit, uid }));
+      });
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < flatResults.length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > -1 ? prev - 1 : prev));
+      } else if (e.key === 'Enter') {
+        if (selectedIndex >= 0 && selectedIndex < flatResults.length) {
+          e.preventDefault();
+          const selected = flatResults[selectedIndex];
+          handleResultClick(selected.hit, selected.uid);
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, openSearch, closeSearch]);
+  }, [isOpen, openSearch, closeSearch, results, selectedIndex, handleResultClick]);
 
   // Click outside to close
   useEffect(() => {
@@ -133,17 +169,6 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [isOpen, closeSearch]);
-
-  // Handle result navigation
-  const handleResultClick = useCallback(
-    (hit: SearchHit, indexUid: string) => {
-      addRecentSearch(query);
-      onSearch?.(query);
-      closeSearch();
-      navigate(getResultRoute(hit, indexUid));
-    },
-    [query, onSearch, closeSearch, navigate]
-  );
 
   // Handle query change
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
