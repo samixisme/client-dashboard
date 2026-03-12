@@ -70,4 +70,5 @@ const TableView: React.FC<{ boardId: string; onTaskClick: (task: Task) => void; 
     );
 };
 
-export default TableView;
+// ⚡ Bolt Optimization: Wrapped in React.memo to prevent unnecessary re-renders of the entire board when parent state (like modals) changes.
+export default React.memo(TableView);
