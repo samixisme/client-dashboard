@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
 const privacySections = [
   {
@@ -85,12 +84,12 @@ const PrivacyPage: React.FC = () => {
         </section>
 
         <div className="mt-8 flex flex-wrap gap-3 text-sm">
-          <Link to="/terms" className="rounded-lg border border-border px-4 py-2 text-foreground transition hover:bg-accent">
+          <a href="/terms" className="rounded-lg border border-border px-4 py-2 text-foreground transition hover:bg-accent">
             View Terms of Service
-          </Link>
-          <Link to="/login" className="rounded-lg border border-border px-4 py-2 text-foreground transition hover:bg-accent">
+          </a>
+          <a href="/#/login" className="rounded-lg border border-border px-4 py-2 text-foreground transition hover:bg-accent">
             Back to Login
-          </Link>
+          </a>
         </div>
       </div>
     </div>
