@@ -113,4 +113,5 @@ const ListView: React.FC<ListViewProps> = ({
     );
 };
 
-export default ListView;
+// ⚡ Bolt Optimization: Wrapped in React.memo to prevent unnecessary re-renders of the entire board when parent state (like modals) changes.
+export default React.memo(ListView);
