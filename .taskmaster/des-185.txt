@@ -1,0 +1,103 @@
+≡ƒÅ╖  Brief: Integrate Postiz Social Media (bd4ba781-2716-41bc-8671-0f1c6ee30366)
+Listing tasks from: https://tryhamster.com/home/designs-team/briefs/bd4ba781-2716-41bc-8671-0f1c6ee30366/plan (https://tryhamster.com/home/designs-team/briefs/bd4ba781-2716-41bc-8671-0f1c6ee30366/plan)
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé Task: #DES-185 - Configure environment variables for Postiz Docker Compose  Γöé
+Γöé stack                                                                       Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+[90mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[90mΓöé[39m ID:                [90mΓöé[39m DES-185                                                                        [90mΓöé[39m
+[90mΓöé[39m Title:             [90mΓöé[39m Configure environment variables for Postiz Docker Compose stack                [90mΓöé[39m
+[90mΓöé[39m Status:            [90mΓöé[39m Γùï pending                                                                      [90mΓöé[39m
+[90mΓöé[39m Priority:          [90mΓöé[39m high                                                                           [90mΓöé[39m
+[90mΓöé[39m Dependencies:      [90mΓöé[39m None                                                                           [90mΓöé[39m
+[90mΓöé[39m Complexity:        [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Category:          [90mΓöé[39m ≡ƒöº development                                                                 [90mΓöé[39m
+[90mΓöé[39m Skills:            [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Description:       [90mΓöé[39m Create and configure the .env file with all required environment variables for [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m Postiz, PostgreSQL, Redis, and Temporal services. This includes database       [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m credentials, JWT secrets, URLs, storage configuration, and placeholder entries [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m for social media API keys to be configured in future phases.                   [90mΓöé[39m
+[90mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Implementation Details:                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   ## Summary Create `.env` file with all required environment variables for Postiz stack         Γöé
+Γöé   initialization and service configuration. ## Implementation Approach 1. Generate secure        Γöé
+Γöé   secrets: ```bash JWT_SECRET=$(openssl rand -base64 64) DB_PASSWORD=$(openssl rand -base64      Γöé
+Γöé   32) echo "JWT_SECRET=$JWT_SECRET" echo "DB_PASSWORD=$DB_PASSWORD" ``` (Save these for later    Γöé
+Γöé   verification) 1. Create `.env` file in `/home/clientdash/postiz/`: ```bash touch               Γöé
+Γöé   /home/clientdash/postiz/.env chmod 600 /home/clientdash/postiz/.env ``` 1. Populate `.env`     Γöé
+Γöé   with required variables (from PRD section 6.3): **Core URLs:** ```                             Γöé
+Γöé   MAIN_URL=https://social.samixism.com FRONTEND_URL=https://social.samixism.com                  Γöé
+Γöé   NEXT_PUBLIC_BACKEND_URL=https://social.samixism.com/api                                        Γöé
+Γöé   BACKEND_INTERNAL_URL=http://localhost:3000 ``` **Database & Cache:** ```                       Γöé
+Γöé   DATABASE_URL=postgresql://postiz-user:@postiz-postgres:5432/postiz-db-local                    Γöé
+Γöé   REDIS_URL=redis://postiz-redis:6379 ``` **Temporal:** ``` TEMPORAL_ADDRESS=temporal:7233 ```   Γöé
+Γöé   **JWT & Security:** ``` JWT_SECRET= ``` **General Settings:** ``` IS_GENERAL=true              Γöé
+Γöé   DISABLE_REGISTRATION=true RUN_CRON=true ``` **Storage (MVP):** ``` STORAGE_PROVIDER=local      Γöé
+Γöé   UPLOAD_DIRECTORY=/uploads NEXT_PUBLIC_UPLOAD_DIRECTORY=/uploads ``` **Social Media & AI        Γöé
+Γöé   (placeholders for future configuration):** ``` OPENAI_API_KEY= X_API_KEY= X_API_SECRET=        Γöé
+Γöé   LINKEDIN_CLIENT_ID= LINKEDIN_CLIENT_SECRET= FACEBOOK_APP_ID= FACEBOOK_APP_SECRET=              Γöé
+Γöé   INSTAGRAM_APP_ID= INSTAGRAM_APP_SECRET= TIKTOK_CLIENT_ID= TIKTOK_CLIENT_SECRET=                Γöé
+Γöé   YOUTUBE_CLIENT_ID= YOUTUBE_CLIENT_SECRET= ``` 1. Verify `.env` file: - `cat                    Γöé
+Γöé   /home/clientdash/postiz/.env` (visually confirm structure) - Check permissions: `ls -la        Γöé
+Γöé   /home/clientdash/postiz/.env` (should show 600 or 640) - No test keys or credentials visible   Γöé
+Γöé   in plain text outside this file 1. Ensure `.gitignore` includes `.env`: ```bash echo ".env"    Γöé
+Γöé   >> /home/clientdash/postiz/.gitignore ``` ## Acceptance Criteria - `.env` file exists at       Γöé
+Γöé   `/home/clientdash/postiz/.env` with secure permissions (600 or 640) - Core variables set:      Γöé
+Γöé   MAIN_URL=https://social.samixism.com, FRONTEND_URL=https://social.samixism.com,                Γöé
+Γöé   NEXT_PUBLIC_BACKEND_URL=https://social.samixism.com/api - Database variables set:              Γöé
+Γöé   DATABASE_URL with postiz-user credentials and postiz-db-local database name pointing to        Γöé
+Γöé   postiz-postgres service - Redis URL configured: REDIS_URL=redis://postiz-redis:6379 -          Γöé
+Γöé   Temporal variables set: TEMPORAL_ADDRESS=temporal:7233 - JWT_SECRET generated using `openssl   Γöé
+Γöé   rand -base64 64` and stored (must be ΓëÑ64 characters, URL-safe) - Storage configuration set     Γöé
+Γöé   to local initially: STORAGE_PROVIDER=local, UPLOAD_DIRECTORY=/uploads - Placeholder API keys   Γöé
+Γöé   documented: X_API_KEY, LINKEDIN_CLIENT_ID, FACEBOOK_APP_ID, INSTAGRAM_APP_ID,                  Γöé
+Γöé   TIKTOK_CLIENT_ID, YOUTUBE_CLIENT_ID, OPENAI_API_KEY (marked for Phase 3 configuration) -       Γöé
+Γöé   General settings configured: IS_GENERAL=true, DISABLE_REGISTRATION=true, RUN_CRON=true - No    Γöé
+Γöé   plain-text secrets in git history ΓÇö `.env` added to `.gitignore` ## Technical Constraints -    Γöé
+Γöé   JWT_SECRET must be ΓëÑ64 characters, generated with cryptographically secure method - Database   Γöé
+Γöé   credentials must match what Docker Compose will set up (postiz-user, postiz-db-local) - All    Γöé
+Γöé   URLs must use https (MAIN_URL and FRONTEND_URL) - BACKEND_INTERNAL_URL must be                 Γöé
+Γöé   http://localhost:3000 (internal Docker network communication) - Temporary placeholder values   Γöé
+Γöé   for social media keys ΓÇö will be populated in Phase 3                                           Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Γ£ô Acceptance Criteria:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   ΓÿÉ `.env` file exists at `/home/clientdash/postiz/.env` with secure permissions (600 or 640)    Γöé
+Γöé   ΓÿÉ Core variables set: MAIN_URL=https://social.samixism.com,                                    Γöé
+Γöé   FRONTEND_URL=https://social.samixism.com,                                                      Γöé
+Γöé   NEXT_PUBLIC_BACKEND_URL=https://social.samixism.com/api                                        Γöé
+Γöé   ΓÿÉ Database variables set: DATABASE_URL with postiz-user credentials and postiz-db-local        Γöé
+Γöé   database name pointing to postiz-postgres service                                              Γöé
+Γöé   ΓÿÉ Redis URL configured: REDIS_URL=redis://postiz-redis:6379                                    Γöé
+Γöé   ΓÿÉ Temporal variables set: TEMPORAL_ADDRESS=temporal:7233                                       Γöé
+Γöé   ΓÿÉ JWT_SECRET generated using `openssl rand -base64 64` and stored (must be ΓëÑ64 characters,     Γöé
+Γöé   URL-safe)                                                                                      Γöé
+Γöé   ΓÿÉ Storage configuration set to local initially: STORAGE_PROVIDER=local,                        Γöé
+Γöé   UPLOAD_DIRECTORY=/uploads                                                                      Γöé
+Γöé   ΓÿÉ Placeholder API keys documented: X_API_KEY, LINKEDIN_CLIENT_ID, FACEBOOK_APP_ID,             Γöé
+Γöé   INSTAGRAM_APP_ID, TIKTOK_CLIENT_ID, YOUTUBE_CLIENT_ID, OPENAI_API_KEY (marked for Phase 3      Γöé
+Γöé   configuration)                                                                                 Γöé
+Γöé   ΓÿÉ General settings configured: IS_GENERAL=true, DISABLE_REGISTRATION=true, RUN_CRON=true       Γöé
+Γöé   ΓÿÉ No plain-text secrets in git history ΓÇö `.env` added to `.gitignore`                          Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Suggested Actions:                                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Run task-master set-status --id=DES-185 --status=in-progress to start working               Γöé
+Γöé   2. Run task-master expand --id=DES-185 to break down into subtasks                             Γöé
+Γöé   3. Run task-master update-task --id=DES-185 --prompt="..." to update details                   Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»

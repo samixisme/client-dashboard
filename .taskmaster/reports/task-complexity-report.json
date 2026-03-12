@@ -1,21 +1,93 @@
 {
 	"meta": {
-		"generatedAt": "2026-03-07T00:31:35.744Z",
-		"tasksAnalyzed": 1,
+		"generatedAt": "2026-03-10T15:32:30.882Z",
+		"tasksAnalyzed": 10,
 		"totalTasks": 10,
-		"analysisCount": 1,
+		"analysisCount": 10,
 		"thresholdScore": 5,
 		"projectName": "Client Dashboard",
 		"usedResearch": false
 	},
 	"complexityAnalysis": [
 		{
-			"taskId": 119,
-			"taskTitle": "Implement Drive Health Endpoint",
+			"taskId": 144,
+			"taskTitle": "Infrastructure Prep: Subdomain & SSL Generation",
 			"complexityScore": 3,
-			"recommendedSubtasks": 0,
-			"expansionPrompt": "The task is well-defined with existing subtasks covering the route implementation, error handling, and local smoke testing. No further expansion is necessary.",
-			"reasoning": "Adding a single GET endpoint with basic error handling is straightforward. The additional requirements to update the drive.files.get() call for Shared Drives and handle specific response metadata slightly increase the effort, but it remains a low-complexity task overall."
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the subdomain creation and SSL generation process, including steps to handle potential AutoSSL conflicts and verify DNS propagation.",
+			"reasoning": "Standard infrastructure task involving cPanel and Certbot. The main challenge is ensuring no conflicts arise from cPanel's built-in AutoSSL feature."
+		},
+		{
+			"taskId": 145,
+			"taskTitle": "Server Resource Tuning & Swap Configuration",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Detail the steps to create and persist the swap file, adjust swappiness, and configure Elasticsearch heap limits.",
+			"reasoning": "Straightforward Linux system administration commands. While technically simple, it is critical for system stability given the strict memory constraints."
+		},
+		{
+			"taskId": 146,
+			"taskTitle": "Nginx Reverse Proxy Configuration",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Generate subtasks for configuring the Nginx reverse proxy, ensuring WebSocket support, SSL integration, and the specific Content-Security-Policy required for iframe embedding.",
+			"reasoning": "Requires precise Nginx syntax, handling of WebSockets, and specific security headers (CSP) to allow cross-origin iframe embedding without breaking security protocols."
+		},
+		{
+			"taskId": 147,
+			"taskTitle": "Postiz Docker Compose Architecture Setup",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the Docker Compose configuration into subtasks covering base setup, port conflict resolution, memory limits for Temporal/ES, and network isolation.",
+			"reasoning": "Managing a multi-container stack with specific resource constraints, custom networking, and port conflict resolutions requires careful orchestration and understanding of Docker."
+		},
+		{
+			"taskId": 148,
+			"taskTitle": "Environment Variables & Secrets Management",
+			"complexityScore": 3,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Detail the creation of the .env file, including generating secure secrets, configuring URLs, and setting application-specific flags like storage and registration.",
+			"reasoning": "Mainly configuration management. It is low complexity but requires high accuracy to ensure the application routes correctly and remains secure."
+		},
+		{
+			"taskId": 149,
+			"taskTitle": "Deploy and Initialize Postiz Stack",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Create subtasks for deploying the Docker stack, monitoring the initialization of Temporal and Elasticsearch, verifying Prisma migrations, and performing health checks.",
+			"reasoning": "Deployment involves handling startup race conditions between heavy services (Temporal/ES) and the main application, requiring careful monitoring of logs and container health."
+		},
+		{
+			"taskId": 150,
+			"taskTitle": "Temporal UI Security & Access Configuration",
+			"complexityScore": 3,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Outline the steps to secure the Temporal UI by restricting port binding to localhost and documenting the SSH tunneling procedure.",
+			"reasoning": "A simple configuration change in Docker Compose and documentation update, but vital for preventing unauthorized access to workflow data."
+		},
+		{
+			"taskId": 151,
+			"taskTitle": "Client Dashboard Frontend Integration",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Generate subtasks for updating the Next.js frontend, including adding the sidebar navigation, creating the new route, and implementing the responsive iframe.",
+			"reasoning": "Standard frontend integration. Ensuring the iframe behaves responsively and without CORS/CSP issues requires some attention to detail, but the overall implementation is straightforward."
+		},
+		{
+			"taskId": 152,
+			"taskTitle": "Social Media Platform API Setup (MVP Platforms)",
+			"complexityScore": 6,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the process of registering developer applications on X and LinkedIn, obtaining credentials, updating the environment, and testing the OAuth flows.",
+			"reasoning": "Interacting with external developer portals and configuring OAuth flows can be tedious and prone to strict callback URL validation issues, requiring thorough testing."
+		},
+		{
+			"taskId": 153,
+			"taskTitle": "System Monitoring & Automated Backups",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Detail the steps to create the PostgreSQL backup script, schedule it via cron, and implement basic RAM monitoring to catch memory leaks.",
+			"reasoning": "Standard bash scripting and cron scheduling. Essential for long-term maintenance and data integrity, but relies on well-documented Linux utilities."
 		}
 	]
 }

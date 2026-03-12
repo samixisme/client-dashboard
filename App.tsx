@@ -56,6 +56,8 @@ import SocialMediaPostDetailPage from './pages/SocialMediaPostDetailPage';
 import BrandAssetCreatorPage from './pages/BrandAssetCreatorPage';
 import ProjectLayout from './components/layout/ProjectLayout';
 import PendingApprovalPage from './pages/PendingApprovalPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 
 // --- Admin CMS Imports ---
 import AdminLayout from './components/layout/AdminLayout';
@@ -229,6 +231,10 @@ function App() {
       return (
           <Routes>
             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
             <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
       );
@@ -238,6 +244,10 @@ function App() {
       return (
           <Routes>
               <Route path="/pending-approval" element={<PendingApprovalPage onLogout={handleLogout} />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsOfServicePage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
               <Route path="*" element={<Navigate to="/pending-approval" />} />
           </Routes>
       );
@@ -522,6 +532,10 @@ function App() {
                          <SearchPage />
                       </MainLayout>
                    } />
+                   <Route path="/privacy" element={<PrivacyPage />} />
+                   <Route path="/privacy-policy" element={<PrivacyPage />} />
+                   <Route path="/terms" element={<TermsOfServicePage />} />
+                   <Route path="/terms-of-service" element={<TermsOfServicePage />} />
 
                    {/* Fallback */}
                    <Route path="*" element={<Navigate to="/" />} />

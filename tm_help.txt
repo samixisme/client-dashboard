@@ -1,0 +1,68 @@
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                              Γöé
+Γöé   Taskmaster CLI - Connected to Hamster                                      Γöé
+Γöé                                                                              Γöé
+Γöé   Taskmaster syncs tasks from your Hamster brief and provides a CLI          Γöé
+Γöé   interface to execute the plan. Commands can be used by humans or AI        Γöé
+Γöé   agents.                                                                    Γöé
+Γöé                                                                              Γöé
+Γöé   Tasks are managed in Hamster Studio. Changes sync automatically.           Γöé
+Γöé   Use these commands to view tasks and update their status:                  Γöé
+Γöé                                                                              Γöé
+Γöé   Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«                                                      Γöé
+Γöé   Γöé  Task Management  Γöé                                                      Γöé
+Γöé   Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»                                                      Γöé
+Γöé   list                                         View all tasks from the       Γöé
+Γöé   brief                                                                      Γöé
+Γöé   list <status>                                Filter by status (e.g.,       Γöé
+Γöé   pending, done, in-progress)                                                Γöé
+Γöé   list all                                     View all tasks with           Γöé
+Γöé   subtasks expanded                                                          Γöé
+Γöé   show <id>                                    Show detailed task/subtask    Γöé
+Γöé   info                                                                       Γöé
+Γöé   next                                         See the next task to work     Γöé
+Γöé   on                                                                         Γöé
+Γöé   set-status|status <id> <status>              Update task status            Γöé
+Γöé   (pending, in-progress, done)                                               Γöé
+Γöé   update-task <id> <prompt>                    Add information to a task     Γöé
+Γöé                                                                              Γöé
+Γöé   Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«                                             Γöé
+Γöé   Γöé  Authentication & Context  Γöé                                             Γöé
+Γöé   Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»                                             Γöé
+Γöé   auth login                                   Log in to Hamster             Γöé
+Γöé   auth logout                                  Log out from Hamster          Γöé
+Γöé   auth refresh                                 Refresh authentication        Γöé
+Γöé   token                                                                      Γöé
+Γöé   auth status                                  Check authentication status   Γöé
+Γöé   briefs                                       View and select from your     Γöé
+Γöé   briefs                                                                     Γöé
+Γöé   context                                      Show current brief context    Γöé
+Γöé   context org                                  Switch organization           Γöé
+Γöé   context brief <url>                          Switch to a different brief   Γöé
+Γöé                                                                              Γöé
+Γöé   Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«                                                        Γöé
+Γöé   Γöé  Configuration  Γöé                                                        Γöé
+Γöé   Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»                                                        Γöé
+Γöé   rules --setup                                Configure AI IDE rules for    Γöé
+Γöé   better integration                                                         Γöé
+Γöé                                                                              Γöé
+Γöé   Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«                                                             Γöé
+Γöé   Γöé  Examples  Γöé                                                             Γöé
+Γöé   Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»                                                             Γöé
+Γöé   tm list                                      See all tasks                 Γöé
+Γöé   tm list done                                 See completed tasks           Γöé
+Γöé   tm list in-progress                          See tasks in progress         Γöé
+Γöé   tm list all                                  View with all subtasks        Γöé
+Γöé   tm show HAM-1,HAM-2                          View multiple tasks           Γöé
+Γöé   tm status HAM-1,HAM-2 in-progress            Start tasks                   Γöé
+Γöé   tm status HAM-1 done                         Mark task complete            Γöé
+Γöé   tm update-task HAM-1 <content>               Add                           Γöé
+Γöé   info/context/breadcrumbs to task                                           Γöé
+Γöé   tm briefs                                    View briefs and select one    Γöé
+Γöé                                                                              Γöé
+Γöé   ┬╗ Need more commands?                                                      Γöé
+Γöé   Advanced features (models, tags, PRD parsing) are managed in Hamster       Γöé
+Γöé   Studio.                                                                    Γöé
+Γöé                                                                              Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»

@@ -44,8 +44,8 @@ When you add a new PM2 app (e.g., a Next.js or Vite app on a local port), you ne
 # /etc/nginx/conf.d/custom_rules.conf
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen [::]:443 ssl;   # ⚠️ ONLY this — do NOT add a separate "listen 443 ssl;" line
+    http2 on;
     server_name your-subdomain.samixism.com;
 
     # Let's Encrypt cert (see Section 3 below for how to generate this)
@@ -63,11 +63,17 @@ server {
 }
 ```
 
+> ⚠️ **CRITICAL: `listen [::]:443 ssl;` only — never add `listen 443 ssl;` separately.**  
+> Engintron's `default_https.conf` uses `listen [::]:443 ssl default_server ipv6only=off;` (dual-stack, covering IPv4 too).  
+> Adding a separate `listen 443 ssl;` (IPv4-only) creates a socket conflict that **prevents nginx from starting after a full restart** while always passing `nginx -t`. The only sign is `bind() to [::]:443 failed (98: Address already in use)` at start time.
+
 **Step 3:** Test and reload:
 
 ```bash
-nginx -t && systemctl restart nginx
+nginx -t && systemctl reload nginx
 ```
+
+> 💡 **Use `reload` not `restart`.** `reload` (SIGHUP) applies new config without releasing sockets — much safer. Full `restart` releases all sockets and recreates them; any listen directive inconsistency will cause a bind failure and take the whole server down.
 
 > ⚠️ **The `X-Forwarded-Proto https` header is non-negotiable for Next.js.**  
 > Without it, Next.js sees plain HTTP internally and redirects every request to HTTPS, creating an infinite `ERR_INVALID_REDIRECT` loop. This is the most common misconfiguration on this server.
@@ -104,10 +110,10 @@ This saves the cert to `/etc/letsencrypt/live/yourdomain.com/` without touching 
 
 **Step 2:** Add a custom server block in `custom_rules.conf` that points directly to the Let's Encrypt cert paths (see Section 2 above for the template). This bypasses the fake cPanel certs entirely because `custom_rules.conf` loads first.
 
-**Step 3:** Restart Nginx:
+**Step 3:** Reload Nginx:
 
 ```bash
-nginx -t && systemctl restart nginx
+nginx -t && systemctl reload nginx
 ```
 
 That's it. No `sed` replacement needed on the generated files.
@@ -138,7 +144,7 @@ Engintron has a static file cache layer (`common_http.conf` / `common_https.conf
 find /etc/nginx -type f -name "common_*.conf" \
   -exec sed -i '/expires max;/a \    add_header Access-Control-Allow-Origin * always;\n    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;' {} +
 
-nginx -t && systemctl restart nginx
+nginx -t && systemctl reload nginx
 ```
 
 ---
@@ -150,7 +156,9 @@ nginx -t && systemctl restart nginx
 | `ERR_INVALID_REDIRECT` on domain    | Missing `X-Forwarded-Proto https` header                | Add header to location block in `custom_rules.conf`           |
 | `ERR_CERT_COMMON_NAME_INVALID`      | Nginx serving wrong/stub cPanel cert                    | Run `certbot certonly` + add custom server block with LE cert |
 | CORS error on `.js` / `.css` assets | Engintron static cache bypasses proxy headers           | Inject headers after `expires max;` in `common_*.conf`        |
-| Port 443 fails to bind              | Leftover nginx socket or conflicting nginx service      | `systemctl restart nginx` — check `ss -tlnp \| grep 443`      |
+| `bind() to [::]:443 failed (98)`    | Dual `listen 443 ssl;` + `listen [::]:443 ssl;` conflicts with Engintron's dual-stack socket | Remove `listen 443 ssl;` lines — use ONLY `listen [::]:443 ssl;` per server block |
+| nginx won't start after restart     | `nginx -t` passes but start fails — socket inconsistency | Check `ss -anp \| grep 443`; see listen directive rule above |
+| `ipv6only` duplicate error          | `listen [::]:443 ssl ipv6only=off;` in multiple server blocks | Only ONE server block may specify socket-level options like `ipv6only` |
 | Works in Incognito, fails in Chrome | Chrome cached the redirect loop locally                 | Right-click Refresh → **Empty Cache and Hard Reload**         |
 | Certbot fails to install cert       | Conflicts with cPanel stub cert in `default_https.conf` | Use `certonly` flag + custom server block instead             |
 
@@ -233,3 +241,44 @@ pm2 reload client-dashboard --update-env
 # Check status
 pm2 status
 ```
+
+---
+
+## 7. Docker Services on This Server
+
+### Postiz — Social Media Scheduler (`social.samixism.com`)
+
+**Location:** `/home/clientdash/postiz-docker/`  
+**Port:** `127.0.0.1:4007 → container:5000`
+
+Postiz requires **5 containers**. The Temporal workflow engine needs Elasticsearch for its visibility store — without it, Temporal fails with `cannot have more than 3 search attribute of type Text`.
+
+| Container | Image | Purpose |
+|---|---|---|
+| `postiz` | `ghcr.io/gitroomhq/postiz-app:latest` | Main app (frontend + backend + orchestrator) |
+| `postiz-postgres` | `postgres:17-alpine` | Database |
+| `postiz-redis` | `redis:7.2` | Queue / cache |
+| `postiz-temporal` | `temporalio/auto-setup:1.24.2` | Workflow engine — must use `DB=postgres12` |
+| `postiz-elasticsearch` | `elasticsearch:8.10.4` | Temporal visibility store (required!) |
+
+**Key `.env` settings:**
+```
+MAIN_URL=https://social.samixism.com
+FRONTEND_URL=https://social.samixism.com
+NEXT_PUBLIC_BACKEND_URL=https://social.samixism.com/api
+BACKEND_INTERNAL_URL=http://localhost:3000
+TEMPORAL_ADDRESS=temporal:7233
+IS_GENERAL=true
+```
+
+**Manage:**
+```bash
+cd /home/clientdash/postiz-docker
+docker compose ps              # status
+docker compose logs postiz --tail=20  # app logs
+docker compose restart postiz  # restart app only
+docker compose down && docker compose up -d  # full restart
+```
+
+> ⚠️ **Temporal DB driver must be `DB=postgres12`** (not `postgresql14` — that driver name is invalid).  
+> ⚠️ **Do NOT drop the postgres volume** unless you intend to wipe all Postiz data (users, connected accounts, scheduled posts).

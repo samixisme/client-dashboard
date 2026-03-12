@@ -54,9 +54,9 @@ const LogTimeModal: React.FC<LogTimeModalProps> = ({ isOpen, onClose, onTaskModa
             forceUpdate();
 
             // Firestore update
-            if (projectId && boardId && !taskId.startsWith('task-')) {
+            if (!taskId.startsWith('task-')) {
                 try {
-                    await addDoc(collection(db, 'projects', projectId, 'boards', boardId, 'tasks', taskId, 'time_logs'), newLogData);
+                    await addDoc(collection(db, 'time_logs'), newLogData);
                 } catch (e) {
                     console.error("Error logging time to Firestore", e);
                     toast.error('Failed to sync time log');

@@ -16,6 +16,7 @@ import { CalendarIcon } from './icons/CalendarIcon';
 import { Textarea } from './ui/textarea';
 import LogTimeModal from './tasks/LogTimeModal';
 import RecurringTaskPopover from './tasks/RecurringTaskPopover';
+import { Popover, PopoverTrigger } from './ui/popover';
 import { db } from '../utils/firebase';
 import { doc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useNovuTrigger } from '../src/hooks/useNovuTrigger';
@@ -37,6 +38,13 @@ const PriorityIndicator: React.FC<{ priority: Task['priority'] }> = ({ priority 
 }
 
 const tagColors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899'];
+
+const SidebarSection: React.FC<{title: string, children: React.ReactNode}> = ({ title, children }) => (
+    <div className="py-3 border-b border-border-color">
+        <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider px-1 mb-3">{title}</h4>
+        <div className="px-1">{children}</div>
+    </div>
+);
 
 const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDeleteTask }) => {
     const { data, updateData, forceUpdate } = useData();
@@ -181,12 +189,16 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
         onClose();
     };
 
+    const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
     const handleDelete = () => {
-        if (window.confirm('Are you sure you want to delete this task?')) {
-            onDeleteTask(task.id);
-            toast.success('Task deleted');
-            onClose();
+        if (!isConfirmingDelete) {
+            setIsConfirmingDelete(true);
+            return;
         }
+        onDeleteTask(task.id);
+        toast.success('Task deleted');
+        onClose();
     };
     
     const handleToggleTag = (tagId: string) => {
@@ -302,9 +314,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                 });
             });
 
-            if (project && board && !task.id.startsWith('task-')) {
+            if (!task.id.startsWith('task-')) {
                  try {
-                    await addDoc(collection(db, 'projects', project.id, 'boards', board.id, 'tasks', task.id, 'comments'), commentData);
+                    await addDoc(collection(db, 'comments'), commentData);
                     toast.success('Comment posted');
                  } catch(e) {
                      console.error("Failed to post comment to Firestore", e);
@@ -360,17 +372,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
     
     const taskCurrentTags = boardTags.filter(t => editedTask.labelIds.includes(t.id));
 
-    const SidebarSection: React.FC<{title: string, children: React.ReactNode}> = ({ title, children }) => (
-        <div className="py-3 border-b border-border-color">
-            <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider px-1 mb-3">{title}</h4>
-            <div className="px-1">{children}</div>
-        </div>
-    );
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-fade-in" onClick={onClose}>
             <div className="bg-glass/60 backdrop-blur-2xl w-full max-w-5xl h-full max-h-[90vh] rounded-2xl shadow-2xl border border-border-color flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-border-color/50 flex-shrink-0">
+                <div className="p-6 border-b border-border-color/50 shrink-0">
                     <div className="flex justify-between items-center gap-4">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <input
@@ -384,7 +389,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                 <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
                             </select>
                         </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="flex items-center gap-3 shrink-0">
                              {project && editedTask.roadmapItemId && (
                                 <Link to={`/projects/${project.id}/roadmap`} onClick={onClose} className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-medium hover:bg-purple-500/40 whitespace-nowrap">
                                     <RoadmapIcon className="w-4 h-4"/> Go to Roadmap
@@ -491,7 +496,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                     </div>
 
                     {/* Sidebar */}
-                    <div className="w-1/3 min-w-[300px] border-l border-border-color overflow-y-auto p-4 space-y-1 bg-glass/40 backdrop-blur-sm">
+                    <div className="w-1/3 min-w-75 border-l border-border-color overflow-y-auto p-4 space-y-1 bg-glass/40 backdrop-blur-sm">
                         {/* Time Tracking */}
                         <SidebarSection title="Time Tracking">
                             <div className="space-y-3">
@@ -528,7 +533,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                 <div className="relative">
                                     <button onClick={() => setIsAssigneeDropdownOpen(o => !o)} className="h-8 w-8 rounded-full bg-surface-light border border-dashed border-border-color flex items-center justify-center text-text-secondary hover:border-primary hover:text-primary" aria-label="Add assignee" title="Add assignee"><AddIcon className="w-4 h-4" /></button>
                                     {isAssigneeDropdownOpen && (
-                                        <div className="absolute top-full left-0 mt-2 w-60 bg-glass/60 backdrop-blur-xl p-2 rounded-lg border border-border-color shadow-lg z-10">
+                                        <div className="absolute top-full left-0 mt-2 w-60 p-2 bg-glass border border-border-color rounded-2xl shadow-2xl z-50 overflow-hidden">
                                             {availableMembers.length > 0 ? (
                                                 availableMembers.map(member => (
                                                     <button key={member.id} onClick={() => handleAddAssignee(member.id)} className="w-full text-left flex items-center gap-2 p-1.5 rounded hover:bg-white/10 text-sm transition-all">
@@ -555,8 +560,8 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                  <div className="relative">
                                     <button onClick={() => setIsTagDropdownOpen(o => !o)} className="p-1 rounded-full bg-surface-light hover:bg-border-color" aria-label="Add tag" title="Add tag"><AddIcon className="w-3 h-3 text-text-secondary"/></button>
                                     {isTagDropdownOpen && (
-                                        <div className="absolute top-full left-0 mt-2 w-56 bg-glass/60 backdrop-blur-xl p-2 rounded-lg border border-border-color shadow-lg z-10">
-                                            <input type="text" placeholder="Search/create..." value={tagSearch} onChange={e => setTagSearch(e.target.value)} className="w-full text-xs bg-glass/40 backdrop-blur-sm border border-border-color rounded px-2 py-1 mb-2 focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all"/>
+                                        <div className="absolute top-full left-0 mt-2 w-56 p-2 bg-glass border border-border-color rounded-2xl shadow-2xl z-50 overflow-hidden">
+                                            <input type="text" placeholder="Search or create label..." value={tagSearch} onChange={e => setTagSearch(e.target.value)} className="w-full text-sm bg-surface-light border border-border-color rounded-lg px-2.5 py-1.5 mb-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all text-text-primary placeholder:text-text-secondary"/>
                                             <div className="max-h-32 overflow-y-auto">
                                                 {boardTags.filter(t => !editedTask.labelIds.includes(t.id) && t.name.toLowerCase().includes(tagSearch.toLowerCase())).map(tag => (
                                                     <button key={tag.id} onClick={() => handleToggleTag(tag.id)} className="w-full text-left flex items-center gap-2 p-1 rounded hover:bg-white/10 text-xs transition-all"><span className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: tag.color}}></span> <span className="text-text-primary">{tag.name}</span></button>
@@ -579,33 +584,40 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                         
                         {/* Recurring Task */}
                         <SidebarSection title="Automations">
-                             <button ref={recurringButtonRef} onClick={() => setIsRecurringPopoverOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 bg-glass/40 backdrop-blur-sm text-text-primary text-sm font-medium rounded-lg border border-border-color hover:bg-glass-light hover:border-primary/30 transition-all">
-                                <RecurringIcon className="w-5 h-5"/> Recurring Task
-                            </button>
+                             <Popover open={isRecurringPopoverOpen} onOpenChange={setIsRecurringPopoverOpen}>
+                                 <PopoverTrigger asChild>
+                                     <button ref={recurringButtonRef} onClick={() => setIsRecurringPopoverOpen(true)} className="w-full flex items-center gap-2 px-3 py-2 bg-glass/40 backdrop-blur-sm text-text-primary text-sm font-medium rounded-lg border border-border-color hover:bg-glass-light hover:border-primary/30 transition-all">
+                                        <RecurringIcon className="w-5 h-5"/> Recurring Task
+                                    </button>
+                                 </PopoverTrigger>
+                                 <RecurringTaskPopover 
+                                     settings={editedTask.recurring}
+                                     onSave={(newSettings) => setEditedTask(prev => ({...prev, recurring: newSettings}))}
+                                     boardId={task.boardId}
+                                     onClose={() => setIsRecurringPopoverOpen(false)}
+                                 />
+                             </Popover>
                         </SidebarSection>
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center p-4 border-t border-border-color flex-shrink-0">
-                    <button onClick={handleDelete} className="px-4 py-2 bg-red-800 text-red-100 text-sm font-medium rounded-lg hover:bg-red-700">Delete Task</button>
+                <div className="flex justify-between items-center p-4 border-t border-border-color shrink-0">
+                    {isConfirmingDelete ? (
+                        <div className="flex items-center gap-2">
+                            <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 animate-pulse">Confirm Delete</button>
+                            <button onClick={() => setIsConfirmingDelete(false)} className="px-4 py-2 bg-glass/40 text-text-primary text-sm font-medium rounded-lg hover:bg-glass-light transition-all">Cancel</button>
+                        </div>
+                    ) : (
+                        <button onClick={handleDelete} className="px-4 py-2 bg-red-800/80 text-red-200 text-sm font-medium rounded-lg hover:bg-red-700 transition-all border border-red-900/30 hover:text-white">Delete Task</button>
+                    )}
                     <div className="flex gap-4">
-                        <button onClick={onClose} className="px-4 py-2 bg-glass/40 backdrop-blur-sm text-text-primary text-sm font-medium rounded-lg hover:bg-glass-light border border-border-color transition-all">Cancel</button>
+                        <button onClick={onClose} className="px-4 py-2 bg-glass/40 backdrop-blur-sm text-text-primary text-sm font-medium rounded-lg hover:bg-glass-light border border-border-color transition-all">Close</button>
                         <button onClick={handleSave} className="px-4 py-2 bg-primary text-background text-sm font-bold rounded-lg hover:bg-primary-hover">Save Changes</button>
                     </div>
                 </div>
             </div>
 
             {isLogTimeModalOpen && <LogTimeModal isOpen={isLogTimeModalOpen} onClose={() => setIsLogTimeModalOpen(false)} onTaskModalClose={onClose} taskId={task.id} projectId={project?.id} boardId={board?.id} />}
-            {isRecurringPopoverOpen && (
-                <RecurringTaskPopover 
-                    isOpen={isRecurringPopoverOpen}
-                    onClose={() => setIsRecurringPopoverOpen(false)}
-                    anchorEl={recurringButtonRef.current}
-                    settings={editedTask.recurring}
-                    onSave={(newSettings) => setEditedTask(prev => ({...prev, recurring: newSettings}))}
-                    boardId={task.boardId}
-                />
-            )}
         </div>
     );
 };

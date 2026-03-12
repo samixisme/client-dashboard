@@ -1,0 +1,175 @@
+≡ƒÅ╖  Brief: Integrate Postiz Social Media (bd4ba781-2716-41bc-8671-0f1c6ee30366)
+Listing tasks from: https://tryhamster.com/home/designs-team/briefs/bd4ba781-2716-41bc-8671-0f1c6ee30366/plan (https://tryhamster.com/home/designs-team/briefs/bd4ba781-2716-41bc-8671-0f1c6ee30366/plan)
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé Task: #DES-188 - Start and initialize the Postiz Docker Compose stack Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+[90mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[90mΓöé[39m ID:                [90mΓöé[39m DES-188                                                                        [90mΓöé[39m
+[90mΓöé[39m Title:             [90mΓöé[39m Start and initialize the Postiz Docker Compose stack                           [90mΓöé[39m
+[90mΓöé[39m Status:            [90mΓöé[39m Γùï pending                                                                      [90mΓöé[39m
+[90mΓöé[39m Priority:          [90mΓöé[39m high                                                                           [90mΓöé[39m
+[90mΓöé[39m Dependencies:      [90mΓöé[39m None                                                                           [90mΓöé[39m
+[90mΓöé[39m Complexity:        [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Category:          [90mΓöé[39m ≡ƒöº development                                                                 [90mΓöé[39m
+[90mΓöé[39m Skills:            [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Description:       [90mΓöé[39m Launch the Docker Compose stack with all 8 services (Postiz, PostgreSQL,       [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m Redis, Temporal, Temporal PostgreSQL, Elasticsearch, Temporal UI, Temporal     [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m Admin Tools). Create necessary volumes and networks, initialize the database   [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m schema, and verify all services start successfully.                            [90mΓöé[39m
+[90mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Implementation Details:                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Summary                                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Launch the complete Postiz Docker Compose stack with all 8 services and verify successful      Γöé
+Γöé   initialization.                                                                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   Implementation Approach                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Navigate to deployment directory:                                                           Γöé
+Γöé                                                                                                  Γöé
+Γöé   cd /home/clientdash/postiz/                                                                    Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Pre-flight checks:                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Verify `.env` file exists and is readable                                                    Γöé
+Γöé   * Verify docker-compose.yml syntax: `docker compose config` (should complete without errors)   Γöé
+Γöé   * Check resource availability again: `free -h`, `df -h` (ensure conditions haven't changed)    Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Create Docker volumes and networks:                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose -f docker-compose.yml up -d --no-start                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   (This creates networks and named volumes without starting containers ΓÇö safer for validation)   Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Review volume and network creation:                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker volume ls | grep postiz                                                                 Γöé
+Γöé   docker network ls | grep postiz                                                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Start all services:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose -f docker-compose.yml up -d                                                     Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Monitor startup (wait 30-60 seconds for services to initialize):                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose -f docker-compose.yml logs -f                                                   Γöé
+Γöé                                                                                                  Γöé
+Γöé   (Exit with Ctrl+C after confirming stable startup)                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Verify all containers running:                                                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose ps                                                                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   Expected output:                                                                               Γöé
+Γöé                                                                                                  Γöé
+Γöé   NAME                    COMMAND                  SERVICE              STATUS           PORTS   Γöé
+Γöé   postiz-app              [app startup cmd]        postiz-app           Up (healthy)             Γöé
+Γöé   0.0.0.0:4007->5000/tcp                                                                         Γöé
+Γöé   postiz-postgres         docker-entrypoint       postiz-postgres      Up (healthy)              Γöé
+Γöé   5432/tcp                                                                                       Γöé
+Γöé   postiz-redis            redis-server            postiz-redis         Up                        Γöé
+Γöé   6379/tcp                                                                                       Γöé
+Γöé   temporal                [temporal cmd]          temporal             Up                        Γöé
+Γöé   7233/tcp, 6933/tcp, 6934/tcp, 6935/tcp, 6939/tcp                                               Γöé
+Γöé   temporal-postgresql     docker-entrypoint       temporal-postgresql  Up                        Γöé
+Γöé   5432/tcp                                                                                       Γöé
+Γöé   temporal-elasticsearch  [elasticsearch]         temporal-elasticsearch Up                      Γöé
+Γöé   9200/tcp, 9300/tcp                                                                             Γöé
+Γöé   temporal-ui             [temporal-ui cmd]       temporal-ui          Up                        Γöé
+Γöé   8081/tcp                                                                                       Γöé
+Γöé   temporal-admin-tools    [admin tools]           temporal-admin-tools Up               [no      Γöé
+Γöé   ports]                                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Check for restart loops:                                                                    Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose logs --tail 50                                                                  Γöé
+Γöé                                                                                                  Γöé
+Γöé   (Look for "exit code", "restarts", or repeated startup messages ΓÇö these indicate problems)     Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Verify database initialization (PostgreSQL schemas created):                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec postiz-postgres psql -U postiz-user -d postiz-db-local -c "\dt"            Γöé
+Γöé                                                                                                  Γöé
+Γöé   (Should list application tables, not empty)                                                    Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Verify Redis connectivity:                                                                  Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec postiz-redis redis-cli ping                                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   (Should return "PONG")                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Save startup logs for reference:                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose logs > /home/clientdash/postiz/startup.log                                      Γöé
+Γöé                                                                                                  Γöé
+Γöé   Acceptance Criteria                                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Docker Compose stack starts without errors: `docker compose -f                               Γöé
+Γöé   /home/clientdash/postiz/docker-compose.yml up -d` completes                                    Γöé
+Γöé   * All 8 containers are created and running (verified with `docker compose ps` showing 8        Γöé
+Γöé   containers with status 'Up')                                                                   Γöé
+Γöé   * Postiz application container shows as healthy (if health check defined) or running without   Γöé
+Γöé   restart loops                                                                                  Γöé
+Γöé   * PostgreSQL postiz-postgres service is healthy and accepting connections (can verify with     Γöé
+Γöé   docker logs)                                                                                   Γöé
+Γöé   * PostgreSQL temporal-postgresql service initialized and stable                                Γöé
+Γöé   * Redis service is accepting connections on port 6379                                          Γöé
+Γöé   * Temporal service started and listening on port 7233                                          Γöé
+Γöé   * Elasticsearch service started (note: ES is memory-intensive; monitor heap usage)             Γöé
+Γöé   * Temporal UI service accessible on port 8081                                                  Γöé
+Γöé   * No 'restart' loops detected: `docker compose logs` shows stable startup sequences, not       Γöé
+Γöé   repeated crash/restart cycles                                                                  Γöé
+Γöé   * Docker networks created for inter-service communication (verified with `docker network       Γöé
+Γöé   ls`)                                                                                           Γöé
+Γöé                                                                                                  Γöé
+Γöé   Technical Constraints                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Must wait 30-60 seconds for service initialization (databases, Elasticsearch, etc.)          Γöé
+Γöé   * Elasticsearch is memory-hungry (256-512MB heap by default) ΓÇö if OOM issues occur, may need   Γöé
+Γöé   ES_JAVA_OPTS tuning                                                                            Γöé
+Γöé   * PostgreSQL services must initialize schemas before Postiz app connects (timing dependency)   Γöé
+Γöé   * All inter-service communication uses internal Docker network (not exposed to host except     Γöé
+Γöé   specified ports)                                                                               Γöé
+Γöé   * Must preserve startup logs for troubleshooting                                               Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Γ£ô Acceptance Criteria:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   ΓÿÉ Docker Compose stack starts without errors: `docker compose -f                               Γöé
+Γöé   /home/clientdash/postiz/docker-compose.yml up -d` completes                                    Γöé
+Γöé   ΓÿÉ All 8 containers are created and running (verified with `docker compose ps` showing 8        Γöé
+Γöé   containers with status 'Up')                                                                   Γöé
+Γöé   ΓÿÉ Postiz application container shows as healthy (if health check defined) or running without   Γöé
+Γöé   restart loops                                                                                  Γöé
+Γöé   ΓÿÉ PostgreSQL postiz-postgres service is healthy and accepting connections (can verify with     Γöé
+Γöé   docker logs)                                                                                   Γöé
+Γöé   ΓÿÉ PostgreSQL temporal-postgresql service initialized and stable                                Γöé
+Γöé   ΓÿÉ Redis service is accepting connections on port 6379                                          Γöé
+Γöé   ΓÿÉ Temporal service started and listening on port 7233                                          Γöé
+Γöé   ΓÿÉ Elasticsearch service started (note: ES is memory-intensive; monitor heap usage)             Γöé
+Γöé   ΓÿÉ Temporal UI service accessible on port 8081                                                  Γöé
+Γöé   ΓÿÉ No 'restart' loops detected: `docker compose logs` shows stable startup sequences, not       Γöé
+Γöé   repeated crash/restart cycles                                                                  Γöé
+Γöé   ΓÿÉ Docker networks created for inter-service communication (verified with `docker network       Γöé
+Γöé   ls`)                                                                                           Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Suggested Actions:                                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Run task-master set-status --id=DES-188 --status=in-progress to start working               Γöé
+Γöé   2. Run task-master expand --id=DES-188 to break down into subtasks                             Γöé
+Γöé   3. Run task-master update-task --id=DES-188 --prompt="..." to update details                   Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»

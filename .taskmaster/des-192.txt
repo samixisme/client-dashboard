@@ -1,0 +1,180 @@
+≡ƒÅ╖  Brief: Integrate Postiz Social Media (bd4ba781-2716-41bc-8671-0f1c6ee30366)
+Listing tasks from: https://tryhamster.com/home/designs-team/briefs/bd4ba781-2716-41bc-8671-0f1c6ee30366/plan (https://tryhamster.com/home/designs-team/briefs/bd4ba781-2716-41bc-8671-0f1c6ee30366/plan)
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé Task: #DES-192 - Verify Postiz Docker stack health and service connectivity Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+[90mΓöîΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö¼ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÉ[39m
+[90mΓöé[39m ID:                [90mΓöé[39m DES-192                                                                        [90mΓöé[39m
+[90mΓöé[39m Title:             [90mΓöé[39m Verify Postiz Docker stack health and service connectivity                     [90mΓöé[39m
+[90mΓöé[39m Status:            [90mΓöé[39m Γùï pending                                                                      [90mΓöé[39m
+[90mΓöé[39m Priority:          [90mΓöé[39m high                                                                           [90mΓöé[39m
+[90mΓöé[39m Dependencies:      [90mΓöé[39m None                                                                           [90mΓöé[39m
+[90mΓöé[39m Complexity:        [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Category:          [90mΓöé[39m ≡ƒº¬ testing                                                                     [90mΓöé[39m
+[90mΓöé[39m Skills:            [90mΓöé[39m N/A                                                                            [90mΓöé[39m
+[90mΓöé[39m Description:       [90mΓöé[39m Validate that all services in the Docker Compose stack are healthy, accessible [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m within the container network, and ready for external routing. Verify database  [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m schemas are properly initialized, Redis is responsive, Temporal workflows can  [90mΓöé[39m
+[90mΓöé[39m                    [90mΓöé[39m be registered, and the Postiz API responds to basic requests.                  [90mΓöé[39m
+[90mΓööΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ[39m[90mΓö┤ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÿ[39m
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Implementation Details:                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Summary                                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   Verify all services in the Postiz Docker stack are healthy, properly initialized, and ready    Γöé
+Γöé   for external Nginx routing.                                                                    Γöé
+Γöé                                                                                                  Γöé
+Γöé   Implementation Approach                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Container Status Check:**                                                                 Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose ps                                                                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   Verify all 8 containers show status "Up" and no restarts.                                      Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Service Logs Inspection:**                                                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose logs --tail 100 | grep -i "error\|fatal\|panic\|fail"                           Γöé
+Γöé                                                                                                  Γöé
+Γöé   Should return minimal/no error lines. Check for repeated restart patterns.                     Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Database Schema Verification:**                                                           Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec postiz-postgres psql -U postiz-user -d postiz-db-local -c "\dt"            Γöé
+Γöé                                                                                                  Γöé
+Γöé   Should list application tables (not empty schema).                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   Verify Temporal database:                                                                      Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec temporal-postgresql psql -U postgres -d temporal -c "\dt"                  Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Redis Connectivity:**                                                                     Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec postiz-redis redis-cli PING                                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   Expected output: PONG                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   Test Redis set/get:                                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec postiz-redis redis-cli SET test_key "test_value"                           Γöé
+Γöé   docker compose exec postiz-redis redis-cli GET test_key                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Temporal Server Health:**                                                                 Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec temporal tctl server describe                                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   (If tctl not available, check logs: docker compose logs temporal | tail -20)                   Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Postiz API Health Check:**                                                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec postiz-app curl -s http://localhost:5000/api/health | jq .                 Γöé
+Γöé                                                                                                  Γöé
+Γöé   (Or inspect logs for startup messages: docker compose logs postiz-app | tail -20)              Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Elasticsearch Cluster Status:**                                                           Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec temporal-elasticsearch curl -s http://localhost:9200/_cluster/health |     Γöé
+Γöé   jq .                                                                                           Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Port Binding Verification:**                                                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker port postiz-app                                                                         Γöé
+Γöé   docker port temporal-ui                                                                        Γöé
+Γöé   netstat -tlnp | grep -E "4007|8081"                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   Confirm Postiz on 4007 and Temporal UI on 8081.                                                Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Network Connectivity Test:**                                                              Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker compose exec postiz-app ping postiz-postgres                                            Γöé
+Γöé   docker compose exec postiz-app ping postiz-redis                                               Γöé
+Γöé   docker compose exec postiz-app ping temporal                                                   Γöé
+Γöé                                                                                                  Γöé
+Γöé   All pings should succeed (0% packet loss).                                                     Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Memory/CPU Usage:**                                                                       Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker stats --no-stream                                                                       Γöé
+Γöé                                                                                                  Γöé
+Γöé   Verify:                                                                                        Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Elasticsearch heap not excessive                                                             Γöé
+Γöé   * No service consuming >50% CPU during idle                                                    Γöé
+Γöé   * Total memory usage <85% of 8GB                                                               Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Volume Persistence Check:**                                                               Γöé
+Γöé                                                                                                  Γöé
+Γöé   docker volume ls | grep postiz                                                                 Γöé
+Γöé   docker inspect postiz-postgres-data (or relevant volume name)                                  Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. **Document Verification Results:**                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Create `/home/clientdash/postiz/VERIFICATION.log` with summary of all checks                 Γöé
+Γöé   * Include timestamp, all command outputs, and final status                                     Γöé
+Γöé                                                                                                  Γöé
+Γöé   Acceptance Criteria                                                                            Γöé
+Γöé                                                                                                  Γöé
+Γöé   * Docker Compose health status: `docker compose ps` shows all 8 services with status 'Up'      Γöé
+Γöé   (no 'Exited', 'Unhealthy', or 'Restarting')                                                    Γöé
+Γöé   * Database connectivity: `docker compose exec postiz-postgres psql -U postiz-user -d           Γöé
+Γöé   postiz-db-local -c 'SELECT 1'` returns 1 (confirms schema is accessible)                       Γöé
+Γöé   * Redis connectivity: `docker compose exec postiz-redis redis-cli PING` returns 'PONG'         Γöé
+Γöé   * Temporal server health: `docker compose exec temporal tctl server describe` returns server   Γöé
+Γöé   config (confirms Temporal is initialized)                                                      Γöé
+Γöé   * Postiz API responds: HTTP request to `http://localhost:4007/api/health` (or equivalent)      Γöé
+Γöé   returns 200 status within container network                                                    Γöé
+Γöé   * No fatal errors in container logs: `docker compose logs` checked for 'FATAL', 'PANIC',       Γöé
+Γöé   'OutOfMemory', or repeated restart patterns                                                    Γöé
+Γöé   * Volume persistence verified: Volumes exist and are mounted in expected locations (can        Γöé
+Γöé   check with `docker inspect`)                                                                   Γöé
+Γöé   * No port conflicts: All exposed ports (4007, 8081) are listening and not in conflict with     Γöé
+Γöé   cPanel/Apache services                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   Technical Constraints                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γöé   * All connectivity tests are internal to Docker network (except port binding checks on host)   Γöé
+Γöé   * Temporal CLI (tctl) may not be available in all image versions ΓÇö logs inspection is          Γöé
+Γöé   acceptable alternative                                                                         Γöé
+Γöé   * Database queries require psql available in container (postgres images include this)          Γöé
+Γöé   * Redis tests use redis-cli (available in redis images)                                        Γöé
+Γöé   * Memory/CPU baselines from this verification will inform monitoring strategy (separate        Γöé
+Γöé   task)                                                                                          Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Γ£ô Acceptance Criteria:                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γöé   ΓÿÉ Docker Compose health status: `docker compose ps` shows all 8 services with status 'Up'      Γöé
+Γöé   (no 'Exited', 'Unhealthy', or 'Restarting')                                                    Γöé
+Γöé   ΓÿÉ Database connectivity: `docker compose exec postiz-postgres psql -U postiz-user -d           Γöé
+Γöé   postiz-db-local -c 'SELECT 1'` returns 1 (confirms schema is accessible)                       Γöé
+Γöé   ΓÿÉ Redis connectivity: `docker compose exec postiz-redis redis-cli PING` returns 'PONG'         Γöé
+Γöé   ΓÿÉ Temporal server health: `docker compose exec temporal tctl server describe` returns server   Γöé
+Γöé   config (confirms Temporal is initialized)                                                      Γöé
+Γöé   ΓÿÉ Postiz API responds: HTTP request to `http://localhost:4007/api/health` (or equivalent)      Γöé
+Γöé   returns 200 status within container network                                                    Γöé
+Γöé   ΓÿÉ No fatal errors in container logs: `docker compose logs` checked for 'FATAL', 'PANIC',       Γöé
+Γöé   'OutOfMemory', or repeated restart patterns                                                    Γöé
+Γöé   ΓÿÉ Volume persistence verified: Volumes exist and are mounted in expected locations (can        Γöé
+Γöé   check with `docker inspect`)                                                                   Γöé
+Γöé   ΓÿÉ No port conflicts: All exposed ports (4007, 8081) are listening and not in conflict with     Γöé
+Γöé   cPanel/Apache services                                                                         Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»
+
+
+Γò¡ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò«
+Γöé                                                                                                  Γöé
+Γöé   Suggested Actions:                                                                             Γöé
+Γöé                                                                                                  Γöé
+Γöé   1. Run task-master set-status --id=DES-192 --status=in-progress to start working               Γöé
+Γöé   2. Run task-master expand --id=DES-192 to break down into subtasks                             Γöé
+Γöé   3. Run task-master update-task --id=DES-192 --prompt="..." to update details                   Γöé
+Γöé                                                                                                  Γöé
+Γò░ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓò»

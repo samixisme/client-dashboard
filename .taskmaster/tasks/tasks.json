@@ -2,538 +2,136 @@
   "master": {
     "tasks": [
       {
-        "id": 119,
-        "title": "Implement Drive Health Endpoint",
-        "description": "Add a GET /api/drive/health endpoint to test Google Drive credential loading.",
-        "details": "In `api/driveRoutes.ts`, add a new GET route `/health`. Inside the route handler, call `await initializeDrive()`. If successful, return `res.status(200).json({ status: 'ok' })`. If an error is thrown, catch it and return `res.status(503).json({ status: 'error', message: error.message })`.",
-        "testStrategy": "Run the local development server and execute `curl http://localhost:3001/api/drive/health` to verify it returns a 200 OK JSON response.",
+        "id": 144,
+        "title": "Infrastructure Prep: Subdomain & SSL Generation",
+        "description": "Create the social.samixism.com subdomain in cPanel and generate Let's Encrypt SSL certificates using Certbot.",
+        "details": "1. Log into cPanel and create an 'A' record for 'social.samixism.com' pointing to 49.13.129.43. 2. SSH into the VPS and run `certbot certonly --nginx -d social.samixism.com`. 3. Verify the certificates are successfully generated at `/etc/letsencrypt/live/social.samixism.com/`. Note: Ensure cPanel's AutoSSL does not conflict with Certbot by disabling it for this specific subdomain if necessary.",
+        "testStrategy": "Run `certbot certificates` to verify the new domain is listed and valid. Perform a DNS lookup to ensure the subdomain resolves to the correct IP.",
         "priority": "high",
         "dependencies": [],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add GET /health route to api/driveRoutes.ts",
-            "description": "Implement the GET /api/drive/health endpoint to verify Google Drive credential loading.",
-            "dependencies": [],
-            "details": "Insert the GET /health route block BEFORE the existing GET /files route, right after the ALLOWED_MIME_TYPES / multer setup in api/driveRoutes.ts. Inside the route handler, call `await initializeDrive()`. If successful, return `res.status(200).json({ status: 'ok', message: 'Google Drive API is reachable' })`. If an error is thrown, catch it and return `res.status(503).json({ status: 'error', message: error.message || 'Drive initialization failed' })`.\n<info added on 2026-03-06T23:40:30.141Z>\nUpdate the successful health response to include rootFolderId (process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID or 'auto-detected') and credentialSource ('env-json' if process.env.GOOGLE_SERVICE_ACCOUNT_JSON is set, 'file-path' if process.env.GOOGLE_SERVICE_ACCOUNT_PATH is set, otherwise 'none'). Add a comment in driveRoutes.ts warning that webViewLinks may 403 briefly for 5-30 seconds after upload due to permission propagation delays. Also, update utils/googleDrive.ts lines 305-308 by adding supportsAllDrives: true to the drive.files.get() call in getFileMetadata() to fix 404 errors for Shared Drive files.\n</info added on 2026-03-06T23:40:30.141Z>\n<info added on 2026-03-07T01:00:46.056Z>\nImplemented GET /health route in api/driveRoutes.ts lines 59-84. Returns { status: 'ok', message, rootFolderId, credentialSource } on success and { status: 'error', message } with HTTP 503 on failure. Added supportsAllDrives: true to getFileMetadata() in utils/googleDrive.ts line 308. TypeScript check passed.\n</info added on 2026-03-07T01:00:46.056Z>",
-            "status": "pending",
-            "testStrategy": "Code review to ensure the route is placed correctly and handles both success and error states properly.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Build and smoke-test locally",
-            "description": "Compile the TypeScript code and test the new health endpoint locally to ensure it works before deployment.",
-            "dependencies": [
-              1
-            ],
-            "details": "Run `npx tsc --noEmit` to confirm there are zero TypeScript errors. Then, start the local development server using `npm run dev`. Finally, execute `curl http://localhost:3001/api/drive/health` to confirm it returns a 200 OK JSON response.\n<info added on 2026-03-06T23:41:22.789Z>\nApply a critical code fix in utils/googleDrive.ts for the getFileMetadata() function (around lines 305-308). Update the drive.files.get() call to include supportsAllDrives: true in the parameters to prevent 404 errors for files stored in Shared Drives. Additionally, extend the smoke-test phase: after confirming the health endpoint works, upload a test file and verify that the 201 response includes a valid webViewLink rather than an empty string.\n</info added on 2026-03-06T23:41:22.789Z>",
-            "status": "pending",
-            "testStrategy": "Verify `npx tsc --noEmit` passes without errors and the curl command returns the expected JSON payload with a 200 status code.",
-            "parentId": "undefined"
-          }
-        ],
-        "complexity": 3,
-        "recommendedSubtasks": 0,
-        "expansionPrompt": "The task is well-defined with existing subtasks covering the route implementation, error handling, and local smoke testing. No further expansion is necessary.",
-        "updatedAt": "2026-03-07T01:00:24.511Z"
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": 120,
-        "title": "Write Unit Tests for Drive Health Endpoint",
-        "description": "Create unit tests to verify the success and failure states of the new health endpoint.",
-        "details": "Create or update the test file for `driveRoutes.ts`. Mock the `initializeDrive` function. Write one test where the mock resolves successfully (expecting HTTP 200 and `{ status: 'ok' }`). Write a second test where the mock rejects with an error (expecting HTTP 503 and `{ status: 'error', message: '...' }`).",
-        "testStrategy": "Run the test suite using `npm test` to ensure the new tests pass and code coverage is maintained.",
+        "id": 145,
+        "title": "Server Resource Tuning & Swap Configuration",
+        "description": "Configure server resources to handle the RAM-heavy Temporal and Elasticsearch containers without triggering OOM kills.",
+        "details": "Given the 8GB RAM constraint and the heavy footprint of Temporal + ES, create a 4GB swap file to prevent Out-Of-Memory (OOM) crashes. 1. Run `fallocate -l 4G /swapfile`, `chmod 600 /swapfile`, `mkswap /swapfile`, and `swapon /swapfile`. 2. Add `/swapfile swap swap defaults 0 0` to `/etc/fstab`. 3. Adjust swappiness: `sysctl vm.swappiness=10` and persist in `/etc/sysctl.conf`. 4. Prepare Elasticsearch heap limits for the Docker compose file (`ES_JAVA_OPTS=\"-Xms256m -Xmx256m\"`).",
+        "testStrategy": "Run `free -h` to verify the 4GB swap space is active. Run `cat /proc/sys/vm/swappiness` to verify it is set to 10.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 146,
+        "title": "Nginx Reverse Proxy Configuration",
+        "description": "Configure Engintron/Nginx to route traffic to the Postiz Docker container while adhering to strict server rules.",
+        "details": "Edit `/etc/nginx/conf.d/custom_rules.conf` (NEVER default.conf). Add a server block for `social.samixism.com` listening on 443 with SSL certs from Task 144. Proxy pass to `http://127.0.0.1:4007`. Crucially, include `proxy_set_header X-Forwarded-Proto https;`, `proxy_set_header X-Forwarded-SSL on;`, and WebSocket support (`Upgrade $http_upgrade`, `Connection 'upgrade'`). To allow iframe embedding in Phase 2, add `add_header Content-Security-Policy \"frame-ancestors 'self' https://client.samixism.com\";` and remove any restrictive `X-Frame-Options` headers.",
+        "testStrategy": "Run `nginx -t` to validate the configuration syntax. If successful, run `systemctl reload nginx`. Verify with `curl -I https://social.samixism.com` (should return 502 Bad Gateway until Docker is up, but SSL should be valid).",
+        "priority": "high",
+        "dependencies": [
+          144
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 147,
+        "title": "Postiz Docker Compose Architecture Setup",
+        "description": "Clone and configure the Postiz Docker Compose stack, resolving port conflicts and setting resource limits.",
+        "details": "1. Create directory `/home/clientdash/postiz/`. 2. Create `docker-compose.yml` based on the official Postiz AGPL-3.0 repo. 3. Map the main Postiz app port to `4007:5000`. 4. Remap Temporal UI port from `8080:8080` to `8081:8080` to avoid Apache conflicts. 5. Add memory limits to the `temporal-elasticsearch` service (`mem_limit: 512m`) and pass `ES_JAVA_OPTS=-Xms256m -Xmx256m`. 6. Ensure all services use a dedicated custom bridge network to avoid cPanel iptables conflicts.",
+        "testStrategy": "Run `docker compose config` to validate the YAML file. Ensure no port 8080 bindings exist in the output.",
+        "priority": "high",
+        "dependencies": [
+          145
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 148,
+        "title": "Environment Variables & Secrets Management",
+        "description": "Configure the `.env` file for Postiz, Temporal, and Database connections.",
+        "details": "Create `/home/clientdash/postiz/.env`. Generate a secure JWT secret using `openssl rand -base64 64`. Set `MAIN_URL=https://social.samixism.com`, `FRONTEND_URL=https://social.samixism.com`, `NEXT_PUBLIC_BACKEND_URL=https://social.samixism.com/api`. Configure `DATABASE_URL` and `REDIS_URL` to point to the internal Docker service names. Set `IS_GENERAL=true`, `DISABLE_REGISTRATION=true` (to restrict access to admins), and `STORAGE_PROVIDER=local` with `UPLOAD_DIRECTORY=/uploads` mapped to a persistent Docker volume.",
+        "testStrategy": "Review the `.env` file manually to ensure no trailing spaces, correct URL schemes (https), and strong generated passwords for Postgres and JWT.",
+        "priority": "high",
+        "dependencies": [
+          147
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 149,
+        "title": "Deploy and Initialize Postiz Stack",
+        "description": "Start the Docker Compose stack, verify container health, and initialize the database.",
+        "details": "Run `docker compose up -d` in the Postiz directory. Temporal and Elasticsearch take time to initialize; the Postiz backend might crash and restart initially. Configure `restart: unless-stopped` in the compose file to handle this. Monitor the logs of the `postiz-app` container to ensure Prisma migrations run successfully and the NestJS backend connects to Temporal (`temporal:7233`) and Postgres.",
+        "testStrategy": "Run `docker compose ps` and ensure all 8 services are 'Up' and 'healthy'. Check `docker compose logs postiz-app` for 'Nest application successfully started'. Visit `https://social.samixism.com` to see the login screen.",
+        "priority": "high",
+        "dependencies": [
+          146,
+          148
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 150,
+        "title": "Temporal UI Security & Access Configuration",
+        "description": "Secure the Temporal UI exposed on port 8081 to prevent unauthorized access to workflow data.",
+        "details": "Since Temporal UI is exposed on `http://49.13.129.43:8081` and lacks built-in auth, it must be secured. Option A: Bind the port only to localhost (`127.0.0.1:8081:8080`) and use an SSH tunnel to access it. Option B: Create another Nginx server block (e.g., `temporal.samixism.com`) proxying to 8081 with `auth_basic` enabled. Implement Option A for immediate security, documenting the SSH tunnel command (`ssh -L 8081:localhost:8081 user@49.13.129.43`) in the SERVER_PLAYBOOK.md.",
+        "testStrategy": "Attempt to access `http://49.13.129.43:8081` from a public IP; it should fail or be rejected. Establish an SSH tunnel and access `http://localhost:8081` locally to verify Temporal UI loads.",
         "priority": "medium",
         "dependencies": [
-          "119"
+          149
         ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Create test file for driveRoutes and mock initializeDrive",
-            "description": "Set up the Jest test file for driveRoutes.ts, mock the initializeDrive function, and write tests for both success and failure states.",
-            "dependencies": [],
-            "details": "Create or update `__tests__/driveRoutes.test.ts`. Mock the module using `jest.mock('../utils/googleDrive', () => ({ initializeDrive: jest.fn() }))`. Import the Express app via `import { app } from '../api/server'` and use supertest. Write two tests: 1) `it('returns 200 when Drive initializes', ...)` where mock resolves and expects HTTP 200 with `{ status: 'ok' }`. 2) `it('returns 503 when Drive fails', ...)` where mock rejects with an error and expects HTTP 503 with `{ status: 'error' }`.\n<info added on 2026-03-07T01:29:19.737Z>\nCreated __tests__/driveRoutes.test.ts with 3 test cases using supertest and jest mocks. Tests verify a 200 response on success, a 503 response with an Error message, and a 503 response with a fallback for non-Error thrown values. All tests pass. Included a @jest-environment node override because the global config uses jsdom.\n</info added on 2026-03-07T01:29:19.737Z>",
-            "status": "pending",
-            "testStrategy": "Run `npx jest __tests__/driveRoutes.test.ts` to verify that the newly written tests compile and execute correctly in isolation.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Run full test suite and verify coverage",
-            "description": "Execute the complete test suite to ensure the new tests pass, no existing tests regress, and code coverage is maintained.",
-            "dependencies": [
-              1
-            ],
-            "details": "Run `npm test` in the terminal to execute the full test suite. Verify that both new tests pass and that no existing tests regress. Check the coverage report; if coverage drops, investigate why and add any missing assertions or test cases.",
-            "status": "pending",
-            "testStrategy": "Review the Jest output in the terminal to confirm a 100% pass rate and inspect the coverage summary table.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-03-07T01:29:09.276Z"
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": 121,
-        "title": "Verify and Configure Google Drive Credentials",
-        "description": "Ensure Google Drive service account credentials are set in the production environment.",
-        "details": "SSH into the VPS. Run `pm2 env client-dashboard-api | grep GOOGLE`. If `GOOGLE_SERVICE_ACCOUNT_PATH` or `GOOGLE_SERVICE_ACCOUNT_JSON` are missing, add them to the shared `.env` file at `/home/clientdash/client-dashboard/shared/.env` or the `ecosystem.config.js` env block.",
-        "testStrategy": "Restart the PM2 process and verify the environment variables are loaded correctly using `pm2 env client-dashboard-api`.",
-        "priority": "high",
-        "dependencies": [],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "SSH into VPS and check PM2 environment for Drive credentials",
-            "description": "Connect to the VPS via SSH and check if the Google Drive credentials are currently loaded in the PM2 environment.",
-            "dependencies": [],
-            "details": "Run `pm2 env client-dashboard-api | grep -i google`. If GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON appear, credentials are set. If empty, proceed to the next subtask.\n<info added on 2026-03-07T01:29:31.195Z>\nSSH connection to clientdash@49.13.129.43 requires interactive password authentication. Cannot automate without SSH key-based auth. User must either: (1) provide SSH key access, or (2) manually run: pm2 env client-dashboard-api | grep -i google to check credentials.\n</info added on 2026-03-07T01:29:31.195Z>\n<info added on 2026-03-07T01:38:27.342Z>\nCode deployment is automated via GitHub Actions CI/CD, eliminating the need for manual SSH for code deployment. However, verifying and setting the Google Drive environment variables (GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_DRIVE_ROOT_FOLDER_ID) in the shared .env file on the VPS remains a manual step requiring server access.\n</info added on 2026-03-07T01:38:27.342Z>\n<info added on 2026-03-07T02:22:55.418Z>\nUploaded google-service-account.json to /home/clientdash/client-dashboard/ via SCP. Patched ecosystem.config.js with GOOGLE_SERVICE_ACCOUNT_PATH and GOOGLE_DRIVE_ROOT_FOLDER_ID. Added the same variables to shared/.env. Restarted PM2 from the current release directory, confirming both cluster instances are online. The health endpoint successfully returns status ok and credentialSource file-path.\n</info added on 2026-03-07T02:22:55.418Z>",
-            "status": "pending",
-            "testStrategy": "Verify the output of the grep command to determine if the environment variables are present.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Add missing credentials to shared .env",
-            "description": "Add the required Google Drive service account credentials to the shared .env file or ecosystem.config.js.",
-            "dependencies": [
-              1
-            ],
-            "details": "Add to /home/clientdash/client-dashboard/shared/.env (create if missing): GOOGLE_SERVICE_ACCOUNT_PATH=/home/clientdash/client-dashboard/service-account.json (or GOOGLE_SERVICE_ACCOUNT_JSON) and GOOGLE_DRIVE_ROOT_FOLDER_ID. Alternatively, use the ecosystem.config.js env_production block. Never commit service account JSON to git.\n<info added on 2026-03-06T23:40:44.690Z>\nCritical Drive context: The service account email must be granted Editor access to the root folder (GOOGLE_DRIVE_ROOT_FOLDER_ID) in the Google Drive UI, otherwise initializeDrive() will fail with a 403 PERMISSION_DENIED error. Note that PM2 cluster mode runs 2 instances, so the in-memory quota state tracks per instance, effectively doubling the rate limit, though the filesystem cache remains shared. Ensure the following environment variables are set: GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON, and GOOGLE_DRIVE_ROOT_FOLDER_ID.\n</info added on 2026-03-06T23:40:44.690Z>",
-            "status": "pending",
-            "testStrategy": "Check the contents of the .env file or ecosystem.config.js to ensure the variables are correctly formatted and saved.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Reload PM2 to pick up new env vars",
-            "description": "Reload the PM2 process with the --update-env flag to apply the newly added environment variables.",
-            "dependencies": [
-              2
-            ],
-            "details": "Run: `pm2 reload client-dashboard-api --update-env` to restart the application and inject the new environment variables from the .env file or ecosystem config.\n<info added on 2026-03-06T23:41:35.242Z>\nAfter reloading PM2, verify the credentials by running curl -s https://client.samixism.com/api/drive/health. The response should return status ok and a valid credentialSource. If credentialSource returns none, the environment variables were not picked up; run pm2 restart client-dashboard-api --update-env instead. Additionally, note that the current code lacks retry/backoff logic for Google Drive API 403/429 rate limit errors. Monitor API calls under load and ensure the rate limit check in driveQuota.ts prevents excessive calls, keeping in mind that actual project-level quotas are much stricter (300 req/sec for read, 3 req/sec per user for write).\n</info added on 2026-03-06T23:41:35.242Z>",
-            "status": "pending",
-            "testStrategy": "Verify with `pm2 env client-dashboard-api | grep -i google` again to ensure the variables are now actively loaded in the PM2 process.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-03-07T02:09:56.360Z"
-      },
-      {
-        "id": 122,
-        "title": "Deploy Backend Updates",
-        "description": "Build and deploy the updated Node.js/Express API server to production.",
-        "details": "Run `npx tsc --noEmit` to ensure zero TypeScript errors. Then run `npm run build:server` to compile the TypeScript code. Finally, execute `pm2 reload client-dashboard-api` to apply the new health endpoint without downtime.",
-        "testStrategy": "Verify the PM2 process restarts successfully without crashing by checking `pm2 logs client-dashboard-api`.",
-        "priority": "high",
-        "dependencies": [
-          "119",
-          "120",
-          "121"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Type-check server code",
-            "description": "Run the TypeScript compiler to ensure there are zero type errors before proceeding with the build.",
-            "dependencies": [],
-            "details": "Run `npx tsc -p tsconfig.server.json --noEmit` from the project root. Zero errors are required before proceeding. If tsc defaults to the app config, ensure the -p flag is used.",
-            "status": "pending",
-            "testStrategy": "Verify the command exits with code 0, indicating no TypeScript errors were found.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Build server bundle",
-            "description": "Compile the TypeScript server code into a JavaScript bundle for production deployment.",
-            "dependencies": [
-              1
-            ],
-            "details": "Run `npm run build:server` to compile api/server.ts and all imports to the dist-server/ directory. If the build script differs, check package.json scripts for the correct server build command.",
-            "status": "pending",
-            "testStrategy": "Verify that the dist-server/api/server.js file exists and is populated after the build completes.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Reload PM2 without downtime",
-            "description": "Gracefully reload the PM2 process to apply the new server build without dropping active connections.",
-            "dependencies": [
-              2
-            ],
-            "details": "Execute `pm2 reload client-dashboard-api`. This is a graceful reload that respects the wait_ready:true and listen_timeout:10000ms settings in ecosystem.config.js.",
-            "status": "pending",
-            "testStrategy": "Monitor with `pm2 logs client-dashboard-api --lines 30` and confirm no crash restarts. Then verify the new health endpoint by running `curl https://client.samixism.com/api/drive/health`.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-03-07T02:09:56.379Z"
-      },
-      {
-        "id": 123,
-        "title": "Implement Advanced Nginx Reverse Proxy Routing with Rate Limiting and High Availability for /api/ Endpoints",
-        "description": "Architect and implement a robust Nginx reverse proxy configuration for the `/api/` namespace. This includes setting up an upstream block for high availability, implementing rate limiting to mitigate abuse, configuring strict timeout and buffer controls, and establishing comprehensive error handling for the Express API server.",
-        "details": "Edit `/etc/nginx/nginx.conf` and `/etc/nginx/conf.d/custom_rules.conf`. 1. Define an upstream block: `upstream api_backend { server 127.0.0.1:3001 max_fails=3 fail_timeout=30s; }`. 2. Define a rate limiting zone in the HTTP context: `limit_req_zone $binary_remote_addr zone=api_limit:10m rate=20r/s;`. 3. In the `location /api/` block, apply the rate limit: `limit_req zone=api_limit burst=10 nodelay;`. 4. Configure the proxy pass: `proxy_pass http://api_backend;`. 5. Inject comprehensive security and routing headers: `proxy_set_header Host $host;`, `proxy_set_header X-Real-IP $remote_addr;`, `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, and `proxy_set_header X-Forwarded-Proto $scheme;`. 6. Optimize proxy buffers to prevent 502 errors on large JSON responses: `proxy_buffer_size 128k; proxy_buffers 4 256k; proxy_busy_buffers_size 256k;`. 7. Set strict timeouts: `proxy_connect_timeout 5s; proxy_send_timeout 15s; proxy_read_timeout 15s;`. 8. Map custom error pages for 502, 503, and 504 gateway errors to ensure a graceful degradation of service. Ensure the root `/` location block remains untouched and routes to port 3000.",
-        "testStrategy": "1. Run `nginx -t` to validate configuration syntax. 2. Reload Nginx and use `curl -v http://localhost/api/health` to verify successful routing and inspect injected headers. 3. Perform load testing using `k6` or `Apache Bench (ab)` to trigger and validate the rate limiting configuration (expecting HTTP 503 responses once the burst threshold is exceeded). 4. Simulate an API failure by temporarily stopping the Express server on port 3001 and verify that the custom 502 Bad Gateway error page is served correctly. 5. Monitor `/var/log/nginx/error.log` during testing to ensure no buffer overflow warnings are generated.",
-        "priority": "high",
-        "dependencies": [
-          "122"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Backup and Modular Configuration Design",
-            "description": "Backup existing Nginx configurations and establish a modular structure for the new custom rules to ensure safe rollback.",
-            "dependencies": [],
-            "details": "Create a backup of /etc/nginx/nginx.conf and /etc/nginx/conf.d/. Ensure that custom_rules.conf is properly included in the main nginx.conf HTTP block to maintain a clean, modular architecture.\n<info added on 2026-03-07T00:36:47.235Z>\nSSH into the server using ssh clientdash@49.13.129.43. Confirm the correct user with whoami and list the directory contents of /etc/nginx/conf.d/. Never modify default.conf or default_https.conf, as Engintron regenerates them. Make a timestamped backup before proceeding by executing sudo cp /etc/nginx/conf.d/custom_rules.conf /etc/nginx/conf.d/custom_rules.conf.bak.$(date +%Y%m%d_%H%M%S) and confirm the backup exists. Print the current file using sudo cat /etc/nginx/conf.d/custom_rules.conf to review its contents. Identify the server block for client.samixism.com, which contains the server_name, ssl_certificate, and an existing location / block proxying to http://127.0.0.1:3000. Do not create a new server block; add all new location blocks inside the existing one.\n</info added on 2026-03-07T00:36:47.235Z>",
-            "status": "pending",
-            "testStrategy": "Verify backups exist in a secure directory. Run `nginx -T` to ensure the include directive for conf.d/*.conf is present and functioning.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Define High Availability Upstream Block",
-            "description": "Configure the upstream block for the Express API backend to enable high availability and failover mechanisms.",
-            "dependencies": [
-              "1"
-            ],
-            "details": "In /etc/nginx/conf.d/custom_rules.conf, define `upstream api_backend { server 127.0.0.1:3001 max_fails=3 fail_timeout=30s; }`. This ensures Nginx marks the backend as down after 3 failures for 30 seconds.\n<info added on 2026-03-07T00:37:13.472Z>\nOpen the file with nano using sudo nano /etc/nginx/conf.d/custom_rules.conf. Navigate to the client.samixism.com server block. Before the existing location / line, insert the following two blocks without deleting anything:\n\nlocation /api/ {\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP $remote_addr;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header X-Forwarded-Proto https;\n    proxy_set_header X-Forwarded-SSL on;\n    proxy_pass http://127.0.0.1:3001;\n    client_max_body_size 210m;\n    proxy_read_timeout 300s;\n    proxy_send_timeout 300s;\n    proxy_connect_timeout 60s;\n}\n\nlocation /admin/api/ {\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP $remote_addr;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header X-Forwarded-Proto https;\n    proxy_set_header X-Forwarded-SSL on;\n    proxy_pass http://127.0.0.1:3001;\n}\n\nThe existing catch-all block for location / must remain last and unchanged, proxying to http://127.0.0.1:3000. Save in nano using Ctrl+X, Y, then Enter. Order matters: Nginx matches location blocks from most-specific to least, so /api/ and /admin/api/ must appear before location / or they will never be reached. Verify the edit before running nginx by executing sudo grep -n 'location\\|proxy_pass\\|client_max_body' /etc/nginx/conf.d/custom_rules.conf. The output should show /api/ routing to 3001, /admin/api/ routing to 3001, and / routing to 3000 in that exact order.\n</info added on 2026-03-07T00:37:13.472Z>\n<info added on 2026-03-07T02:23:05.412Z>\nAdded /api/ and /admin/api/ location blocks to custom_rules.conf inside the client.samixism.com server block. Created backup custom_rules.conf.bak.pre-api. Nginx syntax check passed and reload was successful. Verified the health endpoint returns HTTP/2 200 via HTTPS and the frontend continues to serve HTTP 200. Confirmed upload directives including 210m body, 300s read/send timeout, and 60s connect timeout are correctly set at lines 66-69.\n</info added on 2026-03-07T02:23:05.412Z>",
-            "status": "pending",
-            "testStrategy": "Run `nginx -t` to validate the upstream block syntax and ensure no duplicate upstream names exist.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "Configure Rate Limiting Zone",
-            "description": "Establish a shared memory zone for IP-based rate limiting in the HTTP context to mitigate abuse.",
-            "dependencies": [
-              "1"
-            ],
-            "details": "Add `limit_req_zone $binary_remote_addr zone=api_limit:10m rate=20r/s;` to the HTTP context. This allocates 10MB for state storage and restricts requests to 20 per second per IP address.\n<info added on 2026-03-07T00:37:32.533Z>\nFULL SCOPED DETAIL — Validate, reload, and rollback procedure:\n\nALWAYS run as one chained command — do NOT run them separately:\nsudo nginx -t && sudo systemctl reload nginx\n\nExpected success output:\nnginx: the configuration file /etc/nginx/conf.d/custom_rules.conf syntax is ok\nnginx: configuration file /etc/nginx/conf.d/custom_rules.conf test is successful\n\nIF nginx -t FAILS (syntax error), DO NOT proceed. Identify the error line:\nsudo nginx -t 2>&1   # read the error carefully — it shows line number\nsudo nano /etc/nginx/conf.d/custom_rules.conf   # fix on reported line\n\nROLLBACK — if you're unsure and want to revert completely:\n# Find your backup\nls /etc/nginx/conf.d/custom_rules.conf.bak.*\n# Restore it (replace DATE_TIME with your backup timestamp)\nsudo cp /etc/nginx/conf.d/custom_rules.conf.bak.DATE_TIME /etc/nginx/conf.d/custom_rules.conf\nsudo nginx -t && sudo systemctl reload nginx\n\nPost-reload verification — confirm Nginx is serving correctly:\n# Should return JSON {\"status\":\"ok\"} — NOT an HTML page\ncurl -s https://client.samixism.com/api/drive/health\n\n# Should return JSON {\"files\":[],\"folders\":[]} — NOT 404 HTML\ncurl -s \"https://client.samixism.com/api/drive/files?folder=\"\n\n# Frontend should still work — should return HTTP 200\ncurl -s -o /dev/null -w \"%{http_code}\" https://client.samixism.com/\n\n# Check Nginx is running and has no workers crashed\nsudo systemctl status nginx\nsudo nginx -t\n\nMonitor for 2 minutes after reload:\nsudo tail -f /var/log/nginx/error.log\n# Look for any 502 Bad Gateway — means Express on 3001 isn't running\n# If 502: check PM2: pm2 status && pm2 logs client-dashboard-api --lines 20\n</info added on 2026-03-07T00:37:32.533Z>",
-            "status": "pending",
-            "testStrategy": "Run `nginx -t` to ensure the limit_req_zone directive is valid and placed in the correct HTTP context.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Create API Location Block and Proxy Pass",
-            "description": "Set up the specific location block for the /api/ namespace and route traffic to the upstream backend.",
-            "dependencies": [
-              "2"
-            ],
-            "details": "Define `location /api/ { ... }` in the server block. Inside, add `proxy_pass http://api_backend;`. Ensure the root `/` block remains untouched and continues routing to port 3000.",
-            "status": "pending",
-            "testStrategy": "Review configuration to ensure no overlap with the root location block. Validate syntax with `nginx -t`.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 5,
-            "title": "Apply Rate Limiting Rules to API Endpoint",
-            "description": "Enforce the previously defined rate limiting zone specifically on the /api/ location block with burst controls.",
-            "dependencies": [
-              "3",
-              "4"
-            ],
-            "details": "Inside the `location /api/` block, add `limit_req zone=api_limit burst=10 nodelay;`. This allows a burst of 10 requests to be processed immediately without artificial delay, while rejecting excess traffic.",
-            "status": "pending",
-            "testStrategy": "Syntax check with `nginx -t`. Prepare a bash script using curl to send rapid requests to verify 503 responses later.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 6,
-            "title": "Inject Security and Routing Headers",
-            "description": "Configure proxy headers to pass accurate client information and security context to the Express backend.",
-            "dependencies": [
-              "4"
-            ],
-            "details": "Add `proxy_set_header Host $host;`, `proxy_set_header X-Real-IP $remote_addr;`, `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, and `proxy_set_header X-Forwarded-Proto $scheme;` to the /api/ location block.",
-            "status": "pending",
-            "testStrategy": "Use a test Express endpoint that echoes headers back to verify that X-Real-IP and X-Forwarded-For are correctly populated.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 7,
-            "title": "Optimize Proxy Buffers for Large JSON Payloads",
-            "description": "Tune Nginx proxy buffers to prevent 502 Bad Gateway errors when the API returns large JSON responses.",
-            "dependencies": [
-              "4"
-            ],
-            "details": "Add `proxy_buffer_size 128k; proxy_buffers 4 256k; proxy_busy_buffers_size 256k;` to the /api/ location block. This accommodates large headers and response bodies from the upstream server.",
-            "status": "pending",
-            "testStrategy": "Trigger an API endpoint known to return a large JSON payload (>128k) and ensure it returns 200 OK without truncation or 502 errors.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 8,
-            "title": "Configure Strict Proxy Timeouts",
-            "description": "Implement strict timeout controls to prevent slow backend responses from tying up Nginx worker connections.",
-            "dependencies": [
-              "4"
-            ],
-            "details": "Set `proxy_connect_timeout 5s; proxy_send_timeout 15s; proxy_read_timeout 15s;` in the /api/ location block. This ensures Nginx fails fast if the Express server hangs or becomes unresponsive.",
-            "status": "pending",
-            "testStrategy": "Simulate a slow backend response (e.g., using setTimeout for 20s in Express) and verify Nginx returns a 504 Gateway Timeout after exactly 15 seconds.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 9,
-            "title": "Implement Custom Error Pages for Gateway Errors",
-            "description": "Map 502, 503, and 504 errors to custom HTML pages to ensure graceful service degradation for end users.",
-            "dependencies": [
-              "4"
-            ],
-            "details": "Add `error_page 502 /502.html; error_page 503 /503.html; error_page 504 /504.html;` to the server block. Create the corresponding static HTML files in the Nginx document root with user-friendly messaging.",
-            "status": "pending",
-            "testStrategy": "Manually trigger a 502 (stop backend), 503 (rate limit), and 504 (timeout) and verify the custom HTML content is served instead of default Nginx error pages.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 10,
-            "title": "Configuration Validation and Service Reload",
-            "description": "Validate the complete Nginx configuration syntax and apply the changes without dropping active connections.",
-            "dependencies": [
-              "5",
-              "6",
-              "7",
-              "8",
-              "9"
-            ],
-            "details": "Run `nginx -t` to ensure there are no syntax errors or conflicting directives. If successful, execute `systemctl reload nginx` or `nginx -s reload` to apply the new configuration seamlessly.",
-            "status": "pending",
-            "testStrategy": "Execute `curl -v http://localhost/api/health` to confirm basic routing is functional and the API is reachable.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 11,
-            "title": "Advanced Load Testing and Rate Limit Validation",
-            "description": "Perform comprehensive load testing to validate the rate limiting zone, burst capacity, and nodelay functionality.",
-            "dependencies": [
-              "10"
-            ],
-            "details": "Use `k6` or `Apache Bench (ab)` to send >30 requests per second to /api/health. Verify that the first 30 requests (20 rate + 10 burst) succeed, and subsequent requests return HTTP 503.",
-            "status": "pending",
-            "testStrategy": "Analyze the load testing tool output. Ensure the ratio of 200 OK to 503 Service Unavailable matches the expected mathematical model of the rate limit.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 12,
-            "title": "Failure Simulation and Log Analysis",
-            "description": "Simulate backend failures to test HA failover, error pages, and monitor logs for buffer or timeout warnings.",
-            "dependencies": [
-              "10",
-              "11"
-            ],
-            "details": "Temporarily stop the Express server on port 3001. Send requests to /api/ and verify the custom 502 page. Tail /var/log/nginx/error.log to ensure no 'upstream sent too big header' or buffer overflow warnings occur.",
-            "status": "pending",
-            "testStrategy": "Review /var/log/nginx/error.log and /var/log/nginx/access.log to confirm error states are logged correctly without exposing stack traces to the client.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-03-07T02:21:05.959Z"
-      },
-      {
-        "id": 124,
-        "title": "Configure Nginx /admin/api/ Routing",
-        "description": "Add a location block in Nginx to proxy /admin/api/ requests to the Express API server.",
-        "details": "Edit `/etc/nginx/conf.d/custom_rules.conf` on the VPS. Add another block: `location /admin/api/ { proxy_pass http://127.0.0.1:3001; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; }`.",
-        "testStrategy": "Run `nginx -t` to verify the configuration syntax is correct.",
-        "priority": "high",
-        "dependencies": [
-          "123"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Verify /admin/api/ location block in Nginx configuration",
-            "description": "Confirm that the /admin/api/ block was added in the same atomic edit as the /api/ block during Task 123. Do not make a separate edit.",
-            "dependencies": [],
-            "details": "Verify the existence of the block by running `grep -A 5 'admin/api' /etc/nginx/conf.d/custom_rules.conf`. Both location blocks must exist in one save of the file.\n<info added on 2026-03-07T00:38:21.563Z>\nFULL SCOPED DETAIL — Verify /admin/api/ block with exact grep commands:\n\nThis subtask confirms the /admin/api/ location block was written correctly as part of Task 123's atomic edit. Do NOT open nano or make any new edits here.\n\nRun this exact verification chain:\n\n# 1. Confirm the block exists\nsudo grep -n \"admin/api\" /etc/nginx/conf.d/custom_rules.conf\n# Expected output: a line number + \"location /admin/api/ {\"\n\n# 2. Show full block in context\nsudo grep -A 8 \"admin/api\" /etc/nginx/conf.d/custom_rules.conf\n# Should show all 6 proxy_set_header directives + proxy_pass 3001\n\n# 3. Confirm all required headers are present in the admin block\nsudo awk '/location \\/admin\\/api\\//{flag=1} flag && /\\}/{print; flag=0} flag' /etc/nginx/conf.d/custom_rules.conf\n\nExpected output should contain:\n- proxy_set_header X-Forwarded-Proto https;  ← CRITICAL\n- proxy_set_header X-Forwarded-SSL on;       ← CRITICAL\n- proxy_pass http://127.0.0.1:3001;\n\nIf the block is missing or has wrong headers:\n\n# Re-open and fix:\nsudo nano /etc/nginx/conf.d/custom_rules.conf\n# Add the /admin/api/ block BEFORE location / — see Task 123.2 for the full block\n# Then: sudo nginx -t && sudo systemctl reload nginx\n\nAfter confirming /admin/api/ is correct, test it:\n\ncurl -s -o /dev/null -w \"HTTP %{http_code}\\n\" https://client.samixism.com/admin/api/\n# Expected: HTTP 404 or HTTP 401 (from Express) — NOT HTTP 502 or HTML\n# A 404/401 JSON response means Express received and handled the request\n</info added on 2026-03-07T00:38:21.563Z>",
-            "status": "pending",
-            "testStrategy": "Run `grep -A 5 'admin/api' /etc/nginx/conf.d/custom_rules.conf` to ensure the block is present and correctly formatted.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-03-07T02:21:05.967Z"
-      },
-      {
-        "id": 125,
-        "title": "Configure Nginx Upload Limits and Timeouts",
-        "description": "Update Nginx configuration to support large file uploads up to 200MB.",
-        "details": "Inside the newly created `/api/` location block in `/etc/nginx/conf.d/custom_rules.conf`, add the following directives: `client_max_body_size 210m;`, `proxy_read_timeout 300s;`, and `proxy_send_timeout 300s;`.",
-        "testStrategy": "Run `nginx -t` to verify the configuration syntax is correct.",
-        "priority": "high",
-        "dependencies": [
-          "123"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Verify Nginx upload directives are configured",
-            "description": "Confirm that the upload directives (client_max_body_size 210m, proxy_read_timeout 300s, proxy_send_timeout 300s) were added inside the /api/ location block in the same atomic edit as Task 123.",
-            "dependencies": [],
-            "details": "Run grep -E 'client_max_body_size|proxy_read_timeout|proxy_send_timeout' /etc/nginx/conf.d/custom_rules.conf to ensure the directives are present in the configuration file.\n<info added on 2026-03-07T00:38:45.849Z>\nFULL SCOPED DETAIL: Verify upload limits and timeouts with exact commands. This is a verification-only subtask. Do NOT re-edit the config file. Confirm all three upload directives are inside the /api/ location block by running: sudo grep -n \"client_max_body_size\\|proxy_read_timeout\\|proxy_send_timeout\\|proxy_connect_timeout\" /etc/nginx/conf.d/custom_rules.conf. Expected output is 4 lines within the /api/ block showing client_max_body_size 210m, proxy_read_timeout 300s, proxy_send_timeout 300s, and proxy_connect_timeout 60s. If these appear outside the location block, they apply globally, which is OK but less precise. If missing entirely, re-open and add them using sudo nano /etc/nginx/conf.d/custom_rules.conf inside the location /api/ block, then run sudo nginx -t && sudo systemctl reload nginx. For functional verification, confirm Nginx accepts large request bodies to the API by creating a 50MB dummy file: dd if=/dev/urandom bs=1M count=50 | curl -s -o /dev/null -w \"HTTP %{http_code}\\n\" -X POST https://client.samixism.com/api/drive/upload -F \"file=@/dev/stdin;filename=test.bin;type=application/octet-stream\". Acceptable responses are HTTP 400 or HTTP 500. Unacceptable responses are HTTP 413 Entity Too Large or HTTP 504 Gateway Timeout.\n</info added on 2026-03-07T00:38:45.849Z>",
-            "status": "pending",
-            "testStrategy": "Run nginx -t to verify the configuration syntax is correct and the directives are valid.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-03-07T02:21:05.976Z"
-      },
-      {
-        "id": 126,
-        "title": "Reload Nginx Configuration",
-        "description": "Apply the updated Nginx configuration gracefully.",
-        "details": "Run `nginx -t` to ensure there are no syntax errors. If successful, run `systemctl reload nginx` to apply changes without dropping active connections.",
-        "testStrategy": "Run `curl -I https://client.samixism.com/api/drive/health` and expect a 200 OK response instead of a 404 HTML page.",
-        "priority": "high",
-        "dependencies": [
-          "123",
-          "124",
-          "125"
-        ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Validate Nginx config with nginx -t",
-            "description": "Run nginx -t to validate the configuration syntax. Stop immediately if any errors are reported, do NOT proceed to reload.",
-            "dependencies": [],
-            "details": "Execute `sudo nginx -t` on the server. Check the output for 'syntax is ok' and 'test is successful'. If it fails, investigate and fix the configuration files before proceeding.\n<info added on 2026-03-07T00:39:09.835Z>\nFULL SCOPED DETAIL Full nginx -t validation with error diagnosis:\n\nThis is the safety gate. Run ONLY this and stop if it fails:\nsudo nginx -t\n\nThree possible outcomes:\n\nSUCCESS proceed to 126.2:\nnginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful\n\nSYNTAX ERROR DO NOT reload, fix first:\nnginx: [emerg] unknown directive \"...\" in /etc/nginx/conf.d/custom_rules.conf:NN\n\nCommon causes and fixes:\n- Missing semicolon: add ; at end of the flagged line\n- Unclosed brace: count { vs } in the client.samixism.com block, they must match\n- Typo in directive name: check spelling of proxy_set_header, proxy_pass, etc.\n- Wrong file edited: check you edited custom_rules.conf not default_https.conf\n\nFix, then run sudo nginx -t again before proceeding.\n\nUPSTREAM ERROR PM2 process not running:\nnginx: [warn] upstream server ... is unreachable\n\nThis is a WARNING not an error, nginx -t will still pass. But fix PM2 first:\npm2 status (check client-dashboard-api is online)\npm2 restart client-dashboard-api (if crashed)\npm2 logs client-dashboard-api --lines 30 (diagnose why it crashed)\n\nExtended check dump the full resolved config to spot any unexpected content:\nsudo nginx -T 2>&1 | grep -A 30 \"client.samixism.com\"\nVisually scan: confirm /api/ block appears before location /\nConfirm ssl_certificate points to /etc/letsencrypt/live/ (NOT cPanel path)\n</info added on 2026-03-07T00:39:09.835Z>",
-            "status": "pending",
-            "testStrategy": "Verify the command exits with status code 0 and outputs success messages.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Reload Nginx with systemctl reload nginx",
-            "description": "Gracefully reload the Nginx service to apply the new configuration without dropping active connections.",
-            "dependencies": [
-              1
-            ],
-            "details": "Execute `sudo systemctl reload nginx`. Use reload NOT restart unless the process is hung, to ensure zero-downtime for active client connections.\n<info added on 2026-03-07T00:39:38.053Z>\nOnly proceed if subtask 126.1 passed. Never use stop unless explicitly instructed.\n\nImmediate status check: Run sudo systemctl status nginx to ensure it shows active running. If it shows failed, refer to rollback steps. Run ps aux | grep nginx | grep -v grep to verify master and worker processes are running.\n\nFull verification suite:\n1. Health endpoint: Run curl -sv https://client.samixism.com/api/drive/health 2>&1 | grep -E \"< HTTP|{.*}\" and expect HTTP/2 200 with status ok.\n2. File list endpoint: Run curl -s \"https://client.samixism.com/api/drive/files?folder=\" | python3 -m json.tool and expect valid JSON with files and folders keys.\n3. Frontend check: Run curl -s -o /dev/null -w \"HTTP %{http_code}\\n\" https://client.samixism.com/ and expect HTTP 200.\n4. Error log check: Run sudo tail -20 /var/log/nginx/error.log | grep -i \"502\\|upstream\\|connect\" and expect no output.\n5. Worker count health: Run sudo nginx -t && echo \"Config still valid after reload\".\n\nTroubleshooting 502 Bad Gateway: Check pm2 status. If client-dashboard-api is errored or stopped, run pm2 restart client-dashboard-api and pm2 logs client-dashboard-api --lines 50 to check for startup errors like missing env vars or port conflicts. Verify port 3001 is bound by running ss -tlnp | grep 3001.\n</info added on 2026-03-07T00:39:38.053Z>",
-            "status": "pending",
-            "testStrategy": "Run `curl -I https://client.samixism.com/api/drive/health` and expect a 200 OK response instead of a 404 HTML page.",
-            "parentId": "undefined"
-          }
-        ],
-        "updatedAt": "2026-03-07T02:22:36.126Z"
-      },
-      {
-        "id": 127,
-        "title": "Update SERVER_PLAYBOOK.md Documentation",
-        "description": "Document the dual-port architecture and required environment variables.",
-        "details": "Add a section '6. Dual-Port PM2 Architecture' to `SERVER_PLAYBOOK.md`. Explain that the frontend runs on 3000 and the API on 3001. Include the full Nginx `custom_rules.conf` template. Document where `GOOGLE_SERVICE_ACCOUNT_PATH` and `GOOGLE_SERVICE_ACCOUNT_JSON` must be set.",
-        "testStrategy": "Review the markdown file for clarity, formatting, and completeness. Commit and push to the repository.",
+        "id": 151,
+        "title": "Client Dashboard Frontend Integration",
+        "description": "Embed Postiz into the existing Client Dashboard UI via an iframe and sidebar navigation.",
+        "details": "In the Client Dashboard React/Next.js codebase: 1. Add a new navigation item in the Sidebar component labeled 'Social Media' using the Lucide `Share2` icon. 2. Create a new route/page at `/social`. 3. Implement an iframe: `<iframe src=\"https://social.samixism.com\" className=\"w-full h-[calc(100vh-64px)] border-none rounded-md\" title=\"Social Media Scheduler\" allow=\"clipboard-write; clipboard-read\" />`. Ensure the dashboard's layout accommodates the full width/height.",
+        "testStrategy": "Log into the Client Dashboard, click 'Social Media' in the sidebar. Verify the Postiz login page renders inside the iframe without CORS or X-Frame-Options errors. Test responsive behavior on mobile views.",
         "priority": "medium",
-        "dependencies": [],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Add section 6. Dual-Port PM2 Architecture to SERVER_PLAYBOOK.md",
-            "description": "Document the dual-port architecture for frontend and API, including PM2 management and Nginx configuration.",
-            "dependencies": [],
-            "details": "Append section 6 after section 5. Document frontend on port 3000 and API on port 3001 via ecosystem.config.js. Include Nginx custom_rules.conf template with location blocks for /api/ (3001), /admin/api/ (3001), and / (3000). Ensure proxy blocks include X-Forwarded-Proto https, X-Forwarded-SSL on, and client_max_body_size 210m for /api/.\n<info added on 2026-03-07T01:00:58.500Z>\nInclude a process table, a Google Drive environment variable table, security warnings, and PM2 reload commands.\n</info added on 2026-03-07T01:00:58.500Z>",
-            "status": "pending",
-            "testStrategy": "Review the markdown file to ensure the Nginx template and architecture details are clearly and accurately formatted.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "Document required Google Drive environment variables",
-            "description": "Add a sub-section detailing the required environment variables for Google Drive integration and their secure configuration.",
-            "dependencies": [
-              1
-            ],
-            "details": "Add a sub-section listing GOOGLE_SERVICE_ACCOUNT_PATH or GOOGLE_SERVICE_ACCOUNT_JSON, and GOOGLE_DRIVE_ROOT_FOLDER_ID. Specify they should be set in /home/clientdash/client-dashboard/shared/.env or ecosystem.config.js. Add a security note to never commit service-account.json to git and to include it in .gitignore.",
-            "status": "pending",
-            "testStrategy": "Verify the markdown renders correctly and all environment variables and security warnings are clearly visible.",
-            "parentId": "undefined"
-          }
+        "dependencies": [
+          149
         ],
-        "updatedAt": "2026-03-07T01:00:27.968Z"
+        "status": "pending",
+        "subtasks": []
       },
       {
-        "id": 128,
-        "title": "End-to-End Smoke Testing and UAT",
-        "description": "Verify the file upload system works end-to-end in the production environment.",
-        "details": "Visit `https://client.samixism.com/#/projects/managem-inside/files`. Verify no error banner on load. Upload a test PDF/image (< 200MB). Confirm a 201 JSON response in DevTools and that the file appears in the list. Verify response times (< 3s for list, < 5s for health).",
-        "testStrategy": "Manual UAT following the Acceptance Criteria in the PRD. Ensure `curl \"https://client.samixism.com/api/drive/files?folder=\"` returns a JSON array.",
-        "priority": "high",
+        "id": 152,
+        "title": "Social Media Platform API Setup (MVP Platforms)",
+        "description": "Register developer applications for core social platforms (X/Twitter, LinkedIn) and configure Postiz.",
+        "details": "To allow users to schedule posts, OAuth apps must be created. 1. X/Twitter: Create an app in the Twitter Developer Portal, set callback URL to `https://social.samixism.com/api/auth/callback/twitter`, obtain API Key/Secret. 2. LinkedIn: Create an app in LinkedIn Developer Portal, request 'Share on LinkedIn' and 'Sign In with LinkedIn' products, set callback, obtain Client ID/Secret. 3. Add these credentials to the Postiz `.env` file (`X_API_KEY`, `LINKEDIN_CLIENT_ID`, etc.) and restart the Postiz container.",
+        "testStrategy": "Log into Postiz as an admin. Navigate to 'Connections' or 'Providers'. Attempt to connect a test X (Twitter) account and a LinkedIn account. Verify the OAuth flow completes successfully and the accounts appear as connected.",
+        "priority": "medium",
         "dependencies": [
-          "126"
+          149
         ],
-        "status": "done",
-        "subtasks": [
-          {
-            "id": 1,
-            "title": "Verify API health via curl",
-            "description": "Run specific curl commands to confirm API endpoints return expected JSON responses and HTTP status codes.",
-            "dependencies": [],
-            "details": "Run `curl -s https://client.samixism.com/api/drive/health` (expect {\"status\":\"ok\"}), `curl -s \"https://client.samixism.com/api/drive/files?folder=\" | head -c 200` (expect JSON array start), and `curl -s -o /dev/null -w \"%{http_code}\" https://client.samixism.com/api/drive/stats` (expect 200).\n<info added on 2026-03-07T02:37:08.154Z>\nExecuted local and remote URL curl checks. Health returned JSON {status: ok} at 0.04s. Files endpoint returned valid JSON directory map. Conducted headless browser sanity check confirming the Firebase Auth UI and main frame loads cleanly via client.samixism.com with no 404s or 500s. E2E deployment flows stable.\n</info added on 2026-03-07T02:37:08.154Z>",
-            "status": "pending",
-            "testStrategy": "Verify terminal output matches expected JSON and HTTP 200 codes, ensuring no HTML is returned.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 2,
-            "title": "UI load test",
-            "description": "Visit the files page in a real browser to verify the UI loads correctly without errors.",
-            "dependencies": [
-              1
-            ],
-            "details": "Visit https://client.samixism.com/#/projects/managem-inside/files in a real browser. Confirm no red error banner appears, the file list loads (or shows an empty state), and the page renders in under 3 seconds.",
-            "status": "pending",
-            "testStrategy": "Manual visual inspection in the browser and checking the network tab for load times.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 3,
-            "title": "File upload end-to-end test",
-            "description": "Upload a small test file using the UI and verify the network response and UI update.",
-            "dependencies": [
-              2
-            ],
-            "details": "Upload a small test file (< 5MB PDF or PNG) using the UI. Open browser DevTools -> Network tab. Confirm POST /api/drive/upload returns HTTP 201 with JSON body containing fileId and webViewLink. Confirm the file appears in the list.\n<info added on 2026-03-06T23:41:50.349Z>\nWait 10 to 30 seconds before clicking the webViewLink returned in the 201 response, as Google Drive permissions take time to propagate and may initially return a 403 error. Verify the webViewLink is not an empty string; an empty string indicates a supportsAllDrives bug in getFileMetadata that requires fixing Task 119.2 first. After uploading, reload the file list to ensure the new file appears. If it does not appear, verify the listFiles query includes includeItemsFromAllDrives set to true.\n</info added on 2026-03-06T23:41:50.349Z>",
-            "status": "pending",
-            "testStrategy": "Manual upload test via UI, verifying DevTools network response and UI state changes.",
-            "parentId": "undefined"
-          },
-          {
-            "id": 4,
-            "title": "Performance sanity check",
-            "description": "Verify the response times of the health and files API endpoints.",
-            "dependencies": [
-              1,
-              2,
-              3
-            ],
-            "details": "Confirm /api/drive/health responds in < 5s and /api/drive/files responds in < 3s. If slow, check PM2 logs for Drive init errors on cold start.",
-            "status": "pending",
-            "testStrategy": "Check network tab timings in DevTools or use curl with time formatting to measure response duration.",
-            "parentId": "undefined"
-          }
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 153,
+        "title": "System Monitoring & Automated Backups",
+        "description": "Implement resource monitoring and database backup scripts to ensure stability and data safety.",
+        "details": "1. Create a bash script `/home/clientdash/scripts/backup_postiz.sh` that runs `docker exec postiz-postgres pg_dump -U postiz-user postiz-db-local > /home/clientdash/backups/postiz_$(date +%F).sql`. 2. Add a cron job to run this daily at 3 AM (`0 3 * * *`). 3. Update the existing `system-health-monitor.sh` (if present) or create a simple cron to check RAM usage (`free -m`) and log warnings if available RAM drops below 10% to proactively catch Temporal/ES memory leaks.",
+        "testStrategy": "Execute the backup script manually and verify the `.sql` file is created and contains valid PostgreSQL dump data. Check `crontab -l` to ensure the job is scheduled.",
+        "priority": "low",
+        "dependencies": [
+          149
         ],
-        "updatedAt": "2026-03-07T02:36:57.475Z"
+        "status": "pending",
+        "subtasks": []
       }
     ],
     "metadata": {
-      "version": "1.0.0",
-      "lastModified": "2026-03-07T02:36:57.476Z",
-      "taskCount": 10,
-      "completedCount": 10,
-      "tags": [
-        "master"
-      ],
       "created": "2026-03-07T02:36:57.504Z",
+      "updated": "2026-03-10T14:57:53.849Z",
       "description": "Tasks for master context"
     }
   }

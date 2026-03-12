@@ -343,7 +343,7 @@ const ProjectBoardPage = () => {
             try {
                 const stageSlug = slugify(name);
                 const stageDocId = stageSlug;
-                await setDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageDocId), newStageData);
+                await setDoc(doc(db, 'stages', stageDocId), newStageData);
             } catch (e) {
                 const newStage: Stage = {
                     id: `stage-${Date.now()}`,
@@ -374,7 +374,7 @@ const ProjectBoardPage = () => {
 
         try {
             // Write new stage
-            await setDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', newStageId), newStageData);
+            await setDoc(doc(db, 'stages', newStageId), newStageData);
 
             // Batch-write copied tasks to flat collection
             if (tasksToCopy.length > 0) {
@@ -414,7 +414,7 @@ const ProjectBoardPage = () => {
         if (stage && project) {
             stage.status = status;
             try {
-                 await updateDoc(doc(db, 'projects', project.id, 'boards', boardId!, 'stages', stageId), { status });
+                 await updateDoc(doc(db, 'stages', stageId), { status });
             } catch (e) {
                 console.error('Error updating stage status:', e);
                 toast.error('Failed to update stage status');
@@ -463,7 +463,7 @@ const ProjectBoardPage = () => {
         
         if (project && boardId) {
              try {
-                await deleteDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId));
+                await deleteDoc(doc(db, 'stages', stageId));
             } catch (e) {
                 console.error('Error archiving stage:', e);
                 toast.error('Failed to archive stage');
@@ -485,7 +485,7 @@ const ProjectBoardPage = () => {
         if (stage && project && boardId) {
             stage.sortConfig = config;
              try {
-                updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId), { sortConfig: config });
+                updateDoc(doc(db, 'stages', stageId), { sortConfig: config });
             } catch (e) {
                 console.error('Error updating stage sort config:', e);
                 toast.error('Failed to update sort settings');
@@ -500,7 +500,7 @@ const ProjectBoardPage = () => {
         if (stage && project && boardId) {
             stage.backgroundPattern = patternId;
              try {
-                updateDoc(doc(db, 'projects', project.id, 'boards', boardId, 'stages', stageId), { backgroundPattern: patternId });
+                updateDoc(doc(db, 'stages', stageId), { backgroundPattern: patternId });
             } catch (e) {
                 console.error('Error updating stage background pattern:', e);
                 toast.error('Failed to update stage background');
@@ -525,7 +525,7 @@ const ProjectBoardPage = () => {
             const batch = writeBatch(db);
             reorderedStages.forEach((stage, index) => {
                 batch.update(
-                    doc(db, 'projects', project.id, 'boards', boardId, 'stages', stage.id),
+                    doc(db, 'stages', stage.id),
                     { order: index }
                 );
             });

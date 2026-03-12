@@ -53,10 +53,18 @@ export const deleteProjectDeep = async (projectId: string) => {
         const boardsSnap = await getDocs(collection(db, 'projects', projectId, 'boards'));
         for (const boardDoc of boardsSnap.docs) {
              // Delete subcollections of boards
-             await deleteCollection(`projects/${projectId}/boards/${boardDoc.id}/stages`);
-             await deleteCollection(`projects/${projectId}/boards/${boardDoc.id}/tasks`);
+             // Stages are entirely global, so we need to query and delete them
+             const boardStagesSnap = await getDocs(query(collection(db, 'stages'), where('boardId', '==', boardDoc.id)));
+             for (const stageDoc of boardStagesSnap.docs) {
+                 await deleteDoc(stageDoc.ref);
+             }
+             const boardTasksSnap = await getDocs(query(collection(db, 'tasks'), where('boardId', '==', boardDoc.id)));
+             for (const taskSnap of boardTasksSnap.docs) {
+                 await deleteTaskDeep(projectId, boardDoc.id, taskSnap.id);
+             }
+             
              await deleteCollection(`projects/${projectId}/boards/${boardDoc.id}/tags`);
-             await deleteCollection(`projects/${projectId}/boards/${boardDoc.id}/time_logs`);
+             // Time logs should be deleted as part of deleteTaskDeep above, but if any exist at board level
              await deleteDoc(boardDoc.ref);
         }
 
@@ -107,10 +115,20 @@ export const deleteProjectDeep = async (projectId: string) => {
  */
 export const deleteTaskDeep = async (projectId: string, boardId: string, taskId: string) => {
     try {
-        const taskPath = `projects/${projectId}/boards/${boardId}/tasks/${taskId}`;
-        await deleteCollection(`${taskPath}/comments`);
-        await deleteCollection(`${taskPath}/time_logs`);
-        await deleteDoc(doc(db, taskPath));
+        // Find and delete comments for this task
+        const commentsSnap = await getDocs(query(collection(db, 'comments'), where('taskId', '==', taskId)));
+        for (const docSnap of commentsSnap.docs) {
+            await deleteDoc(docSnap.ref);
+        }
+
+        // Find and delete time logs for this task
+        const timeLogsSnap = await getDocs(query(collection(db, 'time_logs'), where('taskId', '==', taskId)));
+        for (const docSnap of timeLogsSnap.docs) {
+            await deleteDoc(docSnap.ref);
+        }
+        
+        // Delete the task document itself from flat collection
+        await deleteDoc(doc(db, 'tasks', taskId));
     } catch (error) {
         console.error(`Error deleting task deep ${taskId}:`, error);
         throw error;
@@ -122,9 +140,9 @@ export const deleteTaskDeep = async (projectId: string, boardId: string, taskId:
  */
 export const deleteStageDeep = async (projectId: string, boardId: string, stageId: string) => {
     try {
-        // Find all tasks in this stage
+        // Find all tasks in this stage from global space
         const tasksQuery = query(
-            collection(db, 'projects', projectId, 'boards', boardId, 'tasks'),
+            collection(db, 'tasks'),
             where('stageId', '==', stageId)
         );
         const tasksSnap = await getDocs(tasksQuery);
@@ -135,7 +153,7 @@ export const deleteStageDeep = async (projectId: string, boardId: string, stageI
         }
 
         // Delete the stage doc
-        await deleteDoc(doc(db, 'projects', projectId, 'boards', boardId, 'stages', stageId));
+        await deleteDoc(doc(db, 'stages', stageId));
     } catch (error) {
         console.error(`Error deleting stage deep ${stageId}:`, error);
         throw error;
@@ -150,10 +168,13 @@ export const deleteBoardDeep = async (projectId: string, boardId: string) => {
         const boardPath = `projects/${projectId}/boards/${boardId}`;
         
         // Stages
-        await deleteCollection(`${boardPath}/stages`);
+        const boardStagesSnap = await getDocs(query(collection(db, 'stages'), where('boardId', '==', boardId)));
+        for (const stageDoc of boardStagesSnap.docs) {
+             await deleteDoc(stageDoc.ref);
+        }
         
-        // Tasks (Deep delete needed for subcollections)
-        const tasksSnap = await getDocs(collection(db, boardPath, 'tasks'));
+        // Tasks
+        const tasksSnap = await getDocs(query(collection(db, 'tasks'), where('boardId', '==', boardId)));
         for (const t of tasksSnap.docs) {
              await deleteTaskDeep(projectId, boardId, t.id);
         }

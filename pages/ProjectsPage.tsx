@@ -292,10 +292,10 @@ const ProjectsPage = () => {
         ];
 
         for (const stageData of newStagesData) {
-            // Create stages inside board subcollection
+            // Create stages in flat collection
             const stageSlug = slugify(stageData.name);
             const stageDocId = stageSlug;
-            await setDoc(doc(db, 'projects', newProjectId, 'boards', newBoardId, 'stages', stageDocId), stageData);
+            await setDoc(doc(db, 'stages', stageDocId), stageData);
         }
         
         forceUpdate();
