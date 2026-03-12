@@ -411,6 +411,7 @@ const ProjectsPage = () => {
                 <input
                     type="text"
                     placeholder="Search Projects"
+                    aria-label="Search Projects"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-11 pr-4 py-2.5 w-56 rounded-xl bg-glass backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary border border-border-color transition-all duration-300 shadow-sm focus:shadow-lg placeholder:text-text-secondary"
@@ -419,12 +420,14 @@ const ProjectsPage = () => {
             <div className="flex items-center bg-glass/60 backdrop-blur-xl rounded-xl p-1.5 border border-border-color shadow-md">
                 <button
                     onClick={() => setViewMode('board')}
+                    aria-label="Board view"
                     className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'board' ? 'bg-primary text-background shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-110' : 'text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-105'}`}
                 >
                     <BoardIcon className="h-5 w-5"/>
                 </button>
                 <button
                     onClick={() => setViewMode('list')}
+                    aria-label="List view"
                     className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'list' ? 'bg-primary text-background shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-110' : 'text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-105'}`}
                 >
                     <ListIcon className="h-5 w-5"/>
@@ -434,6 +437,8 @@ const ProjectsPage = () => {
                 <button
                     ref={filterAnchorEl}
                     onClick={() => setIsFilterOpen(o => !o)}
+                    aria-label="Filter projects"
+                    aria-expanded={isFilterOpen}
                     className="px-5 py-2.5 flex items-center gap-2.5 bg-glass/60 backdrop-blur-xl text-text-primary text-sm font-semibold rounded-xl border border-border-color hover:bg-glass hover:shadow-xl hover:scale-105 hover:border-primary/40 transition-all duration-300 shadow-md"
                 >
                     <FilterIcon className="h-4 w-4" />
@@ -456,6 +461,7 @@ const ProjectsPage = () => {
             </div>
             <button
                 onClick={() => setIsAddProjectModalOpen(true)}
+                aria-label="Add new project"
                 className="px-6 py-2.5 bg-primary text-background text-sm font-bold rounded-xl hover:bg-primary-hover hover:shadow-[0_8px_30px_rgba(var(--primary-rgb),0.5)] hover:scale-110 transition-all duration-300 shadow-lg relative overflow-hidden group/btn"
             >
                 <span className="relative z-10 flex items-center gap-2">
