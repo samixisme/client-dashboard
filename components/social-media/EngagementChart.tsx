@@ -16,36 +16,38 @@ interface EngagementChartProps {
   loading?: boolean;
 }
 
+// ⚡ Bolt Optimization: Extracted CustomTooltip out of EngagementChart to prevent
+// full unmount/remount on every parent render. Wrapped in React.memo for performance.
+const CustomTooltip = React.memo(({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+
+  return (
+    <div className="bg-glass/90 backdrop-blur-xl border border-white/20 rounded-lg p-4 shadow-xl">
+      <p className="text-sm font-semibold text-white mb-2">{label}</p>
+      <div className="space-y-1.5">
+        {payload.map((entry: any) => (
+          <div key={entry.name} className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-xs text-gray-300 capitalize">{entry.name}:</span>
+            </div>
+            <span className="text-xs font-semibold text-white">
+              {entry.value.toLocaleString()}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+CustomTooltip.displayName = 'CustomTooltip';
+
 const EngagementChart: React.FC<EngagementChartProps> = ({ data, loading = false }) => {
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
-
-  // Custom tooltip with glass morphism
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
-
-    return (
-      <div className="bg-glass/90 backdrop-blur-xl border border-white/20 rounded-lg p-4 shadow-xl">
-        <p className="text-sm font-semibold text-white mb-2">{label}</p>
-        <div className="space-y-1.5">
-          {payload.map((entry: any) => (
-            <div key={entry.name} className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-xs text-gray-300 capitalize">{entry.name}:</span>
-              </div>
-              <span className="text-xs font-semibold text-white">
-                {entry.value.toLocaleString()}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   if (loading) {
     return (
