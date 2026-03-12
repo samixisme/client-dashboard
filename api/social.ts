@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
+import { URL } from 'url';
+import { validateUrl } from './urlValidator';
 
 const socialRouter = Router();
 
@@ -271,6 +273,24 @@ socialRouter.post('/fetch/:platform', async (req: Request, res: Response) => {
 
     try {
         const url = endpoint.startsWith('http') ? endpoint : `${apiBase}${endpoint}`;
+
+        // SSRF protection: validate the constructed URL
+        const urlValidation = validateUrl(url);
+        if (!urlValidation.isValid) {
+            return res.status(400).json({ error: urlValidation.error });
+        }
+
+        // Additional protection: Ensure the URL starts with the expected apiBase hostname
+        try {
+            const parsedUrl = new URL(url);
+            const parsedApiBase = new URL(apiBase);
+            if (parsedUrl.hostname !== parsedApiBase.hostname) {
+                return res.status(403).json({ error: 'Endpoint hostname must match the platform API base hostname' });
+            }
+        } catch (err) {
+            return res.status(400).json({ error: 'Invalid URL format' });
+        }
+
         const headers: Record<string, string> = {};
 
         // Platform-specific auth headers
