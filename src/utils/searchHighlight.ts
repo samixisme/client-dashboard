@@ -107,6 +107,60 @@ function cropSnippet(
   return { croppedText, offset: start };
 }
 
+export interface HighlightPart {
+  text: string;
+  isMatch: boolean;
+}
+
+/**
+ * Returns an array of text parts indicating which segments are matches.
+ */
+export function getHighlightParts(
+  text: string,
+  matchPositions: MatchPosition[] = [],
+  maxSnippetLength = 200
+): HighlightPart[] {
+  if (!text) return [];
+  if (!matchPositions || matchPositions.length === 0) {
+    const cropped = text.length > maxSnippetLength
+      ? text.slice(0, maxSnippetLength) + '…'
+      : text;
+    return [{ text: cropped, isMatch: false }];
+  }
+
+  const { croppedText, offset } = cropSnippet(text, matchPositions, maxSnippetLength);
+  const prefixAdded = offset > 0 ? 1 : 0;
+
+  const adjustedPositions = matchPositions
+    .map((p) => ({
+      start: p.start - offset + prefixAdded,
+      length: p.length,
+    }))
+    .filter((p) => p.start >= 0 && p.start < croppedText.length);
+
+  const merged = mergePositions(adjustedPositions);
+
+  const parts: HighlightPart[] = [];
+  let lastEnd = 0;
+
+  for (const range of merged) {
+    const start = Math.max(0, range.start);
+    const end = Math.min(croppedText.length, range.end);
+
+    if (start > lastEnd) {
+      parts.push({ text: croppedText.slice(lastEnd, start), isMatch: false });
+    }
+    parts.push({ text: croppedText.slice(start, end), isMatch: true });
+    lastEnd = end;
+  }
+
+  if (lastEnd < croppedText.length) {
+    parts.push({ text: croppedText.slice(lastEnd), isMatch: false });
+  }
+
+  return parts;
+}
+
 /**
  * Converts a text string and match positions into an HTML string
  * with <mark> tags at match positions.
@@ -121,51 +175,11 @@ export function highlightMatches(
   matchPositions: MatchPosition[] = [],
   maxSnippetLength = 200
 ): string {
-  if (!text) return '';
-  if (!matchPositions || matchPositions.length === 0) {
-    const cropped = text.length > maxSnippetLength
-      ? text.slice(0, maxSnippetLength) + '…'
-      : text;
-    return escapeHtml(cropped);
-  }
-
-  // Crop the text first, then adjust positions
-  const { croppedText, offset } = cropSnippet(text, matchPositions, maxSnippetLength);
-  const prefixAdded = offset > 0 ? 1 : 0; // The '…' char
-
-  // Adjust positions relative to the cropped text
-  const adjustedPositions = matchPositions
-    .map((p) => ({
-      start: p.start - offset + prefixAdded,
-      length: p.length,
-    }))
-    .filter((p) => p.start >= 0 && p.start < croppedText.length);
-
-  // Merge overlapping positions
-  const merged = mergePositions(adjustedPositions);
-
-  // Build the output string
-  let result = '';
-  let lastEnd = 0;
-
-  for (const range of merged) {
-    const start = Math.max(0, range.start);
-    const end = Math.min(croppedText.length, range.end);
-
-    if (start > lastEnd) {
-      result += escapeHtml(croppedText.slice(lastEnd, start));
-    }
-    result += '<mark class="search-highlight">';
-    result += escapeHtml(croppedText.slice(start, end));
-    result += '</mark>';
-    lastEnd = end;
-  }
-
-  if (lastEnd < croppedText.length) {
-    result += escapeHtml(croppedText.slice(lastEnd));
-  }
-
-  return result;
+  const parts = getHighlightParts(text, matchPositions, maxSnippetLength);
+  return parts.map(part => {
+    const escaped = escapeHtml(part.text);
+    return part.isMatch ? `<mark class="search-highlight">${escaped}</mark>` : escaped;
+  }).join('');
 }
 
 /**

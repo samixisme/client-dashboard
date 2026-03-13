@@ -6,7 +6,8 @@
  */
 
 import React from 'react';
-import { highlightMatches, getFieldMatchPositions } from '../../utils/searchHighlight';
+import { getFieldMatchPositions } from '../../utils/searchHighlight';
+import { HighlightText } from './HighlightText';
 import type { SearchHit } from '../../hooks/useSearch';
 import {
   Folder,
@@ -98,11 +99,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   const titlePositions = getFieldMatchPositions(hit._matchesPosition, meta.titleField);
   const snippetPositions = getFieldMatchPositions(hit._matchesPosition, meta.snippetField);
 
-  const highlightedTitle = highlightMatches(title, titlePositions, 120);
-  const highlightedSnippet = snippet
-    ? highlightMatches(snippet, snippetPositions, 160)
-    : '';
-
   // Status badge
   const status = hit.status as string | undefined;
 
@@ -120,18 +116,23 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
       <div className="result-card__content">
         <div className="result-card__header">
-          <span
+          <HighlightText
+            text={title}
+            positions={titlePositions}
+            maxLength={120}
             className="result-card__title"
-            dangerouslySetInnerHTML={{ __html: highlightedTitle }}
           />
           <span className="result-card__type">{meta.label}</span>
         </div>
 
-        {highlightedSnippet && (
-          <p
-            className="result-card__snippet"
-            dangerouslySetInnerHTML={{ __html: highlightedSnippet }}
-          />
+        {snippet && (
+          <p className="result-card__snippet">
+            <HighlightText
+              text={snippet}
+              positions={snippetPositions}
+              maxLength={160}
+            />
+          </p>
         )}
 
         {status && (
