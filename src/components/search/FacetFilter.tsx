@@ -58,6 +58,7 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
         onClick={() => setExpanded(!expanded)}
         type="button"
         aria-expanded={expanded}
+        aria-label={`${expanded ? 'Collapse' : 'Expand'} ${label} filters`}
       >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         <span className="facet-filter__label">{label}</span>
@@ -73,6 +74,7 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
             }}
             type="button"
             title="Clear all"
+            aria-label={`Clear all ${label} filters`}
           >
             <X size={12} />
           </button>
