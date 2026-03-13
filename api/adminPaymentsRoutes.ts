@@ -244,8 +244,10 @@ router.post('/invoices/bulk-status', async (req: Request, res: Response) => {
     const { ids, status } = parsed.data;
     const db = getFirestore();
 
-    // Fetch all docs to validate transitions
-    const docs = await Promise.all(ids.map((docid) => db.collection('invoices').doc(docid).get()));
+    // Fetch all docs to validate transitions using efficient batched db.getAll() instead of Promise.all
+    // db.getAll bypasses the 30-item 'in' operator limit and handles up to 1000 docs efficiently
+    const docRefs = ids.map((docid) => db.collection('invoices').doc(docid));
+    const docs = await db.getAll(...docRefs);
     const invalid: string[] = [];
     const notFound: string[] = [];
 
@@ -472,7 +474,9 @@ router.post('/estimates/bulk-status', async (req: Request, res: Response) => {
     const { ids, status } = parsed.data;
     const db = getFirestore();
 
-    const docs = await Promise.all(ids.map((docid) => db.collection('estimates').doc(docid).get()));
+    // Fetch all docs to validate transitions using efficient batched db.getAll() instead of Promise.all
+    const docRefs = ids.map((docid) => db.collection('estimates').doc(docid));
+    const docs = await db.getAll(...docRefs);
     const invalid: string[] = [];
     const notFound: string[] = [];
 
