@@ -1,17 +1,21 @@
 # Add 'ui' label to any changes within the components directory
 ui:
-  - components/**/*
+  - changed-files:
+    - any-glob-to-any-file: 'components/**/*'
 
 # Add 'api' label to any changes within the api directory
 api:
-  - api/**/*
+  - changed-files:
+    - any-glob-to-any-file: 'api/**/*'
 
 # Add 'tests' label to any changes within the __tests__ directory
 tests:
-  - __tests__/**/*
+  - changed-files:
+    - any-glob-to-any-file: '__tests__/**/*'
 
 # Add 'dependencies' label to any changes in package files
 dependencies:
-  - package.json
-  - package-lock.json
-  - pnpm-lock.yaml
+  - changed-files:
+    - any-glob-to-any-file: 'package.json'
+    - any-glob-to-any-file: 'package-lock.json'
+    - any-glob-to-any-file: 'pnpm-lock.yaml'
