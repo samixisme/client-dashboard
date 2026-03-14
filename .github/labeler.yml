@@ -1,0 +1,17 @@
+# Add 'ui' label to any changes within the components directory
+ui:
+  - components/**/*
+
+# Add 'api' label to any changes within the api directory
+api:
+  - api/**/*
+
+# Add 'tests' label to any changes within the __tests__ directory
+tests:
+  - __tests__/**/*
+
+# Add 'dependencies' label to any changes in package files
+dependencies:
+  - package.json
+  - package-lock.json
+  - pnpm-lock.yaml
