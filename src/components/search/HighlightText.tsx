@@ -9,19 +9,24 @@ export interface HighlightTextProps {
 export const HighlightText: React.FC<HighlightTextProps> = ({ text, className, as: Component = 'span' }) => {
   if (!text) return null;
 
-  // Split the text by <mark>...</mark> to extract highlighted sections safely
+  // Split the text by <mark> or <mark class="..."> to extract highlighted sections safely
   // The capturing group keeps the matched HTML tags in the resulting array
-  const parts = text.split(/(<mark(?: class="search-highlight")?>.*?<\/mark>)/gi);
+  const parts = text.split(/(<mark[^>]*>.*?<\/mark>)/gi);
 
   return (
     <Component className={className}>
       {parts.map((part, i) => {
         const lowerPart = part.toLowerCase();
-        if (lowerPart.startsWith('<mark class="search-highlight">') && lowerPart.endsWith('</mark>')) {
-          // Render the marked part safely by stripping the tags
-          const content = part.substring(31, part.length - 7);
+
+        // Handle tags with class
+        if (lowerPart.startsWith('<mark ') && lowerPart.endsWith('</mark>')) {
+          // Extract the content between the opening and closing tag
+          const endOfOpenTag = part.indexOf('>');
+          const content = part.substring(endOfOpenTag + 1, part.length - 7);
           return <mark key={i} className="search-highlight">{content}</mark>;
-        } else if (lowerPart.startsWith('<mark>') && lowerPart.endsWith('</mark>')) {
+        }
+        // Handle plain mark tags
+        else if (lowerPart.startsWith('<mark>') && lowerPart.endsWith('</mark>')) {
           const content = part.substring(6, part.length - 7);
           return <mark key={i}>{content}</mark>;
         }
