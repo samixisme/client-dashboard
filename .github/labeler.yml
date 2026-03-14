@@ -1,0 +1,11 @@
+frontend:
+  - any: ['src/**/*', 'components/**/*', 'pages/**/*', 'hooks/**/*', 'public/**/*']
+
+backend:
+  - any: ['api/**/*', 'functions/**/*']
+
+tests:
+  - any: ['__tests__/**/*', 'e2e/**/*']
+
+configs:
+  - any: ['package.json', 'pnpm-lock.yaml', 'vite.config.ts', 'tsconfig.json', '.github/**/*']
