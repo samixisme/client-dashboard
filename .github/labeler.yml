@@ -1,0 +1,11 @@
+# Add 'components' label to any changes within the components directory
+components:
+  - components/**/*
+
+# Add 'api' label to any changes within the api directory
+api:
+  - api/**/*
+
+# Add 'tests' label to any changes within the __tests__ directory
+tests:
+  - __tests__/**/*
