@@ -196,7 +196,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                         <option>Primary</option>
                         <option>Secondary</option>
                     </select>
-                    <button type="button" onClick={() => { handleUpdate('colors', (editedBrand.colors || []).filter((_, i) => i !== index)); toast.success('Color removed'); }} className="p-2 text-text-secondary hover:text-red-500 rounded-md hover:bg-red-500/10"><DeleteIcon/></button>
+                    <button type="button" onClick={() => { handleUpdate('colors', (editedBrand.colors || []).filter((_, i) => i !== index)); toast.success('Color removed'); }} className="p-2 text-text-secondary hover:text-red-500 rounded-md hover:bg-red-500/10" aria-label="Remove color" title="Remove color"><DeleteIcon/></button>
                 </div>
             ))}
             <button type="button" onClick={() => handleUpdate('colors', [...(editedBrand.colors || []), { name: 'New Color', hex: '#ffffff', category: 'Secondary' }])} className="text-primary text-sm font-medium flex items-center gap-1 hover:text-primary-hover"><AddIcon className="h-4 w-4"/>Add Color</button>
@@ -235,7 +235,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                 {(editedBrand.logos || []).map((logo, index) => (
                     <div key={index} className="flex items-center justify-between bg-glass-light p-2 rounded-md text-sm">
                         <span className="truncate">{logo.name}</span>
-                        <button type="button" onClick={() => { handleUpdate('logos', (editedBrand.logos || []).filter((_, i) => i !== index)); toast.success('Logo removed'); }} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
+                        <button type="button" onClick={() => { handleUpdate('logos', (editedBrand.logos || []).filter((_, i) => i !== index)); toast.success('Logo removed'); }} className="p-1 hover:text-red-500" aria-label="Remove logo" title="Remove logo"><DeleteIcon className="h-4 w-4"/></button>
                     </div>
                 ))}
             </div>
@@ -247,7 +247,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                 {(editedBrand.graphics || []).map((graphic, index) => (
                     <div key={index} className="flex items-center justify-between bg-glass-light p-2 rounded-md text-sm">
                         <span className="truncate">{graphic.name}</span>
-                        <button type="button" onClick={() => { handleUpdate('graphics', (editedBrand.graphics || []).filter((_, i) => i !== index)); toast.success('Graphic removed'); }} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
+                        <button type="button" onClick={() => { handleUpdate('graphics', (editedBrand.graphics || []).filter((_, i) => i !== index)); toast.success('Graphic removed'); }} className="p-1 hover:text-red-500" aria-label="Remove graphic" title="Remove graphic"><DeleteIcon className="h-4 w-4"/></button>
                     </div>
                 ))}
             </div>
@@ -259,7 +259,7 @@ const AddEditBrandModal: React.FC<AddEditBrandModalProps> = ({ isOpen, onClose, 
                 {(editedBrand.imagery || []).map((image, index) => (
                      <div key={index} className="flex items-center justify-between bg-glass-light p-2 rounded-md text-sm">
                         <span className="truncate">{image.name}</span>
-                        <button type="button" onClick={() => { handleUpdate('imagery', (editedBrand.imagery || []).filter((_, i) => i !== index)); toast.success('Image removed'); }} className="p-1 hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
+                        <button type="button" onClick={() => { handleUpdate('imagery', (editedBrand.imagery || []).filter((_, i) => i !== index)); toast.success('Image removed'); }} className="p-1 hover:text-red-500" aria-label="Remove image" title="Remove image"><DeleteIcon className="h-4 w-4"/></button>
                     </div>
                 ))}
             </div>
