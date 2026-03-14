@@ -10,6 +10,7 @@ import { useActiveProject } from '../../contexts/ActiveProjectContext';
 import { FileIcon } from '../icons/FileIcon';
 import { BookOpen } from 'lucide-react';
 import { useSearch } from '../../contexts/SearchContext';
+import { HighlightText } from '../../src/components/search/HighlightText';
 
 // Main nav — Social Media and Brands moved to Tools page
 const mainNavItems = [
@@ -134,26 +135,6 @@ const LibraryNavItem: React.FC = () => {
                 <span className="font-medium text-sm">Library</span>
             </div>
         </button>
-    );
-};
-
-// ─── Safe Text Highlighting Component ──────────────────────────────────────────
-const HighlightText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
-    // Split the text by <mark>...</mark> to extract highlighted sections safely
-    const parts = text.split(/(<mark>.*?<\/mark>)/gi);
-
-    return (
-        <span className={className}>
-            {parts.map((part, i) => {
-                if (part.toLowerCase().startsWith('<mark>') && part.toLowerCase().endsWith('</mark>')) {
-                    // Render the marked part safely by stripping the tags
-                    const content = part.slice(6, -7);
-                    return <mark key={i}>{content}</mark>;
-                }
-                // Plain text rendering safely escapes any other HTML tags
-                return <React.Fragment key={i}>{part}</React.Fragment>;
-            })}
-        </span>
     );
 };
 

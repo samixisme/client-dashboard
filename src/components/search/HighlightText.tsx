@@ -3,15 +3,15 @@ import React from 'react';
 export interface HighlightTextProps {
   text: string;
   className?: string;
-  as?: keyof React.JSX.IntrinsicElements;
+  as?: React.ElementType;
 }
 
 export const HighlightText: React.FC<HighlightTextProps> = ({ text, className, as: Component = 'span' }) => {
   if (!text) return null;
 
-  // Split the text by <mark class="search-highlight">...</mark> to extract highlighted sections safely
+  // Split the text by <mark>...</mark> to extract highlighted sections safely
   // The capturing group keeps the matched HTML tags in the resulting array
-  const parts = text.split(/(<mark class="search-highlight">.*?<\/mark>)/gi);
+  const parts = text.split(/(<mark(?: class="search-highlight")?>.*?<\/mark>)/gi);
 
   return (
     <Component className={className}>
