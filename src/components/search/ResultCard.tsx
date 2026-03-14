@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { highlightMatches, getFieldMatchPositions } from '../../utils/searchHighlight';
+import { getHighlightedSegments, getFieldMatchPositions } from '../../utils/searchHighlight';
 import type { SearchHit } from '../../hooks/useSearch';
 import {
   Folder,
@@ -98,10 +98,10 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   const titlePositions = getFieldMatchPositions(hit._matchesPosition, meta.titleField);
   const snippetPositions = getFieldMatchPositions(hit._matchesPosition, meta.snippetField);
 
-  const highlightedTitle = highlightMatches(title, titlePositions, 120);
-  const highlightedSnippet = snippet
-    ? highlightMatches(snippet, snippetPositions, 160)
-    : '';
+  const highlightedTitleSegments = getHighlightedSegments(title, titlePositions, 120);
+  const highlightedSnippetSegments = snippet
+    ? getHighlightedSegments(snippet, snippetPositions, 160)
+    : [];
 
   // Status badge
   const status = hit.status as string | undefined;
@@ -120,18 +120,32 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
       <div className="result-card__content">
         <div className="result-card__header">
-          <span
-            className="result-card__title"
-            dangerouslySetInnerHTML={{ __html: highlightedTitle }}
-          />
+          <span className="result-card__title">
+            {highlightedTitleSegments.map((segment, index) =>
+              segment.isMatch ? (
+                <mark key={index} className="search-highlight">
+                  {segment.text}
+                </mark>
+              ) : (
+                <React.Fragment key={index}>{segment.text}</React.Fragment>
+              )
+            )}
+          </span>
           <span className="result-card__type">{meta.label}</span>
         </div>
 
-        {highlightedSnippet && (
-          <p
-            className="result-card__snippet"
-            dangerouslySetInnerHTML={{ __html: highlightedSnippet }}
-          />
+        {highlightedSnippetSegments.length > 0 && (
+          <p className="result-card__snippet">
+            {highlightedSnippetSegments.map((segment, index) =>
+              segment.isMatch ? (
+                <mark key={index} className="search-highlight">
+                  {segment.text}
+                </mark>
+              ) : (
+                <React.Fragment key={index}>{segment.text}</React.Fragment>
+              )
+            )}
+          </p>
         )}
 
         {status && (

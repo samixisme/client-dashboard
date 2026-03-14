@@ -1,0 +1,23 @@
+# Add 'frontend' label to any changes in the src or components directory
+frontend:
+  - 'src/**/*'
+  - 'components/**/*'
+  - 'pages/**/*'
+
+# Add 'backend' label to any changes in api or functions directory
+backend:
+  - 'api/**/*'
+  - 'functions/**/*'
+
+# Add 'tests' label to any changes in __tests__ directory
+tests:
+  - '__tests__/**/*'
+  - 'playwright.config.ts'
+  - 'jest.config.ts'
+
+# Add 'config' label to any configuration changes
+config:
+  - 'package.json'
+  - 'vite.config.ts'
+  - 'tsconfig.json'
+  - 'ecosystem.config.js'
