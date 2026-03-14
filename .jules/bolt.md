@@ -1,3 +1,6 @@
 ## 2024-05-24 - Nested Component Defintions and Full Remounts
 **Learning:** React components defined inside other components (e.g., `TaskRow` defined inside `DashboardPage`) are completely unmounted and remounted on every parent render because React sees them as entirely new component types each time. This destroys DOM state and leads to severe performance degradation, especially for list items that map over large arrays.
 **Action:** Always extract inner component definitions to the top level (outside of the parent component body). Pass any needed parent scope variables as props, and wrap the extracted list items in `React.memo` for further optimization.
+## 2024-05-24 - Pre-calculation of counts for O(1) lookups
+**Learning:** When calculating properties like `taskCount` across a large list of `users`, calculating the property inside a `.map()` block over the users list using an inner `.filter()` over the `tasks` list is extremely inefficient and degrades performance significantly when entity sizes increase (O(users * tasks)).
+**Action:** Instead, do a single pass over the related entity array (`tasks`) to count and store the frequency mapping into a Map or object (`userTaskCounts = new Map<string, number>()`). Then map over the primary list doing O(1) lookups (`userTaskCounts.get(user.id)`).
