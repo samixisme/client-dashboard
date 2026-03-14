@@ -59,30 +59,17 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
       t.dueDate && new Date(t.dueDate) < now && !isCompleted(t.stageId)
     ).sort((a: Task, b: Task) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
-    // Create an O(1) user lookup map and precalculate active task counts per user to avoid nested loops
-    const userMap = new Map<string, User>(users.map((u: User) => [u.id, u]));
-    const userTaskCounts = new Map<string, number>();
-
-    // Single pass over tasks to count active tasks per assignee
-    tasks.forEach((t: Task) => {
-      if (!isCompleted(t.stageId) && t.assignees) {
-        t.assignees.forEach(assigneeId => {
-          userTaskCounts.set(assigneeId, (userTaskCounts.get(assigneeId) || 0) + 1);
-        });
-      }
-    });
-
-    // 4. Team Workload (O(u + t) instead of O(u * t))
+    // 4. Team Workload
     const teamWorkload = users.map((user: User) => ({
       user,
-      taskCount: userTaskCounts.get(user.id) || 0
+      taskCount: tasks.filter((t: Task) => t.assignees?.includes(user.id) && !isCompleted(t.stageId)).length
     })).sort((a, b) => b.taskCount - a.taskCount);
 
-    // 5. Recent Activities (O(a) instead of O(a * u))
+    // 5. Recent Activities
     const recentActivities = activities
       .sort((a: Activity, b: Activity) => new Date(getTimestampSeconds(b.timestamp) * 1000).getTime() - new Date(getTimestampSeconds(a.timestamp) * 1000).getTime())
       .slice(0, 15)
-      .map((a: Activity) => ({ ...a, user: userMap.get((a as Activity & { author?: string }).author || '') }));
+      .map((a: Activity) => ({ ...a, user: users.find((u: User) => u.id === (a as Activity & { author?: string }).author) }));
 
     // 6. Feedback Status
     type FeedbackWithType = (FeedbackMockup | FeedbackVideo | FeedbackWebsite) & { type: 'mockup' | 'video' | 'website'; status?: string };
