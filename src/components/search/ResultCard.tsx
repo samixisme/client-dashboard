@@ -8,6 +8,7 @@
 import React from 'react';
 import { highlightMatches, getFieldMatchPositions } from '../../utils/searchHighlight';
 import type { SearchHit } from '../../hooks/useSearch';
+import { HighlightText } from './HighlightText';
 import {
   Folder,
   CheckSquare,
@@ -120,17 +121,18 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
       <div className="result-card__content">
         <div className="result-card__header">
-          <span
+          <HighlightText
             className="result-card__title"
-            dangerouslySetInnerHTML={{ __html: highlightedTitle }}
+            text={highlightedTitle}
           />
           <span className="result-card__type">{meta.label}</span>
         </div>
 
         {highlightedSnippet && (
-          <p
+          <HighlightText
+            as="p"
             className="result-card__snippet"
-            dangerouslySetInnerHTML={{ __html: highlightedSnippet }}
+            text={highlightedSnippet}
           />
         )}
 
