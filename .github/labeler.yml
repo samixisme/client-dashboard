@@ -1,0 +1,10 @@
+# frontend:
+#   - src/**/*
+#   - components/**/*
+#
+# backend:
+#   - api/**/*
+#   - functions/**/*
+#
+# docs:
+#   - '**/*.md'
