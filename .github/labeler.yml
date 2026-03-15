@@ -1,0 +1,15 @@
+# Add 'frontend' label to any changes in src/components or src/pages
+frontend:
+  - any:
+      - 'src/components/**/*'
+      - 'src/pages/**/*'
+
+# Add 'backend' label to any changes in api
+backend:
+  - any:
+      - 'api/**/*'
+
+# Add 'tests' label to any changes in __tests__
+tests:
+  - any:
+      - '__tests__/**/*'
