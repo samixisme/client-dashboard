@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > .github/workflows/label.yml
 name: Labeler
 on: [pull_request_target]
 
@@ -13,3 +14,4 @@ jobs:
       with:
         repo-token: "\${{ secrets.GITHUB_TOKEN }}"
         configuration-path: .github/labeler.yml
+INNER_EOF
