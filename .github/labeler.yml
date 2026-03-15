@@ -1,12 +1,11 @@
 frontend:
-  - any:
-    - 'src/components/**/*'
-    - 'src/pages/**/*'
+  - changed-files:
+    - any-glob-to-any-file: ['src/components/**/*', 'src/pages/**/*']
 
 backend:
-  - any:
-    - 'api/**/*'
+  - changed-files:
+    - any-glob-to-any-file: ['api/**/*']
 
 tests:
-  - any:
-    - '__tests__/**/*'
+  - changed-files:
+    - any-glob-to-any-file: ['__tests__/**/*']
