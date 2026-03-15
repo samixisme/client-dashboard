@@ -245,7 +245,9 @@ router.post('/invoices/bulk-status', async (req: Request, res: Response) => {
     const db = getFirestore();
 
     // Fetch all docs to validate transitions
-    const docs = await Promise.all(ids.map((docid) => db.collection('invoices').doc(docid).get()));
+    // ⚡ Bolt: Using db.getAll() for batched reads instead of Promise.all with N get() calls
+    const refs = ids.map((docid) => db.collection('invoices').doc(docid));
+    const docs = refs.length > 0 ? await db.getAll(...refs) : [];
     const invalid: string[] = [];
     const notFound: string[] = [];
 
@@ -472,7 +474,9 @@ router.post('/estimates/bulk-status', async (req: Request, res: Response) => {
     const { ids, status } = parsed.data;
     const db = getFirestore();
 
-    const docs = await Promise.all(ids.map((docid) => db.collection('estimates').doc(docid).get()));
+    // ⚡ Bolt: Using db.getAll() for batched reads instead of Promise.all with N get() calls
+    const refs = ids.map((docid) => db.collection('estimates').doc(docid));
+    const docs = refs.length > 0 ? await db.getAll(...refs) : [];
     const invalid: string[] = [];
     const notFound: string[] = [];
 
