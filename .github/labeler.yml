@@ -1,15 +1,11 @@
-# Add 'frontend' label to any changes in src/components or src/pages
 frontend:
   - changed-files:
-    - any-glob-to-any-file: 'src/components/**/*'
-    - any-glob-to-any-file: 'src/pages/**/*'
+    - any-glob-to-any-file: ['src/components/**/*', 'src/pages/**/*']
 
-# Add 'backend' label to any changes in api
 backend:
   - changed-files:
     - any-glob-to-any-file: 'api/**/*'
 
-# Add 'tests' label to any changes in __tests__
 tests:
   - changed-files:
     - any-glob-to-any-file: '__tests__/**/*'
