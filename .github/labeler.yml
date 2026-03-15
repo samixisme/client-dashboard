@@ -1,0 +1,11 @@
+frontend:
+  - changed-files:
+    - any-glob-to-any-file: ['src/components/**/*', 'src/pages/**/*']
+
+backend:
+  - changed-files:
+    - any-glob-to-any-file: ['api/**/*']
+
+tests:
+  - changed-files:
+    - any-glob-to-any-file: ['__tests__/**/*']

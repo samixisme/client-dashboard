@@ -73,6 +73,7 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
             }}
             type="button"
             title="Clear all"
+            aria-label={`Clear all ${label} filters`}
           >
             <X size={12} />
           </button>
@@ -184,6 +185,7 @@ export const FacetSidebar: React.FC<FacetSidebarProps> = ({
             className="facet-sidebar__clear-all"
             onClick={onClearAll}
             type="button"
+            aria-label="Clear all active filters"
           >
             Clear all
           </button>
