@@ -1,0 +1,15 @@
+# Configure the labeler action here
+
+backend:
+  - api/**/*
+  - functions/**/*
+
+frontend:
+  - src/**/*
+
+documentation:
+  - README.md
+  - docs/**/*
+
+security:
+  - .jules/sentinel.md
