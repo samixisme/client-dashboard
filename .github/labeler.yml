@@ -1,0 +1,20 @@
+frontend:
+  - 'src/**/*'
+  - 'public/**/*'
+  - 'index.html'
+  - 'vite.config.ts'
+
+backend:
+  - 'api/**/*'
+  - 'functions/**/*'
+
+documentation:
+  - '*.md'
+  - '.jules/**/*'
+  - 'AGENTS.md'
+
+configuration:
+  - 'package.json'
+  - 'tsconfig.json'
+  - 'pnpm-lock.yaml'
+  - '.github/**/*'
