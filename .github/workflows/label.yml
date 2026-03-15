@@ -6,8 +6,7 @@
 # https://github.com/actions/labeler
 
 name: Labeler
-on:
-  pull_request:
+on: [pull_request]
 
 jobs:
   label:
@@ -22,3 +21,4 @@ jobs:
     - uses: actions/labeler@v5
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        sync-labels: true
