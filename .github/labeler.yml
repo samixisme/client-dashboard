@@ -1,0 +1,23 @@
+frontend:
+  - components/**/*
+  - pages/**/*
+  - src/**/*
+  - hooks/**/*
+  - contexts/**/*
+
+backend:
+  - api/**/*
+  - functions/**/*
+  - utils/**/*
+
+configuration:
+  - .github/**/*
+  - package.json
+  - pnpm-lock.yaml
+  - vite.config.ts
+  - tsconfig.json
+
+tests:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "e2e/**/*"
