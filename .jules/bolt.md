@@ -1,3 +1,7 @@
 ## 2024-05-24 - Nested Component Defintions and Full Remounts
 **Learning:** React components defined inside other components (e.g., `TaskRow` defined inside `DashboardPage`) are completely unmounted and remounted on every parent render because React sees them as entirely new component types each time. This destroys DOM state and leads to severe performance degradation, especially for list items that map over large arrays.
 **Action:** Always extract inner component definitions to the top level (outside of the parent component body). Pass any needed parent scope variables as props, and wrap the extracted list items in `React.memo` for further optimization.
+
+## 2024-05-25 - React.memo Identity Checks and Inline Functions
+**Learning:** Wrapping list items in `React.memo` is necessary for performance (preventing re-renders when other items change), but it is easily defeated if the parent component passes newly created functions inline (e.g., `onClick={() => onResultClick(hit, id)}`). React.memo sees these inline lambdas as changed props on every render, destroying the memoization benefit.
+**Action:** Always modify the child component's props to accept the required callback parameters directly (e.g., `onClick: (hit: SearchHit, indexUid: string) => void`) so the parent can pass a single, stable callback reference (like `onClick={onResultClick}`) instead of creating a new lambda for each list item.
