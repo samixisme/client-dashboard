@@ -1,0 +1,31 @@
+frontend:
+  - changed-files:
+    - any-glob-to-any-file:
+        - components/**/*
+        - pages/**/*
+        - src/**/*
+        - hooks/**/*
+        - contexts/**/*
+
+backend:
+  - changed-files:
+    - any-glob-to-any-file:
+        - api/**/*
+        - functions/**/*
+        - utils/**/*
+
+configuration:
+  - changed-files:
+    - any-glob-to-any-file:
+        - .github/**/*
+        - package.json
+        - pnpm-lock.yaml
+        - vite.config.ts
+        - tsconfig.json
+
+tests:
+  - changed-files:
+    - any-glob-to-any-file:
+        - "**/*.test.ts"
+        - "**/*.test.tsx"
+        - "e2e/**/*"
