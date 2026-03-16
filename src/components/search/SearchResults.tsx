@@ -179,11 +179,12 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
               </h3>
             )}
             {r.hits.map((hit, idx) => (
+              // Optimization: Pass stable onResultClick reference instead of inline lambda () => onResultClick(hit, uid)
               <ResultCard
                 key={`${uid}-${hit.id}`}
                 hit={hit}
                 indexUid={uid}
-                onClick={() => onResultClick(hit, uid)}
+                onClick={onResultClick}
                 isSelected={selectedIndex === idx}
               />
             ))}
