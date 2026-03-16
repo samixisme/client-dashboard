@@ -1,0 +1,32 @@
+# Add 'bug' label to any PR that touches files with 'fix' in the branch name or commit
+bug:
+  - any:
+      - branch: ['*fix*']
+
+# Add 'enhancement' label to any PR that touches files with 'feature' in the branch name
+enhancement:
+  - any:
+      - branch: ['*feature*']
+
+# Add 'documentation' label to any PR that touches .md files
+documentation:
+  - any:
+      - changed-files:
+          - any-glob-to-any-file: ['**/*.md']
+
+# Add 'frontend' label to any PR that touches src/ components
+frontend:
+  - any:
+      - changed-files:
+          - any-glob-to-any-file: ['src/**/*']
+
+# Add 'backend' label to any PR that touches api/ or functions/ components
+backend:
+  - any:
+      - changed-files:
+          - any-glob-to-any-file: ['api/**/*', 'functions/**/*']
+
+# Add 'security' label to any PR that touches sentinel branch
+security:
+  - any:
+      - branch: ['*sentinel*']
