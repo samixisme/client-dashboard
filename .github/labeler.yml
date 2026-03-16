@@ -1,0 +1,13 @@
+# .github/labeler.yml
+
+frontend:
+  - "src/components/**/*"
+  - "src/pages/**/*"
+  - "src/hooks/**/*"
+
+backend:
+  - "api/**/*"
+  - "functions/**/*"
+
+tests:
+  - "__tests__/**/*"
