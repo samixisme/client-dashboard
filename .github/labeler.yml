@@ -1,0 +1,6 @@
+components:
+  - components/**
+pages:
+  - pages/**
+api:
+  - api/**
