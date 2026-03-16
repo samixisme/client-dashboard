@@ -16,6 +16,11 @@ export interface MatchPosition {
   length: number;
 }
 
+export interface TextSegment {
+  text: string;
+  isMatch: boolean;
+}
+
 /**
  * Escapes HTML entities to prevent XSS.
  */
@@ -108,25 +113,25 @@ function cropSnippet(
 }
 
 /**
- * Converts a text string and match positions into an HTML string
- * with <mark> tags at match positions.
+ * Converts a text string and match positions into an array of text segments
+ * indicating whether each segment is a match.
  *
  * @param text - The raw text to highlight
  * @param matchPositions - Array of { start, length } from Meilisearch
  * @param maxSnippetLength - Maximum length of the output snippet (default: 200)
- * @returns Safe HTML string with <mark class="search-highlight"> tags
+ * @returns Array of TextSegment objects { text, isMatch }
  */
-export function highlightMatches(
+export function getHighlightedSegments(
   text: string,
   matchPositions: MatchPosition[] = [],
   maxSnippetLength = 200
-): string {
-  if (!text) return '';
+): TextSegment[] {
+  if (!text) return [];
   if (!matchPositions || matchPositions.length === 0) {
     const cropped = text.length > maxSnippetLength
       ? text.slice(0, maxSnippetLength) + '…'
       : text;
-    return escapeHtml(cropped);
+    return [{ text: cropped, isMatch: false }];
   }
 
   // Crop the text first, then adjust positions
@@ -144,8 +149,8 @@ export function highlightMatches(
   // Merge overlapping positions
   const merged = mergePositions(adjustedPositions);
 
-  // Build the output string
-  let result = '';
+  // Build the output segments
+  const segments: TextSegment[] = [];
   let lastEnd = 0;
 
   for (const range of merged) {
@@ -153,19 +158,39 @@ export function highlightMatches(
     const end = Math.min(croppedText.length, range.end);
 
     if (start > lastEnd) {
-      result += escapeHtml(croppedText.slice(lastEnd, start));
+      segments.push({ text: croppedText.slice(lastEnd, start), isMatch: false });
     }
-    result += '<mark class="search-highlight">';
-    result += escapeHtml(croppedText.slice(start, end));
-    result += '</mark>';
+    segments.push({ text: croppedText.slice(start, end), isMatch: true });
     lastEnd = end;
   }
 
   if (lastEnd < croppedText.length) {
-    result += escapeHtml(croppedText.slice(lastEnd));
+    segments.push({ text: croppedText.slice(lastEnd), isMatch: false });
   }
 
-  return result;
+  return segments;
+}
+
+/**
+ * Converts a text string and match positions into an HTML string
+ * with <mark> tags at match positions.
+ *
+ * @param text - The raw text to highlight
+ * @param matchPositions - Array of { start, length } from Meilisearch
+ * @param maxSnippetLength - Maximum length of the output snippet (default: 200)
+ * @returns Safe HTML string with <mark class="search-highlight"> tags
+ */
+export function highlightMatches(
+  text: string,
+  matchPositions: MatchPosition[] = [],
+  maxSnippetLength = 200
+): string {
+  const segments = getHighlightedSegments(text, matchPositions, maxSnippetLength);
+  return segments.map(s =>
+    s.isMatch
+      ? `<mark class="search-highlight">${escapeHtml(s.text)}</mark>`
+      : escapeHtml(s.text)
+  ).join('');
 }
 
 /**
