@@ -220,6 +220,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
                     setRecentSearches([]);
                   }}
                   type="button"
+                  aria-label="Clear recent searches"
                 >
                   Clear
                 </button>
