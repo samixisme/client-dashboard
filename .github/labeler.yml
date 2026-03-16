@@ -1,23 +1,31 @@
 frontend:
-  - components/**/*
-  - pages/**/*
-  - src/**/*
-  - hooks/**/*
-  - contexts/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+        - components/**/*
+        - pages/**/*
+        - src/**/*
+        - hooks/**/*
+        - contexts/**/*
 
 backend:
-  - api/**/*
-  - functions/**/*
-  - utils/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+        - api/**/*
+        - functions/**/*
+        - utils/**/*
 
 configuration:
-  - .github/**/*
-  - package.json
-  - pnpm-lock.yaml
-  - vite.config.ts
-  - tsconfig.json
+  - changed-files:
+    - any-glob-to-any-file:
+        - .github/**/*
+        - package.json
+        - pnpm-lock.yaml
+        - vite.config.ts
+        - tsconfig.json
 
 tests:
-  - "**/*.test.ts"
-  - "**/*.test.tsx"
-  - "e2e/**/*"
+  - changed-files:
+    - any-glob-to-any-file:
+        - "**/*.test.ts"
+        - "**/*.test.tsx"
+        - "e2e/**/*"
