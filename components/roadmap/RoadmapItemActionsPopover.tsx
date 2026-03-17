@@ -127,9 +127,9 @@ const RoadmapItemActionsPopover: React.FC<RoadmapItemActionsPopoverProps> = ({
     const SortView = (
         <div className="p-4">
              <div className="flex justify-between items-center mb-4">
-                <button onClick={() => setView('main')} className="text-text-secondary hover:text-text-primary p-1 rounded-full hover:bg-surface-light"><ArrowLeftIcon className="h-5 w-5"/></button>
+                <button onClick={() => setView('main')} className="text-text-secondary hover:text-text-primary p-1 rounded-full hover:bg-surface-light" aria-label="Go back"><ArrowLeftIcon className="h-5 w-5"/></button>
                 <h3 className="font-semibold text-text-primary">Sort Options</h3>
-                <button onClick={onClose} className="text-xl text-text-secondary hover:text-text-primary">&times;</button>
+                <button onClick={onClose} className="text-xl text-text-secondary hover:text-text-primary" aria-label="Close sort options">&times;</button>
             </div>
             <div className="space-y-3 mb-4">
                 {sortOptions.map(option => (
@@ -150,9 +150,9 @@ const RoadmapItemActionsPopover: React.FC<RoadmapItemActionsPopoverProps> = ({
     const BackgroundView = (
         <div className="p-4">
             <div className="flex justify-between items-center mb-4">
-                <button onClick={() => setView('main')} className="text-text-secondary hover:text-text-primary p-1 rounded-full hover:bg-surface-light"><ArrowLeftIcon className="h-5 w-5"/></button>
+                <button onClick={() => setView('main')} className="text-text-secondary hover:text-text-primary p-1 rounded-full hover:bg-surface-light" aria-label="Go back"><ArrowLeftIcon className="h-5 w-5"/></button>
                 <h3 className="font-semibold text-text-primary">Item Background</h3>
-                <button onClick={onClose} className="text-xl text-text-secondary hover:text-text-primary">&times;</button>
+                <button onClick={onClose} className="text-xl text-text-secondary hover:text-text-primary" aria-label="Close background options">&times;</button>
             </div>
             <div className="grid grid-cols-5 gap-3">
                 <button onClick={() => handlePatternSelect(undefined)} className={`w-full aspect-square rounded-lg border-2 flex items-center justify-center bg-surface-light transition-transform hover:scale-110 ${!item.backgroundPattern ? 'border-primary' : 'border-transparent'}`} aria-label="No color"><CancelIcon className="h-6 w-6 text-text-secondary"/></button>
