@@ -1,0 +1,9 @@
+ui:
+  - any:
+      - 'src/components/**/*'
+      - 'src/pages/**/*'
+      - 'src/styles/**/*'
+backend:
+  - any:
+      - 'api/**/*'
+      - 'functions/**/*'
