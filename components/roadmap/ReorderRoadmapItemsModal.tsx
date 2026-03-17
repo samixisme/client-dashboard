@@ -36,7 +36,7 @@ const ReorderRoadmapItemsModal: React.FC<ReorderRoadmapItemsModalProps> = ({ isO
             <div className="bg-surface w-full max-w-md rounded-2xl shadow-xl border border-border-color p-8" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-text-primary">Reorder Items</h2>
-                    <button onClick={onClose} className="text-2xl text-text-secondary hover:text-text-primary">&times;</button>
+                    <button onClick={onClose} className="text-2xl text-text-secondary hover:text-text-primary" aria-label="Close modal">&times;</button>
                 </div>
                 
                 <DragDropContext onDragEnd={handleDragEnd}>

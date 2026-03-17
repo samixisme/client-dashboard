@@ -1,0 +1,19 @@
+# Add 'UI' label to PRs modifying components
+UI:
+  - changed-files:
+    - any-glob-to-any-file: 'components/**/*'
+
+# Add 'API' label to PRs modifying API routes
+API:
+  - changed-files:
+    - any-glob-to-any-file: 'api/**/*'
+
+# Add 'Docs' label to PRs modifying documentation
+Docs:
+  - changed-files:
+    - any-glob-to-any-file: '**/*.md'
+
+# Add 'Functions' label to PRs modifying Firebase functions
+Functions:
+  - changed-files:
+    - any-glob-to-any-file: 'functions/**/*'
