@@ -101,10 +101,22 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   const highlightedTitle = highlightMatches(title, titlePositions, 120);
   const highlightedSnippet = snippet
     ? highlightMatches(snippet, snippetPositions, 160)
-    : '';
+    : [];
 
   // Status badge
   const status = hit.status as string | undefined;
+
+  const renderSegments = (segments: { text: string; isMatch: boolean }[]) => {
+    return segments.map((segment, index) =>
+      segment.isMatch ? (
+        <mark key={index} className="search-highlight">
+          {segment.text}
+        </mark>
+      ) : (
+        <React.Fragment key={index}>{segment.text}</React.Fragment>
+      )
+    );
+  };
 
   return (
     <button
@@ -120,18 +132,16 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
       <div className="result-card__content">
         <div className="result-card__header">
-          <span
-            className="result-card__title"
-            dangerouslySetInnerHTML={{ __html: highlightedTitle }}
-          />
+          <span className="result-card__title">
+            {renderSegments(highlightedTitle)}
+          </span>
           <span className="result-card__type">{meta.label}</span>
         </div>
 
-        {highlightedSnippet && (
-          <p
-            className="result-card__snippet"
-            dangerouslySetInnerHTML={{ __html: highlightedSnippet }}
-          />
+        {highlightedSnippet.length > 0 && (
+          <p className="result-card__snippet">
+            {renderSegments(highlightedSnippet)}
+          </p>
         )}
 
         {status && (
