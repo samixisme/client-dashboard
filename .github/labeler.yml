@@ -1,0 +1,17 @@
+backend:
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: 'api/**/*'
+      - any-glob-to-any-file: 'functions/**/*'
+
+frontend:
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: 'src/**/*'
+      - any-glob-to-any-file: 'public/**/*'
+
+security:
+  - any:
+    - changed-files:
+      - any-glob-to-any-file: 'src/components/search/HighlightText.tsx'
+      - any-glob-to-any-file: '.jules/sentinel.md'
