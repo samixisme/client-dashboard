@@ -60,9 +60,18 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
     ).sort((a: Task, b: Task) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
     // 4. Team Workload
+    // Optimization: Calculate task counts in a single pass (O(N + M)) instead of nested loop (O(N * M))
+    const taskCountByUserId = new Map<string, number>();
+    for (const t of tasks) {
+      if (!isCompleted(t.stageId) && t.assignees?.length) {
+        for (const userId of t.assignees) {
+          taskCountByUserId.set(userId, (taskCountByUserId.get(userId) || 0) + 1);
+        }
+      }
+    }
     const teamWorkload = users.map((user: User) => ({
       user,
-      taskCount: tasks.filter((t: Task) => t.assignees?.includes(user.id) && !isCompleted(t.stageId)).length
+      taskCount: taskCountByUserId.get(user.id) || 0
     })).sort((a, b) => b.taskCount - a.taskCount);
 
     // 5. Recent Activities
