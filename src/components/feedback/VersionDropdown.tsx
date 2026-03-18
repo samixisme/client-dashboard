@@ -78,6 +78,8 @@ const VersionDropdown: React.FC<VersionDropdownProps> = ({
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
+                aria-haspopup="true"
                 className="bg-glass/60 backdrop-blur-xl border border-border-color rounded-lg px-3 py-1.5 flex items-center gap-2 hover:bg-glass/80 transition-all duration-200 text-sm font-medium"
             >
                 <span>v{currentVersion}</span>

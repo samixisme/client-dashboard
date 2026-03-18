@@ -116,6 +116,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
               onClick={() => setShowSortMenu(!showSortMenu)}
               type="button"
               aria-expanded={showSortMenu}
+              aria-haspopup="true"
             >
               <ArrowUpDown size={14} />
               {SORT_OPTIONS.find(
