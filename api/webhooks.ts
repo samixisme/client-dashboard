@@ -1,12 +1,17 @@
 import { Router, Request, Response } from 'express';
 import { getFirestore } from './firebaseAdmin';
 import * as admin from 'firebase-admin';
+import crypto from 'crypto';
 
 const webhookRouter = Router();
 
 // Webhook verify token - should match what you set in Meta App Dashboard
 // This is stored in .env and used to verify Meta's subscription request
 const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'your-webhook-verify-token-here';
+
+if (WEBHOOK_VERIFY_TOKEN === 'your-webhook-verify-token-here') {
+    console.warn('⚠️  Using default WEBHOOK_VERIFY_TOKEN. Meta webhook validation may fail in production.');
+}
 
 /**
  * GET /api/webhooks/instagram
@@ -47,6 +52,31 @@ webhookRouter.get('/instagram', (req: Request, res: Response) => {
  * This is where you receive real-time updates about posts, comments, messages, etc.
  */
 webhookRouter.post('/instagram', async (req: Request, res: Response) => {
+    // Validate Meta payload signature
+    const signature = req.headers['x-hub-signature-256'] as string;
+    const clientSecret = process.env.INSTAGRAM_CLIENT_SECRET;
+
+    if (!signature || !clientSecret) {
+        console.error('🚨 Missing Meta webhook signature or client secret');
+        return res.status(401).send('Missing signature or secret');
+    }
+
+    const rawBody = (req as any).rawBody;
+    if (!rawBody) {
+        console.error('🚨 Missing raw body for Meta webhook signature validation');
+        return res.status(500).send('Server configuration error');
+    }
+
+    const expectedSignature = `sha256=${crypto.createHmac('sha256', clientSecret).update(rawBody).digest('hex')}`;
+
+    const signatureBuffer = Buffer.from(signature);
+    const expectedBuffer = Buffer.from(expectedSignature);
+
+    if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+        console.error('🚨 Invalid Meta webhook signature');
+        return res.status(401).send('Invalid signature');
+    }
+
     const body = req.body;
 
     console.log('Instagram webhook event received:', JSON.stringify(body, null, 2));
