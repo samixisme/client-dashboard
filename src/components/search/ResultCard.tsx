@@ -79,11 +79,13 @@ const INDEX_META: Record<
 export interface ResultCardProps {
   hit: SearchHit;
   indexUid: string;
-  onClick: () => void;
+  onClick: (hit: SearchHit, indexUid: string) => void;
   isSelected?: boolean;
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({
+// Optimization: Wrapped in React.memo to prevent full list re-renders during keyboard navigation.
+// The onClick prop was also updated to accept (hit, indexUid) so the parent can pass a stable callback reference.
+export const ResultCard: React.FC<ResultCardProps> = React.memo(({
   hit,
   indexUid,
   onClick,
@@ -109,7 +111,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   return (
     <button
       className={`result-card ${isSelected ? 'result-card--selected' : ''}`}
-      onClick={onClick}
+      onClick={() => onClick(hit, indexUid)}
       type="button"
       role="option"
       aria-selected={isSelected}
@@ -158,4 +160,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({
       </div>
     </button>
   );
-};
+});
+
+ResultCard.displayName = 'ResultCard';
