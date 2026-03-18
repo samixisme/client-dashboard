@@ -35,14 +35,41 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
 
     // 1. Project Health
     const activeProjects = projects.filter((p: Project) => p.status === 'Active').slice(0, 6);
+
+    // Optimization: Pre-map boards to projects for O(1) lookup
+    const activeProjectIds = new Set(activeProjects.map(p => p.id));
+    const boardToProjectMap = new Map<string, string>();
+    const projectMainBoardMap = new Map<string, Board>();
+
+    boards.forEach((b: Board) => {
+      if (activeProjectIds.has(b.projectId)) {
+        boardToProjectMap.set(b.id, b.projectId);
+        if (!projectMainBoardMap.has(b.projectId)) {
+          projectMainBoardMap.set(b.projectId, b);
+        }
+      }
+    });
+
+    // Optimization: Single pass over tasks to count per project (O(T) instead of O(P*T))
+    const projectTaskCounts = new Map<string, { total: number; completed: number }>();
+    activeProjects.forEach(p => projectTaskCounts.set(p.id, { total: 0, completed: 0 }));
+
+    tasks.forEach((t: Task) => {
+      const projectId = boardToProjectMap.get(t.boardId);
+      if (projectId) {
+        const counts = projectTaskCounts.get(projectId)!;
+        counts.total++;
+        if (isCompleted(t.stageId)) {
+          counts.completed++;
+        }
+      }
+    });
+
     const projectHealth = activeProjects.map((project: Project) => {
-      const projectBoards = boards.filter((b: Board) => b.projectId === project.id);
-      const projectBoardIds = projectBoards.map((b: Board) => b.id);
-      const projectTasks = tasks.filter((t: Task) => projectBoardIds.includes(t.boardId));
-      const completed = projectTasks.filter((t: Task) => isCompleted(t.stageId)).length;
-      const progress = projectTasks.length > 0 ? (completed / projectTasks.length) * 100 : 0;
-      const mainBoard = projectBoards[0];
-      return { project, progress, totalTasks: projectTasks.length, mainBoard };
+      const counts = projectTaskCounts.get(project.id)!;
+      const progress = counts.total > 0 ? (counts.completed / counts.total) * 100 : 0;
+      const mainBoard = projectMainBoardMap.get(project.id);
+      return { project, progress, totalTasks: counts.total, mainBoard };
     });
 
     // 2. Task Velocity
@@ -103,11 +130,47 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
       date.setDate(date.getDate() + i);
       return date.toISOString().split('T')[0];
     });
+
+    // Optimization: Pre-group items by date for O(1) lookup in timeline mapping
+    const tasksByDate = new Map<string, Task[]>();
+    tasks.forEach((t: Task) => {
+      if (t.dueDate) {
+        const dateStr = t.dueDate.split('T')[0];
+        const group = tasksByDate.get(dateStr) || [];
+        group.push(t);
+        tasksByDate.set(dateStr, group);
+      }
+    });
+
+    const eventsByDate = new Map<string, CalendarEvent[]>();
+    if (calendar_events) {
+      calendar_events.forEach((e: CalendarEvent) => {
+        if (e.startDate) {
+          const dateStr = e.startDate.split('T')[0];
+          const group = eventsByDate.get(dateStr) || [];
+          group.push(e);
+          eventsByDate.set(dateStr, group);
+        }
+      });
+    }
+
+    const invoicesByDate = new Map<string, Invoice[]>();
+    if (invoices) {
+      invoices.forEach((i: Invoice) => {
+        if (i.dueDate) {
+          const dateStr = i.dueDate.split('T')[0];
+          const group = invoicesByDate.get(dateStr) || [];
+          group.push(i);
+          invoicesByDate.set(dateStr, group);
+        }
+      });
+    }
+
     const timeline = next7Days.map(date => ({
       date,
-      tasks: tasks.filter((t: Task) => t.dueDate?.startsWith(date)),
-      events: calendar_events?.filter((e: CalendarEvent) => e.startDate?.startsWith(date)) || [],
-      invoices: invoices?.filter((i: Invoice) => i.dueDate?.startsWith(date)) || []
+      tasks: tasksByDate.get(date) || [],
+      events: eventsByDate.get(date) || [],
+      invoices: invoicesByDate.get(date) || []
     }));
 
     // 8. Time Tracking
