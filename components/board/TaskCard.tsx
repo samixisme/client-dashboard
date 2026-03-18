@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Task } from '../../types';
+import { Task, Tag, User, RoadmapItem, Board, Project } from '../../types';
 import { useData } from '../../contexts/DataContext';
 import { MoreIcon } from '../icons/MoreIcon';
 import { CalendarIcon } from '../icons/CalendarIcon';
@@ -8,6 +8,15 @@ import { RoadmapIcon } from '../icons/RoadmapIcon';
 
 interface TaskCardProps {
     task: Task;
+}
+
+interface TaskCardContentProps {
+    task: Task;
+    tags: Tag[];
+    users: User[];
+    roadmapItems: RoadmapItem[];
+    boards: Board[];
+    projects: Project[];
 }
 
 const PriorityBox: React.FC<{ priority: Task['priority'] }> = ({ priority }) => {
@@ -21,9 +30,12 @@ const PriorityBox: React.FC<{ priority: Task['priority'] }> = ({ priority }) => 
 
 const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
-    const { data } = useData();
-    const { tags, users, roadmapItems, boards, projects } = data;
+// Optimization: TaskCardContent is memoized and accepts pure props, avoiding full re-renders
+// from global DataContext updates unless the specific task or data actually changes in a way that affects reference equality.
+// However, since `data` arrays might change ref on every update in some contexts, we extract the exact derived state we need inside or pass it down.
+// Since passing derived state means changing multiple parent components, we memoize the heavy DOM parts based on primitive/stable values where possible.
+// Wait, actually passing data arrays (tags, users, etc) is better than calling useData inside the memoized component.
+const TaskCardContent: React.FC<TaskCardContentProps> = React.memo(({ task, tags, users, roadmapItems, boards, projects }) => {
     const taskTags = tags.filter(t => task.labelIds.includes(t.id));
     const assignees = users.filter(m => task.assignees.includes(m.id));
     
@@ -81,6 +93,23 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             </div>
         </div>
     );
+});
+
+const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
+    const { data } = useData();
+    return (
+        <TaskCardContent
+            task={task}
+            tags={data.tags}
+            users={data.users}
+            roadmapItems={data.roadmapItems}
+            boards={data.boards}
+            projects={data.projects}
+        />
+    );
 };
 
-export default TaskCard;
+// Export with React.memo to prevent unnecessary re-renders when task properties haven't changed.
+// This is a crucial optimization for Kanban boards with many tasks, as it prevents all task cards
+// from re-rendering every time the parent component's state (like dragging state) changes.
+export default React.memo(TaskCard);

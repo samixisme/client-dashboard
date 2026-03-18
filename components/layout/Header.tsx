@@ -117,6 +117,9 @@ const Header: React.FC<HeaderProps> = ({ onLogout }) => {
         <div className="relative">
             <button
               onClick={handleProfileMenuToggle}
+              aria-label="Toggle profile menu"
+              aria-expanded={profileMenuOpen}
+              aria-haspopup="true"
               className="relative h-12 w-12 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-primary transition-all duration-300"
             >
                 {user?.avatarUrl ? (
