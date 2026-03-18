@@ -60,16 +60,28 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
     ).sort((a: Task, b: Task) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
     // 4. Team Workload
+    // Optimization: Map task counts to reduce O(U*T) to O(U+T)
+    const userTaskCounts = new Map<string, number>();
+    tasks.forEach((t: Task) => {
+      if (!isCompleted(t.stageId) && t.assignees) {
+        t.assignees.forEach(userId => {
+          userTaskCounts.set(userId, (userTaskCounts.get(userId) || 0) + 1);
+        });
+      }
+    });
+
     const teamWorkload = users.map((user: User) => ({
       user,
-      taskCount: tasks.filter((t: Task) => t.assignees?.includes(user.id) && !isCompleted(t.stageId)).length
+      taskCount: userTaskCounts.get(user.id) || 0
     })).sort((a, b) => b.taskCount - a.taskCount);
 
     // 5. Recent Activities
+    // Optimization: O(1) user lookup
+    const userMap = new Map<string, User>(users.map((u: User) => [u.id, u]));
     const recentActivities = activities
       .sort((a: Activity, b: Activity) => new Date(getTimestampSeconds(b.timestamp) * 1000).getTime() - new Date(getTimestampSeconds(a.timestamp) * 1000).getTime())
       .slice(0, 15)
-      .map((a: Activity) => ({ ...a, user: users.find((u: User) => u.id === (a as Activity & { author?: string }).author) }));
+      .map((a: Activity) => ({ ...a, user: userMap.get((a as Activity & { author?: string }).author || '') }));
 
     // 6. Feedback Status
     type FeedbackWithType = (FeedbackMockup | FeedbackVideo | FeedbackWebsite) & { type: 'mockup' | 'video' | 'website'; status?: string };
@@ -118,10 +130,21 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
       }));
 
     // 9. Brand Portfolio
+    // Optimization: Single pass project aggregation
+    const brandProjectCounts = new Map<string, { total: number, active: number }>();
+    projects.forEach((p: Project) => {
+      if (p.brandId) {
+        const counts = brandProjectCounts.get(p.brandId) || { total: 0, active: 0 };
+        counts.total++;
+        if (p.status === 'Active') counts.active++;
+        brandProjectCounts.set(p.brandId, counts);
+      }
+    });
+
     const brandStats = brands.map((brand: Brand) => ({
       brand,
-      total: projects.filter((p: Project) => p.brandId === brand.id).length,
-      active: projects.filter((p: Project) => p.brandId === brand.id && p.status === 'Active').length
+      total: brandProjectCounts.get(brand.id)?.total || 0,
+      active: brandProjectCounts.get(brand.id)?.active || 0
     })).sort((a, b) => b.total - a.total).slice(0, 8);
 
     // 10. Payment Status
