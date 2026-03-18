@@ -30,8 +30,6 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
       .filter(s => s.status === 'Closed' || /done|complet/i.test(s.name))
       .map(s => s.id);
     // Fallback to legacy hardcoded ID if no dynamic stages found
-
-
     const isCompleted = (stageId: string) =>
       completedStageIds.length > 0 ? completedStageIds.includes(stageId) : stageId === 'stage-3';
 
@@ -60,7 +58,6 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
     const overdueTasks = tasks.filter((t: Task) =>
       t.dueDate && new Date(t.dueDate) < now && !isCompleted(t.stageId)
     ).sort((a: Task, b: Task) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
-
 
     // 4. Team Workload
     // Optimization: Map task counts to reduce O(U*T) to O(U+T)
@@ -131,7 +128,6 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
         task: tasks.find((t: Task) => t.id === taskId),
         hours: duration / 3600
       }));
-
 
     // 9. Brand Portfolio
     // Optimization: Single pass project aggregation
