@@ -182,7 +182,7 @@ const RoadmapItemModal: React.FC<RoadmapItemModalProps> = ({ item, onClose, onUp
                                 <div key={att.id} className="flex items-center gap-3 bg-glass/40 backdrop-blur-sm p-2 rounded-lg border border-border-color">
                                     <FileIcon className="w-6 h-6 text-text-secondary"/>
                                     <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-text-primary hover:underline flex-1 truncate">{att.name}</a>
-                                    <button onClick={() => handleRemoveAttachment(att.id)} className="p-1 rounded-full hover:bg-red-500/20 text-text-secondary hover:text-red-400"><DeleteIcon className="w-4 h-4"/></button>
+                                    <button onClick={() => handleRemoveAttachment(att.id)} className="p-1 rounded-full hover:bg-red-500/20 text-text-secondary hover:text-red-400" aria-label="Remove attachment" title="Remove attachment"><DeleteIcon className="w-4 h-4"/></button>
                                 </div>
                             ))}
                          </div>

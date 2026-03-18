@@ -1,0 +1,17 @@
+# Add 'frontend' label to any changes within the 'src' or 'pages' or 'components' folders
+frontend:
+  - changed-files:
+    - any-glob-to-any-file: 'src/**/*'
+    - any-glob-to-any-file: 'pages/**/*'
+    - any-glob-to-any-file: 'components/**/*'
+
+# Add 'backend' label to any changes within the 'api' or 'functions' folders
+backend:
+  - changed-files:
+    - any-glob-to-any-file: 'api/**/*'
+    - any-glob-to-any-file: 'functions/**/*'
+
+# Add 'tests' label to any changes within the '__tests__' folder
+tests:
+  - changed-files:
+    - any-glob-to-any-file: '__tests__/**/*'

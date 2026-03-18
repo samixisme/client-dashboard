@@ -73,6 +73,7 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
             }}
             type="button"
             title="Clear all"
+            aria-label={`Clear all ${label} filters`}
           >
             <X size={12} />
           </button>
