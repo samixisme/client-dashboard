@@ -83,4 +83,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     );
 };
 
-export default TaskCard;
+// Export with React.memo to prevent unnecessary re-renders when task properties haven't changed.
+// This is a crucial optimization for Kanban boards with many tasks, as it prevents all task cards
+// from re-rendering every time the parent component's state (like dragging state) changes.
+export default React.memo(TaskCard);
