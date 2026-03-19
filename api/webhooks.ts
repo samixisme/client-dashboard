@@ -1,12 +1,30 @@
 import { Router, Request, Response } from 'express';
 import { getFirestore } from './firebaseAdmin';
 import * as admin from 'firebase-admin';
+import * as crypto from 'crypto';
 
 const webhookRouter = Router();
 
 // Webhook verify token - should match what you set in Meta App Dashboard
 // This is stored in .env and used to verify Meta's subscription request
-const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'your-webhook-verify-token-here';
+/**
+ * Helper to get the token, allowing tests to run if it is not explicitly configured
+ */
+const getWebhookVerifyToken = () => {
+    const token = process.env.WEBHOOK_VERIFY_TOKEN;
+    if (!token && process.env.NODE_ENV !== 'test') {
+        throw new Error('CRITICAL SECURITY ERROR: WEBHOOK_VERIFY_TOKEN environment variable is required.');
+    }
+    return token || 'test-token';
+};
+
+const getInstagramClientSecret = () => {
+    const secret = process.env.INSTAGRAM_CLIENT_SECRET;
+    if (!secret && process.env.NODE_ENV !== 'test') {
+        throw new Error('CRITICAL SECURITY ERROR: INSTAGRAM_CLIENT_SECRET environment variable is required for signature verification.');
+    }
+    return secret || 'test-secret';
+};
 
 /**
  * GET /api/webhooks/instagram
@@ -25,7 +43,7 @@ webhookRouter.get('/instagram', (req: Request, res: Response) => {
     // Check if a token and mode were sent
     if (mode && token) {
         // Check the mode and token sent are correct
-        if (mode === 'subscribe' && token === WEBHOOK_VERIFY_TOKEN) {
+        if (mode === 'subscribe' && token === getWebhookVerifyToken()) {
             // Respond with 200 OK and challenge token from the request
             console.log('Instagram webhook verified successfully');
             res.status(200).send(challenge);
@@ -47,6 +65,29 @@ webhookRouter.get('/instagram', (req: Request, res: Response) => {
  * This is where you receive real-time updates about posts, comments, messages, etc.
  */
 webhookRouter.post('/instagram', async (req: Request, res: Response) => {
+    // Verify HMAC signature
+    const signatureHeader = req.headers['x-hub-signature-256'];
+    const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
+    const rawBody = (req as any).rawBody;
+
+    if (!signature || !rawBody) {
+        console.error('Instagram webhook verification failed: missing signature or rawBody');
+        return res.status(401).send('Unauthorized');
+    }
+
+    const expectedSignature = `sha256=${crypto
+        .createHmac('sha256', getInstagramClientSecret())
+        .update(rawBody)
+        .digest('hex')}`;
+
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf-8');
+    const signatureBuffer = Buffer.from(signature, 'utf-8');
+
+    if (expectedBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(expectedBuffer, signatureBuffer)) {
+        console.error('Instagram webhook verification failed: signature mismatch');
+        return res.status(401).send('Unauthorized');
+    }
+
     const body = req.body;
 
     console.log('Instagram webhook event received:', JSON.stringify(body, null, 2));
