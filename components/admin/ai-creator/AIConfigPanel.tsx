@@ -39,6 +39,7 @@ export const AIConfigPanel: React.FC<AIConfigPanelProps> = ({
             type="button"
             onClick={onToggleApiKey}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary focus:outline-none"
+            aria-label={showApiKey ? 'Hide API Key' : 'Show API Key'}
           >
             {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
