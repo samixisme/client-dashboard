@@ -127,7 +127,13 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Parse JSON bodies with size limit
-app.use(express.json({ limit: '1mb' }));
+// Use verify to store the raw body buffer for signature validation
+app.use(express.json({
+  limit: '1mb',
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
 // VercelRequest and VercelResponse are compatible enough with Express req/res
