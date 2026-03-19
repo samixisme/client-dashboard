@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as crypto from 'crypto';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -687,6 +688,26 @@ export const facebookDeauthorizeCallback = functions.https.onRequest(async (req,
 
     // Decode the signed request
     const [_encodedSig, payload] = signed_request.split('.');
+
+    // Validate the signature
+    const expectedSig = crypto.createHmac('sha256', FACEBOOK_CLIENT_SECRET).update(payload || '').digest('base64url');
+
+    // Use timingSafeEqual to prevent timing attacks
+    // We need to ensure both are Buffers of the same length
+    const encodedSigBuf = Buffer.from(_encodedSig || '', 'utf8');
+    const expectedSigBuf = Buffer.from(expectedSig, 'utf8');
+
+    let isValid = false;
+    if (encodedSigBuf.length === expectedSigBuf.length) {
+      isValid = crypto.timingSafeEqual(encodedSigBuf, expectedSigBuf);
+    }
+
+    if (!isValid) {
+      console.error('Invalid signature in signed_request');
+      res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
+
     const data = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
 
     console.log('Deauthorization data:', { user_id: data.user_id });
@@ -765,6 +786,26 @@ export const facebookDataDeletionCallback = functions.https.onRequest(async (req
 
     // Decode the signed request
     const [_encodedSig, payload] = signed_request.split('.');
+
+    // Validate the signature
+    const expectedSig = crypto.createHmac('sha256', FACEBOOK_CLIENT_SECRET).update(payload || '').digest('base64url');
+
+    // Use timingSafeEqual to prevent timing attacks
+    // We need to ensure both are Buffers of the same length
+    const encodedSigBuf = Buffer.from(_encodedSig || '', 'utf8');
+    const expectedSigBuf = Buffer.from(expectedSig, 'utf8');
+
+    let isValid = false;
+    if (encodedSigBuf.length === expectedSigBuf.length) {
+      isValid = crypto.timingSafeEqual(encodedSigBuf, expectedSigBuf);
+    }
+
+    if (!isValid) {
+      console.error('Invalid signature in signed_request');
+      res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
+
     const data = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
 
     console.log('Data deletion request:', { user_id: data.user_id });
