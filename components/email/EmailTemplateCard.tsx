@@ -65,6 +65,7 @@ export function EmailTemplateCard({ template, index, onDuplicate, onDelete }: Em
             onClick={handleEdit}
             className="p-2 rounded-lg bg-primary text-background hover:bg-primary-hover hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)] transition-all duration-300"
             title="Edit"
+            aria-label="Edit template"
           >
             <Edit className="w-4 h-4" />
           </button>
@@ -72,6 +73,7 @@ export function EmailTemplateCard({ template, index, onDuplicate, onDelete }: Em
             onClick={handlePreview}
             className="p-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
             title="Preview"
+            aria-label="Preview template"
           >
             <Eye className="w-4 h-4" />
           </button>
@@ -93,6 +95,9 @@ export function EmailTemplateCard({ template, index, onDuplicate, onDelete }: Em
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Template options"
+              aria-haspopup="menu"
+              aria-expanded={showMenu}
             >
               <MoreHorizontal className="w-4 h-4 text-text-secondary" />
             </button>
