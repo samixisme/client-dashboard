@@ -185,6 +185,7 @@ socialRouter.post('/auth/callback', async (req: Request, res: Response) => {
             // Instagram requires form-encoded POST
             tokenResponse = await axios.post(config.tokenUrl, new URLSearchParams(tokenParams), {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                timeout: 15000,
             });
         } else if (platform === 'twitter') {
             // Twitter uses Basic auth header
@@ -194,10 +195,12 @@ socialRouter.post('/auth/callback', async (req: Request, res: Response) => {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     Authorization: `Basic ${basicAuth}`,
                 },
+                timeout: 15000,
             });
         } else {
             tokenResponse = await axios.post(config.tokenUrl, new URLSearchParams(tokenParams), {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                timeout: 15000,
             });
         }
 
@@ -212,6 +215,7 @@ socialRouter.post('/auth/callback', async (req: Request, res: Response) => {
                         client_secret: config.clientSecret,
                         access_token: tokens.access_token,
                     },
+                    timeout: 15000,
                 });
                 tokens.access_token = longLivedResp.data.access_token;
                 tokens.expires_in = longLivedResp.data.expires_in;
@@ -224,7 +228,7 @@ socialRouter.post('/auth/callback', async (req: Request, res: Response) => {
         if (platform === 'facebook' && tokens.access_token) {
             try {
                 const longLivedUrl = `${config.tokenUrl}?grant_type=fb_exchange_token&client_id=${config.clientId}&client_secret=${config.clientSecret}&fb_exchange_token=${tokens.access_token}`;
-                const longLivedResp = await axios.get(longLivedUrl);
+                const longLivedResp = await axios.get(longLivedUrl, { timeout: 15000 });
 
                 if (longLivedResp.data.access_token) {
                     tokens.access_token = longLivedResp.data.access_token;
@@ -298,6 +302,7 @@ socialRouter.post('/fetch/:platform', async (req: Request, res: Response) => {
             method,
             url,
             headers,
+            timeout: 15000,
         };
 
         // Add access_token as query param for Meta and Google platforms
