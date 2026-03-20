@@ -98,7 +98,7 @@ const ListView: React.FC<ListViewProps> = ({
                                         <span className="relative z-10">Add Task</span>
                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                     </button>
-                                    <button onClick={() => setAddingToStage(null)} className="text-xl text-text-secondary hover:text-text-primary leading-none hover:scale-110 transition-all duration-300">&times;</button>
+                                    <button onClick={() => setAddingToStage(null)} aria-label={`Cancel adding task to ${stage.name}`} className="text-xl text-text-secondary hover:text-text-primary leading-none hover:scale-110 transition-all duration-300">&times;</button>
                                 </div>
                             </div>
                         ) : (
