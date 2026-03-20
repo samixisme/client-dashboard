@@ -24,6 +24,7 @@ import notificationsRouter from './notifications';
 import socialRouter from './social';
 import webhookRouter from './webhooks';
 import adminRouter from './adminRoutes';
+import { adminRateLimiter } from './adminAuthMiddleware';
 import paymenterRouter from './paymenterRoutes';
 import driveRouter from './driveRoutes';
 import searchRouter from './searchRoutes';
@@ -177,7 +178,7 @@ app.use('/api/social', socialRouter);
 app.use('/api/webhooks', webhookRouter);
 
 // Admin API endpoints (Firebase Admin SDK - user management, custom claims, bulk operations)
-app.use('/admin/api', optionalApiKeyAuth, adminRouter);
+app.use('/admin/api', adminRateLimiter, optionalApiKeyAuth, adminRouter);
 
 // Paymenter billing & subscription proxy
 app.use('/api/paymenter', paymenterRouter);
