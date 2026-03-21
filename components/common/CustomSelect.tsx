@@ -23,7 +23,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listboxId = React.useId();
 
   const selectedOption = options.find(opt => opt.value === value);
 
@@ -44,9 +46,72 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen) {
+      const selectedIndex = options.findIndex(opt => opt.value === value);
+      setFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    } else {
+      setFocusedIndex(-1);
+    }
+  }, [isOpen, options, value]);
+
+  useEffect(() => {
+    if (isOpen && focusedIndex >= 0) {
+      const element = document.getElementById(`${listboxId}-option-${focusedIndex}`);
+      if (element) {
+        element.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [focusedIndex, isOpen, listboxId]);
+
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
     setIsOpen(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (isOpen) {
+          if (focusedIndex >= 0 && focusedIndex < options.length) {
+            handleSelect(options[focusedIndex].value);
+          }
+        } else {
+          setIsOpen(true);
+        }
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        if (!isOpen) {
+          setIsOpen(true);
+        } else {
+          setFocusedIndex(prev => (prev < options.length - 1 ? prev + 1 : prev));
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (!isOpen) {
+          setIsOpen(true);
+        } else {
+          setFocusedIndex(prev => (prev > 0 ? prev - 1 : prev));
+        }
+        break;
+      case 'Escape':
+        if (isOpen) {
+          e.preventDefault();
+          setIsOpen(false);
+        }
+        break;
+      case 'Tab':
+        if (isOpen) {
+          setIsOpen(false);
+        }
+        break;
+    }
   };
 
   return (
@@ -56,7 +121,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-activedescendant={isOpen && focusedIndex >= 0 ? `${listboxId}-option-${focusedIndex}` : undefined}
         onClick={() => !disabled && setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
         disabled={disabled}
         className={`
           w-full px-4 py-3
@@ -92,14 +160,16 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute z-50 w-full mt-2 bg-surface/98 backdrop-blur-2xl border border-primary/50 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_20px_rgba(163,230,53,0.2)] overflow-hidden animate-scale-in">
-          <div role="listbox" className="max-h-60 overflow-y-auto custom-scrollbar py-1">
-            {options.map((option) => (
+          <div id={listboxId} role="listbox" aria-label={placeholder} className="max-h-60 overflow-y-auto custom-scrollbar py-1">
+            {options.map((option, index) => (
               <button
                 key={option.value}
+                id={`${listboxId}-option-${index}`}
                 type="button"
                 role="option"
                 aria-selected={option.value === value}
                 onClick={() => handleSelect(option.value)}
+                tabIndex={-1}
                 className={`
                   w-full px-4 py-3 text-left text-sm font-medium
                   transition-all duration-200
@@ -107,6 +177,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
                     ? 'bg-primary/25 text-primary font-bold border-l-4 border-primary shadow-[inset_0_0_20px_rgba(163,230,53,0.25)]'
                     : 'text-text-primary hover:bg-primary/15 hover:text-primary hover:border-l-4 hover:border-primary/50 hover:font-semibold'
                   }
+                  ${focusedIndex === index && option.value !== value ? 'bg-primary/15 text-primary border-l-4 border-primary/50' : ''}
                 `}
               >
                 {option.label}
