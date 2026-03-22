@@ -48,7 +48,7 @@ const TaskCardContent: React.FC<TaskCardContentProps> = React.memo(({ task, tags
         <div className="bg-glass/40 backdrop-blur-xl p-3 rounded-xl border border-border-color shadow-md cursor-pointer hover:bg-glass/60 hover:border-primary/60 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-all duration-300 flex flex-col gap-2 group">
             <div className="flex justify-between items-start">
                 <p className="text-sm font-medium text-text-primary pr-2 flex-1 group-hover:text-primary transition-colors duration-300">{task.title}</p>
-                 <button className="text-text-secondary hover:text-primary hover:scale-110 transition-all duration-300 flex-shrink-0">
+                 <button aria-label="Task options" title="Task options" className="text-text-secondary hover:text-primary hover:scale-110 transition-all duration-300 flex-shrink-0">
                     <MoreIcon className="w-5 h-5"/>
                  </button>
             </div>
