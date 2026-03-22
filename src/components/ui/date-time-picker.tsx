@@ -41,6 +41,7 @@ export function DateTimePicker({
   const [time, setTime] = React.useState<string>(
     value ? format(value, 'HH:mm') : '10:00'
   )
+  const timeInputId = React.useId()
 
   // Update internal state when value prop changes
   React.useEffect(() => {
@@ -119,10 +120,11 @@ export function DateTimePicker({
         />
         {showTime && (
           <div className="border-t border-white/20 p-3">
-            <label className="block text-xs font-medium text-muted-foreground mb-2">
+            <label htmlFor={timeInputId} className="block text-xs font-medium text-muted-foreground mb-2">
               Time
             </label>
             <input
+              id={timeInputId}
               type="time"
               value={time}
               onChange={(e) => handleTimeChange(e.target.value)}
