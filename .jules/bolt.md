@@ -5,3 +5,7 @@
 ## 2026-03-13 - Optimizing Firebase Admin SDK document fetches
 **Learning:** For fetching multiple Firestore documents by ID/reference in the Admin SDK, using individual `doc().get()` calls inside `Promise.all` creates separate network requests and is less efficient.
 **Action:** Always use `db.getAll(...refs)` instead. It is significantly more efficient, fetches up to 1000 documents in a single batched network request, and bypasses the 30-item limit of the 'in' operator.
+
+## 2024-05-24 - Exhausting Firebase Limits with Promise.all
+**Learning:** Replacing deeply nested sequential Firestore operations (`deleteDoc`) with unbounded `Promise.all` arrays during recursive cleanups (`deleteProjectDeep`) is an anti-pattern. While it solves N+1 latency, it instantly fires thousands of concurrent `getDocs` queries and writes, causing Firebase connection limit exhaustion and runtime crashes.
+**Action:** Always batch deep recursive deletions. Boundedly or synchronously traverse the entire recursive tree to collect a single flat array of `DocumentReference` objects, then delete them precisely once using `writeBatch` in chunks of 500.
