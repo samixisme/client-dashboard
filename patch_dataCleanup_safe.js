@@ -1,11 +1,13 @@
-import { 
-    collection, 
-    getDocs, 
-    deleteDoc, 
-    doc, 
-    query, 
-    where, 
-    writeBatch, 
+const fs = require('fs');
+
+const content = `import {
+    collection,
+    getDocs,
+    deleteDoc,
+    doc,
+    query,
+    where,
+    writeBatch,
     collectionGroup,
     DocumentReference
 } from 'firebase/firestore';
@@ -54,7 +56,7 @@ export const deleteProjectDeep = async (projectId: string) => {
         // A. Feedback Items
         const feedbackItemsSnap = await getDocs(collection(db, 'projects', projectId, 'feedbackItems'));
         for (const itemDoc of feedbackItemsSnap.docs) {
-            await collectCollectionRefs(`projects/${projectId}/feedbackItems/${itemDoc.id}/comments`, refsToDelete);
+            await collectCollectionRefs(\`projects/\${projectId}/feedbackItems/\${itemDoc.id}/comments\`, refsToDelete);
             refsToDelete.push(itemDoc.ref as DocumentReference);
         }
 
@@ -69,21 +71,21 @@ export const deleteProjectDeep = async (projectId: string) => {
              for (const taskSnap of boardTasksSnap.docs) {
                  await collectTaskRefs(taskId(taskSnap), refsToDelete);
              }
-             
-             await collectCollectionRefs(`projects/${projectId}/boards/${boardDoc.id}/tags`, refsToDelete);
+
+             await collectCollectionRefs(\`projects/\${projectId}/boards/\${boardDoc.id}/tags\`, refsToDelete);
              refsToDelete.push(boardDoc.ref as DocumentReference);
         }
 
         // C. Moodboards (and items)
         const moodboardsSnap = await getDocs(collection(db, 'projects', projectId, 'moodboards'));
         for (const mbDoc of moodboardsSnap.docs) {
-            await collectCollectionRefs(`projects/${projectId}/moodboards/${mbDoc.id}/moodboard_items`, refsToDelete);
+            await collectCollectionRefs(\`projects/\${projectId}/moodboards/\${mbDoc.id}/moodboard_items\`, refsToDelete);
             refsToDelete.push(mbDoc.ref as DocumentReference);
         }
 
         // D. Other direct subcollections
-        await collectCollectionRefs(`projects/${projectId}/activities`, refsToDelete);
-        await collectCollectionRefs(`projects/${projectId}/roadmap`, refsToDelete);
+        await collectCollectionRefs(\`projects/\${projectId}/activities\`, refsToDelete);
+        await collectCollectionRefs(\`projects/\${projectId}/roadmap\`, refsToDelete);
 
         // 2. Delete Global References (orphaned data)
         const globalTasksQuery = query(collection(db, 'tasks'), where('projectId', '==', projectId));
@@ -104,7 +106,7 @@ export const deleteProjectDeep = async (projectId: string) => {
         // Execute batch deletion
         await deleteDocumentsInBatches(refsToDelete);
     } catch (error) {
-        console.error(`Error deleting project ${projectId}:`, error);
+        console.error(\`Error deleting project \${projectId}:\`, error);
         throw error;
     }
 };
@@ -134,7 +136,7 @@ export const deleteTaskDeep = async (projectId: string, boardId: string, taskId:
         await collectTaskRefs(taskId, refsToDelete);
         await deleteDocumentsInBatches(refsToDelete);
     } catch (error) {
-        console.error(`Error deleting task deep ${taskId}:`, error);
+        console.error(\`Error deleting task deep \${taskId}:\`, error);
         throw error;
     }
 };
@@ -151,7 +153,7 @@ export const deleteStageDeep = async (projectId: string, boardId: string, stageI
             where('stageId', '==', stageId)
         );
         const tasksSnap = await getDocs(tasksQuery);
-        
+
         for (const taskDoc of tasksSnap.docs) {
             await collectTaskRefs(taskDoc.id, refsToDelete);
         }
@@ -159,7 +161,7 @@ export const deleteStageDeep = async (projectId: string, boardId: string, stageI
         refsToDelete.push(doc(db, 'stages', stageId) as DocumentReference);
         await deleteDocumentsInBatches(refsToDelete);
     } catch (error) {
-        console.error(`Error deleting stage deep ${stageId}:`, error);
+        console.error(\`Error deleting stage deep \${stageId}:\`, error);
         throw error;
     }
 };
@@ -170,24 +172,24 @@ export const deleteStageDeep = async (projectId: string, boardId: string, stageI
 export const deleteBoardDeep = async (projectId: string, boardId: string) => {
     try {
         const refsToDelete: DocumentReference[] = [];
-        const boardPath = `projects/${projectId}/boards/${boardId}`;
-        
+        const boardPath = \`projects/\${projectId}/boards/\${boardId}\`;
+
         const boardStagesSnap = await getDocs(query(collection(db, 'stages'), where('boardId', '==', boardId)));
         for (const stageDoc of boardStagesSnap.docs) {
              refsToDelete.push(stageDoc.ref as DocumentReference);
         }
-        
+
         const tasksSnap = await getDocs(query(collection(db, 'tasks'), where('boardId', '==', boardId)));
         for (const t of tasksSnap.docs) {
              await collectTaskRefs(t.id, refsToDelete);
         }
-        
-        await collectCollectionRefs(`${boardPath}/tags`, refsToDelete);
+
+        await collectCollectionRefs(\`\${boardPath}/tags\`, refsToDelete);
         refsToDelete.push(doc(db, boardPath) as DocumentReference);
 
         await deleteDocumentsInBatches(refsToDelete);
     } catch (error) {
-        console.error(`Error deleting board deep ${boardId}:`, error);
+        console.error(\`Error deleting board deep \${boardId}:\`, error);
         throw error;
     }
 };
@@ -204,7 +206,7 @@ export const purgeStaleData = async () => {
         const validProjectIds = new Set(projectsSnap.docs.map(d => d.id));
 
         const collectionsToCheck = ['tasks', 'activities', 'events'];
-        
+
         for (const colName of collectionsToCheck) {
             const snap = await getDocs(collection(db, colName));
             const batch = writeBatch(db);
@@ -234,7 +236,7 @@ export const purgeStaleData = async () => {
         for (const itemDoc of feedbackSnap.docs) {
              const projectRef = itemDoc.ref.parent.parent;
              if (projectRef && !validProjectIds.has(projectRef.id)) {
-                  await deleteCollection(`${itemDoc.ref.path}/comments`);
+                  await deleteCollection(\`\${itemDoc.ref.path}/comments\`);
                   await deleteDoc(itemDoc.ref);
                   deletedCount++;
              }
@@ -244,7 +246,7 @@ export const purgeStaleData = async () => {
         for (const mbDoc of moodboardsSnap.docs) {
              const projectRef = mbDoc.ref.parent.parent;
              if (projectRef && !validProjectIds.has(projectRef.id)) {
-                 await deleteCollection(`${mbDoc.ref.path}/moodboard_items`);
+                 await deleteCollection(\`\${mbDoc.ref.path}/moodboard_items\`);
                  await deleteDoc(mbDoc.ref);
                  deletedCount++;
              }
@@ -258,10 +260,13 @@ export const purgeStaleData = async () => {
                  deletedCount++;
              }
         }
-        
+
         return deletedCount;
     } catch (error) {
         console.error("Error purging stale data:", error);
         throw error;
     }
 };
+`;
+
+fs.writeFileSync('utils/dataCleanup.ts', content);
