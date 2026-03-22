@@ -130,6 +130,7 @@ const VideoPlayerHUD: React.FC<VideoPlayerHUDProps> = ({
                     onClick={isPlaying ? onPause : onPlay}
                     className="w-10 h-10 rounded-full bg-primary text-black flex items-center justify-center hover:bg-primary-hover transition-colors"
                     title={isPlaying ? 'Pause' : 'Play'}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
                 >
                     {isPlaying ? <PauseIcon className="w-5 h-5" /> : <PlayIcon className="w-5 h-5 ml-0.5" />}
                 </button>
@@ -137,6 +138,7 @@ const VideoPlayerHUD: React.FC<VideoPlayerHUDProps> = ({
                     onClick={onStop}
                     className="w-8 h-8 rounded-lg bg-glass-light text-text-primary flex items-center justify-center hover:bg-border-color transition-colors"
                     title="Stop"
+                    aria-label="Stop playback"
                 >
                     <StopIcon className="w-4 h-4" />
                 </button>
@@ -184,6 +186,9 @@ const VideoPlayerHUD: React.FC<VideoPlayerHUDProps> = ({
                 <button 
                     onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                     className="px-2 py-1 text-xs font-bold text-text-primary bg-glass-light rounded hover:bg-border-color transition-colors"
+                    aria-label="Playback speed"
+                    aria-expanded={showSpeedMenu}
+                    aria-haspopup="true"
                 >
                     {playbackRate}x
                 </button>
@@ -211,6 +216,7 @@ const VideoPlayerHUD: React.FC<VideoPlayerHUDProps> = ({
                     onClick={onMuteToggle}
                     className="w-8 h-8 rounded-lg bg-glass-light text-text-primary flex items-center justify-center hover:bg-border-color transition-colors"
                     title={isMuted ? 'Unmute' : 'Mute'}
+                    aria-label={isMuted ? 'Unmute' : 'Mute'}
                 >
                     <VolumeIcon className="w-4 h-4" muted={isMuted || volume === 0} />
                 </button>
@@ -236,6 +242,9 @@ const VideoPlayerHUD: React.FC<VideoPlayerHUDProps> = ({
                     onClick={() => setShowZoomMenu(!showZoomMenu)}
                     className="w-8 h-8 rounded-lg bg-glass-light text-text-primary flex items-center justify-center hover:bg-border-color transition-colors"
                     title="Zoom"
+                    aria-label="Zoom"
+                    aria-expanded={showZoomMenu}
+                    aria-haspopup="true"
                 >
                     <ZoomIcon className="w-4 h-4" />
                 </button>
@@ -264,6 +273,7 @@ const VideoPlayerHUD: React.FC<VideoPlayerHUDProps> = ({
                 onClick={onPinsToggle}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${showPins ? 'bg-primary/20 text-primary' : 'bg-glass-light text-text-secondary'}`}
                 title={showPins ? 'Hide Pins' : 'Show Pins'}
+                aria-label={showPins ? 'Hide comment pins' : 'Show comment pins'}
             >
                 <EyeIcon className="w-4 h-4" off={!showPins} />
             </button>
