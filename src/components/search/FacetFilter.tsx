@@ -185,6 +185,7 @@ export const FacetSidebar: React.FC<FacetSidebarProps> = ({
             className="facet-sidebar__clear-all"
             onClick={onClearAll}
             type="button"
+            aria-label="Clear all filters"
           >
             Clear all
           </button>
