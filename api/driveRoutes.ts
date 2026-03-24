@@ -670,9 +670,9 @@ router.get('/files/:fileId/tags', async (req: Request, res: Response) => {
       return res.json({ success: true, data: { tags: [] } });
     }
     // Fetch tag details
-    const tagsSnap = await Promise.all(
-      tagIds.map((id) => db.collection('fileTags').doc(id).get())
-    );
+    // ⚡ Bolt: Use db.getAll for efficient batched fetching instead of Promise.all with individual gets
+    const tagRefs = tagIds.map((id) => db.collection('fileTags').doc(id));
+    const tagsSnap = await db.getAll(...tagRefs);
     const tags = tagsSnap
       .filter((doc) => doc.exists)
       .map((doc) => ({ id: doc.id, ...doc.data() }));
