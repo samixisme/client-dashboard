@@ -25,6 +25,8 @@ router.get('/', async (req: Request, res: Response) => {
     const { data: html } = await axios.get(rawUrl, {
       timeout: 5000,
       maxRedirects: 3,
+      maxContentLength: 5 * 1024 * 1024, // 5MB limit to prevent DoS
+      maxBodyLength: 5 * 1024 * 1024,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LinkMetaBot/1.0)' },
       responseType: 'text',
     });
