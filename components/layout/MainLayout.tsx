@@ -44,10 +44,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout, fullBleed }
         <div className="h-[88px] flex items-center justify-between px-4 md:px-10 shrink-0 no-print">
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-2">
-                <button onClick={() => navigate(-1)} title="Go back" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
+                <button aria-label="Go back" onClick={() => navigate(-1)} title="Go back" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
                     <ArrowLeftIcon className="h-5 w-5" />
                 </button>
-                <button onClick={() => navigate(1)} title="Go forward" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
+                <button aria-label="Go forward" onClick={() => navigate(1)} title="Go forward" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
                     <ArrowRightIcon className="h-5 w-5" />
                 </button>
             </div>
