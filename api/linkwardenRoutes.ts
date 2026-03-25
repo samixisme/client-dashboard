@@ -19,6 +19,9 @@ router.get('/links', async (req: Request, res: Response) => {
     return res.status(503).json({ error: 'Linkwarden token not configured on server.' });
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
   try {
     const qs = new URLSearchParams();
     const allowed = ['searchQueryString', 'tagId', 'collectionId', 'type', 'skip', 'take',
@@ -30,7 +33,7 @@ router.get('/links', async (req: Request, res: Response) => {
     const qsStr = qs.toString() ? `?${qs.toString()}` : '';
     const upstream = `${LINKWARDEN_BASE_URL}/api/v1/search${qsStr}`;
 
-    const response = await fetch(upstream, { headers: authHeaders() });
+    const response = await fetch(upstream, { headers: authHeaders(), signal: controller.signal as any });
     const body = await response.text();
 
     if (!response.ok) {
@@ -39,9 +42,14 @@ router.get('/links', async (req: Request, res: Response) => {
 
     res.setHeader('Content-Type', 'application/json');
     res.send(body);
-  } catch (err) {
+  } catch (err: any) {
     console.error('[linkwarden] links error:', err);
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Gateway Timeout: Linkwarden took too long to respond' });
+    }
     res.status(500).json({ error: 'Failed to fetch links from Linkwarden' });
+  } finally {
+    clearTimeout(timeoutId);
   }
 });
 
@@ -51,9 +59,12 @@ router.get('/collections', async (_req: Request, res: Response) => {
     return res.status(503).json({ error: 'Linkwarden token not configured on server.' });
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
   try {
     const upstream = `${LINKWARDEN_BASE_URL}/api/v1/collections`;
-    const response = await fetch(upstream, { headers: authHeaders() });
+    const response = await fetch(upstream, { headers: authHeaders(), signal: controller.signal as any });
     const body = await response.text();
 
     if (!response.ok) {
@@ -62,9 +73,14 @@ router.get('/collections', async (_req: Request, res: Response) => {
 
     res.setHeader('Content-Type', 'application/json');
     res.send(body);
-  } catch (err) {
+  } catch (err: any) {
     console.error('[linkwarden] collections error:', err);
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Gateway Timeout: Linkwarden took too long to respond' });
+    }
     res.status(500).json({ error: 'Failed to fetch collections from Linkwarden' });
+  } finally {
+    clearTimeout(timeoutId);
   }
 });
 

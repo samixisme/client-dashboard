@@ -13,22 +13,35 @@ async function paymenterFetch<T>(
   endpoint: string,
   options: { method?: string; body?: unknown } = {}
 ): Promise<T> {
-  const res = await fetch(`${PAYMENTER_URL}/api/v1/admin${endpoint}`, {
-    method: options.method ?? 'GET',
-    headers: {
-      Authorization: `Bearer ${PAYMENTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    ...(options.body ? { body: JSON.stringify(options.body) } : {}),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout to prevent DoS
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`Paymenter API ${res.status}: ${text}`);
+  try {
+    const res = await fetch(`${PAYMENTER_URL}/api/v1/admin${endpoint}`, {
+      method: options.method ?? 'GET',
+      headers: {
+        Authorization: `Bearer ${PAYMENTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+      signal: controller.signal as any,
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => res.statusText);
+      throw new Error(`Paymenter API ${res.status}: ${text}`);
+    }
+
+    return await res.json() as T;
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      throw new Error('Paymenter API timeout: Request exceeded 15 seconds');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return res.json() as Promise<T>;
 }
 
 // ─── Health / connectivity check ─────────────────────────────────────────────
