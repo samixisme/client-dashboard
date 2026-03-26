@@ -217,6 +217,7 @@ const SearchPage: React.FC = () => {
               value={query}
               onChange={handleQueryChange}
               autoFocus
+              aria-label="Search query"
             />
             {query && (
               <button
@@ -226,10 +227,11 @@ const SearchPage: React.FC = () => {
                   newParams.delete('q');
                   setSearchParams(newParams, { replace: true });
                 }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+                className="search-page__clear-btn"
+                aria-label="Clear search"
                 type="button"
               >
-                <X size={16} />
+                <X size={16} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -249,9 +251,10 @@ const SearchPage: React.FC = () => {
                     );
                   }}
                   type="button"
+                  aria-label={`Remove filter: ${tag.key} ${tag.value}`}
                 >
                   {tag.key}: {tag.value}
-                  <X size={12} />
+                  <X size={12} aria-hidden="true" />
                 </button>
               ))}
               <button
