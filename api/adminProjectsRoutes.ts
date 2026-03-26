@@ -131,8 +131,10 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Validate memberIds exist in users collection
     if (data.memberIds.length > 0) {
-      const memberChecks = await Promise.all(
-        data.memberIds.map((uid) => db.collection('users').doc(uid).get())
+      // ⚡ Bolt: Replace N+1 Promise.all(.get()) network requests with a single batched db.getAll()
+      // db.getAll fetches up to 1000 documents efficiently in one operation and bypasses the 30-item 'in' operator limit.
+      const memberChecks = await db.getAll(
+        ...data.memberIds.map((uid) => db.collection('users').doc(uid))
       );
       const missing = data.memberIds.filter((_, i) => !memberChecks[i].exists);
       if (missing.length > 0) {
