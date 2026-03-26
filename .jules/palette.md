@@ -1,3 +1,3 @@
-## 2024-03-13 - Added ARIA attributes to search filters and sorting
-**Learning:** Screen readers need dynamic context for repeated "Clear all" buttons in facet filters, otherwise they all sound identical. Also, custom sort dropdowns must properly signal their expanded/collapsed state using `aria-expanded` to allow keyboard/screen reader users to understand the UI's state.
-**Action:** Always use dynamic labels (e.g., ``aria-label={`Clear all ${label} filters`}``) when multiple identical actions exist on a page, and always tie `aria-expanded` to the state variable controlling a custom dropdown's visibility.
+## 2024-05-20 - [ARIA state for Timeline Expand/Collapse Toggles]
+**Learning:** Found that multiple icon-only toggle buttons in dynamic timeline/sidebar views lacked proper screen reader context for their expanded/collapsed states.
+**Action:** Always add `aria-expanded` and dynamic `aria-label`s to custom toggle buttons (like accordion or sidebar toggles), especially when they use icons instead of text, to ensure state changes are announced properly to assistive technologies.
