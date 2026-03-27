@@ -88,6 +88,21 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
       facets: ['status', 'priority', 'type'],
     });
 
+
+  // Compute flat list of all hits for keyboard navigation
+  const allHits = React.useMemo(() => {
+    const hits: Array<{ hit: SearchHit; indexUid: string }> = [];
+    if (!results) return hits;
+    for (const [uid, r] of Object.entries(results)) {
+      if (r.hits && r.hits.length > 0) {
+        for (const hit of r.hits) {
+          hits.push({ hit, indexUid: uid });
+        }
+      }
+    }
+    return hits;
+  }, [results]);
+
   // Open/close handlers
   const openSearch = useCallback(() => {
     setIsOpen(true);
@@ -101,6 +116,17 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
     setSelectedIndex(-1);
   }, [clearAll]);
 
+  // Handle result navigation
+  const handleResultClick = useCallback(
+    (hit: SearchHit, indexUid: string) => {
+      addRecentSearch(query);
+      onSearch?.(query);
+      closeSearch();
+      navigate(getResultRoute(hit, indexUid));
+    },
+    [query, onSearch, closeSearch, navigate]
+  );
+
   // Global keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -113,14 +139,30 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
         }
       }
 
-      if (e.key === 'Escape' && isOpen) {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
         closeSearch();
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev < allHits.length - 1 ? prev + 1 : prev));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > -1 ? prev - 1 : prev));
+      } else if (e.key === 'Enter') {
+        if (selectedIndex > -1 && selectedIndex < allHits.length) {
+          e.preventDefault();
+          const selected = allHits[selectedIndex];
+          handleResultClick(selected.hit, selected.indexUid);
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, openSearch, closeSearch]);
+  }, [isOpen, openSearch, closeSearch, allHits, selectedIndex, handleResultClick]);
 
   // Click outside to close
   useEffect(() => {
@@ -133,17 +175,6 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [isOpen, closeSearch]);
-
-  // Handle result navigation
-  const handleResultClick = useCallback(
-    (hit: SearchHit, indexUid: string) => {
-      addRecentSearch(query);
-      onSearch?.(query);
-      closeSearch();
-      navigate(getResultRoute(hit, indexUid));
-    },
-    [query, onSearch, closeSearch, navigate]
-  );
 
   // Handle query change
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
