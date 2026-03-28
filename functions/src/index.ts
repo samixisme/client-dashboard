@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import * as crypto from 'crypto';
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -14,6 +15,42 @@ const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'my-super-secre
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID || '';
 const INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET || '';
 const INSTAGRAM_REDIRECT_URI = 'https://us-central1-client-dashboard-v2.cloudfunctions.net/instagramOAuthCallback';
+
+/**
+ * Validates a Meta signed_request using the application's client secret.
+ * Decodes the base64url payload, verifies the HMAC-SHA256 signature,
+ * and securely compares the expected signature to prevent timing attacks.
+ */
+function validateSignedRequest(signedRequest: string, clientSecret: string): any {
+  if (!signedRequest || typeof signedRequest !== 'string') {
+    throw new Error('Missing or invalid signed_request');
+  }
+
+  const parts = signedRequest.split('.');
+  if (parts.length !== 2) {
+    throw new Error('Invalid signed_request format');
+  }
+
+  const [encodedSig, payload] = parts;
+
+  // Base64url decode signature
+  const sig = Buffer.from(encodedSig.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+
+  // Compute expected signature
+  const expectedSig = crypto.createHmac('sha256', clientSecret)
+    .update(payload)
+    .digest();
+
+  // Securely compare signatures to prevent timing attacks
+  if (sig.length !== expectedSig.length || !crypto.timingSafeEqual(sig, expectedSig)) {
+    throw new Error('Invalid signed_request signature');
+  }
+
+  // Decode and parse payload
+  const data = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+  return data;
+}
+
 
 /**
  * Instagram Webhook Endpoint
@@ -367,16 +404,15 @@ export const instagramDeauthorizeCallback = functions.https.onRequest(async (req
 
     console.log('🚫 Instagram deauthorization request received');
 
-    // Parse the signed request (Meta sends a base64 encoded signature + payload)
-    if (!signed_request) {
-      console.error('No signed_request in deauthorization callback');
-      res.status(400).json({ error: 'Missing signed_request' });
+    // Validate and parse the signed request using the app secret
+    let data;
+    try {
+      data = validateSignedRequest(signed_request, INSTAGRAM_CLIENT_SECRET);
+    } catch (err: any) {
+      console.error('Invalid signed_request in Instagram deauthorization callback:', err.message);
+      res.status(400).json({ error: 'Invalid signed_request' });
       return;
     }
-
-    // Decode the signed request
-    const [_encodedSig, payload] = signed_request.split('.');
-    const data = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
 
     console.log('Deauthorization data:', { user_id: data.user_id, algorithm: data.algorithm });
 
@@ -445,16 +481,15 @@ export const instagramDataDeletionCallback = functions.https.onRequest(async (re
 
     console.log('🗑️ Instagram data deletion request received');
 
-    // Parse the signed request (Meta sends a base64 encoded signature + payload)
-    if (!signed_request) {
-      console.error('No signed_request in data deletion callback');
-      res.status(400).json({ error: 'Missing signed_request' });
+    // Validate and parse the signed request using the app secret
+    let data;
+    try {
+      data = validateSignedRequest(signed_request, INSTAGRAM_CLIENT_SECRET);
+    } catch (err: any) {
+      console.error('Invalid signed_request in Instagram data deletion callback:', err.message);
+      res.status(400).json({ error: 'Invalid signed_request' });
       return;
     }
-
-    // Decode the signed request
-    const [_encodedSig, payload] = signed_request.split('.');
-    const data = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
 
     console.log('Data deletion request:', { user_id: data.user_id, algorithm: data.algorithm });
 
@@ -679,15 +714,15 @@ export const facebookDeauthorizeCallback = functions.https.onRequest(async (req,
 
     console.log('🔓 Facebook deauthorization request received');
 
-    if (!signed_request) {
-      console.error('No signed_request in deauthorization callback');
-      res.status(400).json({ error: 'Missing signed_request' });
+    // Validate and parse the signed request using the app secret
+    let data;
+    try {
+      data = validateSignedRequest(signed_request, FACEBOOK_CLIENT_SECRET);
+    } catch (err: any) {
+      console.error('Invalid signed_request in Facebook deauthorization callback:', err.message);
+      res.status(400).json({ error: 'Invalid signed_request' });
       return;
     }
-
-    // Decode the signed request
-    const [_encodedSig, payload] = signed_request.split('.');
-    const data = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
 
     console.log('Deauthorization data:', { user_id: data.user_id });
 
@@ -757,15 +792,15 @@ export const facebookDataDeletionCallback = functions.https.onRequest(async (req
 
     console.log('🗑️ Facebook data deletion request received');
 
-    if (!signed_request) {
-      console.error('No signed_request in data deletion callback');
-      res.status(400).json({ error: 'Missing signed_request' });
+    // Validate and parse the signed request using the app secret
+    let data;
+    try {
+      data = validateSignedRequest(signed_request, FACEBOOK_CLIENT_SECRET);
+    } catch (err: any) {
+      console.error('Invalid signed_request in Facebook data deletion callback:', err.message);
+      res.status(400).json({ error: 'Invalid signed_request' });
       return;
     }
-
-    // Decode the signed request
-    const [_encodedSig, payload] = signed_request.split('.');
-    const data = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
 
     console.log('Data deletion request:', { user_id: data.user_id });
 
