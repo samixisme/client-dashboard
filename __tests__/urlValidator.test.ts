@@ -75,24 +75,41 @@ describe('urlValidator', () => {
       expect(result.isValid).toBe(false);
     });
 
-    it('blocks IPv6 loopback ::1 (raw form)', () => {
-      // Bracket-notation IPv6 may bypass validator library;
-      // raw hostname form is caught by the regex
+    it('blocks IPv6 loopback ::1', () => {
       const result = validateUrl('http://[::1]:8080');
-      // Validator library inconsistently handles bracket IPv6 — document actual behavior
-      expect(typeof result.isValid).toBe('boolean');
+      expect(result.isValid).toBe(false);
     });
 
-    it('rejects IPv6 ULA fc00: (via invalid URL format)', () => {
-      // The validator library may not recognize bracket-notation IPv6 as valid URL format
-      // The important protection is that IPv4 private ranges are blocked
+    it('blocks IPv4-mapped IPv6 loopback addresses', () => {
+      const result = validateUrl('http://[::ffff:127.0.0.1]');
+      expect(result.isValid).toBe(false);
+      const result2 = validateUrl('http://[::ffff:7f00:1]');
+      expect(result2.isValid).toBe(false);
+    });
+
+    it('rejects IPv6 ULA fc00:', () => {
       const result = validateUrl('http://[fc00::1]');
-      expect(typeof result.isValid).toBe('boolean');
+      expect(result.isValid).toBe(false);
     });
 
-    it('rejects IPv6 link-local fe80: (via invalid URL format)', () => {
+    it('rejects IPv6 ULA fd00:', () => {
+      const result = validateUrl('http://[fd00::1]');
+      expect(result.isValid).toBe(false);
+    });
+
+    it('rejects IPv6 link-local fe80:', () => {
       const result = validateUrl('http://[fe80::1]');
-      expect(typeof result.isValid).toBe('boolean');
+      expect(result.isValid).toBe(false);
+    });
+
+    it('blocks IPv6 unspecified address ::', () => {
+      const result = validateUrl('http://[::]');
+      expect(result.isValid).toBe(false);
+    });
+
+    it('blocks IPv6 unspecified address 0000:', () => {
+      const result = validateUrl('http://[0000:0000:0000:0000:0000:0000:0000:0000]');
+      expect(result.isValid).toBe(false);
     });
 
     it('blocks 0.x.x.x range', () => {
