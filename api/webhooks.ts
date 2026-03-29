@@ -7,10 +7,12 @@ const webhookRouter = Router();
 
 // Webhook verify token - should match what you set in Meta App Dashboard
 // This is stored in .env and used to verify Meta's subscription request
-const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'your-webhook-verify-token-here';
+const WEBHOOK_VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || (process.env.NODE_ENV === 'test' ? 'test-token' : undefined);
 
-if (WEBHOOK_VERIFY_TOKEN === 'your-webhook-verify-token-here') {
-    console.warn('⚠️  Using default WEBHOOK_VERIFY_TOKEN. Meta webhook validation may fail in production.');
+if (!WEBHOOK_VERIFY_TOKEN) {
+    console.error('🚨 CRITICAL: WEBHOOK_VERIFY_TOKEN is not set in the environment. Meta webhook verification will fail.');
+} else if (WEBHOOK_VERIFY_TOKEN === 'test-token' && process.env.NODE_ENV !== 'test') {
+    console.error('🚨 CRITICAL: Using test WEBHOOK_VERIFY_TOKEN in a non-test environment.');
 }
 
 /**
