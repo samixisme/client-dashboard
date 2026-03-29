@@ -670,8 +670,10 @@ router.get('/files/:fileId/tags', async (req: Request, res: Response) => {
       return res.json({ success: true, data: { tags: [] } });
     }
     // Fetch tag details
-    const tagsSnap = await Promise.all(
-      tagIds.map((id) => db.collection('fileTags').doc(id).get())
+    // ⚡ Bolt: Replace N+1 Promise.all(.get()) network requests with a single batched db.getAll()
+    // db.getAll fetches up to 1000 documents efficiently in one operation and bypasses the 30-item 'in' operator limit.
+    const tagsSnap = await db.getAll(
+      ...tagIds.map((id) => db.collection('fileTags').doc(id))
     );
     const tags = tagsSnap
       .filter((doc) => doc.exists)
