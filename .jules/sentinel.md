@@ -1,13 +1,4 @@
-## 2025-02-26 - Prevent XSS from URL parameters via DOM insertion
-**Vulnerability:** XSS vulnerability in `SocialMediaPage.tsx` caused by directly interpolating URL parameters (`result.username`, `result.message`) into a template string passed to `.innerHTML` for toast notifications.
-**Learning:** URL parameters fetched during OAuth callbacks can contain malicious payloads. If directly assigned to `.innerHTML`, script tags or other malicious HTML can be executed by the browser. Even simple fields like `username` or `message` should be considered untrusted.
-**Prevention:** Never use template literals containing dynamic values with `.innerHTML`. Always create empty containers (e.g., `<span class="message-container"></span>`) and then use `.textContent` or `.innerText` to securely inject dynamic content, ensuring it is treated as text, not executable HTML.
-## 2025-03-15 - SSRF Protection on Proxy API Endpoints
-**Vulnerability:** A Server-Side Request Forgery (SSRF) risk existed in the `POST /api/social/fetch/:platform` endpoint, where user-supplied inputs (`endpoint` containing a full URL) were proxied using `axios` without any internal validation. This could allow an attacker to make the server initiate requests to restricted/private networks or arbitrary hostnames on their behalf.
-**Learning:** Even heavily customized proxy configurations with some initial prefix-checking logic (like `endpoint.startsWith('http')`) can be bypassed and need formal URL validation. The repository already had an existing helper `validateUrl` in `api/urlValidator.ts` designed to block access to private IPs and metadata hostnames.
-**Prevention:** Always validate full, un-trusted URLs using the established `validateUrl` utility before feeding them into backend HTTP clients (`axios`, `fetch`) when building proxy endpoints.
-
-## 2025-02-17 - Webhook Signature Validation Missing
-**Vulnerability:** The `/api/webhooks/instagram` endpoint accepted POST requests without validating the Meta webhook payload signature, allowing arbitrary, potentially malicious injection of data into the backend systems via unverified events.
-**Learning:** Adding `crypto.timingSafeEqual` directly on the request signature and the expected hash without first asserting `signatureBuffer.length === expectedBuffer.length` creates an unhandled promise rejection and exploitable DoS condition in Express, because `timingSafeEqual` strictly expects buffers of identical lengths.
-**Prevention:** Always assert length equivalence before invoking `timingSafeEqual`. Furthermore, ensure the Express middleware is specifically configured (via `verify` in `express.json`) to persist the raw body buffer, since computing HMAC signatures depends entirely on the original raw bytes of the request.
+## 2024-05-24 - Fix IPv4-mapped IPv6 SSRF bypass
+**Vulnerability:** The SSRF protection in `api/urlValidator.ts` blocked standard loopback IPs like `127.0.0.1` but failed to block IPv4-mapped IPv6 loopbacks like `[::ffff:127.0.0.1]` or `[::ffff:7f00:1]` and bracketed private IPv6 ranges.
+**Learning:** `new URL(url).hostname` retains the brackets for IPv6 addresses (e.g., `[::1]`). The existing regexes like `/^::1$/` failed to match bracketed IP addresses, making the SSRF protection bypassable using `validator.isURL` which permits these formats.
+**Prevention:** Always account for bracketed notation `\[?` and `\]?` when validating IPv6 addresses via regex, and explicitly block the IPv4-mapped IPv6 subnet `::ffff:/96` to prevent bypasses targeting internal IPv4 services.
