@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useData } from '../../../contexts/DataContext';
 import { Task } from '../../../types';
 
@@ -14,7 +14,17 @@ const PriorityBox: React.FC<{ priority: Task['priority'] }> = ({ priority }) => 
 
 const TableView: React.FC<{ boardId: string; onTaskClick: (task: Task) => void; }> = ({ boardId, onTaskClick }) => {
     const { data } = useData();
-    const tasks = data.tasks.filter(t => t.boardId === boardId);
+
+    // Convert arrays to Maps for O(1) lookups during render loop, optimizing performance from O(N*M) to O(N+M)
+    const { tasks, stagesMap, membersMap, tagsMap } = useMemo(() => {
+        const boardTasks = data.tasks.filter(t => t.boardId === boardId);
+
+        const sMap = new Map(data.stages.map(s => [s.id, s]));
+        const mMap = new Map(data.board_members.map(m => [m.id, m]));
+        const tMap = new Map(data.tags.map(t => [t.id, t]));
+
+        return { tasks: boardTasks, stagesMap: sMap, membersMap: mMap, tagsMap: tMap };
+    }, [data.tasks, data.stages, data.board_members, data.tags, boardId]);
     
     return (
         <div className="w-full bg-glass/60 backdrop-blur-xl rounded-xl border border-border-color overflow-hidden shadow-xl">
@@ -32,9 +42,9 @@ const TableView: React.FC<{ boardId: string; onTaskClick: (task: Task) => void; 
                     </thead>
                     <tbody>
                         {tasks.map(task => {
-                            const stage = data.stages.find(s => s.id === task.stageId);
-                            const assignees = data.board_members.filter(m => task.assignees.includes(m.id));
-                            const taskTags = data.tags.filter(t => task.labelIds.includes(t.id));
+                            const stage = stagesMap.get(task.stageId);
+                            const assignees = task.assignees.map(id => membersMap.get(id)).filter(Boolean) as typeof data.board_members;
+                            const taskTags = task.labelIds.map(id => tagsMap.get(id)).filter(Boolean) as typeof data.tags;
                             return (
                                 <tr key={task.id} onClick={() => onTaskClick(task)} className="border-b border-border-color last:border-b-0 bg-glass/20 hover:bg-glass-light/80 hover:shadow-lg hover:scale-[1.01] cursor-pointer transition-all duration-300">
                                     <td className="p-4 font-semibold text-text-primary whitespace-nowrap">{task.title}</td>
