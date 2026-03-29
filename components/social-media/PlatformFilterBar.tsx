@@ -42,6 +42,8 @@ const PlatformFilterBar: React.FC<PlatformFilterBarProps> = ({
       {showAll && (
         <button
           onClick={handleToggleAll}
+          aria-pressed={allSelected}
+          aria-label={allSelected ? 'Deselect all platforms' : 'Select all platforms'}
           className={`
             px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300
             ${allSelected
@@ -62,6 +64,8 @@ const PlatformFilterBar: React.FC<PlatformFilterBarProps> = ({
           <button
             key={platform}
             onClick={() => onTogglePlatform(platform)}
+            aria-pressed={isSelected}
+            aria-label={`Toggle ${name} platform`}
             className={`
               relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300
               flex items-center gap-2 group overflow-hidden
