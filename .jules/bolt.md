@@ -5,3 +5,7 @@
 ## 2026-03-13 - Optimizing Firebase Admin SDK document fetches
 **Learning:** For fetching multiple Firestore documents by ID/reference in the Admin SDK, using individual `doc().get()` calls inside `Promise.all` creates separate network requests and is less efficient.
 **Action:** Always use `db.getAll(...refs)` instead. It is significantly more efficient, fetches up to 1000 documents in a single batched network request, and bypasses the 30-item limit of the 'in' operator.
+
+## 2026-03-30 - Memoizing Hook Return Values
+**Learning:** Custom hooks that compute values from state (using operations like `Object.values`, `Object.entries`, `reduce`, and `some`) will recalculate those values on every render if left unmemoized. Returning unmemoized new object references (like the `facets` object) from a hook causes unnecessary re-renders in all components consuming the hook.
+**Action:** Always wrap derived state calculations and object transformations in custom hooks with `useMemo`, using the underlying state variables as dependencies, to preserve object stability and reduce computational overhead.
