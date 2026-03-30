@@ -24,7 +24,7 @@ const IconViewSwitcher: React.FC<IconViewSwitcherProps> = ({
         : 'flex flex-row gap-3';
 
     return (
-        <div className={containerClass}>
+        <div className={containerClass} role="group" aria-label="View mode">
             {options.map(option => {
                 const isActive = currentView === option.id;
 
@@ -33,6 +33,7 @@ const IconViewSwitcher: React.FC<IconViewSwitcherProps> = ({
                         key={option.id}
                         onClick={() => onSwitchView(option.id)}
                         aria-label={`Switch to ${option.name} view`}
+                        aria-pressed={isActive}
                         title={option.name}
                         className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 ${
                             isActive
