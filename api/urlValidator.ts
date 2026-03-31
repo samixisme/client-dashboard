@@ -10,8 +10,10 @@ const PRIVATE_IP_RANGES = [
   /^0\./,
   /^169\.254\./,
   /^::1$/,
-  /^fc00:/,
-  /^fe80:/,
+  /^::$/, // Unspecified address, can be used to bypass localhost
+  /^::ffff:/, // IPv4-mapped IPv6 address (e.g. ::ffff:127.0.0.1)
+  /^f[cd][0-9a-f]{2}:/, // Unique Local Addresses (fc00::/7)
+  /^fe[89ab][0-9a-f]:/, // Link-local addresses
 ];
 
 // Blocked hostnames
@@ -51,8 +53,10 @@ export function validateUrl(urlString: string): { isValid: boolean; error?: stri
   }
 
   // Block private IP ranges
+  // Remove brackets for IPv6 address parsing
+  const ipHostname = hostname.replace(/^\[|\]$/g, '');
   for (const range of PRIVATE_IP_RANGES) {
-    if (range.test(hostname)) {
+    if (range.test(ipHostname)) {
       return { isValid: false, error: 'Access to private IP addresses is not allowed' };
     }
   }
