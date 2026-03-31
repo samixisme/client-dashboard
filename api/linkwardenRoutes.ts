@@ -30,7 +30,19 @@ router.get('/links', async (req: Request, res: Response) => {
     const qsStr = qs.toString() ? `?${qs.toString()}` : '';
     const upstream = `${LINKWARDEN_BASE_URL}/api/v1/search${qsStr}`;
 
-    const response = await fetch(upstream, { headers: authHeaders() });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    let response;
+    try {
+      response = await fetch(upstream, {
+        headers: authHeaders(),
+        signal: controller.signal as any
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
     const body = await response.text();
 
     if (!response.ok) {
@@ -53,7 +65,20 @@ router.get('/collections', async (_req: Request, res: Response) => {
 
   try {
     const upstream = `${LINKWARDEN_BASE_URL}/api/v1/collections`;
-    const response = await fetch(upstream, { headers: authHeaders() });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    let response;
+    try {
+      response = await fetch(upstream, {
+        headers: authHeaders(),
+        signal: controller.signal as any
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
     const body = await response.text();
 
     if (!response.ok) {
