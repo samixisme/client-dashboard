@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2024-05-24 - DoS vulnerability via Unhandled Promise Rejections in Fetch
+**Vulnerability:** The application used `fetch` inside async route handlers with `AbortController` timeouts without wrapping the calls in `try...catch` blocks.
+**Learning:** When `AbortController` triggers a timeout, `fetch` throws an `AbortError`. If this is not caught in an async function, it causes an Unhandled Promise Rejection, which crashes the entire Node.js process. Furthermore, cleaning up the timer using `clearTimeout` right after the `await fetch` will be skipped if the fetch fails, leading to memory leaks.
+**Prevention:** Always wrap `fetch` calls implementing timeouts inside a `try...catch...finally` block to handle the `AbortError` gracefully and ensure `clearTimeout(timeout)` is executed in the `finally` block.

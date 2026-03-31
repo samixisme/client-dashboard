@@ -13,15 +13,26 @@ async function paymenterFetch<T>(
   endpoint: string,
   options: { method?: string; body?: unknown } = {}
 ): Promise<T> {
-  const res = await fetch(`${PAYMENTER_URL}/api/v1/admin${endpoint}`, {
-    method: options.method ?? 'GET',
-    headers: {
-      Authorization: `Bearer ${PAYMENTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    ...(options.body ? { body: JSON.stringify(options.body) } : {}),
-  });
+  const url = `${PAYMENTER_URL}/api/v1/admin${endpoint}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method: options.method ?? 'GET',
+      headers: {
+        Authorization: `Bearer ${PAYMENTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      signal: controller.signal as any,
+      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
