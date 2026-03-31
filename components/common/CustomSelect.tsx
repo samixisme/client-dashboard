@@ -23,7 +23,10 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listboxRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const selectedOption = options.find(opt => opt.value === value);
 
@@ -37,26 +40,110 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      // Reset active index when opening to the currently selected item or the first item
+      const currentIndex = options.findIndex(opt => opt.value === value);
+      setActiveIndex(currentIndex >= 0 ? currentIndex : 0);
+    } else {
+      setActiveIndex(-1);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, options, value]);
+
+  // Scroll active item into view
+  useEffect(() => {
+    if (isOpen && activeIndex >= 0 && listboxRef.current) {
+      const activeElement = listboxRef.current.children[activeIndex] as HTMLElement;
+      if (activeElement) {
+        activeElement.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [activeIndex, isOpen]);
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
     setIsOpen(false);
+    buttonRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (isOpen) {
+          if (activeIndex >= 0 && activeIndex < options.length) {
+            handleSelect(options[activeIndex].value);
+          }
+        } else {
+          setIsOpen(true);
+        }
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        if (!isOpen) {
+          setIsOpen(true);
+        } else {
+          setActiveIndex(prev => (prev < options.length - 1 ? prev + 1 : prev));
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (!isOpen) {
+          setIsOpen(true);
+        } else {
+          setActiveIndex(prev => (prev > 0 ? prev - 1 : prev));
+        }
+        break;
+      case 'Escape':
+        if (isOpen) {
+          e.preventDefault();
+          setIsOpen(false);
+          buttonRef.current?.focus();
+        }
+        break;
+      case 'Tab':
+        if (isOpen) {
+          setIsOpen(false);
+        }
+        break;
+      default:
+        // Basic type-ahead search
+        if (isOpen && e.key.length === 1) {
+          const char = e.key.toLowerCase();
+          const nextIndex = options.findIndex((opt, idx) =>
+             idx > activeIndex && opt.label.toLowerCase().startsWith(char)
+          );
+          if (nextIndex >= 0) {
+            setActiveIndex(nextIndex);
+          } else {
+            const firstIndex = options.findIndex(opt => opt.label.toLowerCase().startsWith(char));
+            if (firstIndex >= 0) {
+              setActiveIndex(firstIndex);
+            }
+          }
+        }
+        break;
+    }
   };
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Select Button */}
       <button
+        ref={buttonRef}
+        role="combobox"
         type="button"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? 'custom-select-listbox' : undefined}
+        aria-activedescendant={isOpen && activeIndex >= 0 ? `custom-select-option-${activeIndex}` : undefined}
         onClick={() => !disabled && setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
         disabled={disabled}
         className={`
           w-full px-4 py-3
@@ -92,26 +179,42 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute z-50 w-full mt-2 bg-surface/98 backdrop-blur-2xl border border-primary/50 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6),0_0_20px_rgba(163,230,53,0.2)] overflow-hidden animate-scale-in">
-          <div role="listbox" className="max-h-60 overflow-y-auto custom-scrollbar py-1">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={option.value === value}
-                onClick={() => handleSelect(option.value)}
-                className={`
-                  w-full px-4 py-3 text-left text-sm font-medium
-                  transition-all duration-200
-                  ${option.value === value
-                    ? 'bg-primary/25 text-primary font-bold border-l-4 border-primary shadow-[inset_0_0_20px_rgba(163,230,53,0.25)]'
-                    : 'text-text-primary hover:bg-primary/15 hover:text-primary hover:border-l-4 hover:border-primary/50 hover:font-semibold'
-                  }
-                `}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div
+            id="custom-select-listbox"
+            role="listbox"
+            ref={listboxRef}
+            className="max-h-60 overflow-y-auto custom-scrollbar py-1"
+            tabIndex={-1}
+          >
+            {options.map((option, index) => {
+              const isSelected = option.value === value;
+              const isActive = index === activeIndex;
+              return (
+                <button
+                  key={option.value}
+                  id={`custom-select-option-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  tabIndex={-1}
+                  onClick={(e) => {
+                     e.preventDefault(); // Prevents button from stealing focus from the select button
+                     handleSelect(option.value);
+                  }}
+                  className={`
+                    w-full px-4 py-3 text-left text-sm font-medium
+                    transition-all duration-200
+                    ${isSelected
+                      ? 'bg-primary/25 text-primary font-bold border-l-4 border-primary shadow-[inset_0_0_20px_rgba(163,230,53,0.25)]'
+                      : 'text-text-primary hover:bg-primary/15 hover:text-primary hover:border-l-4 hover:border-primary/50 hover:font-semibold'
+                    }
+                    ${isActive && !isSelected ? 'bg-primary/15 text-primary border-l-4 border-primary/50 font-semibold' : ''}
+                  `}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
