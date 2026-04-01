@@ -1,0 +1,40 @@
+--- pages/FeedbackItemPage.tsx
++++ pages/FeedbackItemPage.tsx
+@@ -32,6 +32,19 @@
+ type FeedbackItem = FeedbackWebsite | FeedbackMockup | FeedbackVideo;
+ type SidebarPosition = 'right' | 'bottom';
+
++const ToolbarButton = React.memo(({ Icon, tooltip, onClick, isActive = false }: { Icon: React.FC<any>, tooltip: string, onClick: () => void, isActive?: boolean}) => (
++    <div className="relative group">
++        <button onClick={onClick} className={`p-3 rounded-lg transition-all duration-300 ${isActive ? 'bg-primary text-background shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)]' : 'bg-glass-light/60 backdrop-blur-sm text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-110'}`}>
++            <Icon className="w-5 h-5"/>
++        </button>
++        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-glass/95 backdrop-blur-xl border border-border-color text-text-primary text-xs font-semibold rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
++            {tooltip}
++        </div>
++    </div>
++));
++
++ToolbarButton.displayName = 'ToolbarButton';
++
+ const FeedbackItemPage = () => {
+     const { projectId, itemType, itemId } = useParams<{ projectId: string; itemType: 'website' | 'mockup' | 'video'; itemId: string }>();
+     const [searchParams] = useSearchParams();
+@@ -564,17 +577,6 @@
+     // FIX: Use currentVideoAsset for video source URL.
+     const currentVideoUrl = isVideo ? currentVideoAsset?.url : undefined;
+
+-    const ToolbarButton = ({ Icon, tooltip, onClick, isActive = false }: { Icon: React.FC<any>, tooltip: string, onClick: () => void, isActive?: boolean}) => (
+-        <div className="relative group">
+-            <button onClick={onClick} className={`p-3 rounded-lg transition-all duration-300 ${isActive ? 'bg-primary text-background shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)]' : 'bg-glass-light/60 backdrop-blur-sm text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-110'}`}>
+-                <Icon className="w-5 h-5"/>
+-            </button>
+-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-glass/95 backdrop-blur-xl border border-border-color text-text-primary text-xs font-semibold rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
+-                {tooltip}
+-            </div>
+-        </div>
+-    );
+-
+     const contentStyle: React.CSSProperties = {
+         transform: `scale(${zoom})`,
+         transformOrigin: 'center',
