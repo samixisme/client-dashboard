@@ -36,7 +36,12 @@ const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ currentView, onSwitchView, 
 
     return (
         <div ref={wrapperRef} className="relative z-50">
-            <button onClick={() => setIsOpen(o => !o)} className="px-4 py-2.5 flex items-center gap-2.5 bg-glass/60 backdrop-blur-xl text-text-primary text-sm font-semibold rounded-xl border border-border-color hover:bg-glass hover:shadow-xl hover:scale-105 hover:border-primary/40 transition-all duration-300 shadow-md">
+            <button
+                onClick={() => setIsOpen(o => !o)}
+                className="px-4 py-2.5 flex items-center gap-2.5 bg-glass/60 backdrop-blur-xl text-text-primary text-sm font-semibold rounded-xl border border-border-color hover:bg-glass hover:shadow-xl hover:scale-105 hover:border-primary/40 transition-all duration-300 shadow-md"
+                aria-expanded={isOpen}
+                aria-haspopup="true"
+            >
                 <activeView.Icon className="h-5 w-5"/> {activeView.name} <ChevronDownIcon className={`h-4 w-4 text-text-secondary transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}/>
             </button>
             {isOpen && (
