@@ -33,19 +33,6 @@ import { RefreshIcon } from '../components/icons/RefreshIcon';
 type FeedbackItem = FeedbackWebsite | FeedbackMockup | FeedbackVideo;
 type SidebarPosition = 'right' | 'bottom';
 
-const ToolbarButton = React.memo(({ Icon, tooltip, onClick, isActive = false }: { Icon: React.FC<any>, tooltip: string, onClick: () => void, isActive?: boolean}) => (
-    <div className="relative group">
-        <button onClick={onClick} className={`p-3 rounded-lg transition-all duration-300 ${isActive ? 'bg-primary text-background shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)]' : 'bg-glass-light/60 backdrop-blur-sm text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-110'}`}>
-            <Icon className="w-5 h-5"/>
-        </button>
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-glass/95 backdrop-blur-xl border border-border-color text-text-primary text-xs font-semibold rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
-            {tooltip}
-        </div>
-    </div>
-));
-
-ToolbarButton.displayName = 'ToolbarButton';
-
 const FeedbackItemPage = () => {
     const { projectId, itemType, itemId } = useParams<{ projectId: string; itemType: 'website' | 'mockup' | 'video'; itemId: string }>();
     const [searchParams] = useSearchParams();
@@ -53,9 +40,9 @@ const FeedbackItemPage = () => {
     const commentIdToOpen = searchParams.get('commentId');
     const videoAssetIdParam = searchParams.get('videoAssetId');
     const navigate = useNavigate();
-    
+
     const { data, forceUpdate } = useData();
-    
+
     const [item, setItem] = useState<FeedbackItem | undefined>();
     const [localComments, setLocalComments] = useState<FeedbackComment[]>([]);
     const [currentImage, setCurrentImage] = useState<MockupImage | undefined>();
@@ -66,7 +53,7 @@ const FeedbackItemPage = () => {
     const [sidebarView, setSidebarView] = useState<'comments' | 'activity' | null>('comments');
     const [sidebarPosition, setSidebarPosition] = useState<SidebarPosition>('right');
     const [pinsVisible, setPinsVisible] = useState(true);
-    
+
     const contentRef = useRef<HTMLDivElement>(null);
     const viewerContainerRef = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
@@ -126,7 +113,7 @@ const FeedbackItemPage = () => {
     const isWebsite = itemType === 'website';
     const isMockup = itemType === 'mockup';
     const isVideo = itemType === 'video';
-    
+
     const getMember = (id: string | undefined): User | undefined => id ? data.users.find(m => m.id === id) : undefined;
 
     const deviceDimensions: Record<DeviceView, { width: string; height: string }> = {
@@ -168,7 +155,7 @@ const FeedbackItemPage = () => {
             }
         }
         setItem(currentItem);
-        
+
         if (itemId) {
             setLocalComments(data.feedbackComments.filter(c => c.targetId === itemId));
         }
@@ -189,7 +176,7 @@ const FeedbackItemPage = () => {
             if (itemType === 'website') {
                 const commentDeviceView = c.deviceView || 'desktop';
                 if (commentDeviceView !== deviceView) return false;
-                
+
                 const commentPage = c.pageUrl || '/';
                 return commentPage === currentIframePage;
             }
@@ -219,7 +206,7 @@ const FeedbackItemPage = () => {
         } else if (isWebsite) {
             const deviceW = parseInt(deviceDimensions[deviceView].width);
             const deviceH = parseInt(deviceDimensions[deviceView].height);
-            
+
             if (deviceView !== 'desktop' && !isNaN(deviceW) && !isNaN(deviceH)) {
                 const scaleX = availableWidth / deviceW;
                 const scaleY = availableHeight / deviceH;
@@ -233,7 +220,7 @@ const FeedbackItemPage = () => {
             const scaleY = availableHeight / video.videoHeight;
             newFitZoom = Math.min(scaleX, scaleY, 1);
         }
-        
+
         setFitZoom(newFitZoom);
         return newFitZoom;
     }, [isMockup, isWebsite, isVideo, deviceView, deviceDimensions]);
@@ -246,7 +233,7 @@ const FeedbackItemPage = () => {
     }, []);
 
     useEffect(() => {
-        handleClosePopover(); 
+        handleClosePopover();
     }, [deviceView, handleClosePopover, currentIframePage]);
 
     // Effect to handle resize - just update the fitZoom value for the button
@@ -272,10 +259,10 @@ const FeedbackItemPage = () => {
         if ((e.target as HTMLElement).closest('.comment-pin') || (e.target as HTMLElement).closest('.comment-popover')) return;
         if (contentRef.current && viewerContainerRef.current) {
             const rect = contentRef.current.getBoundingClientRect();
-            
+
             const x = (e.clientX - rect.left) / zoom;
             const y = (e.clientY - rect.top) / zoom;
-            
+
             setActiveComment(null);
             setNewCommentCoords({ x, y });
         }
@@ -321,7 +308,7 @@ const FeedbackItemPage = () => {
 
         if (isVideo && details) {
             newComment = {
-                id: `com-${Date.now()}`, projectId, targetId: itemId, targetType: 'video', comment: text, reporterId: 'user-1', 
+                id: `com-${Date.now()}`, projectId, targetId: itemId, targetType: 'video', comment: text, reporterId: 'user-1',
                 status: 'Active', timestamp: new Date().toISOString(), pin_number: newPinNumber,
                 startTime: details.startTime, endTime: details.endTime,
                 x_coordinate: newCommentCoords?.x,
@@ -335,7 +322,7 @@ const FeedbackItemPage = () => {
                 imageId: isMockup ? currentImage?.id : undefined,
                 deviceView: isWebsite ? deviceView : undefined,
                 pageUrl: isWebsite ? currentIframePage : undefined,
-                targetType: itemType, comment: text, reporterId: 'user-1', 
+                targetType: itemType, comment: text, reporterId: 'user-1',
                 x_coordinate: newCommentCoords.x, y_coordinate: newCommentCoords.y,
                 status: 'Active', timestamp: new Date().toISOString(), pin_number: newPinNumber,
                 dueDate: details?.dueDate,
@@ -359,9 +346,9 @@ const FeedbackItemPage = () => {
         if (!originalComment) return;
         const originalDueDate = originalComment.dueDate;
 
-        const update = (comments: FeedbackComment[]) => 
+        const update = (comments: FeedbackComment[]) =>
             comments.map(c => c.id === commentId ? { ...c, ...updates } : c);
-        
+
         setLocalComments(update);
         data.feedbackComments = update(data.feedbackComments);
 
@@ -414,9 +401,9 @@ const FeedbackItemPage = () => {
     const handleStop = () => { if(videoRef.current) { videoRef.current.currentTime = 0; videoRef.current.pause(); }};
     const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => setVolume(parseFloat(e.target.value));
     const toggleMute = () => setIsMuted(m => !m);
-    const handlePlaybackRateChange = (rate: number) => { 
-        setPlaybackRate(rate); 
-        setIsSpeedOpen(false); 
+    const handlePlaybackRateChange = (rate: number) => {
+        setPlaybackRate(rate);
+        setIsSpeedOpen(false);
     };
 
     useEffect(() => {
@@ -432,14 +419,14 @@ const FeedbackItemPage = () => {
         const handlePlay = () => setIsPlaying(true);
         const handlePause = () => setIsPlaying(false);
         const handleVolume = () => { setVolume(video.volume); setIsMuted(video.muted); };
-        
+
         video.addEventListener('timeupdate', handleTime);
         video.addEventListener('loadedmetadata', handleDuration);
         video.addEventListener('progress', handleProgress);
         video.addEventListener('play', handlePlay);
         video.addEventListener('pause', handlePause);
         video.addEventListener('volumechange', handleVolume);
-        
+
         video.volume = volume;
         video.muted = isMuted;
         video.playbackRate = playbackRate;
@@ -488,7 +475,7 @@ const FeedbackItemPage = () => {
         const timelineRect = timelineRef.current.getBoundingClientRect();
         const dx = e.clientX - draggingComment.startX;
         const timeDelta = (dx / timelineRect.width) * duration;
-        
+
         setLocalComments(prev => prev.map(c => {
             if (c.id === draggingComment.commentId) {
                 const newComment = {...c};
@@ -578,6 +565,17 @@ const FeedbackItemPage = () => {
     // FIX: Use currentVideoAsset for video source URL.
     const currentVideoUrl = isVideo ? currentVideoAsset?.url : undefined;
 
+    const ToolbarButton = ({ Icon, tooltip, onClick, isActive = false }: { Icon: React.FC<any>, tooltip: string, onClick: () => void, isActive?: boolean}) => (
+        <div className="relative group">
+            <button onClick={onClick} className={`p-3 rounded-lg transition-all duration-300 ${isActive ? 'bg-primary text-background shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)]' : 'bg-glass-light/60 backdrop-blur-sm text-text-secondary hover:text-text-primary hover:bg-glass-light hover:scale-110'}`}>
+                <Icon className="w-5 h-5"/>
+            </button>
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-glass/95 backdrop-blur-xl border border-border-color text-text-primary text-xs font-semibold rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
+                {tooltip}
+            </div>
+        </div>
+    );
+
     const contentStyle: React.CSSProperties = {
         transform: `scale(${zoom})`,
         transformOrigin: 'center',
@@ -628,10 +626,10 @@ const FeedbackItemPage = () => {
             <div className={`flex-1 flex gap-4 overflow-hidden ${sidebarPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}>
                 <div className="flex-1 flex flex-col gap-4 overflow-hidden">
                     <div ref={viewerContainerRef} className="flex-1 bg-glass rounded-lg border border-border-color overflow-auto flex justify-center items-center p-4 relative gap-4">
-                        <div 
-                                                        ref={contentRef} 
-                                                        onClick={handleContentClick} 
-                                                        className={`relative flex-shrink-0 transition-transform ${interactionMode === 'comment' && !isVideo ? 'cursor-crosshair ring-4 ring-green-500/30 rounded-lg' : ''} ${isVideo && isPlacingVideoComment ? 'cursor-crosshair' : ''}`} 
+                        <div
+                                                        ref={contentRef}
+                                                        onClick={handleContentClick}
+                                                        className={`relative flex-shrink-0 transition-transform ${interactionMode === 'comment' && !isVideo ? 'cursor-crosshair ring-4 ring-green-500/30 rounded-lg' : ''} ${isVideo && isPlacingVideoComment ? 'cursor-crosshair' : ''}`}
                                                         style={contentStyle}
                                                     >
                                                         {isWebsite && 'url' in item && <iframe ref={iframeRef} src={(item as FeedbackWebsite).url} className={`w-full h-full border-0 bg-white ${interactionMode !== 'navigate' ? 'pointer-events-none' : ''}`} title={item.name} />}
@@ -647,9 +645,9 @@ const FeedbackItemPage = () => {
                                                                             const isTimeActive = currentTime >= (comment.startTime ?? -Infinity) && currentTime <= (comment.endTime ?? Infinity);
                                                                             const isCurrentlyActive = comment.id === activeComment?.id || isTimeActive;
                                                                             return (
-                                                                                <div 
-                                                                                    key={comment.id} 
-                                                                                    className={`comment-pin absolute pointer-events-auto z-10 transition-all duration-300 ease-in-out ${isTimeActive ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} 
+                                                                                <div
+                                                                                    key={comment.id}
+                                                                                    className={`comment-pin absolute pointer-events-auto z-10 transition-all duration-300 ease-in-out ${isTimeActive ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}
                                                                                     style={{ left: `${comment.x_coordinate}px`, top: `${comment.y_coordinate}px`, transform: `translate(-50%, -50%) scale(${isCurrentlyActive ? 1.25 : 1})`}}
                                                                                     onClick={(e) => handlePinClick(comment, e)}
                                                                                 >
@@ -663,7 +661,7 @@ const FeedbackItemPage = () => {
                                                                 </div>
                                                             </div>
                                                         )}
-                            
+
                                                         {(pinsVisible && (isMockup || (isWebsite && interactionMode === 'comment'))) && pinsForCurrentView.map(comment => {
                                                             const isCurrentlyActive = comment.id === activeComment?.id;
                                                             return (
@@ -685,10 +683,10 @@ const FeedbackItemPage = () => {
                                     {isVolumeOpen && (
                                         <div className="absolute bottom-full mb-3 bg-glass p-3 rounded-xl border border-border-color shadow-lg">
                                             <div className="h-24 w-8 flex justify-center items-center">
-                                                <input 
-                                                    type="range" 
-                                                    min="0" max="1" step="0.05" 
-                                                    value={isMuted ? 0 : volume} 
+                                                <input
+                                                    type="range"
+                                                    min="0" max="1" step="0.05"
+                                                    value={isMuted ? 0 : volume}
                                                     onChange={handleVolumeChange}
                                                     className="w-24 h-2 accent-primary bg-white/20 rounded-full appearance-none cursor-pointer -rotate-90"
                                                     aria-label="Volume"
@@ -701,7 +699,7 @@ const FeedbackItemPage = () => {
                                      <button onClick={() => setIsSpeedOpen(o => !o)} title="Playback speed" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass-light text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color text-sm font-semibold">{playbackRate}x</button>
                                      {isSpeedOpen && (
                                         <div className="absolute bottom-full mb-3 bg-glass p-2 rounded-xl border border-border-color shadow-lg flex flex-col gap-1">
-                                            {[0.5, 1, 1.5, 2].map(rate => 
+                                            {[0.5, 1, 1.5, 2].map(rate =>
                                                 <button key={rate} onClick={() => handlePlaybackRateChange(rate)} className={`px-4 py-1.5 text-sm font-medium rounded-md ${playbackRate === rate ? 'bg-primary text-background' : 'hover:bg-glass-light'}`}>{rate}x</button>
                                             )}
                                         </div>
@@ -710,11 +708,11 @@ const FeedbackItemPage = () => {
                             </div>
                         )}
                     </div>
-                    
+
                     {isVideo && duration > 0 && (
                          <div ref={timelineRef} className="flex-shrink-0 bg-glass/40 backdrop-blur-xl py-2 rounded-lg border border-border-color shadow-md">
                             <div className="relative h-8 flex items-center mx-4" >
-                                 <div 
+                                 <div
                                     className="relative h-4 w-full bg-surface rounded-full cursor-pointer group"
                                     onClick={(e) => {
                                         if(videoRef.current && timelineRef.current) {
@@ -735,7 +733,7 @@ const FeedbackItemPage = () => {
                                         const left = `${(comment.startTime! / duration) * 100}%`;
                                         const width = `${Math.max(0.5, ((comment.endTime! - comment.startTime!) / duration) * 100)}%`;
                                         return (
-                                            <div 
+                                            <div
                                                 key={comment.id}
                                                 className={`absolute -top-1 h-6 rounded-md group ${isEditMode ? 'cursor-move' : ''}`}
                                                 style={{ left, width }}
@@ -772,9 +770,9 @@ const FeedbackItemPage = () => {
                     />
                 )}
             </div>
-            
+
             {(activeComment || newCommentCoords || isAddingComment) && (
-                <CommentPopover 
+                <CommentPopover
                     comment={activeComment}
                     coords={(isMockup || isWebsite || (isVideo && newCommentCoords)) ? (activeComment ? { x: activeComment.x_coordinate!, y: activeComment.y_coordinate! } : newCommentCoords) : null}
                     contentRef={contentRef}
@@ -788,7 +786,7 @@ const FeedbackItemPage = () => {
                     videoCurrentTime={isVideo && isAddingComment ? videoRef.current?.currentTime : undefined}
                 />
             )}
-            
+
             <div className="flex justify-center items-center gap-4 mt-4 flex-shrink-0">
                 <div className="p-2 bg-glass/40 backdrop-blur-xl border border-border-color rounded-xl flex items-center gap-2 shadow-xl">
                     <ToolbarButton tooltip={sidebarPosition === 'right' ? "Dock to Bottom" : "Dock to Side"} Icon={sidebarPosition === 'right' ? CommentsIcon : ActivityIcon} onClick={() => setSidebarPosition(p => p === 'right' ? 'bottom' : 'right')} />
