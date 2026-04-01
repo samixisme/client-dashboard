@@ -36,14 +36,25 @@ const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ currentView, onSwitchView, 
 
     return (
         <div ref={wrapperRef} className="relative z-50">
-            <button onClick={() => setIsOpen(o => !o)} className="px-4 py-2.5 flex items-center gap-2.5 bg-glass/60 backdrop-blur-xl text-text-primary text-sm font-semibold rounded-xl border border-border-color hover:bg-glass hover:shadow-xl hover:scale-105 hover:border-primary/40 transition-all duration-300 shadow-md">
+            <button
+                onClick={() => setIsOpen(o => !o)}
+                aria-expanded={isOpen}
+                aria-haspopup="true"
+                aria-label={`Current view: ${activeView.name}. Click to change view.`}
+                className="px-4 py-2.5 flex items-center gap-2.5 bg-glass/60 backdrop-blur-xl text-text-primary text-sm font-semibold rounded-xl border border-border-color hover:bg-glass hover:shadow-xl hover:scale-105 hover:border-primary/40 transition-all duration-300 shadow-md"
+            >
                 <activeView.Icon className="h-5 w-5"/> {activeView.name} <ChevronDownIcon className={`h-4 w-4 text-text-secondary transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}/>
             </button>
             {isOpen && (
-                <div className={`absolute top-full right-0 mt-2 ${widthClass} bg-glass/95 backdrop-blur-xl rounded-xl shadow-2xl border border-border-color z-[9999] p-2 animate-scale-in`}>
+                <div
+                    role="menu"
+                    className={`absolute top-full right-0 mt-2 ${widthClass} bg-glass/95 backdrop-blur-xl rounded-xl shadow-2xl border border-border-color z-[9999] p-2 animate-scale-in`}
+                >
                     {options.map(option => (
                         <button
                             key={option.id}
+                            role="menuitem"
+                            aria-current={currentView === option.id ? 'true' : undefined}
                             onClick={() => handleSelect(option.id)}
                             className={`w-full text-left flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 ${
                                 currentView === option.id
