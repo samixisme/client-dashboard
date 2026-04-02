@@ -78,6 +78,15 @@ const getBestPreviewFormat = (logo: BrandLogo) => {
         || logo.formats[0];
 };
 
+const getLogoCardClasses = (variation?: string) => {
+    switch (variation) {
+        case 'Dark Background': return 'bg-surface/80 backdrop-blur-sm';
+        case 'White Background': return 'bg-glass-light/80 backdrop-blur-sm';
+        case 'Grayscale': return 'bg-glass/60 backdrop-blur-sm';
+        default: return 'bg-glass-light/60 backdrop-blur-sm';
+    }
+};
+
 const PlaceholderCard: React.FC<{ text: string }> = ({ text }) => (
     <div className="flex items-center justify-center p-4 rounded-lg border-2 border-dashed border-border-color bg-glass-light/40 backdrop-blur-sm min-h-[142px]">
         <p className="text-sm text-text-secondary text-center font-medium">{text}</p>
@@ -93,6 +102,116 @@ const AddLogoCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
         <p className="text-sm font-medium text-text-secondary text-center">Add Logo</p>
     </button>
 );
+
+const AssetSection: React.FC<{ id: string; title: string; children: React.ReactNode; onAdd?: () => void; onDownload?: () => void; editControls?: React.ReactNode; filterControls?: React.ReactNode; isAdmin?: boolean; isEditMode?: boolean; }> = React.memo(({ id, title, children, onAdd, onDownload, editControls, filterControls, isAdmin, isEditMode }) => (
+    <div id={id} className="bg-glass/40 backdrop-blur-xl p-6 rounded-2xl border border-border-color shadow-lg hover:shadow-xl hover:border-border-color/80 transition-all duration-300 break-inside-avoid animate-fade-in-up">
+        <div className="flex justify-between items-center border-b border-border-color/50 pb-4 mb-6">
+            <h2 className="text-2xl font-bold text-text-primary">{title}</h2>
+            <div className="flex items-center gap-2 no-print">
+                {filterControls}
+                {isAdmin && isEditMode && editControls}
+                {isAdmin && isEditMode && onAdd && (
+                    <button onClick={onAdd} className="p-2 rounded-lg hover:bg-glass-light hover:scale-110 transition-all duration-300 group">
+                        <AddIcon className="h-5 w-5 text-primary group-hover:rotate-90 transition-transform duration-300" />
+                    </button>
+                )}
+                {onDownload && (
+                     <button onClick={onDownload} className="flex items-center gap-2 px-4 py-2 bg-glass-light/60 backdrop-blur-sm text-text-primary text-xs font-semibold rounded-lg border border-border-color hover:bg-glass hover:shadow-lg hover:scale-105 transition-all duration-300"><DownloadIcon className="h-4 w-4" /> Download</button>
+                )}
+            </div>
+        </div>
+        {children}
+    </div>
+));
+
+const LogoCard: React.FC<{
+    logo: BrandLogo,
+    isEditMode?: boolean,
+    originalIndex: number,
+    allLogoTypes: BrandLogoType[],
+    allLogoVariations: BrandLogoVariation[],
+    brandName?: string,
+    handleGenericUpdate: <T>(section: keyof Brand, index: number, field: keyof T, value: T[keyof T]) => void,
+    handleLogoFormatUpdate: (logoIndex: number, formatIndex: number, field: 'format' | 'url', value: string) => void,
+    handleLogoFormatFileChange: (logoIndex: number, formatIndex: number, file: File | null) => void,
+    handleDeleteLogoFormat: (logoIndex: number, formatIndex: number) => void,
+    handleAddLogoFormat: (logoIndex: number) => void,
+    handleDeleteItem: (section: keyof Brand, index: number) => void,
+    handleDownloadAsset: (url: string, filename: string) => void
+}> = React.memo(({
+    logo,
+    isEditMode,
+    originalIndex,
+    allLogoTypes,
+    allLogoVariations,
+    brandName,
+    handleGenericUpdate,
+    handleLogoFormatUpdate,
+    handleLogoFormatFileChange,
+    handleDeleteLogoFormat,
+    handleAddLogoFormat,
+    handleDeleteItem,
+    handleDownloadAsset
+}) => {
+    const previewFormat = getBestPreviewFormat(logo);
+
+    if (isEditMode) {
+        return (
+            <div className={`relative group flex flex-col p-3 rounded-lg border border-border-color bg-glass-light`}>
+                <button onClick={() => handleDeleteItem('logos', originalIndex)} className="absolute top-2 right-2 p-1.5 bg-glass rounded hover:bg-red-500/50 z-10" title="Delete Logo"><DeleteIcon className="h-4 w-4 text-text-secondary"/></button>
+                <div className="flex-grow flex items-center justify-center min-h-[90px] py-2">
+                    <img src={previewFormat?.url} alt={`${logo.type} - ${logo.variation}`} className="max-h-20 max-w-full object-contain" />
+                </div>
+                <div className="mt-auto pt-2 space-y-2">
+                    <select value={logo.type} onChange={(e) => handleGenericUpdate<BrandLogo>('logos', originalIndex, 'type', e.target.value as BrandLogoType)} className="w-full text-xs text-text-primary bg-glass border border-border-color rounded p-1">
+                        {allLogoTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <select value={logo.variation} onChange={(e) => handleGenericUpdate<BrandLogo>('logos', originalIndex, 'variation', e.target.value as BrandLogoVariation)} className="w-full text-xs text-text-secondary bg-glass border border-border-color rounded p-1">
+                        {allLogoVariations.map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                    <div className="mt-2 pt-2 border-t border-border-color">
+                        <h4 className="text-xs font-semibold text-text-secondary mb-1">Formats</h4>
+                        <div className="space-y-1 max-h-24 overflow-y-auto">
+                            {logo.formats.map((format, formatIndex) => (
+                                <div key={formatIndex} className="flex items-center gap-2 text-xs bg-glass p-1 rounded">
+                                    <input type="text" value={format.format} onChange={(e) => handleLogoFormatUpdate(originalIndex, formatIndex, 'format', e.target.value)} className="w-12 bg-transparent font-mono uppercase text-text-secondary focus:bg-glass-light focus:text-text-primary p-0.5 rounded" placeholder="ext"/>
+                                    <div className="flex-grow text-right">
+                                        <label className="cursor-pointer text-text-secondary hover:text-primary" title="Change file">
+                                            <EditIcon className="h-4 w-4" />
+                                            <input type="file" className="hidden" onChange={(e) => handleLogoFormatFileChange(originalIndex, formatIndex, e.target.files?.[0] || null)} />
+                                        </label>
+                                    </div>
+                                    <button onClick={() => handleDeleteLogoFormat(originalIndex, formatIndex)} className="text-text-secondary hover:text-red-500" title="Delete format"><DeleteIcon className="h-4 w-4" /></button>
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={() => handleAddLogoFormat(originalIndex)} className="mt-2 text-xs text-primary hover:text-primary-hover w-full text-left">+ Add Format</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+         <div className={`relative group flex flex-col p-3 rounded-lg border border-border-color ${getLogoCardClasses(logo.variation)}`}>
+            <div className="flex-grow flex items-center justify-center min-h-[90px] py-2">
+                <img src={previewFormat?.url} alt={`${logo.type} - ${logo.variation}`} className="max-h-20 max-w-full object-contain" />
+            </div>
+            <p className="text-sm text-text-primary text-center truncate mt-auto pt-2">{logo.type}</p>
+            <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity p-2 z-20">
+                {logo.formats.map((format, fIndex) => {
+                    const filename = `${brandName}-${logo.type}-${logo.variation}.${format.format}`.replace(/\s+/g, '-').toLowerCase();
+                    return (
+                        <button key={fIndex} onClick={() => handleDownloadAsset(format.url, filename)} className="w-full px-3 py-1.5 bg-glass-light text-text-primary text-xs font-medium rounded-lg border border-border-color hover:bg-primary hover:text-background transition-colors flex items-center justify-center gap-2">
+                            <DownloadIcon className="h-4 w-4"/> Download .{format.format.toUpperCase()}
+                        </button>
+                    )
+                })}
+                {logo.formats.length === 0 && <p className="text-xs text-text-secondary">No formats available</p>}
+            </div>
+        </div>
+    );
+});
 
 
 const BrandDetailPage = () => {
@@ -359,102 +478,6 @@ const BrandDetailPage = () => {
     const filteredFonts = editedBrand.fonts.filter(f => fontFilter === 'All' || f.type === fontFilter);
     const selectedLogoForDownload = brand.logos.find(l => l.type === downloadSelection.type && l.variation === downloadSelection.variation);
     
-    const AssetSection: React.FC<{ id: string; title: string; children: React.ReactNode; onAdd?: () => void; onDownload?: () => void; editControls?: React.ReactNode; filterControls?: React.ReactNode; }> = ({ id, title, children, onAdd, onDownload, editControls, filterControls }) => (
-        <div id={id} className="bg-glass/40 backdrop-blur-xl p-6 rounded-2xl border border-border-color shadow-lg hover:shadow-xl hover:border-border-color/80 transition-all duration-300 break-inside-avoid animate-fade-in-up">
-            <div className="flex justify-between items-center border-b border-border-color/50 pb-4 mb-6">
-                <h2 className="text-2xl font-bold text-text-primary">{title}</h2>
-                <div className="flex items-center gap-2 no-print">
-                    {filterControls}
-                    {isAdmin && isEditMode && editControls}
-                    {isAdmin && isEditMode && onAdd && (
-                        <button onClick={onAdd} className="p-2 rounded-lg hover:bg-glass-light hover:scale-110 transition-all duration-300 group">
-                            <AddIcon className="h-5 w-5 text-primary group-hover:rotate-90 transition-transform duration-300" />
-                        </button>
-                    )}
-                    {onDownload && (
-                         <button onClick={onDownload} className="flex items-center gap-2 px-4 py-2 bg-glass-light/60 backdrop-blur-sm text-text-primary text-xs font-semibold rounded-lg border border-border-color hover:bg-glass hover:shadow-lg hover:scale-105 transition-all duration-300"><DownloadIcon className="h-4 w-4" /> Download</button>
-                    )}
-                </div>
-            </div>
-            {children}
-        </div>
-    );
-    
-    const getLogoCardClasses = (variation?: string) => {
-        switch (variation) {
-            case 'Dark Background': return 'bg-surface/80 backdrop-blur-sm';
-            case 'White Background': return 'bg-glass-light/80 backdrop-blur-sm';
-            case 'Grayscale': return 'bg-glass/60 backdrop-blur-sm';
-            default: return 'bg-glass-light/60 backdrop-blur-sm';
-        }
-    };
-
-    const LogoCard: React.FC<{logo: BrandLogo}> = ({ logo }) => {
-        const originalIndex = editedBrand!.logos.findIndex(l => l === logo);
-        const previewFormat = logo.formats.find(f => f.format === 'png')
-            || logo.formats.find(f => f.format === 'jpg')
-            || logo.formats.find(f => f.format === 'jpeg')
-            || logo.formats.find(f => f.format === 'svg')
-            || logo.formats[0];
-
-        if (isEditMode) {
-            return (
-                <div className={`relative group flex flex-col p-3 rounded-lg border border-border-color bg-glass-light`}>
-                    <button onClick={() => handleDeleteItem('logos', originalIndex)} className="absolute top-2 right-2 p-1.5 bg-glass rounded hover:bg-red-500/50 z-10" title="Delete Logo"><DeleteIcon className="h-4 w-4 text-text-secondary"/></button>
-                    <div className="flex-grow flex items-center justify-center min-h-[90px] py-2">
-                        <img src={previewFormat?.url} alt={`${logo.type} - ${logo.variation}`} className="max-h-20 max-w-full object-contain" />
-                    </div>
-                    <div className="mt-auto pt-2 space-y-2">
-                        <select value={logo.type} onChange={(e) => handleGenericUpdate<BrandLogo>('logos', originalIndex, 'type', e.target.value as BrandLogoType)} className="w-full text-xs text-text-primary bg-glass border border-border-color rounded p-1">
-                            {allLogoTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                        <select value={logo.variation} onChange={(e) => handleGenericUpdate<BrandLogo>('logos', originalIndex, 'variation', e.target.value as BrandLogoVariation)} className="w-full text-xs text-text-secondary bg-glass border border-border-color rounded p-1">
-                            {allLogoVariations.map(v => <option key={v} value={v}>{v}</option>)}
-                        </select>
-                        <div className="mt-2 pt-2 border-t border-border-color">
-                            <h4 className="text-xs font-semibold text-text-secondary mb-1">Formats</h4>
-                            <div className="space-y-1 max-h-24 overflow-y-auto">
-                                {logo.formats.map((format, formatIndex) => (
-                                    <div key={formatIndex} className="flex items-center gap-2 text-xs bg-glass p-1 rounded">
-                                        <input type="text" value={format.format} onChange={(e) => handleLogoFormatUpdate(originalIndex, formatIndex, 'format', e.target.value)} className="w-12 bg-transparent font-mono uppercase text-text-secondary focus:bg-glass-light focus:text-text-primary p-0.5 rounded" placeholder="ext"/>
-                                        <div className="flex-grow text-right">
-                                            <label className="cursor-pointer text-text-secondary hover:text-primary" title="Change file">
-                                                <EditIcon className="h-4 w-4" />
-                                                <input type="file" className="hidden" onChange={(e) => handleLogoFormatFileChange(originalIndex, formatIndex, e.target.files?.[0] || null)} />
-                                            </label>
-                                        </div>
-                                        <button onClick={() => handleDeleteLogoFormat(originalIndex, formatIndex)} className="text-text-secondary hover:text-red-500" title="Delete format"><DeleteIcon className="h-4 w-4" /></button>
-                                    </div>
-                                ))}
-                            </div>
-                            <button onClick={() => handleAddLogoFormat(originalIndex)} className="mt-2 text-xs text-primary hover:text-primary-hover w-full text-left">+ Add Format</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-        
-        return (
-             <div className={`relative group flex flex-col p-3 rounded-lg border border-border-color ${getLogoCardClasses(logo.variation)}`}>
-                <div className="flex-grow flex items-center justify-center min-h-[90px] py-2">
-                    <img src={previewFormat?.url} alt={`${logo.type} - ${logo.variation}`} className="max-h-20 max-w-full object-contain" />
-                </div>
-                <p className="text-sm text-text-primary text-center truncate mt-auto pt-2">{logo.type}</p>
-                <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 transition-opacity p-2 z-20">
-                    {logo.formats.map((format, fIndex) => {
-                        const filename = `${brand!.name}-${logo.type}-${logo.variation}.${format.format}`.replace(/\s+/g, '-').toLowerCase();
-                        return (
-                            <button key={fIndex} onClick={() => handleDownloadAsset(format.url, filename)} className="w-full px-3 py-1.5 bg-glass-light text-text-primary text-xs font-medium rounded-lg border border-border-color hover:bg-primary hover:text-background transition-colors flex items-center justify-center gap-2">
-                                <DownloadIcon className="h-4 w-4"/> Download .{format.format.toUpperCase()}
-                            </button>
-                        )
-                    })}
-                    {logo.formats.length === 0 && <p className="text-xs text-text-secondary">No formats available</p>}
-                </div>
-            </div>
-        );
-    };
-    
     const fontWeights = ['100', '200', '300', '400', '500', '600', '700', '800', '900', 'normal', 'bold', 'lighter', 'bolder'];
     
     const renderAssetGallery = (section: 'imagery' | 'graphics') => {
@@ -471,7 +494,7 @@ const BrandDetailPage = () => {
         );
 
         return (
-            <AssetSection title={title} id={`${section}-section`} onAdd={() => handleAddItem(section)} onDownload={() => handlePrint(`${section}-section`)} editControls={editControls}>
+            <AssetSection title={title} id={`${section}-section`} onAdd={() => handleAddItem(section)} onDownload={() => handlePrint(`${section}-section`)} editControls={editControls} isAdmin={isAdmin} isEditMode={isEditMode}>
                 <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${size}px, 1fr))` }}>
                     {assets.map((asset, index) => {
                          const originalIndex = editedBrand[section].findIndex(a => a === asset);
@@ -582,7 +605,7 @@ const BrandDetailPage = () => {
             </div>
             
             <main className="space-y-8">
-                <AssetSection title="Team Members" id="members-section">
+                <AssetSection title="Team Members" id="members-section" isAdmin={isAdmin} isEditMode={isEditMode}>
                     <div className="flex flex-wrap gap-4">
                         {brandMembers.map(member => (
                             <div key={member.id} className="flex items-center gap-3 bg-glass-light p-2 pr-4 rounded-full">
@@ -604,7 +627,7 @@ const BrandDetailPage = () => {
                         </div>
                     )}
                 </AssetSection>
-                 <AssetSection title="Logos" id="logos-section" onDownload={() => setIsDownloadModalOpen(true)} filterControls={(
+                 <AssetSection title="Logos" id="logos-section" onDownload={() => setIsDownloadModalOpen(true)} isAdmin={isAdmin} isEditMode={isEditMode} filterControls={(
                     <div className="flex flex-col md:flex-row justify-end items-stretch md:items-center gap-2 no-print">
                         <div className="flex items-center bg-glass rounded-lg p-1 border border-border-color">
                             {allLogoTypes.map(type => (<button key={type} onClick={() => setLogoTypeFilter(type)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors flex-1 ${logoTypeFilter === type ? 'bg-primary text-background' : 'text-text-secondary hover:bg-glass-light'}`}>{type}</button>))}
@@ -621,7 +644,21 @@ const BrandDetailPage = () => {
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                 {(() => {
                                     const primaryLogo = editedBrand.logos.find(logo => logo.type === logoTypeFilter && logo.variation === 'Color');
-                                    if (primaryLogo) return <LogoCard logo={primaryLogo} />;
+                                    if (primaryLogo) return <LogoCard
+                                        logo={primaryLogo}
+                                        isEditMode={isEditMode}
+                                        originalIndex={editedBrand.logos.findIndex(l => l === primaryLogo)}
+                                        allLogoTypes={allLogoTypes}
+                                        allLogoVariations={allLogoVariations}
+                                        brandName={brand.name}
+                                        handleGenericUpdate={handleGenericUpdate}
+                                        handleLogoFormatUpdate={handleLogoFormatUpdate}
+                                        handleLogoFormatFileChange={handleLogoFormatFileChange}
+                                        handleDeleteLogoFormat={handleDeleteLogoFormat}
+                                        handleAddLogoFormat={handleAddLogoFormat}
+                                        handleDeleteItem={handleDeleteItem}
+                                        handleDownloadAsset={handleDownloadAsset}
+                                    />;
                                     if (isAdmin && isEditMode) return <AddLogoCard onClick={() => handleAddLogo(logoTypeFilter, 'Color')} />;
                                     return <PlaceholderCard text="Not provided" />;
                                 })()}
@@ -638,7 +675,21 @@ const BrandDetailPage = () => {
                                         <div key={variation}>
                                             <h4 className="text-sm font-semibold text-text-secondary mb-2">{variation}</h4>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                                {logoForVariation ? <LogoCard logo={logoForVariation} /> : (isAdmin && isEditMode ? <AddLogoCard onClick={() => handleAddLogo(logoTypeFilter, variation)} /> : <PlaceholderCard text="Not provided" />)}
+                                                {logoForVariation ? <LogoCard
+                                                    logo={logoForVariation}
+                                                    isEditMode={isEditMode}
+                                                    originalIndex={editedBrand.logos.findIndex(l => l === logoForVariation)}
+                                                    allLogoTypes={allLogoTypes}
+                                                    allLogoVariations={allLogoVariations}
+                                                    brandName={brand.name}
+                                                    handleGenericUpdate={handleGenericUpdate}
+                                                    handleLogoFormatUpdate={handleLogoFormatUpdate}
+                                                    handleLogoFormatFileChange={handleLogoFormatFileChange}
+                                                    handleDeleteLogoFormat={handleDeleteLogoFormat}
+                                                    handleAddLogoFormat={handleAddLogoFormat}
+                                                    handleDeleteItem={handleDeleteItem}
+                                                    handleDownloadAsset={handleDownloadAsset}
+                                                /> : (isAdmin && isEditMode ? <AddLogoCard onClick={() => handleAddLogo(logoTypeFilter, variation)} /> : <PlaceholderCard text="Not provided" />)}
                                             </div>
                                         </div>
                                     );
@@ -647,7 +698,7 @@ const BrandDetailPage = () => {
                         </div>
                     )}
                 </AssetSection>
-                <AssetSection title="Brand Colors" id="colors-section" onAdd={isAdmin ? () => handleAddItem('colors') : undefined} onDownload={() => handlePrint('colors-section')} filterControls={(
+                <AssetSection title="Brand Colors" id="colors-section" onAdd={isAdmin ? () => handleAddItem('colors') : undefined} onDownload={() => handlePrint('colors-section')} isAdmin={isAdmin} isEditMode={isEditMode} filterControls={(
                     <div className="flex justify-end no-print">
                         <div className="flex items-center bg-glass rounded-lg p-1 border border-border-color">
                         {(['All', 'Primary', 'Secondary'] as const).map(type => (<button key={type} onClick={() => setColorFilter(type)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${colorFilter === type ? 'bg-primary text-background' : 'text-text-secondary hover:bg-glass-light'}`}>{type}</button>))}
@@ -673,7 +724,7 @@ const BrandDetailPage = () => {
                         })}
                     </div>
                 </AssetSection>
-                <AssetSection title="Typography" id="typography-section" onAdd={isAdmin ? () => handleAddItem('fonts') : undefined} onDownload={() => handlePrint('typography-section')} filterControls={(
+                <AssetSection title="Typography" id="typography-section" onAdd={isAdmin ? () => handleAddItem('fonts') : undefined} onDownload={() => handlePrint('typography-section')} isAdmin={isAdmin} isEditMode={isEditMode} filterControls={(
                     <div className="flex justify-end no-print">
                         <div className="flex items-center bg-glass rounded-lg p-1 border border-border-color">
                         {(['All', 'Primary', 'Secondary'] as const).map(type => (<button key={type} onClick={() => setFontFilter(type)} className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${fontFilter === type ? 'bg-primary text-background' : 'text-text-secondary hover:bg-glass-light'}`}>{type}</button>))}
@@ -742,16 +793,16 @@ const BrandDetailPage = () => {
                         )})}
                     </div>
                 </AssetSection>
-                <AssetSection title="Brand Voice & Vocabulary" id="voice-section" onDownload={() => handlePrint('voice-section')}>
+                <AssetSection title="Brand Voice & Vocabulary" id="voice-section" onDownload={() => handlePrint('voice-section')} isAdmin={isAdmin} isEditMode={isEditMode}>
                     <Textarea value={editedBrand.brandVoice} onChange={e => handleBrandStringChange('brandVoice', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={8} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
                 </AssetSection>
-                <AssetSection title="Brand Positioning" id="positioning-section" onDownload={() => handlePrint('positioning-section')}>
+                <AssetSection title="Brand Positioning" id="positioning-section" onDownload={() => handlePrint('positioning-section')} isAdmin={isAdmin} isEditMode={isEditMode}>
                      <Textarea value={editedBrand.brandPositioning} onChange={e => handleBrandStringChange('brandPositioning', e.target.value)} readOnly={!isAdmin || !isEditMode} rows={6} className="w-full text-text-primary bg-glass border border-border-color rounded px-2 py-1 read-only:bg-transparent read-only:p-0 read-only:border-none"/>
                 </AssetSection>
                 {renderAssetGallery('imagery')}
                 {renderAssetGallery('graphics')}
                 {brandProjects.length > 0 && (
-                    <AssetSection title="Projects" id="projects-section">
+                    <AssetSection title="Projects" id="projects-section" isAdmin={isAdmin} isEditMode={isEditMode}>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                            {brandProjects.map(project => (
                                 <Link key={project.id} to={`/projects/${project.id}`} className="block p-4 bg-glass-light rounded-lg border border-border-color hover:border-primary">
