@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2025-04-02 - SSRF and DoS Protection on Internal Webhooks
+**Vulnerability:** A Server-Side Request Forgery (SSRF) and resource exhaustion risk existed in `api/searchMonitoring.ts` where the `SEARCH_SYNC_ALERT_WEBHOOK` environment variable was used directly in an `axios.post` call without validation or a timeout.
+**Learning:** Even internal webhooks configured via environment variables can be misconfigured (or maliciously altered if the environment is compromised) to point to private internal network addresses. Additionally, a missing timeout can cause backend processes to hang indefinitely.
+**Prevention:** Always validate full, untrusted URLs using the established `validateUrl` utility before feeding them into backend HTTP clients (`axios`, `fetch`), even if they come from environment variables. Always include explicit timeouts (e.g., `{ timeout: 5000 }`) on outgoing requests to prevent resource exhaustion.
