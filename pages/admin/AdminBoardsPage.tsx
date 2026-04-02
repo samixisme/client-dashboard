@@ -14,6 +14,11 @@ import { slugify } from '../../utils/slugify';
 type SortField = 'name' | 'taskCount' | 'brand';
 type SortDirection = 'asc' | 'desc';
 
+const SortIcon = React.memo(({ field, sortBy, sortDirection }: { field: SortField, sortBy: SortField, sortDirection: SortDirection }) => {
+    if (sortBy !== field) return <span className="text-gray-400 ml-1 text-[10px]">⇅</span>;
+    return <span className="text-primary ml-1 text-[10px]">{sortDirection === 'asc' ? '▲' : '▼'}</span>;
+});
+
 const AdminBoardsPage: React.FC = () => {
   const { data, forceUpdate } = useData();
   const [searchTerm, setSearchTerm] = useState('');
@@ -175,12 +180,6 @@ const AdminBoardsPage: React.FC = () => {
       }
   };
 
-  // Helper for Sort Icons
-  const SortIcon = ({ field }: { field: SortField }) => {
-      if (sortBy !== field) return <span className="text-gray-400 ml-1 text-[10px]">⇅</span>;
-      return <span className="text-primary ml-1 text-[10px]">{sortDirection === 'asc' ? '▲' : '▼'}</span>;
-  };
-
   return (
     <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -221,13 +220,13 @@ const AdminBoardsPage: React.FC = () => {
             {/* Sort Buttons */}
             <div className="flex items-center gap-2 ml-auto">
                 <button onClick={() => handleSort('name')} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-glass-light hover:bg-border-color text-text-secondary flex items-center">
-                    Name <SortIcon field="name" />
+                    Name <SortIcon field="name" sortBy={sortBy} sortDirection={sortDirection} />
                 </button>
                 <button onClick={() => handleSort('taskCount')} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-glass-light hover:bg-border-color text-text-secondary flex items-center">
-                    Tasks <SortIcon field="taskCount" />
+                    Tasks <SortIcon field="taskCount" sortBy={sortBy} sortDirection={sortDirection} />
                 </button>
                 <button onClick={() => handleSort('brand')} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-glass-light hover:bg-border-color text-text-secondary flex items-center">
-                    Brand <SortIcon field="brand" />
+                    Brand <SortIcon field="brand" sortBy={sortBy} sortDirection={sortDirection} />
                 </button>
             </div>
         </div>
