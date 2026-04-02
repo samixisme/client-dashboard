@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import axios from 'axios';
 import { getSyncCheckpoint } from './searchState';
 import { getMeili } from './meiliClient';
+import { validateUrl } from './urlValidator';
 
 // ── In-Memory Latency Tracking for p50/p95/p99 ────────────────────────
 const MAX_LATENCY_SAMPLES = 1000;
@@ -73,6 +74,12 @@ export async function triggerSyncAlert(indexName: string, failureCount: number, 
   const webhookUrl = process.env.SEARCH_SYNC_ALERT_WEBHOOK;
   if (!webhookUrl) return;
 
+  const urlValidation = validateUrl(webhookUrl);
+  if (!urlValidation.isValid) {
+    console.error(`[searchSync] Invalid SEARCH_SYNC_ALERT_WEBHOOK URL: ${urlValidation.error}`);
+    return;
+  }
+
   try {
     await axios.post(webhookUrl, {
       sync_job_status: 'failed',
@@ -80,7 +87,7 @@ export async function triggerSyncAlert(indexName: string, failureCount: number, 
       failure_count: failureCount,
       latest_error: errorMsg,
       timestamp: new Date().toISOString()
-    });
+    }, { timeout: 5000 });
     console.log(`[searchSync] 🚨 Alert webhook sent for ${indexName}`);
   } catch (error: any) {
     console.error(`[searchSync] Failed to send alert webhook: ${error?.message}`);
