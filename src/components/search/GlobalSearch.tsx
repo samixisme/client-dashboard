@@ -220,6 +220,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
                     setRecentSearches([]);
                   }}
                   type="button"
+                  aria-label="Clear recent searches"
                 >
                   Clear
                 </button>
@@ -230,6 +231,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
                   className="global-search__recent-item"
                   onClick={() => handleRecentClick(term)}
                   type="button"
+                  aria-label={`Search again for ${term}`}
                 >
                   <Clock size={14} />
                   <span>{term}</span>
