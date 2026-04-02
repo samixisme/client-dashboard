@@ -2,6 +2,7 @@
 **Vulnerability:** XSS vulnerability in `SocialMediaPage.tsx` caused by directly interpolating URL parameters (`result.username`, `result.message`) into a template string passed to `.innerHTML` for toast notifications.
 **Learning:** URL parameters fetched during OAuth callbacks can contain malicious payloads. If directly assigned to `.innerHTML`, script tags or other malicious HTML can be executed by the browser. Even simple fields like `username` or `message` should be considered untrusted.
 **Prevention:** Never use template literals containing dynamic values with `.innerHTML`. Always create empty containers (e.g., `<span class="message-container"></span>`) and then use `.textContent` or `.innerText` to securely inject dynamic content, ensuring it is treated as text, not executable HTML.
+
 ## 2025-03-15 - SSRF Protection on Proxy API Endpoints
 **Vulnerability:** A Server-Side Request Forgery (SSRF) risk existed in the `POST /api/social/fetch/:platform` endpoint, where user-supplied inputs (`endpoint` containing a full URL) were proxied using `axios` without any internal validation. This could allow an attacker to make the server initiate requests to restricted/private networks or arbitrary hostnames on their behalf.
 **Learning:** Even heavily customized proxy configurations with some initial prefix-checking logic (like `endpoint.startsWith('http')`) can be bypassed and need formal URL validation. The repository already had an existing helper `validateUrl` in `api/urlValidator.ts` designed to block access to private IPs and metadata hostnames.
@@ -16,3 +17,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2025-03-15 - SSRF and Timeout Risk in Alert Webhooks
+**Vulnerability:** The `triggerSyncAlert` function in `api/searchMonitoring.ts` made an outbound `axios.post` request to a webhook URL configured via an environment variable, without URL validation or a timeout. This allowed for potential SSRF/private network scanning if the environment was compromised or misconfigured, and opened the server to resource exhaustion (hanging requests) due to missing timeouts.
+**Learning:** Even internal/alert webhooks derived from environment variables must be treated as potentially unsafe, and all outbound requests must have explicit network boundaries (timeouts) to ensure application stability.
+**Prevention:** Always validate internal or environment-sourced URLs using `validateUrl` and attach explicit `timeout` configurations to HTTP clients (`axios`, `fetch`) making outbound requests.
