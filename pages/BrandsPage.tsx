@@ -41,51 +41,12 @@ const StatBox = ({ to, icon, count, label }: { to: string; icon: React.ReactNode
     );
 };
 
-const BrandCard: React.FC<{ brand: Brand; index: number }> = ({ brand, index }) => {
+const BrandCard: React.FC<{ brand: Brand; index: number; stats: { projectCount: number; moodboardCount: number; feedbackCount: number; invoiceCount: number; estimateCount: number; eventCount: number } }> = ({ brand, index, stats }) => {
     const { data } = useData();
-    const { projects, boards, roadmapItems, tasks, users, moodboards, calendar_events, invoices, estimates, clients, feedbackComments } = data;
+    const { users } = data;
 
-    const getBrandStats = (brandId: string) => {
-        const brandProjects = projects.filter(p => p.brandId === brandId);
-        const projectCount = brandProjects.length;
-        const brandProjectIds = brandProjects.map(p => p.id);
-        const moodboardCount = moodboards.filter(m => brandProjectIds.includes(m.projectId)).length;
-        const feedbackCount = feedbackComments.filter(f => brandProjectIds.includes(f.projectId)).length;
-        const brandClientIds = clients.filter(c => c.brandId === brandId).map(c => c.id);
-        const invoiceCount = invoices.filter(i => brandClientIds.includes(i.clientId)).length;
-        const estimateCount = estimates.filter(e => brandClientIds.includes(e.clientId)).length;
-        const getBrandForEvent = (event: CalendarEvent) => {
-            if (event.brandId) return event.brandId;
-            if (event.sourceId) {
-                switch (event.type) {
-                    case 'task': {
-                        const task = tasks.find(t => t.id === event.sourceId);
-                        const board = task ? boards.find(b => b.id === task.boardId) : undefined;
-                        const project = board ? projects.find(p => p.id === board.projectId) : undefined;
-                        return project?.brandId;
-                    }
-                    case 'roadmap_item': {
-                        const item = roadmapItems.find(i => i.id === event.sourceId);
-                        const project = item ? projects.find(p => p.id === item.projectId) : undefined;
-                        return project?.brandId;
-                    }
-                    case 'invoice': {
-                        const invoice = invoices.find(i => i.id === event.sourceId);
-                        if (!invoice) return undefined;
-                        const client = clients.find(c => c.id === invoice.clientId);
-                        return client?.brandId;
-                    }
-                    default: return undefined;
-                }
-            }
-            return undefined;
-        };
-        const eventCount = calendar_events.filter(e => getBrandForEvent(e) === brandId).length;
-        return { projectCount, moodboardCount, feedbackCount, invoiceCount, estimateCount, eventCount };
-    };
+        const members = users.filter(m => brand.memberIds?.includes(m.id));
 
-    const members = users.filter(m => brand.memberIds?.includes(m.id));
-    const stats = getBrandStats(brand.id);
 
     return (
         <div
@@ -137,6 +98,95 @@ const BrandsPage = () => {
     const { data, loading, error, updateData, forceUpdate } = useData();
     const { searchQuery, setSearchQuery } = useSearch();
     const { projects } = data;
+
+    const brandStats = useMemo(() => {
+        const stats = new Map<string, { projectCount: number; moodboardCount: number; feedbackCount: number; invoiceCount: number; estimateCount: number; eventCount: number }>();
+        data.brands.forEach(b => stats.set(b.id, { projectCount: 0, moodboardCount: 0, feedbackCount: 0, invoiceCount: 0, estimateCount: 0, eventCount: 0 }));
+
+        const projectBrandMap = new Map<string, string>();
+        const clientBrandMap = new Map<string, string>();
+        const boardProjectMap = new Map<string, string>();
+        const taskBoardMap = new Map<string, string>();
+        const roadmapProjectMap = new Map<string, string>();
+
+        data.projects.forEach(p => {
+            if (p.brandId && stats.has(p.brandId)) {
+                projectBrandMap.set(p.id, p.brandId);
+                stats.get(p.brandId)!.projectCount++;
+            }
+        });
+
+        data.clients.forEach(c => {
+            if (c.brandId && stats.has(c.brandId)) {
+                clientBrandMap.set(c.id, c.brandId);
+            }
+        });
+
+        data.boards.forEach(b => {
+             if (b.projectId) {
+                 boardProjectMap.set(b.id, b.projectId);
+             }
+        });
+
+        data.tasks.forEach(t => {
+             if (t.boardId) {
+                 taskBoardMap.set(t.id, t.boardId);
+             }
+        });
+
+        data.roadmapItems.forEach(r => {
+             if (r.projectId) {
+                 roadmapProjectMap.set(r.id, r.projectId);
+             }
+        });
+
+        data.moodboards.forEach(m => {
+            const brandId = projectBrandMap.get(m.projectId);
+            if (brandId && stats.has(brandId)) stats.get(brandId)!.moodboardCount++;
+        });
+
+        data.feedbackComments.forEach(f => {
+            const brandId = projectBrandMap.get(f.projectId);
+            if (brandId && stats.has(brandId)) stats.get(brandId)!.feedbackCount++;
+        });
+
+        data.invoices.forEach(i => {
+            const brandId = clientBrandMap.get(i.clientId);
+            if (brandId && stats.has(brandId)) stats.get(brandId)!.invoiceCount++;
+        });
+
+        data.estimates.forEach(e => {
+            const brandId = clientBrandMap.get(e.clientId);
+            if (brandId && stats.has(brandId)) stats.get(brandId)!.estimateCount++;
+        });
+
+        data.calendar_events.forEach(e => {
+            let brandId: string | undefined;
+            if (e.brandId) {
+                brandId = e.brandId;
+            } else if (e.sourceId) {
+                if (e.type === 'task') {
+                    const boardId = taskBoardMap.get(e.sourceId);
+                    const projectId = boardId ? boardProjectMap.get(boardId) : undefined;
+                    brandId = projectId ? projectBrandMap.get(projectId) : undefined;
+                } else if (e.type === 'roadmap_item') {
+                    const projectId = roadmapProjectMap.get(e.sourceId);
+                    brandId = projectId ? projectBrandMap.get(projectId) : undefined;
+                } else if (e.type === 'invoice') {
+                    const invoice = data.invoices.find(i => i.id === e.sourceId);
+                    if (invoice) {
+                         brandId = clientBrandMap.get(invoice.clientId);
+                    }
+                }
+            }
+            if (brandId && stats.has(brandId)) {
+                stats.get(brandId)!.eventCount++;
+            }
+        });
+
+        return stats;
+    }, [data.brands, data.projects, data.clients, data.boards, data.tasks, data.roadmapItems, data.moodboards, data.feedbackComments, data.invoices, data.estimates, data.calendar_events]);
+
 
     const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
     const [sortState, setSortState] = useState<BrandSortState>({
@@ -308,7 +358,7 @@ const BrandsPage = () => {
 
       {viewMode === 'board' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredBrands.map((brand, index) => <BrandCard key={brand.id} brand={brand} index={index} />)}
+            {filteredBrands.map((brand, index) => <BrandCard key={brand.id} brand={brand} index={index} stats={brandStats.get(brand.id) || { projectCount: 0, moodboardCount: 0, feedbackCount: 0, invoiceCount: 0, estimateCount: 0, eventCount: 0 }} />)}
         </div>
       ) : (
         <div className="bg-glass/40 backdrop-blur-xl p-6 rounded-2xl border border-border-color shadow-xl overflow-hidden animate-fade-in">
