@@ -49,7 +49,7 @@ describe('BrandsPage', () => {
 
   it('shows empty state when no data', async () => {
     mockUseData.mockReturnValue({
-      data: { brands: [], clients: mockClients, users: [], projects: [], tasks: [], invoices: [], moodboards: [], feedbackComments: [], estimates: [], calendar_events: [], socialAccounts: [] },
+      data: { brands: [], clients: mockClients, users: [], projects: [], tasks: [], invoices: [], moodboards: [], feedbackComments: [], estimates: [], calendar_events: [], socialAccounts: [], boards: [], roadmapItems: [] },
       loading: false,
     });
 
@@ -59,7 +59,7 @@ describe('BrandsPage', () => {
 
   it('renders brands list', async () => {
     mockUseData.mockReturnValue({
-      data: { brands: mockBrands, clients: mockClients, users: [], projects: [], tasks: [], invoices: [], moodboards: [], feedbackComments: [], estimates: [], calendar_events: [], socialAccounts: [] },
+      data: { brands: mockBrands, clients: mockClients, users: [], projects: [], tasks: [], invoices: [], moodboards: [], feedbackComments: [], estimates: [], calendar_events: [], socialAccounts: [], boards: [], roadmapItems: [] },
       loading: false,
     });
 
