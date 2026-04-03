@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2024-04-03 - SSRF Protection Bypass via IPv4-mapped IPv6 Addresses
+**Vulnerability:** The SSRF protection in `api/urlValidator.ts` was bypassing blocklist checks for IPv6 addresses because it did not remove brackets (e.g., `[::1]`) from `parsedUrl.hostname` before comparison, and it failed to block IPv4-mapped IPv6 addresses (e.g., `::ffff:127.0.0.1`).
+**Learning:** `new URL().hostname` returns IPv6 addresses enclosed in brackets (e.g., `[::1]`). Without removing these brackets, regex checks against raw IP strings (like `^::1$`) will fail. Additionally, SSRF filters must account for IPv4-mapped IPv6 addresses, which can be used to bypass IPv4-only blocklists.
+**Prevention:** Always strip `[` and `]` characters from hostnames when validating IPv6 addresses against string or regex patterns. Include patterns to block IPv4-mapped IPv6 addresses (e.g., `^::ffff:`) in the private IP blocklist.
