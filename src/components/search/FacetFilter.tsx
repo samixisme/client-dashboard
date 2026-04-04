@@ -135,12 +135,14 @@ const FACET_LABELS: Record<string, string> = {
   clientId: 'Client',
 };
 
+const DEFAULT_PINNED_FACETS = ['status'];
+
 export const FacetSidebar: React.FC<FacetSidebarProps> = ({
   facets,
   selectedFilters,
   onFilterChange,
   onClearAll,
-  pinnedFacets = ['status'],
+  pinnedFacets = DEFAULT_PINNED_FACETS,
 }) => {
   // Flatten facets from all indexes
   const mergedFacets = useMemo(() => {
