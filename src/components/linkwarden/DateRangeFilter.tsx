@@ -88,6 +88,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
               key={key}
               onClick={() => selectPreset(key)}
               className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300"
+              aria-pressed={isActive}
               style={{
                 border: "1px solid rgba(255,255,255,0.07)",
                 color: isActive ? "#a3e635" : "rgba(255,255,255,0.92)",
@@ -113,6 +114,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
             }
           }}
           className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300"
+          aria-pressed={activePreset === "custom"}
           style={{
             border: "1px solid rgba(255,255,255,0.07)",
             color:
