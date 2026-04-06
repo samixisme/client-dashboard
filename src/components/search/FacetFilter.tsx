@@ -89,6 +89,7 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
               placeholder={`Search ${label.toLowerCase()}…`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label={`Search ${label.toLowerCase()}`}
             />
           )}
 
