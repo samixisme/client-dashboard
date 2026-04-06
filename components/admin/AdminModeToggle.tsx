@@ -14,6 +14,8 @@ const AdminModeToggle: React.FC = () => {
         <button
             onClick={toggleAdminMode}
             title="Toggle Admin Backend"
+            aria-pressed={isAdminMode}
+            aria-label="Toggle Admin Mode"
             className={`fixed bottom-6 right-6 z-50 h-11 w-11 rounded-xl flex items-center justify-center shadow-lg transition-all duration-300 transform hover:scale-110 no-print ${
                 isAdminMode ? 'bg-red-500 hover:bg-red-600' : 'bg-primary hover:bg-primary-hover'
             }`}
