@@ -27,6 +27,8 @@ router.get('/', async (req: Request, res: Response) => {
       maxRedirects: 3,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LinkMetaBot/1.0)' },
       responseType: 'text',
+      maxContentLength: 5 * 1024 * 1024, // 5MB limit
+      maxBodyLength: 5 * 1024 * 1024,
     });
 
     const $ = cheerio.load(html);
