@@ -298,6 +298,9 @@ socialRouter.post('/fetch/:platform', async (req: Request, res: Response) => {
             method,
             url,
             headers,
+            maxContentLength: 5 * 1024 * 1024, // 5MB limit
+            maxBodyLength: 5 * 1024 * 1024,
+            timeout: 15000,
         };
 
         // Add access_token as query param for Meta and Google platforms
