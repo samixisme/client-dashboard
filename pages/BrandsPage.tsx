@@ -41,52 +41,19 @@ const StatBox = ({ to, icon, count, label }: { to: string; icon: React.ReactNode
     );
 };
 
-const BrandCard: React.FC<{ brand: Brand; index: number }> = ({ brand, index }) => {
-    const { data } = useData();
-    const { projects, boards, roadmapItems, tasks, users, moodboards, calendar_events, invoices, estimates, clients, feedbackComments } = data;
-
-    const getBrandStats = (brandId: string) => {
-        const brandProjects = projects.filter(p => p.brandId === brandId);
-        const projectCount = brandProjects.length;
-        const brandProjectIds = brandProjects.map(p => p.id);
-        const moodboardCount = moodboards.filter(m => brandProjectIds.includes(m.projectId)).length;
-        const feedbackCount = feedbackComments.filter(f => brandProjectIds.includes(f.projectId)).length;
-        const brandClientIds = clients.filter(c => c.brandId === brandId).map(c => c.id);
-        const invoiceCount = invoices.filter(i => brandClientIds.includes(i.clientId)).length;
-        const estimateCount = estimates.filter(e => brandClientIds.includes(e.clientId)).length;
-        const getBrandForEvent = (event: CalendarEvent) => {
-            if (event.brandId) return event.brandId;
-            if (event.sourceId) {
-                switch (event.type) {
-                    case 'task': {
-                        const task = tasks.find(t => t.id === event.sourceId);
-                        const board = task ? boards.find(b => b.id === task.boardId) : undefined;
-                        const project = board ? projects.find(p => p.id === board.projectId) : undefined;
-                        return project?.brandId;
-                    }
-                    case 'roadmap_item': {
-                        const item = roadmapItems.find(i => i.id === event.sourceId);
-                        const project = item ? projects.find(p => p.id === item.projectId) : undefined;
-                        return project?.brandId;
-                    }
-                    case 'invoice': {
-                        const invoice = invoices.find(i => i.id === event.sourceId);
-                        if (!invoice) return undefined;
-                        const client = clients.find(c => c.id === invoice.clientId);
-                        return client?.brandId;
-                    }
-                    default: return undefined;
-                }
-            }
-            return undefined;
-        };
-        const eventCount = calendar_events.filter(e => getBrandForEvent(e) === brandId).length;
-        return { projectCount, moodboardCount, feedbackCount, invoiceCount, estimateCount, eventCount };
+const BrandCard = React.memo<{
+    brand: Brand;
+    index: number;
+    stats: {
+        projectCount: number;
+        moodboardCount: number;
+        feedbackCount: number;
+        invoiceCount: number;
+        estimateCount: number;
+        eventCount: number;
     };
-
-    const members = users.filter(m => brand.memberIds?.includes(m.id));
-    const stats = getBrandStats(brand.id);
-
+    members: User[];
+}>(({ brand, index, stats, members }) => {
     return (
         <div
             className="bg-glass/40 backdrop-blur-xl p-6 rounded-2xl border border-border-color flex flex-col gap-4 hover:border-primary/60 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] hover:scale-[1.03] hover:bg-glass/60 transition-all duration-500 group animate-fade-in-up relative overflow-hidden"
@@ -129,14 +96,14 @@ const BrandCard: React.FC<{ brand: Brand; index: number }> = ({ brand, index }) 
             </div>
         </div>
     );
-};
+});
 
 
 const BrandsPage = () => {
     const { isAdminMode } = useAdmin();
     const { data, loading, error, updateData, forceUpdate } = useData();
     const { searchQuery, setSearchQuery } = useSearch();
-    const { projects } = data;
+    const { projects, boards, roadmapItems, tasks, users, moodboards, calendar_events, invoices, estimates, clients, feedbackComments, brands } = data;
 
     const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
     const [sortState, setSortState] = useState<BrandSortState>({
@@ -148,8 +115,122 @@ const BrandsPage = () => {
     const [isSortOpen, setIsSortOpen] = useState(false);
     const sortAnchorEl = useRef<HTMLButtonElement>(null);
 
+    const brandStatsMap = useMemo(() => {
+        const stats = new Map<string, {
+            projectCount: number;
+            moodboardCount: number;
+            feedbackCount: number;
+            invoiceCount: number;
+            estimateCount: number;
+            eventCount: number;
+        }>();
+
+        brands?.forEach((brand: Brand) => {
+            stats.set(brand.id, {
+                projectCount: 0,
+                moodboardCount: 0,
+                feedbackCount: 0,
+                invoiceCount: 0,
+                estimateCount: 0,
+                eventCount: 0
+            });
+        });
+
+        // 1. Map projects to brands
+        const projectToBrand = new Map<string, string>();
+        projects?.forEach((p: import('../types').Project) => {
+            if (p.brandId) {
+                projectToBrand.set(p.id, p.brandId);
+                const stat = stats.get(p.brandId);
+                if (stat) stat.projectCount++;
+            }
+        });
+
+        // 2. Count moodboards
+        moodboards?.forEach((m: import('../types').Moodboard) => {
+            const brandId = projectToBrand.get(m.projectId);
+            if (brandId) {
+                const stat = stats.get(brandId);
+                if (stat) stat.moodboardCount++;
+            }
+        });
+
+        // 3. Count feedback
+        feedbackComments?.forEach((f: import('../types').FeedbackComment) => {
+            const brandId = projectToBrand.get(f.projectId);
+            if (brandId) {
+                const stat = stats.get(brandId);
+                if (stat) stat.feedbackCount++;
+            }
+        });
+
+        // 4. Map clients to brands
+        const clientToBrand = new Map<string, string>();
+        clients?.forEach((c: import('../types').Client) => {
+            if (c.brandId) {
+                clientToBrand.set(c.id, c.brandId);
+            }
+        });
+
+        // 5. Count invoices
+        invoices?.forEach((i: import('../types').Invoice) => {
+            const brandId = clientToBrand.get(i.clientId);
+            if (brandId) {
+                const stat = stats.get(brandId);
+                if (stat) stat.invoiceCount++;
+            }
+        });
+
+        // 6. Count estimates
+        estimates?.forEach((e: import('../types').Estimate) => {
+            const brandId = clientToBrand.get(e.clientId);
+            if (brandId) {
+                const stat = stats.get(brandId);
+                if (stat) stat.estimateCount++;
+            }
+        });
+
+        // 7. Count events
+        // Optimization: Map task/roadmap to project to brand
+        const boardToProject = new Map<string, string>();
+        boards?.forEach((b: import('../types').Board) => boardToProject.set(b.id, b.projectId));
+
+        const taskToBrand = new Map<string, string>();
+        tasks?.forEach((t: import('../types').Task) => {
+            const projectId = boardToProject.get(t.boardId);
+            if (projectId) {
+                const brandId = projectToBrand.get(projectId);
+                if (brandId) taskToBrand.set(t.id, brandId);
+            }
+        });
+
+        const roadmapToBrand = new Map<string, string>();
+        roadmapItems?.forEach((r: import('../types').RoadmapItem) => {
+            const brandId = projectToBrand.get(r.projectId);
+            if (brandId) roadmapToBrand.set(r.id, brandId);
+        });
+
+        calendar_events?.forEach((e: CalendarEvent) => {
+            let brandId = e.brandId;
+            if (!brandId && e.sourceId) {
+                if (e.type === 'task') brandId = taskToBrand.get(e.sourceId);
+                else if (e.type === 'roadmap_item') brandId = roadmapToBrand.get(e.sourceId);
+                else if (e.type === 'invoice') {
+                    const inv = invoices.find((i: import('../types').Invoice) => i.id === e.sourceId);
+                    if (inv) brandId = clientToBrand.get(inv.clientId);
+                }
+            }
+            if (brandId) {
+                const stat = stats.get(brandId);
+                if (stat) stat.eventCount++;
+            }
+        });
+
+        return stats;
+    }, [brands, projects, moodboards, feedbackComments, clients, invoices, estimates, calendar_events, boards, tasks, roadmapItems]);
+
     const filteredBrands = useMemo(() => {
-        let tempBrands = [...data.brands];
+        let tempBrands = [...brands];
 
         if (searchQuery) {
             const lowercasedQuery = searchQuery.toLowerCase();
@@ -308,7 +389,11 @@ const BrandsPage = () => {
 
       {viewMode === 'board' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredBrands.map((brand, index) => <BrandCard key={brand.id} brand={brand} index={index} />)}
+            {filteredBrands.map((brand, index) => {
+                const stats = brandStatsMap.get(brand.id) || { projectCount: 0, moodboardCount: 0, feedbackCount: 0, invoiceCount: 0, estimateCount: 0, eventCount: 0 };
+                const members = users.filter((m: User) => brand.memberIds?.includes(m.id));
+                return <BrandCard key={brand.id} brand={brand} index={index} stats={stats} members={members} />;
+            })}
         </div>
       ) : (
         <div className="bg-glass/40 backdrop-blur-xl p-6 rounded-2xl border border-border-color shadow-xl overflow-hidden animate-fade-in">
@@ -323,9 +408,9 @@ const BrandsPage = () => {
                 </thead>
                 <tbody>
                     {filteredBrands.map((brand, index) => {
-                        const projectCount = projects.filter(p => p.brandId === brand.id).length;
+                        const projectCount = brandStatsMap.get(brand.id)?.projectCount || 0;
                         const createdAt = typeof brand.createdAt === 'object' && brand.createdAt && 'toDate' in brand.createdAt ? brand.createdAt.toDate() : new Date(brand.createdAt as Date);
-                        const members = data.users.filter(m => brand.memberIds?.includes(m.id));
+                        const members = users.filter((m: User) => brand.memberIds?.includes(m.id));
                         return (
                             <tr
                                 key={brand.id}
