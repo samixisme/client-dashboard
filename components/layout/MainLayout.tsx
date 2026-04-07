@@ -44,10 +44,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout, fullBleed }
         <div className="h-[88px] flex items-center justify-between px-4 md:px-10 shrink-0 no-print">
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-2">
-                <button onClick={() => navigate(-1)} title="Go back" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
+                <button onClick={() => navigate(-1)} title="Go back" aria-label="Go back" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
                     <ArrowLeftIcon className="h-5 w-5" />
                 </button>
-                <button onClick={() => navigate(1)} title="Go forward" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
+                <button onClick={() => navigate(1)} title="Go forward" aria-label="Go forward" className="h-11 w-11 flex items-center justify-center rounded-xl bg-glass text-text-secondary hover:bg-glass-light hover:text-text-primary border border-border-color">
                     <ArrowRightIcon className="h-5 w-5" />
                 </button>
             </div>
@@ -63,10 +63,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout, fullBleed }
           {/* Calendar Controls - Only show on calendar page */}
           {isCalendarPage && (
             <div className="flex items-center gap-3">
-              <button onClick={() => navigateDate(-1)} className="px-3 py-2 bg-glass border border-border-color rounded-lg hover:bg-glass-light transition-all duration-200 shadow-sm hover:shadow-md">&larr;</button>
+              <button onClick={() => navigateDate(-1)} aria-label="Previous date" className="px-3 py-2 bg-glass border border-border-color rounded-lg hover:bg-glass-light transition-all duration-200 shadow-sm hover:shadow-md">&larr;</button>
               <button onClick={today} className="px-4 py-2 bg-glass border border-border-color rounded-lg hover:bg-glass-light transition-all duration-200 shadow-sm hover:shadow-md text-sm font-semibold whitespace-nowrap">{headerTitle}</button>
-              <button onClick={() => navigateDate(1)} className="px-3 py-2 bg-glass border border-border-color rounded-lg hover:bg-glass-light transition-all duration-200 shadow-sm hover:shadow-md">&rarr;</button>
-              <div className="grid grid-cols-5 gap-0 bg-glass-light rounded-lg p-1 border border-border-color shadow-sm ml-2 relative overflow-hidden">
+              <button onClick={() => navigateDate(1)} aria-label="Next date" className="px-3 py-2 bg-glass border border-border-color rounded-lg hover:bg-glass-light transition-all duration-200 shadow-sm hover:shadow-md">&rarr;</button>
+              <div role="group" aria-label="Calendar views" className="grid grid-cols-5 gap-0 bg-glass-light rounded-lg p-1 border border-border-color shadow-sm ml-2 relative overflow-hidden">
                 <div
                   className="absolute bg-primary rounded-md transition-all duration-300 ease-out shadow-md pointer-events-none"
                   style={{
@@ -80,6 +80,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, onLogout, fullBleed }
                   <button
                     key={v}
                     onClick={() => setView(v)}
+                    aria-pressed={view === v}
                     className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors duration-300 relative z-10 whitespace-nowrap ${view === v ? 'text-gray-900' : 'text-text-secondary hover:text-text-primary'}`}
                   >
                     {v.charAt(0).toUpperCase() + v.replace('-month', ' Month').slice(1)}
