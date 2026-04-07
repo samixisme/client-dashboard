@@ -99,6 +99,22 @@ describe('urlValidator', () => {
       const result = validateUrl('http://0.1.2.3');
       expect(result.isValid).toBe(false);
     });
+
+    it('blocks IPv4-mapped IPv6 loopback (decimal form)', () => {
+      const result = validateUrl('http://[::ffff:127.0.0.1]');
+      // Result may be false from isValid or false due to format, but it should never be valid
+      expect(result.isValid).toBe(false);
+    });
+
+    it('blocks IPv4-mapped IPv6 loopback (hex form)', () => {
+      const result = validateUrl('http://[::ffff:7f00:1]');
+      expect(result.isValid).toBe(false);
+    });
+
+    it('blocks IPv4-mapped IPv6 AWS metadata (decimal form)', () => {
+      const result = validateUrl('http://[::ffff:169.254.169.254]');
+      expect(result.isValid).toBe(false);
+    });
   });
 
   describe('validateId', () => {

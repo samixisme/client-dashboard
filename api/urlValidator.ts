@@ -12,6 +12,17 @@ const PRIVATE_IP_RANGES = [
   /^::1$/,
   /^fc00:/,
   /^fe80:/,
+  /^::ffff:127\./,
+  /^::ffff:7f[0-9a-f]{2}:/i,
+  /^::ffff:10\./,
+  /^::ffff:0?a[0-9a-f]{2}:/i,
+  /^::ffff:172\.(1[6-9]|2[0-9]|3[0-1])\./,
+  /^::ffff:ac1[0-9a-f]:/i,
+  /^::ffff:192\.168\./,
+  /^::ffff:c0a8:/i,
+  /^::ffff:169\.254\./,
+  /^::ffff:a9fe:/i,
+  /^::ffff:0\./,
 ];
 
 // Blocked hostnames
@@ -46,13 +57,15 @@ export function validateUrl(urlString: string): { isValid: boolean; error?: stri
 
   // Block localhost variations
   const hostname = parsedUrl.hostname.toLowerCase();
-  if (BLOCKED_HOSTNAMES.includes(hostname)) {
+  const strippedHostname = hostname.replace(/^\[|\]$/g, '');
+
+  if (BLOCKED_HOSTNAMES.includes(hostname) || BLOCKED_HOSTNAMES.includes(strippedHostname)) {
     return { isValid: false, error: 'Access to this hostname is not allowed' };
   }
 
   // Block private IP ranges
   for (const range of PRIVATE_IP_RANGES) {
-    if (range.test(hostname)) {
+    if (range.test(strippedHostname)) {
       return { isValid: false, error: 'Access to private IP addresses is not allowed' };
     }
   }
