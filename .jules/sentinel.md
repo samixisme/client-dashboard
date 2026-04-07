@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2025-05-15 - DoS Risk in Missing Fetch Timeouts
+**Vulnerability:** The application used unbounded `fetch` requests in `api/linkwardenRoutes.ts` without configuring explicit timeouts or abort signals. This could allow an attacker or a poorly performing upstream service to cause thread starvation and resource exhaustion (Denial of Service) by hanging HTTP connections indefinitely.
+**Learning:** Native `fetch` does not have a default timeout. Unbounded requests can consume server resources indefinitely, especially in high-concurrency environments like Express proxy endpoints.
+**Prevention:** Always implement an explicit timeout for outbound `fetch` calls using `AbortController` and `setTimeout` (e.g., 15 seconds). Ensure the fetch call is wrapped in a `try...catch...finally` block to handle the `AbortError` (returning an appropriate Gateway Timeout like 504) and safely clear the timeout ID.

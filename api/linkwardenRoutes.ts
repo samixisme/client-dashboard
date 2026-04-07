@@ -30,15 +30,27 @@ router.get('/links', async (req: Request, res: Response) => {
     const qsStr = qs.toString() ? `?${qs.toString()}` : '';
     const upstream = `${LINKWARDEN_BASE_URL}/api/v1/search${qsStr}`;
 
-    const response = await fetch(upstream, { headers: authHeaders() });
-    const body = await response.text();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: `Linkwarden API error ${response.status}` });
+    try {
+      const response = await fetch(upstream, { headers: authHeaders(), signal: controller.signal });
+      const body = await response.text();
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: `Linkwarden API error ${response.status}` });
+      }
+
+      res.setHeader('Content-Type', 'application/json');
+      res.send(body);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return res.status(504).json({ error: 'Linkwarden API request timed out' });
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    res.setHeader('Content-Type', 'application/json');
-    res.send(body);
   } catch (err) {
     console.error('[linkwarden] links error:', err);
     res.status(500).json({ error: 'Failed to fetch links from Linkwarden' });
@@ -53,15 +65,28 @@ router.get('/collections', async (_req: Request, res: Response) => {
 
   try {
     const upstream = `${LINKWARDEN_BASE_URL}/api/v1/collections`;
-    const response = await fetch(upstream, { headers: authHeaders() });
-    const body = await response.text();
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: `Linkwarden API error ${response.status}` });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const response = await fetch(upstream, { headers: authHeaders(), signal: controller.signal });
+      const body = await response.text();
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: `Linkwarden API error ${response.status}` });
+      }
+
+      res.setHeader('Content-Type', 'application/json');
+      res.send(body);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return res.status(504).json({ error: 'Linkwarden API request timed out' });
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    res.setHeader('Content-Type', 'application/json');
-    res.send(body);
   } catch (err) {
     console.error('[linkwarden] collections error:', err);
     res.status(500).json({ error: 'Failed to fetch collections from Linkwarden' });
