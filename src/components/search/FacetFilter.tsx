@@ -19,11 +19,11 @@ export interface FacetFilterProps {
   label: string;
   values: Record<string, number>;
   selected: string[];
-  onChange: (values: string[]) => void;
+  onChange: (facetKey: string, values: string[]) => void;
   defaultExpanded?: boolean;
 }
 
-export const FacetFilter: React.FC<FacetFilterProps> = ({
+export const FacetFilter: React.FC<FacetFilterProps> = React.memo(({
   facetKey,
   label,
   values,
@@ -45,9 +45,9 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
 
   const handleToggle = (value: string) => {
     if (selected.includes(value)) {
-      onChange(selected.filter((v) => v !== value));
+      onChange(facetKey, selected.filter((v) => v !== value));
     } else {
-      onChange([...selected, value]);
+      onChange(facetKey, [...selected, value]);
     }
   };
 
@@ -69,7 +69,7 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
             className="facet-filter__clear"
             onClick={(e) => {
               e.stopPropagation();
-              onChange([]);
+              onChange(facetKey, []);
             }}
             type="button"
             title="Clear all"
@@ -113,7 +113,9 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
       )}
     </div>
   );
-};
+});
+
+FacetFilter.displayName = 'FacetFilter';
 
 // ── FacetSidebar ───────────────────────────────────────────────────────
 
@@ -135,12 +137,15 @@ const FACET_LABELS: Record<string, string> = {
   clientId: 'Client',
 };
 
+const DEFAULT_PINNED_FACETS = ['status'];
+const DEFAULT_SELECTED_ARRAY: string[] = [];
+
 export const FacetSidebar: React.FC<FacetSidebarProps> = ({
   facets,
   selectedFilters,
   onFilterChange,
   onClearAll,
-  pinnedFacets = ['status'],
+  pinnedFacets = DEFAULT_PINNED_FACETS,
 }) => {
   // Flatten facets from all indexes
   const mergedFacets = useMemo(() => {
@@ -198,8 +203,8 @@ export const FacetSidebar: React.FC<FacetSidebarProps> = ({
             facetKey={key}
             label={FACET_LABELS[key] || key}
             values={mergedFacets[key]}
-            selected={selectedFilters[key] || []}
-            onChange={(values) => onFilterChange(key, values)}
+            selected={selectedFilters[key] || DEFAULT_SELECTED_ARRAY}
+            onChange={onFilterChange}
             defaultExpanded={pinnedFacets.includes(key)}
           />
         ))}
