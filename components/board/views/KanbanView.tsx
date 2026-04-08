@@ -114,4 +114,5 @@ const KanbanView: React.FC<KanbanViewProps> = ({
     );
 };
 
-export default KanbanView;
+// ⚡ Bolt Optimization: Wrapped in React.memo to prevent unnecessary re-renders of the entire board when parent state (like modals) changes.
+export default React.memo(KanbanView);
