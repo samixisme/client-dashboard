@@ -531,7 +531,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                     );
                                 })}
                                 <div className="relative">
-                                    <button onClick={() => setIsAssigneeDropdownOpen(o => !o)} className="h-8 w-8 rounded-full bg-surface-light border border-dashed border-border-color flex items-center justify-center text-text-secondary hover:border-primary hover:text-primary" aria-label="Add assignee" title="Add assignee"><AddIcon className="w-4 h-4" /></button>
+                                    <button onClick={() => setIsAssigneeDropdownOpen(o => !o)} aria-expanded={isAssigneeDropdownOpen} aria-haspopup="listbox" className="h-8 w-8 rounded-full bg-surface-light border border-dashed border-border-color flex items-center justify-center text-text-secondary hover:border-primary hover:text-primary" aria-label="Add assignee" title="Add assignee"><AddIcon className="w-4 h-4" /></button>
                                     {isAssigneeDropdownOpen && (
                                         <div className="absolute top-full left-0 mt-2 w-60 p-2 bg-glass border border-border-color rounded-2xl shadow-2xl z-50 overflow-hidden">
                                             {availableMembers.length > 0 ? (
@@ -558,7 +558,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ task, onClose, onUpdateTask, onDe
                                     </div>
                                 ))}
                                  <div className="relative">
-                                    <button onClick={() => setIsTagDropdownOpen(o => !o)} className="p-1 rounded-full bg-surface-light hover:bg-border-color" aria-label="Add tag" title="Add tag"><AddIcon className="w-3 h-3 text-text-secondary"/></button>
+                                    <button onClick={() => setIsTagDropdownOpen(o => !o)} aria-expanded={isTagDropdownOpen} aria-haspopup="listbox" className="p-1 rounded-full bg-surface-light hover:bg-border-color" aria-label="Add tag" title="Add tag"><AddIcon className="w-3 h-3 text-text-secondary"/></button>
                                     {isTagDropdownOpen && (
                                         <div className="absolute top-full left-0 mt-2 w-56 p-2 bg-glass border border-border-color rounded-2xl shadow-2xl z-50 overflow-hidden">
                                             <input type="text" placeholder="Search or create label..." value={tagSearch} onChange={e => setTagSearch(e.target.value)} className="w-full text-sm bg-surface-light border border-border-color rounded-lg px-2.5 py-1.5 mb-2 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all text-text-primary placeholder:text-text-secondary"/>
