@@ -82,6 +82,7 @@ const ToolsNavItem: React.FC = () => {
 
     return (
         <button
+            aria-label="Tools"
             onClick={() => navigate(href)}
             title="Tools"
             className={`group flex items-center h-11 w-11 hover:w-44 rounded-xl transition-all duration-300 ease-in-out overflow-hidden cursor-pointer ${
@@ -119,6 +120,7 @@ const LibraryNavItem: React.FC = () => {
 
     return (
         <button
+            aria-label="Library"
             onClick={() => navigate(href)}
             title="Library"
             className={`group flex items-center h-11 w-11 hover:w-44 rounded-xl transition-all duration-300 ease-in-out overflow-hidden cursor-pointer ${
