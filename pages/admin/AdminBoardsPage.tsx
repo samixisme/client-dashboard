@@ -311,8 +311,8 @@ const AdminBoardsPage: React.FC = () => {
                                                         </td>
                                                         <td className="p-3 text-right">
                                                             <div className="flex justify-end gap-2">
-                                                                <button onClick={() => handleEditTask(task)} className="text-text-secondary hover:text-primary"><EditIcon className="h-4 w-4"/></button>
-                                                                <button onClick={() => confirmDelete(task)} className="text-text-secondary hover:text-red-500"><DeleteIcon className="h-4 w-4"/></button>
+                                                                <button onClick={() => handleEditTask(task)} className="text-text-secondary hover:text-primary" aria-label={`Edit task: ${task.title}`} title="Edit task"><EditIcon className="h-4 w-4"/></button>
+                                                                <button onClick={() => confirmDelete(task)} className="text-text-secondary hover:text-red-500" aria-label={`Delete task: ${task.title}`} title="Delete task"><DeleteIcon className="h-4 w-4"/></button>
                                                             </div>
                                                         </td>
                                                     </tr>
