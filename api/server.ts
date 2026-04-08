@@ -20,6 +20,7 @@ for (const envPath of envPaths) {
 
 import proxyHandler from './proxy';
 import { optionalApiKeyAuth } from './authMiddleware';
+import { adminRateLimiter } from './adminAuthMiddleware';
 import notificationsRouter from './notifications';
 import socialRouter from './social';
 import webhookRouter from './webhooks';
@@ -177,7 +178,7 @@ app.use('/api/social', socialRouter);
 app.use('/api/webhooks', webhookRouter);
 
 // Admin API endpoints (Firebase Admin SDK - user management, custom claims, bulk operations)
-app.use('/admin/api', optionalApiKeyAuth, adminRouter);
+app.use('/admin/api', adminRateLimiter, optionalApiKeyAuth, adminRouter);
 
 // Paymenter billing & subscription proxy
 app.use('/api/paymenter', paymenterRouter);
