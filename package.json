@@ -19,7 +19,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@usewaypoint/email-builder": "^0.0.9",
-    "axios": "^1.13.2",
+    "axios": "^1.15.0",
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
