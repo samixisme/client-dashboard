@@ -217,7 +217,9 @@ GET /api/proxy?url=https://example.com&projectId=123
 
 The server fetches the page, rewrites relative URLs, removes CSP headers, and injects the `feedback.js` widget before returning the modified HTML to an iframe.
 
-SSRF protection (`api/urlValidator.ts`) blocks private IPs, localhost, and cloud metadata endpoints.
+SSRF protection (`api/urlValidator.ts`) validates the initial requested URL and is intended to block private IPs, localhost, and cloud metadata endpoints.
+
+**Current limitation:** if the upstream server responds with an HTTP redirect, protection depends on the proxy implementation also disabling redirects or revalidating each redirect target. Until that is enforced in the proxy, redirect-based bypasses may still be possible.
 
 ---
 
