@@ -228,7 +228,7 @@ SSRF protection (`api/urlValidator.ts`) validates the initial requested URL and 
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for the full VPS deployment guide.
 
-The production environment runs on a VPS at `49.13.129.43` behind Nginx/Engintron, with both servers managed by PM2.
+The production environment runs on a VPS behind Nginx/Engintron, with both servers managed by PM2.
 
 ```bash
 # Production build
