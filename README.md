@@ -35,7 +35,7 @@ A full-stack TypeScript client dashboard for managing projects, feedback, brands
 | Backend | Express 5 (Node.js proxy + API server) |
 | Database | Firebase Firestore (real-time) |
 | Storage | Firebase Storage + Google Drive |
-| Auth | Firebase Authentication (email link / passwordless) |
+| Auth | Firebase Authentication (email/password, email link, phone OTP, Google OAuth) |
 | Search | Meilisearch |
 | Notifications | Novu |
 | AI | Google Gemini (`@google/genai`) |
@@ -96,7 +96,8 @@ RATE_LIMIT_MAX=100                # Requests per 15 min per IP
 
 ```env
 GEMINI_API_KEY=         # AI features
-VITE_NOVU_APP_ID=       # In-app notifications
+VITE_NOVU_APP_ID=       # In-app notifications (frontend)
+NOVU_API_KEY=           # Novu backend API key (server-side notification dispatch)
 MEILISEARCH_HOST=       # Full-text search
 MEILISEARCH_MASTER_KEY=
 ```
@@ -223,7 +224,9 @@ The feedback tool can annotate any external website by proxying it through the E
 GET /api/proxy?url=https://example.com&projectId=123
 ```
 
-The server fetches the page, rewrites relative URLs, removes CSP headers, and injects the `feedback.js` widget before returning the modified HTML to an iframe.
+The server fetches the page, rewrites relative URLs, removes CSP headers, and injects the feedback tool into the page before returning the modified HTML to an iframe.
+
+**Injection detail:** The proxy currently injects the Vite HMR client (`/@vite/client`), the React Refresh preamble, and the source entry (`/src/feedback-tool/index.tsx`) as a `<script type="module">`. This means the proxy relies on the Vite dev server being reachable and is suited for development use. A production-ready configuration would inject the compiled `feedback.js` bundle instead and omit the HMR scripts.
 
 SSRF protection (`api/urlValidator.ts`) validates the initial requested URL and is intended to block private IPs, localhost, and cloud metadata endpoints.
 
