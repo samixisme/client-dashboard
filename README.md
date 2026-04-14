@@ -98,7 +98,7 @@ RATE_LIMIT_MAX=100                # Requests per 15 min per IP
 GEMINI_API_KEY=         # AI features
 VITE_NOVU_APP_ID=       # In-app notifications
 MEILISEARCH_HOST=       # Full-text search
-MEILISEARCH_API_KEY=
+MEILISEARCH_MASTER_KEY=
 ```
 
 ### Firebase Setup
