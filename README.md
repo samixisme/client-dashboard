@@ -84,11 +84,11 @@ VITE_FIREBASE_DATABASE_URL=
 VITE_FIREBASE_APP_CHECK_SITE_KEY=
 ```
 
-**Optional — API server security:**
+**API server security (optional for local development; required in production):**
 
 ```env
-API_KEY=your-secret-key           # Enables X-API-Key auth on the proxy
-ALLOWED_ORIGINS=http://localhost:3000
+API_KEY=your-secret-key           # Required in production; enables X-API-Key auth on the proxy
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 RATE_LIMIT_MAX=100                # Requests per 15 min per IP
 ```
 
