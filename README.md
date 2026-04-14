@@ -181,9 +181,10 @@ NotificationHistoryProvider
   → UserProvider
     → AdminProvider
       → DataProvider
-        → TimerProvider
-          → CalendarProvider
-            → SearchProvider
+        → ActiveProjectProvider
+          → TimerProvider
+            → CalendarProvider
+              → SearchProvider
 ```
 
 ### Authentication Flow
