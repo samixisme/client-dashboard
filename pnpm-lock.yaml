@@ -24,8 +24,8 @@ importers:
         specifier: 16.6.0
         version: 16.6.0(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@novu/api':
-        specifier: ^3.13.0
-        version: 3.14.1
+        specifier: ^3.15.0
+        version: 3.15.0
       '@novu/react':
         specifier: ^3.13.0
         version: 3.14.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1689,8 +1689,8 @@ packages:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
-  '@novu/api@3.14.1':
-    resolution: {integrity: sha512-TqCIlayGdFELzZRgAzsqA2HjfX5k5Sd3LcWgNtIWVHtl0wXtmUAXq5FsXKl1HAZe3uWkN+jisWrINW1vJ5KdPQ==}
+  '@novu/api@3.15.0':
+    resolution: {integrity: sha512-S1fK3S+qxfTe0bbU0NstNR7EZic500j5YcF9Cg8OdTxw+IDzUGZPjBdzE1G1JHZdhfNQBBuplb9w4wCZC7us1Q==}
 
   '@novu/js@3.14.1':
     resolution: {integrity: sha512-Og9IrPPunw3XleaMl8nkV0vSu0rGXE75CO/CP/upEQWpbK+KvMZbN6rF9+KTrcO1EDG6DwNjI+jhZO83KaIQNg==}
@@ -7656,7 +7656,7 @@ snapshots:
 
   '@noble/hashes@1.8.0': {}
 
-  '@novu/api@3.14.1':
+  '@novu/api@3.15.0':
     dependencies:
       zod: 3.25.76
 
