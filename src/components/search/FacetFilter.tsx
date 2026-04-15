@@ -160,7 +160,7 @@ export const FacetSidebar: React.FC<FacetSidebarProps> = ({
     return merged;
   }, [facets]);
 
-  const hasActiveFilters = Object.values(selectedFilters).some((v) => v.length > 0);
+  const hasActiveFilters = useMemo(() => Object.values(selectedFilters).some((v) => v.length > 0), [selectedFilters]);
 
   // Sort: pinned facets first, then alphabetical
   const sortedFacetKeys = useMemo(() => {

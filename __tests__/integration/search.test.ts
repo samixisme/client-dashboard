@@ -53,8 +53,8 @@ describe('Search Routes', () => {
       expect(res.body.results.tasks.hits).toHaveLength(0);
       expect(mockMultiSearch).toHaveBeenCalledWith({
         queries: [
-          { indexUid: 'projects', q: 'test', limit: 5, offset: 0, attributesToHighlight: ['*'], highlightPreTag: '<mark>', highlightPostTag: '</mark>' },
-          { indexUid: 'tasks', q: 'test', limit: 5, offset: 0, attributesToHighlight: ['*'], highlightPreTag: '<mark>', highlightPostTag: '</mark>' },
+          { indexUid: 'projects', q: 'test', limit: 5, offset: 0, attributesToHighlight: ['*'], highlightPreTag: '<mark>', highlightPostTag: '</mark>', showMatchesPosition: true },
+          { indexUid: 'tasks', q: 'test', limit: 5, offset: 0, attributesToHighlight: ['*'], highlightPreTag: '<mark>', highlightPostTag: '</mark>', showMatchesPosition: true },
         ],
       });
     });
