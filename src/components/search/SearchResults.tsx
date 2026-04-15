@@ -8,7 +8,7 @@
  * - "View all" links for truncated result sets
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { SearchIndexResult, SearchHit, SearchSort } from '../../hooks/useSearch';
 import { ResultCard } from './ResultCard';
 import { ArrowUpDown } from 'lucide-react';
@@ -61,9 +61,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   // Filter to only indexes with results
-  const indexesWithResults = Object.entries(results).filter(
+  const indexesWithResults = useMemo(() => Object.entries(results).filter(
     ([, r]) => r.hits && r.hits.length > 0
-  );
+  ), [results]);
 
   if (error) {
     return (
