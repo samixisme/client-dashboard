@@ -77,6 +77,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [activeTab, setActiveTab] = useState<string | 'all'>('all');
 
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -87,6 +88,26 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
       limit: 5,
       facets: ['status', 'priority', 'type'],
     });
+
+  // Flat results for keyboard navigation
+  const flatResults = React.useMemo(() => {
+    if (!results) return [];
+    const indexesWithResults = Object.entries(results).filter(
+      ([, r]) => r.hits && r.hits.length > 0
+    );
+    const displayedResults =
+      activeTab === 'all'
+        ? indexesWithResults
+        : indexesWithResults.filter(([uid]) => uid === activeTab);
+
+    const flat: Array<{ hit: SearchHit; indexUid: string }> = [];
+    displayedResults.forEach(([uid, r]) => {
+      r.hits.forEach((hit) => {
+        flat.push({ hit, indexUid: uid });
+      });
+    });
+    return flat;
+  }, [results, activeTab]);
 
   // Open/close handlers
   const openSearch = useCallback(() => {
@@ -99,9 +120,21 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
     setIsOpen(false);
     clearAll();
     setSelectedIndex(-1);
+    setActiveTab('all');
   }, [clearAll]);
 
-  // Global keyboard shortcut: Cmd+K / Ctrl+K
+  // Handle result navigation
+  const handleResultClick = useCallback(
+    (hit: SearchHit, indexUid: string) => {
+      addRecentSearch(query);
+      onSearch?.(query);
+      closeSearch();
+      navigate(getResultRoute(hit, indexUid));
+    },
+    [query, onSearch, closeSearch, navigate]
+  );
+
+  // Global keyboard shortcut: Cmd+K / Ctrl+K and modal navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -116,11 +149,29 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
       if (e.key === 'Escape' && isOpen) {
         closeSearch();
       }
+
+      if (isOpen) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < flatResults.length - 1 ? prev + 1 : prev
+          );
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < flatResults.length) {
+            const { hit, indexUid } = flatResults[selectedIndex];
+            handleResultClick(hit, indexUid);
+          }
+        }
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, openSearch, closeSearch]);
+  }, [isOpen, openSearch, closeSearch, flatResults, selectedIndex, handleResultClick]);
 
   // Click outside to close
   useEffect(() => {
@@ -134,21 +185,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, [isOpen, closeSearch]);
 
-  // Handle result navigation
-  const handleResultClick = useCallback(
-    (hit: SearchHit, indexUid: string) => {
-      addRecentSearch(query);
-      onSearch?.(query);
-      closeSearch();
-      navigate(getResultRoute(hit, indexUid));
-    },
-    [query, onSearch, closeSearch, navigate]
-  );
-
   // Handle query change
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
     setSelectedIndex(-1);
+    setActiveTab('all');
   };
 
   // Handle recent search click
@@ -248,6 +289,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
               processingTimeMs={processingTimeMs}
               onResultClick={handleResultClick}
               selectedIndex={selectedIndex}
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setSelectedIndex(-1);
+              }}
             />
           )}
         </div>

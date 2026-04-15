@@ -26,6 +26,8 @@ export interface SearchResultsProps {
   onSortChange?: (sort: SearchSort | undefined) => void;
   currentSort?: SearchSort;
   selectedIndex?: number;
+  activeTab?: string | 'all';
+  onTabChange?: (tab: string | 'all') => void;
 }
 
 const INDEX_LABELS: Record<string, string> = {
@@ -56,8 +58,15 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   onSortChange,
   currentSort,
   selectedIndex,
+  activeTab = 'all',
+  onTabChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<string | 'all'>('all');
+  const [internalActiveTab, setInternalActiveTab] = useState<string | 'all'>('all');
+  const currentTab = onTabChange ? activeTab : internalActiveTab;
+  const handleTabChange = (tab: string | 'all') => {
+    if (onTabChange) onTabChange(tab);
+    else setInternalActiveTab(tab);
+  };
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   // Filter to only indexes with results
@@ -96,9 +105,11 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   }
 
   const displayedResults =
-    activeTab === 'all'
+    currentTab === 'all'
       ? indexesWithResults
-      : indexesWithResults.filter(([uid]) => uid === activeTab);
+      : indexesWithResults.filter(([uid]) => uid === currentTab);
+
+  let currentGlobalIdx = 0;
 
   return (
     <div className="search-results">
@@ -148,10 +159,10 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       {/* Tabs */}
       <div className="search-results__tabs" role="tablist">
         <button
-          className={`search-results__tab ${activeTab === 'all' ? 'search-results__tab--active' : ''}`}
-          onClick={() => setActiveTab('all')}
+          className={`search-results__tab ${currentTab === 'all' ? 'search-results__tab--active' : ''}`}
+          onClick={() => handleTabChange('all')}
           role="tab"
-          aria-selected={activeTab === 'all'}
+          aria-selected={currentTab === 'all'}
           type="button"
         >
           All ({totalHits})
@@ -159,10 +170,10 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         {indexesWithResults.map(([uid, r]) => (
           <button
             key={uid}
-            className={`search-results__tab ${activeTab === uid ? 'search-results__tab--active' : ''}`}
-            onClick={() => setActiveTab(uid)}
+            className={`search-results__tab ${currentTab === uid ? 'search-results__tab--active' : ''}`}
+            onClick={() => handleTabChange(uid)}
             role="tab"
-            aria-selected={activeTab === uid}
+            aria-selected={currentTab === uid}
             type="button"
           >
             {INDEX_LABELS[uid] || uid} ({r.estimatedTotalHits})
@@ -174,25 +185,28 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       <div className="search-results__list" role="listbox">
         {displayedResults.map(([uid, r]) => (
           <div key={uid} className="search-results__group">
-            {activeTab === 'all' && (
+            {currentTab === 'all' && (
               <h3 className="search-results__group-title">
                 {INDEX_LABELS[uid] || uid}
               </h3>
             )}
-            {r.hits.map((hit, idx) => (
-              // Optimization: Pass stable onResultClick reference instead of inline lambda () => onResultClick(hit, uid)
-              <ResultCard
-                key={`${uid}-${hit.id}`}
-                hit={hit}
-                indexUid={uid}
-                onClick={onResultClick}
-                isSelected={selectedIndex === idx}
-              />
-            ))}
-            {r.estimatedTotalHits > r.hits.length && activeTab === 'all' && (
+            {r.hits.map((hit) => {
+              const idx = currentGlobalIdx++;
+              return (
+                // Optimization: Pass stable onResultClick reference instead of inline lambda () => onResultClick(hit, uid)
+                <ResultCard
+                  key={`${uid}-${hit.id}`}
+                  hit={hit}
+                  indexUid={uid}
+                  onClick={onResultClick}
+                  isSelected={selectedIndex === idx}
+                />
+              );
+            })}
+            {r.estimatedTotalHits > r.hits.length && currentTab === 'all' && (
               <button
                 className="search-results__view-all"
-                onClick={() => setActiveTab(uid)}
+                onClick={() => handleTabChange(uid)}
                 type="button"
               >
                 View all {r.estimatedTotalHits} {INDEX_LABELS[uid] || uid} →
