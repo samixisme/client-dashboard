@@ -117,12 +117,18 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
       ...feedbackVideos.map((v: FeedbackVideo) => ({ ...v, type: 'video' as const })),
       ...feedbackWebsites.map((w: FeedbackWebsite) => ({ ...w, type: 'website' as const }))
     ];
-    const feedbackByStatus = {
-      pending: allFeedback.filter((f: FeedbackWithType) => f.status === 'pending').length,
-      in_review: allFeedback.filter((f: FeedbackWithType) => f.status === 'in_review').length,
-      approved: allFeedback.filter((f: FeedbackWithType) => f.status === 'approved').length,
-      changes_requested: allFeedback.filter((f: FeedbackWithType) => f.status === 'changes_requested').length,
-    };
+    // Bolt Optimization: Calculate all feedback statuses in a single pass (O(N))
+    // instead of making 4 separate .filter().length passes (O(4N))
+    const feedbackByStatus = allFeedback.reduce(
+      (acc, f) => {
+        if (f.status === 'pending') acc.pending++;
+        else if (f.status === 'in_review') acc.in_review++;
+        else if (f.status === 'approved') acc.approved++;
+        else if (f.status === 'changes_requested') acc.changes_requested++;
+        return acc;
+      },
+      { pending: 0, in_review: 0, approved: 0, changes_requested: 0 }
+    );
 
     // 7. Upcoming Timeline
     const next7Days = Array.from({length: 7}, (_, i) => {
