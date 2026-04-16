@@ -93,6 +93,8 @@ const SearchPage: React.FC = () => {
     facets: ALL_FACETS,
   });
 
+  const [activeTab, setActiveTab] = React.useState<string | 'all'>('all');
+
   // Sync URL → hook on mount
   useEffect(() => {
     if (urlQuery) setQuery(urlQuery);
@@ -275,6 +277,8 @@ const SearchPage: React.FC = () => {
           onResultClick={handleResultClick}
           onSortChange={handleSortChange}
           currentSort={urlSortObj}
+          activeTab={activeTab}
+          onActiveTabChange={setActiveTab}
         />
       </div>
     </div>
