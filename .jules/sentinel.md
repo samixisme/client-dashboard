@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2024-05-18 - SSRF Protection IPv6 Bypass
+**Vulnerability:** SSRF protection logic was bypassing IPv6 addresses (e.g., `[::1]`) and IPv4-mapped IPv6 addresses (e.g., `[::ffff:127.0.0.1]`) because `new URL().hostname` wraps IPv6 addresses in brackets, which broke regex matching.
+**Learning:** `URL.hostname` returns brackets for IPv6 inputs. Also, IPv4-mapped IPv6 ranges must be explicitly blocked because Node.js normalizes inputs like `::ffff:127.0.0.1` to `::ffff:7f00:1`.
+**Prevention:** Strip brackets from IPv6 addresses in Node's `new URL().hostname` before validation and explicitly block IPv4-mapped IPv6 ranges in decimal and hex forms using catch-all regexes.
