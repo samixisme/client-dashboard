@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2025-04-16 - SSRF Bypass via Redirects
+**Vulnerability:** A Server-Side Request Forgery (SSRF) bypass existed in the `api/proxy.ts` and `api/linkMetaRoutes.ts` endpoints. While the initial URL was validated against internal/private IPs using `validateUrl`, the underlying HTTP client (`axios`) automatically followed redirects without validating the target URLs. An attacker could supply a valid external URL that redirects to a prohibited internal IP (e.g., `169.254.169.254`), bypassing the SSRF protection.
+**Learning:** URL validation must be performed not only on the initial request URL but also on every subsequent URL encountered during redirect chains. Automatic redirect following in HTTP clients can completely undermine initial validation checks.
+**Prevention:** Always validate redirected URLs by using client hooks (e.g., Axios `beforeRedirect` or fetch equivalents) to intercept and validate the `Location` header before the redirect is actually followed. Ensure the HTTP client is configured to throw an error if the redirected URL is invalid.
