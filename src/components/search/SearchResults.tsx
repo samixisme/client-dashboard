@@ -26,6 +26,8 @@ export interface SearchResultsProps {
   onSortChange?: (sort: SearchSort | undefined) => void;
   currentSort?: SearchSort;
   selectedIndex?: number;
+  activeTab: string | 'all';
+  onActiveTabChange: (tab: string | 'all') => void;
 }
 
 const INDEX_LABELS: Record<string, string> = {
@@ -56,8 +58,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   onSortChange,
   currentSort,
   selectedIndex,
+  activeTab,
+  onActiveTabChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<string | 'all'>('all');
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   // Filter to only indexes with results
@@ -99,6 +102,8 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     activeTab === 'all'
       ? indexesWithResults
       : indexesWithResults.filter(([uid]) => uid === activeTab);
+
+  let currentGlobalIdx = 0;
 
   return (
     <div className="search-results">
@@ -149,7 +154,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       <div className="search-results__tabs" role="tablist">
         <button
           className={`search-results__tab ${activeTab === 'all' ? 'search-results__tab--active' : ''}`}
-          onClick={() => setActiveTab('all')}
+          onClick={() => onActiveTabChange('all')}
           role="tab"
           aria-selected={activeTab === 'all'}
           type="button"
@@ -160,7 +165,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <button
             key={uid}
             className={`search-results__tab ${activeTab === uid ? 'search-results__tab--active' : ''}`}
-            onClick={() => setActiveTab(uid)}
+            onClick={() => onActiveTabChange(uid)}
             role="tab"
             aria-selected={activeTab === uid}
             type="button"
@@ -179,20 +184,23 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                 {INDEX_LABELS[uid] || uid}
               </h3>
             )}
-            {r.hits.map((hit, idx) => (
-              // Optimization: Pass stable onResultClick reference instead of inline lambda () => onResultClick(hit, uid)
-              <ResultCard
-                key={`${uid}-${hit.id}`}
-                hit={hit}
-                indexUid={uid}
-                onClick={onResultClick}
-                isSelected={selectedIndex === idx}
-              />
-            ))}
+            {r.hits.map((hit) => {
+              const globalIdx = currentGlobalIdx++;
+              return (
+                // Optimization: Pass stable onResultClick reference instead of inline lambda () => onResultClick(hit, uid)
+                <ResultCard
+                  key={`${uid}-${hit.id}`}
+                  hit={hit}
+                  indexUid={uid}
+                  onClick={onResultClick}
+                  isSelected={selectedIndex === globalIdx}
+                />
+              );
+            })}
             {r.estimatedTotalHits > r.hits.length && activeTab === 'all' && (
               <button
                 className="search-results__view-all"
-                onClick={() => setActiveTab(uid)}
+                onClick={() => onActiveTabChange(uid)}
                 type="button"
               >
                 View all {r.estimatedTotalHits} {INDEX_LABELS[uid] || uid} →

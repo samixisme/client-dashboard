@@ -9,7 +9,7 @@
  * - Mobile-responsive overlay
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearch } from '../../hooks/useSearch';
 import { SearchResults } from './SearchResults';
 import type { SearchHit } from '../../hooks/useSearch';
@@ -77,6 +77,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [activeTab, setActiveTab] = useState<string | 'all'>('all');
 
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -87,6 +88,20 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
       limit: 5,
       facets: ['status', 'priority', 'type'],
     });
+
+  const flatHits = useMemo(() => {
+    const indexesWithResults = Object.entries(results).filter(
+      ([, r]) => r.hits && r.hits.length > 0
+    );
+    const displayedResults =
+      activeTab === 'all'
+        ? indexesWithResults
+        : indexesWithResults.filter(([uid]) => uid === activeTab);
+
+    return displayedResults.flatMap(([uid, r]) =>
+      r.hits.map((hit) => ({ hit, indexUid: uid }))
+    );
+  }, [results, activeTab]);
 
   // Open/close handlers
   const openSearch = useCallback(() => {
@@ -99,6 +114,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
     setIsOpen(false);
     clearAll();
     setSelectedIndex(-1);
+    setActiveTab('all');
   }, [clearAll]);
 
   // Global keyboard shortcut: Cmd+K / Ctrl+K
@@ -133,6 +149,22 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [isOpen, closeSearch]);
+
+  const handleModalKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (flatHits.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < flatHits.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : flatHits.length - 1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0 && selectedIndex < flatHits.length) {
+      e.preventDefault();
+      const selected = flatHits[selectedIndex];
+      handleResultClick(selected.hit, selected.indexUid);
+    }
+  };
 
   // Handle result navigation
   const handleResultClick = useCallback(
@@ -173,7 +205,12 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
 
   return (
     <div className="global-search__overlay" ref={overlayRef}>
-      <div className="global-search__modal" role="dialog" aria-label="Search">
+      <div
+        className="global-search__modal"
+        role="dialog"
+        aria-label="Search"
+        onKeyDown={handleModalKeyDown}
+      >
         {/* Input */}
         <div className="global-search__input-row">
           <Search size={18} className="global-search__input-icon" />
@@ -248,6 +285,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
               processingTimeMs={processingTimeMs}
               onResultClick={handleResultClick}
               selectedIndex={selectedIndex}
+              activeTab={activeTab}
+              onActiveTabChange={(tab) => {
+                setActiveTab(tab);
+                setSelectedIndex(-1);
+              }}
             />
           )}
         </div>
