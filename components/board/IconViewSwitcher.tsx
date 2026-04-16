@@ -11,20 +11,22 @@ interface IconViewSwitcherProps {
     onSwitchView: (view: string) => void;
     options: ViewOption[];
     orientation?: 'vertical' | 'horizontal';
+    groupLabel?: string;
 }
 
 const IconViewSwitcher: React.FC<IconViewSwitcherProps> = ({
     currentView,
     onSwitchView,
     options,
-    orientation = 'vertical'
+    orientation = 'vertical',
+    groupLabel = 'View switcher'
 }) => {
     const containerClass = orientation === 'vertical'
         ? 'flex flex-col gap-3'
         : 'flex flex-row gap-3';
 
     return (
-        <div className={containerClass}>
+        <div className={containerClass} role="group" aria-label={groupLabel}>
             {options.map(option => {
                 const isActive = currentView === option.id;
 
@@ -33,6 +35,7 @@ const IconViewSwitcher: React.FC<IconViewSwitcherProps> = ({
                         key={option.id}
                         onClick={() => onSwitchView(option.id)}
                         aria-label={`Switch to ${option.name} view`}
+                        aria-pressed={isActive}
                         title={option.name}
                         className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 ${
                             isActive
