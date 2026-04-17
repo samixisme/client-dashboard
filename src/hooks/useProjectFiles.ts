@@ -45,11 +45,14 @@ export function useProjectFiles(projectId: string | undefined): ProjectFile[] {
     }
 
     // 3. Task Attachments
-    const projectBoardIds = data.boards
-      .filter(b => b.projectId === projectId)
-      .map(b => b.id);
+    // ⚡ Bolt Optimization: Use a Set for O(1) lookups instead of Array.includes() to prevent O(N*M) time complexity during task filtering.
+    const projectBoardIds = new Set(
+      data.boards
+        .filter(b => b.projectId === projectId)
+        .map(b => b.id)
+    );
       
-    const tasks = data.tasks.filter(t => projectBoardIds.includes(t.boardId));
+    const tasks = data.tasks.filter(t => projectBoardIds.has(t.boardId));
     tasks.forEach(task => {
       if (task.attachments && task.attachments.length > 0) {
         const attachs = task.attachments.map((att): ProjectFile => ({
