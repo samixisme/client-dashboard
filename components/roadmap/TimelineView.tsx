@@ -57,7 +57,12 @@ const SidebarItem = React.memo(({
                 {!isSidebarCollapsed && (
                     <div className="flex items-center gap-1 overflow-hidden">
                         {hasChildren ? (
-                            <button onClick={() => toggleExpand(item.id)} className="p-0.5 rounded-sm hover:bg-glass/60 hover:scale-110 transition-all duration-200 focus:ring-2 focus:ring-primary">
+                            <button
+                                onClick={() => toggleExpand(item.id)}
+                                className="p-0.5 rounded-sm hover:bg-glass/60 hover:scale-110 transition-all duration-200 focus:ring-2 focus:ring-primary"
+                                aria-expanded={expandedItems.has(item.id)}
+                                aria-label={expandedItems.has(item.id) ? `Collapse tasks for ${item.title}` : `Expand tasks for ${item.title}`}
+                            >
                                 <ChevronDownIcon className={`w-4 h-4 text-text-secondary transition-transform ${expandedItems.has(item.id) ? '' : '-rotate-90'}`} />
                             </button>
                         ) : (
@@ -385,7 +390,13 @@ const TimelineView: React.FC<TimelineViewProps> = ({ items, tasks, onUpdateItem,
                     <div className={`sticky left-0 flex-shrink-0 border-r border-primary/30 bg-black/95 backdrop-blur-3xl shadow-[2px_0_15px_rgba(0,0,0,0.1)] z-20 transition-all duration-300 ${isSidebarCollapsed ? 'w-24' : 'w-80'}`}>
                         <div className={`h-16 flex items-center px-4 border-b border-primary/20 sticky top-0 bg-black/95 backdrop-blur-3xl z-30 shadow-xl shadow-[0_4px_15px_rgba(var(--primary-rgb),0.1)] ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
                             <h3 className={`font-bold text-lg bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0 select-none absolute' : 'opacity-100'}`}>Tasks</h3>
-                            <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-1.5 rounded-lg hover:bg-white/10 hover:border-primary/60 border border-transparent transition-all duration-200 hover:scale-110 hover:shadow-lg focus:ring-2 focus:ring-primary" title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+                            <button
+                                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                                className="p-1.5 rounded-lg hover:bg-white/10 hover:border-primary/60 border border-transparent transition-all duration-200 hover:scale-110 hover:shadow-lg focus:ring-2 focus:ring-primary"
+                                title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                                aria-expanded={!isSidebarCollapsed}
+                                aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                            >
                                 <ChevronDownIcon className={`h-5 w-5 text-text-secondary transition-transform duration-300 ${isSidebarCollapsed ? '-rotate-90' : 'rotate-90'}`} />
                             </button>
                         </div>
