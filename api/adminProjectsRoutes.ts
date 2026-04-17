@@ -131,8 +131,8 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Validate memberIds exist in users collection
     if (data.memberIds.length > 0) {
-      const memberChecks = await Promise.all(
-        data.memberIds.map((uid) => db.collection('users').doc(uid).get())
+      const memberChecks = await db.getAll(
+        ...data.memberIds.map((uid) => db.collection('users').doc(uid))
       );
       const missing = data.memberIds.filter((_, i) => !memberChecks[i].exists);
       if (missing.length > 0) {
