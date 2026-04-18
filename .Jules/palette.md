@@ -1,0 +1,3 @@
+## 2024-04-18 - DocumentDownloadButton icon state
+**Learning:** Found that secondary icon-only buttons lacked aria-labels when loading and that standardizing loading states across buttons makes the interface feel more reliable. The `DocumentDownloadButton` was using a generic SVG that gave no feedback when clicked if it was generating a document, unlike the text-based buttons.
+**Action:** When adding or fixing buttons, always ensure that if the button can be in an icon-only state (like `variant='secondary'`), an `aria-label` is conditionally applied so screen readers know what the button does. Additionally, replacing generic SVGs with standard `lucide-react` icons (like `Loader2`) for async loading states improves visual consistency.
