@@ -463,17 +463,21 @@ const ToolsPage: React.FC = () => {
 
     const feedbackStats = useMemo(() => {
         if (!project) return [];
-        const sites = data.feedbackWebsites.filter(f => f.projectId === project.id);
-        const mockups = data.feedbackMockups.filter(f => f.projectId === project.id);
-        const videos = data.feedbackVideos.filter(f => f.projectId === project.id);
-        const openComments = data.feedbackComments.filter(
-            c => c.projectId === project.id && c.status === 'Active'
-        );
+        let sitesCount = 0;
+        let mockupsCount = 0;
+        let videosCount = 0;
+        let openCommentsCount = 0;
+
+        data.feedbackWebsites.forEach(f => { if (f.projectId === project.id) sitesCount++; });
+        data.feedbackMockups.forEach(f => { if (f.projectId === project.id) mockupsCount++; });
+        data.feedbackVideos.forEach(f => { if (f.projectId === project.id) videosCount++; });
+        data.feedbackComments.forEach(c => { if (c.projectId === project.id && c.status === 'Active') openCommentsCount++; });
+
         return [
-            { label: 'Websites', value: sites.length },
-            { label: 'Mockups', value: mockups.length },
-            { label: 'Videos', value: videos.length },
-            { label: 'Open Comments', value: openComments.length },
+            { label: 'Websites', value: sitesCount },
+            { label: 'Mockups', value: mockupsCount },
+            { label: 'Videos', value: videosCount },
+            { label: 'Open Comments', value: openCommentsCount },
         ];
     }, [project, data.feedbackWebsites, data.feedbackMockups, data.feedbackVideos, data.feedbackComments]);
 

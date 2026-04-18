@@ -213,11 +213,15 @@ interface StatsBarProps {
 }
 const StatsBar: React.FC<StatsBarProps> = ({ invoices, subscriptions, billingRecords, paymenterOk, isLoading }) => {
   const totalInvoiced = invoices.reduce((s, i) => s + (i.totals?.totalNet ?? 0), 0);
-  const activeCount   = subscriptions.filter(s => s.status === 'active').length;
-  const mrr           = subscriptions.filter(s => s.status === 'active').reduce((sum, s) => {
-    const m = s.billingCycle === 'yearly' ? s.price / 12 : s.billingCycle === 'quarterly' ? s.price / 3 : s.price;
-    return sum + m;
-  }, 0);
+  let activeCount = 0;
+  let mrr = 0;
+  subscriptions.forEach(s => {
+    if (s.status === 'active') {
+      activeCount++;
+      const m = s.billingCycle === 'yearly' ? s.price / 12 : s.billingCycle === 'quarterly' ? s.price / 3 : s.price;
+      mrr += m;
+    }
+  });
   const overdueInv  = invoices.filter(i => i.status === 'Overdue').length;
   const overdueRec  = billingRecords.filter(b => b.status === 'overdue').length;
   const overdueTotal = overdueInv + overdueRec;

@@ -75,16 +75,35 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
     // 2. Task Velocity
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-    const thisWeekCompleted = tasks.filter((t: Task) => isCompleted(t.stageId) && new Date(getTimestampSeconds(t.createdAt) * 1000) >= weekAgo).length;
-    const lastWeekCompleted = tasks.filter((t: Task) => isCompleted(t.stageId) && new Date(getTimestampSeconds(t.createdAt) * 1000) >= twoWeeksAgo && new Date(getTimestampSeconds(t.createdAt) * 1000) < weekAgo).length;
-    const velocityTrend = lastWeekCompleted > 0 ? ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100 : 0;
-    const activeProjectCount = projects.filter((p: Project) => p.status === 'Active').length;
-
-    // 3. Overdue Tasks
     const now = new Date();
-    const overdueTasks = tasks.filter((t: Task) =>
-      t.dueDate && new Date(t.dueDate) < now && !isCompleted(t.stageId)
-    ).sort((a: Task, b: Task) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+
+    let thisWeekCompleted = 0;
+    let lastWeekCompleted = 0;
+    let activeProjectCount = 0;
+    const overdueTasks: Task[] = [];
+
+    projects.forEach((p: Project) => {
+      if (p.status === 'Active') activeProjectCount++;
+    });
+
+    tasks.forEach((t: Task) => {
+      const completed = isCompleted(t.stageId);
+      if (completed) {
+        const createdAtDate = new Date(getTimestampSeconds(t.createdAt) * 1000);
+        if (createdAtDate >= weekAgo) {
+          thisWeekCompleted++;
+        } else if (createdAtDate >= twoWeeksAgo && createdAtDate < weekAgo) {
+          lastWeekCompleted++;
+        }
+      } else if (t.dueDate && new Date(t.dueDate) < now) {
+        overdueTasks.push(t);
+      }
+    });
+
+    const velocityTrend = lastWeekCompleted > 0 ? ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100 : 0;
+
+    // 3. Overdue Tasks Sorting
+    overdueTasks.sort((a: Task, b: Task) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
     // 4. Team Workload
     // Optimization: Map task counts to reduce O(U*T) to O(U+T)
@@ -117,12 +136,20 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
       ...feedbackVideos.map((v: FeedbackVideo) => ({ ...v, type: 'video' as const })),
       ...feedbackWebsites.map((w: FeedbackWebsite) => ({ ...w, type: 'website' as const }))
     ];
+
     const feedbackByStatus = {
-      pending: allFeedback.filter((f: FeedbackWithType) => f.status === 'pending').length,
-      in_review: allFeedback.filter((f: FeedbackWithType) => f.status === 'in_review').length,
-      approved: allFeedback.filter((f: FeedbackWithType) => f.status === 'approved').length,
-      changes_requested: allFeedback.filter((f: FeedbackWithType) => f.status === 'changes_requested').length,
+      pending: 0,
+      in_review: 0,
+      approved: 0,
+      changes_requested: 0,
     };
+
+    allFeedback.forEach((f: FeedbackWithType) => {
+      if (f.status === 'pending') feedbackByStatus.pending++;
+      else if (f.status === 'in_review') feedbackByStatus.in_review++;
+      else if (f.status === 'approved') feedbackByStatus.approved++;
+      else if (f.status === 'changes_requested') feedbackByStatus.changes_requested++;
+    });
 
     // 7. Upcoming Timeline
     const next7Days = Array.from({length: 7}, (_, i) => {
@@ -211,19 +238,39 @@ const useDashboardMetrics = (data: ReturnType<typeof useData>['data']) => {
     })).sort((a, b) => b.total - a.total).slice(0, 8);
 
     // 10. Payment Status
-    const outstanding = invoices?.filter((i: Invoice) => i.status === 'Sent' || i.status === 'Overdue')
-      .reduce((sum: number, inv: Invoice) => sum + (inv.totals?.totalNet || 0), 0) || 0;
-    const paidThisMonth = invoices?.filter((i: Invoice) => i.status === 'Paid' && new Date(i.date).getMonth() === new Date().getMonth())
-      .reduce((sum: number, inv: Invoice) => sum + (inv.totals?.totalNet || 0), 0) || 0;
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    let outstanding = 0;
+    let paidThisMonth = 0;
+
+    invoices?.forEach((i: Invoice) => {
+      const net = i.totals?.totalNet || 0;
+      if (i.status === 'Sent' || i.status === 'Overdue') {
+        outstanding += net;
+      } else if (i.status === 'Paid') {
+        const d = new Date(i.date);
+        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+          paidThisMonth += net;
+        }
+      }
+    });
+
     const pendingEstimates = estimates?.filter((e: Estimate) => e.status === 'Draft' || e.status === 'Sent').length || 0;
 
     // 11. Priority Task Queue
-    const highPriority = tasks.filter((t: Task) => t.priority === 'High' && t.stageId !== 'stage-3');
-    const dueThisWeek = tasks.filter((t: Task) => {
-      if (!t.dueDate || t.stageId === 'stage-3') return false;
-      const due = new Date(t.dueDate);
-      const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      return due <= weekEnd && due >= now;
+    const highPriority: Task[] = [];
+    const dueThisWeek: Task[] = [];
+    const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    tasks.forEach((t: Task) => {
+      if (t.stageId === 'stage-3') return;
+      if (t.priority === 'High') highPriority.push(t);
+      if (t.dueDate) {
+        const due = new Date(t.dueDate);
+        if (due <= weekEnd && due >= now) {
+          dueThisWeek.push(t);
+        }
+      }
     });
 
     return {

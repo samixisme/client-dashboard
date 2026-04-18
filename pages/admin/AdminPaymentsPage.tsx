@@ -229,18 +229,29 @@ export default function AdminPaymentsPage() {
     }
   ];
 
-  const revenue = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + (i.totals?.totalNet || 0), 0);
-  const outstanding = invoices.filter(i => ['Sent', 'Overdue'].includes(i.status)).reduce((acc, i) => acc + (i.totals?.totalNet || 0), 0);
-  
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
-  const paidThisMonth = invoices.filter(i => {
-    if (i.status !== 'Paid') return false;
-    const d = new Date(i.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  }).reduce((acc, i) => acc + (i.totals?.totalNet || 0), 0);
-  
-  const draftCount = invoices.filter(i => i.status === 'Draft').length + estimates.filter(e => e.status === 'Draft').length;
+  let revenue = 0;
+  let outstanding = 0;
+  let paidThisMonth = 0;
+  let invoiceDraftCount = 0;
+
+  invoices.forEach(i => {
+    const net = i.totals?.totalNet || 0;
+    if (i.status === 'Paid') {
+      revenue += net;
+      const d = new Date(i.date);
+      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        paidThisMonth += net;
+      }
+    } else if (i.status === 'Sent' || i.status === 'Overdue') {
+      outstanding += net;
+    } else if (i.status === 'Draft') {
+      invoiceDraftCount++;
+    }
+  });
+
+  const draftCount = invoiceDraftCount + estimates.filter(e => e.status === 'Draft').length;
 
   const headerActions = (
     <div className="relative group z-20">

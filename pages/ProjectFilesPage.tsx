@@ -161,8 +161,13 @@ const ProjectFilesPage: React.FC = () => {
     const out: ProjectFile[] = [];
 
     // Task Attachments
-    const projectBoardIds = data.boards.filter(b => b.projectId === safeProjectId).map(b => b.id);
-    const tasks = data.tasks.filter(t => projectBoardIds.includes(t.boardId));
+    const projectBoardIds = new Set();
+    data.boards.forEach(b => {
+      if (b.projectId === safeProjectId) {
+        projectBoardIds.add(b.id);
+      }
+    });
+    const tasks = data.tasks.filter(t => projectBoardIds.has(t.boardId));
     tasks.forEach(task => {
       (task.attachments ?? []).forEach(att => {
         out.push({
