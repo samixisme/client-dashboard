@@ -34,6 +34,13 @@ export default async (req: Request, res: Response) => {
       maxContentLength: 50 * 1024 * 1024, // 50MB limit to prevent DoS
       maxBodyLength: 50 * 1024 * 1024,
       timeout: 30000, // 30 second timeout
+      beforeRedirect: (options) => {
+        const redirectUrl = typeof options === 'string' ? options : (options.href || `${options.protocol}//${options.hostname}${options.path}`);
+        const validation = validateUrl(redirectUrl);
+        if (!validation.isValid) {
+          throw new Error('Redirect blocked by SSRF protection: ' + validation.error);
+        }
+      }
     });
     const $ = cheerio.load(response.data);
 
