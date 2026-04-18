@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2025-10-24 - SSRF Bypass via IPv6 Bracket Notation in Node.js
+**Vulnerability:** The SSRF protection in `api/urlValidator.ts` correctly identified private IPv4 patterns, but failed to block private IPv6 addresses because Node.js preserves the brackets `[]` around IPv6 addresses in the `URL.hostname` property (e.g., `[::1]`). The regular expressions did not account for these brackets, allowing an attacker to bypass the blocklist using IPv6 loopback (`[::1]`), ULA (`[fc00::]`), or IPv4-mapped IPv6 ranges (`[::ffff:127.0.0.1]`).
+**Learning:** When implementing SSRF protection using Node's `new URL().hostname`, the bracket notation for IPv6 addresses must be explicitly handled either by updating all regular expressions or systematically stripping the brackets prior to regex matching. Additionally, IPv4-mapped IPv6 addresses can be exploited to bypass IPv4 blocklists.
+**Prevention:** Always strip brackets from IPv6 hostnames (e.g., `.replace(/^\[(.*)\]$/, '$1')`) before validating against IPv6 regex patterns, and ensure explicit block rules exist for IPv4-mapped IPv6 address spaces (`/^::ffff:.*$/`).

@@ -75,24 +75,26 @@ describe('urlValidator', () => {
       expect(result.isValid).toBe(false);
     });
 
-    it('blocks IPv6 loopback ::1 (raw form)', () => {
-      // Bracket-notation IPv6 may bypass validator library;
-      // raw hostname form is caught by the regex
+    it('blocks IPv6 loopback ::1 (bracket notation)', () => {
       const result = validateUrl('http://[::1]:8080');
-      // Validator library inconsistently handles bracket IPv6 — document actual behavior
-      expect(typeof result.isValid).toBe('boolean');
+      expect(result.isValid).toBe(false);
     });
 
-    it('rejects IPv6 ULA fc00: (via invalid URL format)', () => {
-      // The validator library may not recognize bracket-notation IPv6 as valid URL format
-      // The important protection is that IPv4 private ranges are blocked
+    it('blocks IPv4-mapped IPv6 ranges (bracket notation)', () => {
+      expect(validateUrl('http://[::ffff:127.0.0.1]').isValid).toBe(false);
+      expect(validateUrl('http://[::ffff:7f00:1]').isValid).toBe(false);
+      expect(validateUrl('http://[::ffff:10.0.0.1]').isValid).toBe(false);
+      expect(validateUrl('http://[::ffff:a00:1]').isValid).toBe(false);
+    });
+
+    it('blocks IPv6 ULA fc00: (bracket notation)', () => {
       const result = validateUrl('http://[fc00::1]');
-      expect(typeof result.isValid).toBe('boolean');
+      expect(result.isValid).toBe(false);
     });
 
-    it('rejects IPv6 link-local fe80: (via invalid URL format)', () => {
+    it('blocks IPv6 link-local fe80: (bracket notation)', () => {
       const result = validateUrl('http://[fe80::1]');
-      expect(typeof result.isValid).toBe('boolean');
+      expect(result.isValid).toBe(false);
     });
 
     it('blocks 0.x.x.x range', () => {
