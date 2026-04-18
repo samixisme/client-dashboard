@@ -24,6 +24,43 @@ const PriorityBox: React.FC<{ priority: Task['priority'] }> = ({ priority }) => 
     return <span className={`px-2 py-0.5 text-xs font-semibold rounded ${priorityClasses[priority]}`}>{priority}</span>;
 }
 
+// Extracted to top level to avoid unmounting/remounting on parent render
+const ListViewRow = React.memo<{
+    task: Task;
+    onTaskClick: (task: Task) => void;
+    boardMembers: import('../../../types').User[];
+    tags: import('../../../types').Tag[];
+}>(({ task, onTaskClick, boardMembers, tags }) => {
+    const assignees = boardMembers.filter(m => task.assignees.includes(m.id));
+    const taskTags = tags.filter(t => task.labelIds.includes(t.id));
+
+    return (
+        <div onClick={() => onTaskClick(task)} className="bg-glass/40 backdrop-blur-sm p-4 hover:bg-glass-light/60 cursor-pointer rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 border border-border-color grid grid-cols-12 gap-4 items-center">
+            <div className="col-span-12 sm:col-span-5 flex items-center gap-2">
+                <p className="font-medium text-text-primary">{task.title}</p>
+                <div className="flex items-center gap-1">
+                    {taskTags.map(tag => (
+                        <span key={tag.id} className="px-1.5 py-0.5 text-xs font-semibold rounded" style={{ backgroundColor: `${tag.color}40`, color: tag.color }}>{tag.name}</span>
+                    ))}
+                </div>
+            </div>
+            <div className="col-span-6 sm:col-span-2">
+                <PriorityBox priority={task.priority} />
+            </div>
+            <div className="col-span-6 sm:col-span-3">
+                {task.dueDate && <p className="text-sm text-text-secondary">{new Date(task.dueDate).toLocaleDateString()}</p>}
+            </div>
+            <div className="col-span-12 sm:col-span-2 flex justify-end">
+                <div className="flex -space-x-2">
+                    {assignees.map(member => (
+                        <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-8 h-8 rounded-full border-2 border-surface" />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+});
+
 
 const ListView: React.FC<ListViewProps> = ({ 
     boardId, onTaskClick, stages, tasksByStage,
@@ -53,35 +90,15 @@ const ListView: React.FC<ListViewProps> = ({
                             </h3>
                         </div>
                         <div className="space-y-3">
-                            {stageTasks.map(task => {
-                                const assignees = data.board_members.filter(m => task.assignees.includes(m.id));
-                                const taskTags = data.tags.filter(t => task.labelIds.includes(t.id));
-                                return (
-                                    <div key={task.id} onClick={() => onTaskClick(task)} className="bg-glass/40 backdrop-blur-sm p-4 hover:bg-glass-light/60 cursor-pointer rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 border border-border-color grid grid-cols-12 gap-4 items-center">
-                                        <div className="col-span-12 sm:col-span-5 flex items-center gap-2">
-                                            <p className="font-medium text-text-primary">{task.title}</p>
-                                            <div className="flex items-center gap-1">
-                                                {taskTags.map(tag => (
-                                                    <span key={tag.id} className="px-1.5 py-0.5 text-xs font-semibold rounded" style={{ backgroundColor: `${tag.color}40`, color: tag.color }}>{tag.name}</span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="col-span-6 sm:col-span-2">
-                                            <PriorityBox priority={task.priority} />
-                                        </div>
-                                        <div className="col-span-6 sm:col-span-3">
-                                            {task.dueDate && <p className="text-sm text-text-secondary">{new Date(task.dueDate).toLocaleDateString()}</p>}
-                                        </div>
-                                        <div className="col-span-12 sm:col-span-2 flex justify-end">
-                                            <div className="flex -space-x-2">
-                                                {assignees.map(member => (
-                                                    <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-8 h-8 rounded-full border-2 border-surface" />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            {stageTasks.map(task => (
+                                <ListViewRow
+                                    key={task.id}
+                                    task={task}
+                                    onTaskClick={onTaskClick}
+                                    boardMembers={data.board_members}
+                                    tags={data.tags}
+                                />
+                            ))}
                         </div>
                         {addingToStage === stage.id ? (
                             <div className="mt-3 p-2">

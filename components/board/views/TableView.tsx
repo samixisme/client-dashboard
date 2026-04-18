@@ -11,6 +11,44 @@ const PriorityBox: React.FC<{ priority: Task['priority'] }> = ({ priority }) => 
     return <span className={`px-2 py-0.5 text-xs font-semibold rounded ${priorityClasses[priority]}`}>{priority}</span>;
 }
 
+// Extracted to top level to avoid unmounting/remounting on parent render
+const TableViewRow = React.memo<{
+    task: Task;
+    onTaskClick: (task: Task) => void;
+    stages: import('../../../types').Stage[];
+    boardMembers: import('../../../types').User[];
+    tags: import('../../../types').Tag[];
+}>(({ task, onTaskClick, stages, boardMembers, tags }) => {
+    const stage = stages.find(s => s.id === task.stageId);
+    const assignees = boardMembers.filter(m => task.assignees.includes(m.id));
+    const taskTags = tags.filter(t => task.labelIds.includes(t.id));
+
+    return (
+        <tr onClick={() => onTaskClick(task)} className="border-b border-border-color last:border-b-0 bg-glass/20 hover:bg-glass-light/80 hover:shadow-lg hover:scale-[1.01] cursor-pointer transition-all duration-300">
+            <td className="p-4 font-semibold text-text-primary whitespace-nowrap">{task.title}</td>
+            <td className="p-4 whitespace-nowrap">
+                <div className="flex items-center gap-1">
+                    {taskTags.map(tag => (
+                        <span key={tag.id} className="px-2 py-1 text-xs font-semibold rounded-lg" style={{ backgroundColor: `${tag.color}40`, color: tag.color }}>{tag.name}</span>
+                    ))}
+                </div>
+            </td>
+            <td className="p-4 text-text-secondary whitespace-nowrap font-medium">{stage?.name || 'N/A'}</td>
+            <td className="p-4 font-medium">
+                <PriorityBox priority={task.priority} />
+            </td>
+            <td className="p-4">
+                <div className="flex -space-x-2">
+                    {assignees.map(member => (
+                        <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-8 h-8 rounded-full border-2 border-surface shadow-md" />
+                    ))}
+                </div>
+            </td>
+            <td className="p-4 text-text-secondary whitespace-nowrap">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</td>
+        </tr>
+    );
+});
+
 
 const TableView: React.FC<{ boardId: string; onTaskClick: (task: Task) => void; }> = ({ boardId, onTaskClick }) => {
     const { data } = useData();
@@ -31,35 +69,16 @@ const TableView: React.FC<{ boardId: string; onTaskClick: (task: Task) => void; 
                         </tr>
                     </thead>
                     <tbody>
-                        {tasks.map(task => {
-                            const stage = data.stages.find(s => s.id === task.stageId);
-                            const assignees = data.board_members.filter(m => task.assignees.includes(m.id));
-                            const taskTags = data.tags.filter(t => task.labelIds.includes(t.id));
-                            return (
-                                <tr key={task.id} onClick={() => onTaskClick(task)} className="border-b border-border-color last:border-b-0 bg-glass/20 hover:bg-glass-light/80 hover:shadow-lg hover:scale-[1.01] cursor-pointer transition-all duration-300">
-                                    <td className="p-4 font-semibold text-text-primary whitespace-nowrap">{task.title}</td>
-                                    <td className="p-4 whitespace-nowrap">
-                                        <div className="flex items-center gap-1">
-                                            {taskTags.map(tag => (
-                                                <span key={tag.id} className="px-2 py-1 text-xs font-semibold rounded-lg" style={{ backgroundColor: `${tag.color}40`, color: tag.color }}>{tag.name}</span>
-                                            ))}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-text-secondary whitespace-nowrap font-medium">{stage?.name || 'N/A'}</td>
-                                    <td className="p-4 font-medium">
-                                        <PriorityBox priority={task.priority} />
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex -space-x-2">
-                                            {assignees.map(member => (
-                                                <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-8 h-8 rounded-full border-2 border-surface shadow-md" />
-                                            ))}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-text-secondary whitespace-nowrap">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}</td>
-                                </tr>
-                            );
-                        })}
+                        {tasks.map(task => (
+                            <TableViewRow
+                                key={task.id}
+                                task={task}
+                                onTaskClick={onTaskClick}
+                                stages={data.stages}
+                                boardMembers={data.board_members}
+                                tags={data.tags}
+                            />
+                        ))}
                     </tbody>
                 </table>
                 {tasks.length === 0 && (
