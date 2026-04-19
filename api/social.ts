@@ -298,6 +298,13 @@ socialRouter.post('/fetch/:platform', async (req: Request, res: Response) => {
             method,
             url,
             headers,
+            beforeRedirect: (options: any) => {
+                const redirectUrl = options.href;
+                const redirectValidation = validateUrl(redirectUrl);
+                if (!redirectValidation.isValid) {
+                    throw new Error(`SSRF blocked redirect to: ${redirectUrl}`);
+                }
+            }
         };
 
         // Add access_token as query param for Meta and Google platforms

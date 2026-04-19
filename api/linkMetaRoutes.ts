@@ -27,6 +27,13 @@ router.get('/', async (req: Request, res: Response) => {
       maxRedirects: 3,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LinkMetaBot/1.0)' },
       responseType: 'text',
+      beforeRedirect: (options) => {
+        const redirectUrl = options.href;
+        const redirectValidation = validateUrl(redirectUrl);
+        if (!redirectValidation.isValid) {
+          throw new Error(`SSRF blocked redirect to: ${redirectUrl}`);
+        }
+      }
     });
 
     const $ = cheerio.load(html);
