@@ -80,7 +80,7 @@ export async function triggerSyncAlert(indexName: string, failureCount: number, 
       failure_count: failureCount,
       latest_error: errorMsg,
       timestamp: new Date().toISOString()
-    });
+    }, { timeout: 15000 });
     console.log(`[searchSync] 🚨 Alert webhook sent for ${indexName}`);
   } catch (error: any) {
     console.error(`[searchSync] Failed to send alert webhook: ${error?.message}`);

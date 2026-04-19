@@ -16,3 +16,7 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+## 2025-03-24 - DoS Risk via Unbounded External HTTP Requests
+**Vulnerability:** A Denial of Service (DoS) and resource exhaustion vulnerability existed in external proxy APIs (`api/social.ts` and `api/searchMonitoring.ts`) because external `axios` calls had no configured timeouts.
+**Learning:** If external dependencies or services (like social media authentication servers or alerting webhook receivers) respond very slowly or drop packets without closing the connection, the default `axios` behavior is to wait indefinitely. Under high load, this exhausts the Node.js event loop and socket pool, causing an internal DoS where the service stops processing new legitimate requests.
+**Prevention:** Always implement explicit timeouts (e.g., `{ timeout: 15000 }`) on outbound external network calls as a layer of defense-in-depth against failing dependencies.
