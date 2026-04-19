@@ -3,6 +3,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { useSearch } from '../contexts/SearchContext';
 import { Project, User, Task, Brand, Stage, ProjectStatus, Board } from '../types';
+
+export interface ProjectStats {
+    brand?: Brand;
+    projectBoards: Board[];
+    members: User[];
+    projectTasks: Task[];
+    completedTasks: number;
+    progress: number;
+    upcomingTask?: Task;
+    moodboardCount: number;
+    boardCount: number;
+    roadmapCount: number;
+    mainBoard?: Board;
+}
+
 import { MoreIcon } from '../components/icons/MoreIcon';
 import { FilterIcon } from '../components/icons/FilterIcon';
 import { BoardIcon } from '../components/icons/BoardIcon';
@@ -27,29 +42,87 @@ const StatusBadge: React.FC<{ status: ProjectStatus }> = ({ status }) => {
   );
 };
 
+// Custom hook to pre-calculate project stats in O(N) pass to avoid O(N*M) lookups inside ProjectCard and ProjectRow
+const useProjectStatsMap = (data: ReturnType<typeof useData>['data']) => {
+    return useMemo(() => {
+        const { brands, users, tasks, moodboards, boards, roadmapItems, projects, stages } = data;
+        const statsMap = new Map<string, ProjectStats>();
+
+        // Pre-build lookup maps for O(1) access
+        const brandMap = new Map(brands.map(b => [b.id, b]));
+        const userMap = new Map(users.map(u => [u.id, u]));
+
+        const isCompleted = (stageId: string) => stageId === 'stage-3';
+
+        // Group related entities by project ID
+        const boardsByProject = new Map<string, Board[]>();
+        boards.forEach(b => {
+            const projectBoards = boardsByProject.get(b.projectId) || [];
+            projectBoards.push(b);
+            boardsByProject.set(b.projectId, projectBoards);
+        });
+
+        const moodboardCounts = new Map<string, number>();
+        moodboards.forEach(m => {
+            moodboardCounts.set(m.projectId, (moodboardCounts.get(m.projectId) || 0) + 1);
+        });
+
+        const roadmapCounts = new Map<string, number>();
+        roadmapItems.forEach(r => {
+            roadmapCounts.set(r.projectId, (roadmapCounts.get(r.projectId) || 0) + 1);
+        });
+
+        // Map boards to their project IDs for tasks
+        const boardToProject = new Map<string, string>();
+        boards.forEach(b => boardToProject.set(b.id, b.projectId));
+
+        const tasksByProject = new Map<string, Task[]>();
+        tasks.forEach(t => {
+            const projectId = boardToProject.get(t.boardId);
+            if (projectId) {
+                const projectTasks = tasksByProject.get(projectId) || [];
+                projectTasks.push(t);
+                tasksByProject.set(projectId, projectTasks);
+            }
+        });
+
+        // Compute stats for each project
+        projects.forEach(project => {
+            const projectBoards = boardsByProject.get(project.id) || [];
+            const projectTasks = tasksByProject.get(project.id) || [];
+
+            const memberIds = [...new Set(projectBoards.flatMap(b => b.member_ids || []))];
+            const members = memberIds.map(id => userMap.get(id)).filter(Boolean) as User[];
+
+            const completedTasks = projectTasks.filter(t => isCompleted(t.stageId)).length;
+            const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0;
+
+            const upcomingTask = projectTasks
+                .filter(t => t.dueDate && new Date(t.dueDate) > new Date())
+                .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())[0];
+
+            statsMap.set(project.id, {
+                brand: brandMap.get(project.brandId),
+                projectBoards,
+                members,
+                projectTasks,
+                completedTasks,
+                progress,
+                upcomingTask,
+                moodboardCount: moodboardCounts.get(project.id) || 0,
+                boardCount: projectBoards.length,
+                roadmapCount: roadmapCounts.get(project.id) || 0,
+                mainBoard: projectBoards[0]
+            });
+        });
+
+        return statsMap;
+    }, [data.projects, data.brands, data.users, data.tasks, data.moodboards, data.boards, data.roadmapItems, data.stages]);
+};
+
 // Bolt Performance Optimization: ProjectCard is memoized to prevent re-renders when parent states (like filter/search) change.
-const ProjectCard = React.memo<{ project: Project; index: number; data: ReturnType<typeof useData>['data']; navigate: ReturnType<typeof useNavigate> }>(({ project, index, data, navigate }) => {
-    const { brands, users, tasks, moodboards, boards, roadmapItems } = data;
-
-    const brand = brands.find(b => b.id === project.brandId);
-    const projectBoards = boards.filter(b => b.projectId === project.id);
-    const memberIds = [...new Set(projectBoards.flatMap(b => b.member_ids || []))];
-    const members = users.filter(m => memberIds.includes(m.id));
-    const projectBoardIds = projectBoards.map(b => b.id);
-    const projectTasks = tasks.filter(t => projectBoardIds.includes(t.boardId));
-
-    const completedTasks = projectTasks.filter(t => t.stageId === 'stage-3').length;
-    const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0;
-
-    const upcomingTask = projectTasks
-        .filter(t => t.dueDate && new Date(t.dueDate) > new Date())
-        .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())[0];
-
-    const moodboardCount = moodboards.filter(m => m.projectId === project.id).length;
-    const boardCount = projectBoards.length;
-    const roadmapCount = roadmapItems.filter(r => r.projectId === project.id).length;
-
-    const mainBoard = projectBoards[0];
+const ProjectCard = React.memo<{ project: Project; index: number; stats: ProjectStats; navigate: ReturnType<typeof useNavigate> }>(({ project, index, stats, navigate }) => {
+    const { brand, members, projectTasks, progress, upcomingTask, boardCount, roadmapCount, moodboardCount, mainBoard } = stats;
 
     const handleCardClick = (e: React.MouseEvent) => {
         if ((e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('button')) return;
@@ -143,18 +216,8 @@ const ProjectCard = React.memo<{ project: Project; index: number; data: ReturnTy
 
 // Bolt Performance Optimization: Extracted ProjectRow component to avoid full remounts on parent render
 // and memoized to prevent unnecessary recalculation of derived data (tasks, boards, progress) for unchanged projects.
-const ProjectRow = React.memo<{ project: Project; index: number; data: ReturnType<typeof useData>['data']; navigate: ReturnType<typeof useNavigate> }>(({ project, index, data, navigate }) => {
-    const brand = data.brands.find((b: Brand) => b.id === project.brandId);
-    const projectBoards = data.boards.filter((b: Board) => b.projectId === project.id);
-    const memberIds = [...new Set(projectBoards.flatMap((b: Board) => b.member_ids))];
-    const members = data.users.filter((m: User) => memberIds.includes(m.id));
-    const projectBoardIds = projectBoards.map((b: Board) => b.id);
-    const projectTasks = data.tasks.filter((t: Task) => projectBoardIds.includes(t.boardId));
-    const completedTasks = projectTasks.filter((t: Task) => t.stageId === 'stage-3').length;
-    const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0;
-    const mainBoard = projectBoards[0];
-    const boardCount = projectBoards.length;
-    const roadmapCount = data.roadmapItems.filter((r: import('../types').RoadmapItem) => r.projectId === project.id).length;
+const ProjectRow = React.memo<{ project: Project; index: number; stats: ProjectStats; navigate: ReturnType<typeof useNavigate> }>(({ project, index, stats, navigate }) => {
+    const { brand, members, projectTasks, progress, boardCount, roadmapCount, mainBoard } = stats;
 
     return (
         <tr
@@ -204,6 +267,7 @@ const ProjectsPage = () => {
   const { data, forceUpdate } = useData();
   const { searchQuery, setSearchQuery } = useSearch();
   const navigate = useNavigate();
+  const statsMap = useProjectStatsMap(data);
 
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
   const [filterSortState, setFilterSortState] = useState<FilterSortState>({
@@ -228,18 +292,22 @@ const ProjectsPage = () => {
     
     let tempProjects = [...projects];
 
+    // Pre-build brand map for O(1) lookups
+    const brandMap = new Map(brands.map(b => [b.id, b]));
+    const filterBrandsSet = new Set(filterSortState.brands);
+
     // Filtering
     if (filterSortState.status !== 'All') {
         tempProjects = tempProjects.filter(p => p.status === filterSortState.status);
     }
-    if (filterSortState.brands.length > 0) {
-        tempProjects = tempProjects.filter(p => filterSortState.brands.includes(p.brandId));
+    if (filterBrandsSet.size > 0) {
+        tempProjects = tempProjects.filter(p => filterBrandsSet.has(p.brandId));
     }
 
     if (searchQuery) {
         const lowercasedQuery = searchQuery.toLowerCase();
         tempProjects = tempProjects.filter(p => {
-            const brand = brands.find(b => b.id === p.brandId);
+            const brand = brandMap.get(p.brandId);
             return p.name.toLowerCase().includes(lowercasedQuery) ||
                    (brand && brand.name.toLowerCase().includes(lowercasedQuery));
         });
@@ -470,7 +538,7 @@ const ProjectsPage = () => {
       {viewMode === 'board' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProjects.map((project, index) => (
-                <ProjectCard key={project.id} project={project} index={index} data={data} navigate={navigate} />
+                <ProjectCard key={project.id} project={project} index={index} stats={statsMap.get(project.id)!} navigate={navigate} />
             ))}
         </div>
       ) : (
@@ -489,7 +557,7 @@ const ProjectsPage = () => {
                 </thead>
                 <tbody>
                     {filteredProjects.map((project, index) => (
-                        <ProjectRow key={project.id} project={project} index={index} data={data} navigate={navigate} />
+                        <ProjectRow key={project.id} project={project} index={index} stats={statsMap.get(project.id)!} navigate={navigate} />
                     ))}
                 </tbody>
             </table>
