@@ -13,7 +13,12 @@ async function paymenterFetch<T>(
   endpoint: string,
   options: { method?: string; body?: unknown } = {}
 ): Promise<T> {
-  const res = await fetch(`${PAYMENTER_URL}/api/v1/admin${endpoint}`, {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const res = await fetch(`${PAYMENTER_URL}/api/v1/admin${endpoint}`, {
+      signal: controller.signal as any,
     method: options.method ?? 'GET',
     headers: {
       Authorization: `Bearer ${PAYMENTER_API_KEY}`,
@@ -24,11 +29,14 @@ async function paymenterFetch<T>(
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`Paymenter API ${res.status}: ${text}`);
-  }
+      const text = await res.text().catch(() => res.statusText);
+      throw new Error(`Paymenter API ${res.status}: ${text}`);
+    }
 
-  return res.json() as Promise<T>;
+    return (await res.json()) as Promise<T>;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // ─── Health / connectivity check ─────────────────────────────────────────────
