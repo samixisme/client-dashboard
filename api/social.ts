@@ -1,3 +1,4 @@
+import { validateUrl } from './urlValidator';
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import crypto from 'crypto';
@@ -310,6 +311,14 @@ socialRouter.post('/fetch/:platform', async (req: Request, res: Response) => {
         if (body && method !== 'GET') {
             axiosConfig.data = body;
         }
+
+        // Ensure redirect URLs are validated to prevent SSRF bypass
+        axiosConfig.beforeRedirect = (options: Record<string, any>) => {
+            const redirectUrlValidation = validateUrl(options.href);
+            if (!redirectUrlValidation.isValid) {
+                throw new Error(`SSRF Prevention: Redirect to invalid URL blocked (${redirectUrlValidation.error})`);
+            }
+        };
 
         const response = await axios(axiosConfig);
         res.json(response.data);

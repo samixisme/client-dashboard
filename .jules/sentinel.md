@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2025-03-24 - SSRF Bypass via Redirects and DoS via Fetch Timeouts
+**Vulnerability:** Axios requests in `api/linkMetaRoutes.ts`, `api/proxy.ts`, and `api/social.ts` had initial SSRF validations but did not validate the URL of potential redirects, creating an SSRF bypass vulnerability. In `api/paymenterRoutes.ts`, an internal `node-fetch` call lacked a timeout, causing potential DoS via resource exhaustion.
+**Learning:** Initial URL validation is not sufficient when libraries like `axios` automatically follow redirects. Validation must be re-applied within a `beforeRedirect` hook to intercept unsafe redirects. For `node-fetch`, the default is no timeout, which can cause process hanging and exhaustion.
+**Prevention:** Always use the `beforeRedirect` hook in `axios` to revalidate destination URLs against the SSRF allow/block list. Always implement timeouts for outbound `node-fetch` and `fetch` calls using `AbortController` wrapped in a `try/finally` block to clear the timeout.
