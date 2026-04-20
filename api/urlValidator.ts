@@ -12,6 +12,7 @@ const PRIVATE_IP_RANGES = [
   /^::1$/,
   /^fc00:/,
   /^fe80:/,
+  /^::ffff:.*$/, // Catch IPv4-mapped IPv6 ranges
 ];
 
 // Blocked hostnames
@@ -44,8 +45,10 @@ export function validateUrl(urlString: string): { isValid: boolean; error?: stri
     return { isValid: false, error: 'Only HTTP and HTTPS protocols are allowed' };
   }
 
+  // Strip brackets from IPv6 hostnames (e.g., [::1] -> ::1)
+  const hostname = parsedUrl.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+
   // Block localhost variations
-  const hostname = parsedUrl.hostname.toLowerCase();
   if (BLOCKED_HOSTNAMES.includes(hostname)) {
     return { isValid: false, error: 'Access to this hostname is not allowed' };
   }
