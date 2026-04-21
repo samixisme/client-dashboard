@@ -261,13 +261,13 @@ const TabSwitcher: React.FC<{
   const w = `calc(${100 / TABS.length}% - 6px)`;
   const l = `calc(${(idx / TABS.length) * 100}% + 6px)`;
   return (
-    <div className="relative inline-flex items-center gap-1 mb-6 bg-glass/60 backdrop-blur-xl rounded-xl p-1.5 border border-border-color shadow-md animate-fade-in-up w-full max-w-xl" style={{ animationDelay: '100ms' }}>
+    <div role="tablist" className="relative inline-flex items-center gap-1 mb-6 bg-glass/60 backdrop-blur-xl rounded-xl p-1.5 border border-border-color shadow-md animate-fade-in-up w-full max-w-xl" style={{ animationDelay: '100ms' }}>
       <div className="absolute top-1.5 bottom-1.5 bg-primary rounded-lg shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] transition-all duration-300 ease-out" style={{ left: l, width: w }} />
       {TABS.map(tab => {
         const sel = active === tab.id;
         const count = counts[tab.id];
         return (
-          <button key={tab.id} onClick={() => onChange(tab.id)}
+          <button role="tab" aria-selected={sel} key={tab.id} onClick={() => onChange(tab.id)}
             className={`relative flex-1 px-3 py-2.5 text-xs font-semibold rounded-lg transition-all duration-300 z-10 whitespace-nowrap ${sel ? 'text-background scale-105' : 'text-text-secondary hover:text-text-primary'}`}>
             {tab.label}
             {count != null && count > 0 && (
