@@ -669,10 +669,9 @@ router.get('/files/:fileId/tags', async (req: Request, res: Response) => {
     if (tagIds.length === 0) {
       return res.json({ success: true, data: { tags: [] } });
     }
-    // Fetch tag details
-    const tagsSnap = await Promise.all(
-      tagIds.map((id) => db.collection('fileTags').doc(id).get())
-    );
+    // Fetch tag details using efficient batched db.getAll()
+    const docRefs = tagIds.map((id) => db.collection('fileTags').doc(id));
+    const tagsSnap = await db.getAll(...docRefs);
     const tags = tagsSnap
       .filter((doc) => doc.exists)
       .map((doc) => ({ id: doc.id, ...doc.data() }));
