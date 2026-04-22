@@ -29,7 +29,7 @@ export function useProjectFiles(projectId: string | undefined): ProjectFile[] {
     }
 
     // 2. Project Links
-    const links = data.projectLinks.filter(link => link.projectId === projectId);
+    const links = data.projectLinks?.filter(link => link.projectId === projectId) || [];
     if (links.length > 0) {
       const mappedLinks = links.map((link): ProjectFile => ({
         id: `link:${link.id}`,
@@ -45,11 +45,15 @@ export function useProjectFiles(projectId: string | undefined): ProjectFile[] {
     }
 
     // 3. Task Attachments
-    const projectBoardIds = data.boards
-      .filter(b => b.projectId === projectId)
-      .map(b => b.id);
+    // ⚡ Bolt: Convert array to Set for O(1) lookup inside the filter loop,
+    // eliminating O(N*M) complexity when filtering tasks by board ID.
+    const projectBoardIds = new Set(
+      (data.boards || [])
+        .filter(b => b.projectId === projectId)
+        .map(b => b.id)
+    );
       
-    const tasks = data.tasks.filter(t => projectBoardIds.includes(t.boardId));
+    const tasks = (data.tasks || []).filter(t => projectBoardIds.has(t.boardId));
     tasks.forEach(task => {
       if (task.attachments && task.attachments.length > 0) {
         const attachs = task.attachments.map((att): ProjectFile => ({
@@ -67,7 +71,7 @@ export function useProjectFiles(projectId: string | undefined): ProjectFile[] {
     });
 
     // 4. Feedback Mockups
-    const mockups = data.feedbackMockups.filter(m => m.projectId === projectId);
+    const mockups = data.feedbackMockups?.filter(m => m.projectId === projectId) || [];
     mockups.forEach(mockup => {
       if (mockup.images && mockup.images.length > 0) {
         const imgs = mockup.images.map((img): ProjectFile => ({
@@ -85,7 +89,7 @@ export function useProjectFiles(projectId: string | undefined): ProjectFile[] {
     });
 
     // 5. Feedback Videos
-    const videos = data.feedbackVideos.filter(v => v.projectId === projectId);
+    const videos = data.feedbackVideos?.filter(v => v.projectId === projectId) || [];
     videos.forEach(video => {
       if (video.videos && video.videos.length > 0) {
         const vids = video.videos.map((vid): ProjectFile => ({
