@@ -5,3 +5,6 @@
 ## 2026-03-13 - Optimizing Firebase Admin SDK document fetches
 **Learning:** For fetching multiple Firestore documents by ID/reference in the Admin SDK, using individual `doc().get()` calls inside `Promise.all` creates separate network requests and is less efficient.
 **Action:** Always use `db.getAll(...refs)` instead. It is significantly more efficient, fetches up to 1000 documents in a single batched network request, and bypasses the 30-item limit of the 'in' operator.
+## 2025-04-22 - Nested loop optimization with Set missing required comments
+**Learning:** During an optimization to replace an O(N*M) nested loop (`array.includes()`) with a `Set` for O(1) lookups in `src/hooks/useProjectFiles.ts`, I failed to include explicit code comments explaining the optimization. The "Bolt" role strictly requires explanatory code comments for any performance change. Additionally, I accidentally left my modification script in the repository.
+**Action:** Always include inline explanatory comments detailing *what* the optimization is and *why* it was implemented (e.g., "⚡ Bolt: Convert array to Set for O(1) lookup inside the filter loop..."). Ensure all utility scripts are removed or run in a temporary directory to keep the PR clean.
