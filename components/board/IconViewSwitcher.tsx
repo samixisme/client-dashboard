@@ -33,6 +33,7 @@ const IconViewSwitcher: React.FC<IconViewSwitcherProps> = ({
                         key={option.id}
                         onClick={() => onSwitchView(option.id)}
                         aria-label={`Switch to ${option.name} view`}
+                        aria-pressed={isActive}
                         title={option.name}
                         className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 ${
                             isActive
