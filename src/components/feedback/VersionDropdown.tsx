@@ -78,6 +78,8 @@ const VersionDropdown: React.FC<VersionDropdownProps> = ({
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                aria-expanded={isOpen}
+                aria-haspopup="menu"
                 className="bg-glass/60 backdrop-blur-xl border border-border-color rounded-lg px-3 py-1.5 flex items-center gap-2 hover:bg-glass/80 transition-all duration-200 text-sm font-medium"
             >
                 <span>v{currentVersion}</span>
@@ -88,7 +90,10 @@ const VersionDropdown: React.FC<VersionDropdownProps> = ({
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute top-full mt-2 right-0 z-50 min-w-[240px] bg-glass/80 backdrop-blur-xl border border-border-color rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div
+                    className="absolute top-full mt-2 right-0 z-50 min-w-[240px] bg-glass/80 backdrop-blur-xl border border-border-color rounded-lg shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                    role="menu"
+                >
                     {/* Version List */}
                     <div className="max-h-[300px] overflow-y-auto">
                         {sortedVersions.length === 0 ? (
@@ -99,6 +104,7 @@ const VersionDropdown: React.FC<VersionDropdownProps> = ({
                             sortedVersions.map((version) => (
                                 <button
                                     key={version.versionNumber}
+                                    role="menuitem"
                                     onClick={() => handleVersionSelect(version.versionNumber)}
                                     className={`w-full px-4 py-3 text-left hover:bg-glass-light/60 transition-all duration-200 border-b border-border-color/50 last:border-b-0 ${
                                         version.versionNumber === currentVersion
@@ -125,6 +131,7 @@ const VersionDropdown: React.FC<VersionDropdownProps> = ({
                     {/* Create New Version Button */}
                     <div className="border-t border-border-color/50">
                         <button
+                            role="menuitem"
                             onClick={handleCreateVersion}
                             className="w-full px-4 py-3 bg-primary text-black hover:bg-primary-hover transition-all duration-200 font-medium flex items-center justify-center gap-2"
                         >
