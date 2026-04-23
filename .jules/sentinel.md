@@ -16,3 +16,8 @@
 **Vulnerability:** The application used a guessable fallback string (`your-webhook-verify-token-here`) for `WEBHOOK_VERIFY_TOKEN` in Meta Webhooks (`api/webhooks.ts`).
 **Learning:** This could allow an attacker to bypass endpoint verification in production if the environment variable was accidentally omitted during deployment.
 **Prevention:** Configuration secrets should fail securely if undefined in production. Only permit fallback secrets in strictly controlled testing environments (`NODE_ENV === 'test'`).
+
+## 2025-05-15 - Missing Boundaries on Outbound Proxies (DoS Risk)
+**Vulnerability:** Proxy endpoints using `axios` (`/api/social/fetch/:platform` and `/api/link-meta`) lacked size limits and timeouts. This could allow an attacker or a compromised third-party endpoint to exhaust server resources by returning infinitely large payloads or hanging connections indefinitely, leading to a Denial of Service (DoS).
+**Learning:** Proxy endpoints need strict resource boundaries in addition to target validation (SSRF protection). The default behavior of HTTP clients like `axios` is often to buffer the entire response into memory without timeouts unless explicitly configured.
+**Prevention:** Always define explicit `timeout`, `maxContentLength`, and `maxBodyLength` configurations for backend HTTP clients like `axios` when proxying or fetching remote content, especially when the target URL is derived from user input or external sources.
