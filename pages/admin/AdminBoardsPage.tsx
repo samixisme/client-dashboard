@@ -41,9 +41,21 @@ const AdminBoardsPage: React.FC = () => {
   };
 
   const filteredBoards = useMemo(() => {
+    // Optimization: Pre-compute lookup maps in O(N) to avoid O(N*M) operations in filter and sort
+    const projectMap = new Map(data.projects.map(p => [p.id, p]));
+    const brandMap = new Map(data.brands.map(b => [b.id, b]));
+
+    // Compute task counts in a single pass O(T) instead of O(B * T)
+    const taskCountMap = new Map<string, number>();
+    if (sortBy === 'taskCount') {
+        data.tasks.forEach(t => {
+            taskCountMap.set(t.boardId, (taskCountMap.get(t.boardId) || 0) + 1);
+        });
+    }
+
     let boards = data.boards.filter(board => {
-        const project = data.projects.find(p => p.id === board.projectId);
-        const brand = project ? data.brands.find(b => b.id === project.brandId) : undefined;
+        const project = projectMap.get(board.projectId);
+        const brand = project ? brandMap.get(project.brandId) : undefined;
 
         const matchesSearch = board.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                               (project && project.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -61,15 +73,15 @@ const AdminBoardsPage: React.FC = () => {
             valA = a.name.toLowerCase();
             valB = b.name.toLowerCase();
         } else if (sortBy === 'taskCount') {
-            valA = data.tasks.filter(t => t.boardId === a.id).length;
-            valB = data.tasks.filter(t => t.boardId === b.id).length;
+            valA = taskCountMap.get(a.id) || 0;
+            valB = taskCountMap.get(b.id) || 0;
         } else if (sortBy === 'brand') {
-            const projA = data.projects.find(p => p.id === a.projectId);
-            const brandA = projA ? data.brands.find(br => br.id === projA.brandId) : undefined;
+            const projA = projectMap.get(a.projectId);
+            const brandA = projA ? brandMap.get(projA.brandId) : undefined;
             valA = brandA?.name.toLowerCase() || '';
 
-            const projB = data.projects.find(p => p.id === b.projectId);
-            const brandB = projB ? data.brands.find(br => br.id === projB.brandId) : undefined;
+            const projB = projectMap.get(b.projectId);
+            const brandB = projB ? brandMap.get(projB.brandId) : undefined;
             valB = brandB?.name.toLowerCase() || '';
         }
 
