@@ -115,6 +115,7 @@ export const ResultCard: React.FC<ResultCardProps> = React.memo(({
       type="button"
       role="option"
       aria-selected={isSelected}
+      aria-label={`${meta.label}: ${title}`}
     >
       <div className="result-card__icon" style={{ color: meta.color }}>
         <Icon size={18} />
