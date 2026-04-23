@@ -9,7 +9,7 @@
  * - Automatic cleanup on unmount
  */
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -278,25 +278,32 @@ export function useSearch(
 
   // ── Computed values ────────────────────────────────────────────────
 
-  const totalHits = Object.values(results).reduce(
-    (sum, r) => sum + (r.estimatedTotalHits || 0),
-    0
-  );
+  // Memoize derived state to maintain referential equality and prevent unnecessary re-renders
+  const totalHits = useMemo(() => {
+    return Object.values(results).reduce(
+      (sum, r) => sum + (r.estimatedTotalHits || 0),
+      0
+    );
+  }, [results]);
 
   const limit = options.limit ?? 5;
-  const hasMore = Object.values(results).some(
-    (r) => r.estimatedTotalHits > (r.hits?.length || 0)
-  );
+  const hasMore = useMemo(() => {
+    return Object.values(results).some(
+      (r) => r.estimatedTotalHits > (r.hits?.length || 0)
+    );
+  }, [results]);
 
-  const facets = Object.entries(results).reduce(
-    (acc, [indexUid, r]) => {
-      if (r.facetDistribution) {
-        acc[indexUid] = r.facetDistribution;
-      }
-      return acc;
-    },
-    {} as Record<string, Record<string, Record<string, number>>>
-  );
+  const facets = useMemo(() => {
+    return Object.entries(results).reduce(
+      (acc, [indexUid, r]) => {
+        if (r.facetDistribution) {
+          acc[indexUid] = r.facetDistribution;
+        }
+        return acc;
+      },
+      {} as Record<string, Record<string, Record<string, number>>>
+    );
+  }, [results]);
 
   return {
     results,
