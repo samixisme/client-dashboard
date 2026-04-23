@@ -295,6 +295,9 @@ socialRouter.post('/fetch/:platform', async (req: Request, res: Response) => {
         }
 
         const axiosConfig: Record<string, any> = {
+            timeout: 15000,
+            maxContentLength: 10 * 1024 * 1024,
+            maxBodyLength: 10 * 1024 * 1024,
             method,
             url,
             headers,
