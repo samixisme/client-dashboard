@@ -129,11 +129,10 @@ router.post('/', async (req: Request, res: Response) => {
     const data = parsed.data;
     const db = getFirestore();
 
-    // Validate memberIds exist in users collection
+    // Validate memberIds exist in users collection using batched db.getAll instead of Promise.all
     if (data.memberIds.length > 0) {
-      const memberChecks = await Promise.all(
-        data.memberIds.map((uid) => db.collection('users').doc(uid).get())
-      );
+      const docRefs = data.memberIds.map((uid) => db.collection('users').doc(uid));
+      const memberChecks = await db.getAll(...docRefs);
       const missing = data.memberIds.filter((_, i) => !memberChecks[i].exists);
       if (missing.length > 0) {
         return res.status(400).json({ success: false, error: `Users not found: ${missing.join(', ')}` });
