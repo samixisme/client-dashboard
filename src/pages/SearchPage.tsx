@@ -228,6 +228,7 @@ const SearchPage: React.FC = () => {
                 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
                 type="button"
+                aria-label="Clear search input"
               >
                 <X size={16} />
               </button>
@@ -249,6 +250,7 @@ const SearchPage: React.FC = () => {
                     );
                   }}
                   type="button"
+                  aria-label={`Remove filter ${tag.key}: ${tag.value}`}
                 >
                   {tag.key}: {tag.value}
                   <X size={12} />
@@ -258,6 +260,7 @@ const SearchPage: React.FC = () => {
                 className="search-page__filter-tag"
                 onClick={handleClearAll}
                 type="button"
+                aria-label="Clear all filters"
               >
                 Clear all
               </button>
