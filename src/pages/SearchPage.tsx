@@ -228,6 +228,7 @@ const SearchPage: React.FC = () => {
                 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
                 type="button"
+                aria-label="Clear search"
               >
                 <X size={16} />
               </button>
