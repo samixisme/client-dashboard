@@ -116,6 +116,8 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
               onClick={() => setShowSortMenu(!showSortMenu)}
               type="button"
               aria-expanded={showSortMenu}
+              aria-haspopup="menu"
+              aria-controls="sort-menu"
             >
               <ArrowUpDown size={14} />
               {SORT_OPTIONS.find(
@@ -125,7 +127,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
               )?.label || 'Relevance'}
             </button>
             {showSortMenu && (
-              <div className="search-results__sort-menu">
+              <div className="search-results__sort-menu" role="menu" id="sort-menu">
                 {SORT_OPTIONS.map((opt) => (
                   <button
                     key={opt.label}
@@ -135,6 +137,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                       setShowSortMenu(false);
                     }}
                     type="button"
+                    role="menuitem"
                   >
                     {opt.label}
                   </button>
