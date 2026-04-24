@@ -311,6 +311,13 @@ socialRouter.post('/fetch/:platform', async (req: Request, res: Response) => {
             axiosConfig.data = body;
         }
 
+        axiosConfig.beforeRedirect = (options: any) => {
+            const redirectValidation = validateUrl(options.href);
+            if (!redirectValidation.isValid) {
+                throw new Error('SSRF blocked on redirect: ' + redirectValidation.error);
+            }
+        };
+
         const response = await axios(axiosConfig);
         res.json(response.data);
     } catch (error: any) {
