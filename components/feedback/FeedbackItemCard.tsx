@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EditIcon } from '../icons/EditIcon';
 import { CheckIcon } from '../icons/CheckIcon';
@@ -47,7 +47,8 @@ interface FeedbackItemCardProps {
     showScreensCount?: boolean; // Control screens count pill visibility (only for mockup collections)
 }
 
-const FeedbackItemCard: React.FC<FeedbackItemCardProps> = ({
+// Bolt Performance Optimization: Memoize FeedbackItemCard to prevent unnecessary re-renders in grid/list views
+const FeedbackItemCard: React.FC<FeedbackItemCardProps> = memo(({
     type,
     id,
     name,
@@ -338,6 +339,6 @@ const FeedbackItemCard: React.FC<FeedbackItemCardProps> = ({
             )}
         </>
     );
-};
+});
 
 export default FeedbackItemCard;
