@@ -12,6 +12,7 @@ const PRIVATE_IP_RANGES = [
   /^::1$/,
   /^fc00:/,
   /^fe80:/,
+  /^::ffff:.*$/,
 ];
 
 // Blocked hostnames
@@ -50,9 +51,12 @@ export function validateUrl(urlString: string): { isValid: boolean; error?: stri
     return { isValid: false, error: 'Access to this hostname is not allowed' };
   }
 
+  // Strip brackets from IPv6 addresses for regex matching
+  const normalizedHostname = hostname.replace(/^\[|\]$/g, '');
+
   // Block private IP ranges
   for (const range of PRIVATE_IP_RANGES) {
-    if (range.test(hostname)) {
+    if (range.test(normalizedHostname)) {
       return { isValid: false, error: 'Access to private IP addresses is not allowed' };
     }
   }
