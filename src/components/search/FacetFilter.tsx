@@ -41,10 +41,12 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
     return all.filter(([key]) => key.toLowerCase().includes(lower));
   }, [values, searchTerm]);
 
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+
   const showSearch = Object.keys(values).length > 6;
 
   const handleToggle = (value: string) => {
-    if (selected.includes(value)) {
+    if (selectedSet.has(value)) {
       onChange(selected.filter((v) => v !== value));
     } else {
       onChange([...selected, value]);
@@ -97,7 +99,7 @@ export const FacetFilter: React.FC<FacetFilterProps> = ({
               <label key={value} className="facet-filter__option">
                 <input
                   type="checkbox"
-                  checked={selected.includes(value)}
+                  checked={selectedSet.has(value)}
                   onChange={() => handleToggle(value)}
                 />
                 <span className="facet-filter__value">{value}</span>
@@ -162,17 +164,19 @@ export const FacetSidebar: React.FC<FacetSidebarProps> = ({
 
   const hasActiveFilters = Object.values(selectedFilters).some((v) => v.length > 0);
 
+  const pinnedSet = useMemo(() => new Set(pinnedFacets), [pinnedFacets]);
+
   // Sort: pinned facets first, then alphabetical
   const sortedFacetKeys = useMemo(() => {
     const keys = Object.keys(mergedFacets);
     return keys.sort((a, b) => {
-      const aPinned = pinnedFacets.includes(a);
-      const bPinned = pinnedFacets.includes(b);
+      const aPinned = pinnedSet.has(a);
+      const bPinned = pinnedSet.has(b);
       if (aPinned && !bPinned) return -1;
       if (!aPinned && bPinned) return 1;
       return a.localeCompare(b);
     });
-  }, [mergedFacets, pinnedFacets]);
+  }, [mergedFacets, pinnedSet]);
 
   if (sortedFacetKeys.length === 0) return null;
 
@@ -200,7 +204,7 @@ export const FacetSidebar: React.FC<FacetSidebarProps> = ({
             values={mergedFacets[key]}
             selected={selectedFilters[key] || []}
             onChange={(values) => onFilterChange(key, values)}
-            defaultExpanded={pinnedFacets.includes(key)}
+            defaultExpanded={pinnedSet.has(key)}
           />
         ))}
       </div>

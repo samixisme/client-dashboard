@@ -5,3 +5,6 @@
 ## 2026-03-13 - Optimizing Firebase Admin SDK document fetches
 **Learning:** For fetching multiple Firestore documents by ID/reference in the Admin SDK, using individual `doc().get()` calls inside `Promise.all` creates separate network requests and is less efficient.
 **Action:** Always use `db.getAll(...refs)` instead. It is significantly more efficient, fetches up to 1000 documents in a single batched network request, and bypasses the 30-item limit of the 'in' operator.
+## 2026-04-24 - Optimize Array Lookups in React Loops
+**Learning:** Repeatedly calling `Array.includes` inside loops or `.sort` comparator functions in React components causes O(N*M) time complexity.
+**Action:** Always pre-compute a `Set` and memoize it with `useMemo` before the loop or sort, then use `Set.has` for O(1) lookups.
