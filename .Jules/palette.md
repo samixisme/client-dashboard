@@ -1,0 +1,1 @@
+## 2025-04-25 - Improve keyboard focus visibility\n**Learning:** Interactive elements like buttons and search results lack clear keyboard focus indicators, making navigation difficult for keyboard users.\n**Action:** Add `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary` classes or equivalent CSS to interactive elements to ensure clear focus states.

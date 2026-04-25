@@ -42,6 +42,11 @@
   background: var(--bg-glass-light, rgba(255, 255, 255, 0.08));
 }
 
+.global-search__trigger:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
+}
+
 .global-search__trigger-text {
   flex: 1;
   text-align: left;
@@ -283,6 +288,11 @@
   border-color: var(--primary, #6366f1);
 }
 
+.search-results__sort-btn:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
+}
+
 .search-results__sort-menu {
   position: absolute;
   right: 0;
@@ -344,6 +354,12 @@
   color: var(--text-primary, #e2e8f0);
 }
 
+.search-results__tab:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
 .search-results__tab--active {
   color: var(--primary, #6366f1);
   border-bottom-color: var(--primary, #6366f1);
@@ -383,6 +399,11 @@
 
 .search-results__view-all:hover {
   background: rgba(99, 102, 241, 0.08);
+}
+
+.search-results__view-all:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
 }
 
 /* ── States ────────────────────────────────────────────────────────── */
@@ -452,6 +473,11 @@
 
 .result-card--selected {
   outline: 1px solid var(--primary, #6366f1);
+}
+
+.result-card:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
 }
 
 .result-card__icon {
@@ -553,6 +579,13 @@
   font-weight: 500;
   cursor: pointer;
   text-align: left;
+  outline: none;
+}
+
+.facet-filter__header:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .facet-filter__label {
@@ -579,6 +612,11 @@
 
 .facet-filter__clear:hover {
   color: #ef4444;
+}
+
+.facet-filter__clear:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
 }
 
 .facet-filter__body {
@@ -668,6 +706,12 @@
 
 .facet-sidebar__clear-all:hover {
   text-decoration: underline;
+}
+
+.facet-sidebar__clear-all:focus-visible {
+  outline: 2px solid var(--primary, #6366f1);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* ── Search Page ───────────────────────────────────────────────────── */
