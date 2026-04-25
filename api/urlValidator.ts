@@ -12,6 +12,7 @@ const PRIVATE_IP_RANGES = [
   /^::1$/,
   /^fc00:/,
   /^fe80:/,
+  /^::ffff:/,
 ];
 
 // Blocked hostnames
@@ -45,7 +46,8 @@ export function validateUrl(urlString: string): { isValid: boolean; error?: stri
   }
 
   // Block localhost variations
-  const hostname = parsedUrl.hostname.toLowerCase();
+  // Also strip brackets from IPv6 addresses (e.g. [::1] -> ::1) for correct regex matching
+  const hostname = parsedUrl.hostname.toLowerCase().replace(/^\[|\]$/g, '');
   if (BLOCKED_HOSTNAMES.includes(hostname)) {
     return { isValid: false, error: 'Access to this hostname is not allowed' };
   }

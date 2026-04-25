@@ -95,6 +95,16 @@ describe('urlValidator', () => {
       expect(typeof result.isValid).toBe('boolean');
     });
 
+    it('blocks IPv6 loopback [::1] bypass', () => {
+      const result = validateUrl('http://[::1]');
+      expect(result.isValid).toBe(false);
+    });
+
+    it('blocks IPv4-mapped IPv6 bypass', () => {
+      const result = validateUrl('http://[::ffff:127.0.0.1]');
+      expect(result.isValid).toBe(false);
+    });
+
     it('blocks 0.x.x.x range', () => {
       const result = validateUrl('http://0.1.2.3');
       expect(result.isValid).toBe(false);
