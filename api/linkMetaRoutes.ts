@@ -27,6 +27,12 @@ router.get('/', async (req: Request, res: Response) => {
       maxRedirects: 3,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LinkMetaBot/1.0)' },
       responseType: 'text',
+      beforeRedirect: (options) => {
+        const urlValidation = validateUrl(options.href);
+        if (!urlValidation.isValid) {
+          throw new Error('Blocked redirect to invalid URL: ' + urlValidation.error);
+        }
+      },
     });
 
     const $ = cheerio.load(html);
